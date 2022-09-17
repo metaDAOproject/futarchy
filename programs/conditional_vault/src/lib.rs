@@ -6,6 +6,19 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod conditional_vault {
     use super::*;
 
+    pub fn initialize_conditional_expression(
+        ctx: Context<InitializeConditionalExpression>,
+        proposal_number: u64,
+        pass_or_fail_flag: bool
+    ) -> Result<()> {
+        let conditional_expression = &mut ctx.accounts.conditional_expression;
+
+        conditional_expression.proposal_number = proposal_number;
+        conditional_expression.pass_or_fail_flag = pass_or_fail_flag;
+
+        Ok(())
+    }
+
     //pub fn initialize_conditional_token_account(
     //    ctx: Context<InitializeConditionalTokenAccount>, 
     //    proposal_number: u64, 
