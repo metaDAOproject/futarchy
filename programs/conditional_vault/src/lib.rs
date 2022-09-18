@@ -45,11 +45,14 @@ pub mod conditional_vault {
 }
 
 #[derive(Accounts)]
+#[instruction(proposal_number: u64, pass_or_fail_flag: bool)]
 pub struct InitializeConditionalExpression<'info> {
     #[account(
         init,
         payer = initializer,
-        space = 8 + 8 + 1 // TODO: PDA
+        space = 8 + 8 + 1,
+        seeds = [b"conditional-expression", proposal_number.to_be_bytes().as_ref(), &[u8::from(pass_or_fail_flag)]],
+        bump
     )]
     conditional_expression: Account<'info, ConditionalExpression>,
     #[account(mut)]

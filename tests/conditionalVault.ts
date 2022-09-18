@@ -15,7 +15,15 @@ describe("Conditional vault", () => {
     const proposalNumber = 324;
     const redeemableOnPass = true;
 
-    const conditionalExpressionAcc = anchor.web3.Keypair.generate();
+    const [conditionalExpressionAcc, bump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode("conditional-expression"),
+          new anchor.BN(proposalNumber).toBuffer("be", 8),
+          Buffer.from([redeemableOnPass]),
+        ],
+        program.programId
+      );
 
     await program.methods
       .initializeConditionalExpression(
@@ -23,16 +31,15 @@ describe("Conditional vault", () => {
         redeemableOnPass
       )
       .accounts({
-        conditionalExpression: conditionalExpressionAcc.publicKey,
+        conditionalExpression: conditionalExpressionAcc,
         initializer: provider.wallet.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
-      .signers([conditionalExpressionAcc])
       .rpc();
 
     const storedConditionalExpression =
       await program.account.conditionalExpression.fetch(
-        conditionalExpressionAcc.publicKey
+        conditionalExpressionAcc
       );
 
     assert.ok(
