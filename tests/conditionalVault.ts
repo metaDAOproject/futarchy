@@ -8,7 +8,8 @@ describe("Conditional vault", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.ConditionalVault as Program<ConditionalVault>;
+  const program = anchor.workspace
+    .ConditionalVault as Program<ConditionalVault>;
 
   it("Conditional expressions can be initialized", async () => {
     const proposalNumber = 324;
@@ -16,28 +17,105 @@ describe("Conditional vault", () => {
 
     const conditionalExpressionAcc = anchor.web3.Keypair.generate();
 
-    await program.methods.initializeConditionalExpression(
-	    new anchor.BN(proposalNumber),
-	    redeemableOnPass
-    	)
-	.accounts({
-		conditionalExpression: conditionalExpressionAcc.publicKey,
-		initializer: provider.wallet.publicKey,
-		systemProgram: anchor.web3.SystemProgram.programId,
-	})
-	.signers([conditionalExpressionAcc])
-	.rpc();
-    
-    const storedConditionalExpression = await program.account.conditionalExpression.fetch(conditionalExpressionAcc.publicKey);
+    await program.methods
+      .initializeConditionalExpression(
+        new anchor.BN(proposalNumber),
+        redeemableOnPass
+      )
+      .accounts({
+        conditionalExpression: conditionalExpressionAcc.publicKey,
+        initializer: provider.wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([conditionalExpressionAcc])
+      .rpc();
 
-    assert.ok(storedConditionalExpression.proposalNumber.eq(new anchor.BN(proposalNumber)));
+    const storedConditionalExpression =
+      await program.account.conditionalExpression.fetch(
+        conditionalExpressionAcc.publicKey
+      );
+
+    assert.ok(
+      storedConditionalExpression.proposalNumber.eq(
+        new anchor.BN(proposalNumber)
+      )
+    );
     assert.equal(storedConditionalExpression.passOrFailFlag, redeemableOnPass);
   });
-    
+
+  it("Conditional vaults can be initialized", async () => {
+    const proposalNumber = 123;
+    const redeemableOnPass = false;
+
+    const conditionalExpressionAcc = anchor.web3.Keypair.generate();
+    const conditionalVaultAcc = anchor.web3.Keypair.generate();
+    const mintAuthority = anchor.web3.Keypair.generate();
+
+    // create the token account for the conditional vault
+
+    const mint = await token.createMint(
+      provider.connection,
+      provider.wallet.payer,
+      mintAuthority.publicKey,
+      null,
+      2
+    );
+
+    console.log("MINT");
+    console.log(mint);
+
+    const vaultTokenAcc = (
+      await token.getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        provider.wallet.payer,
+        mint,
+        conditionalVaultAcc.publicKey,
+        true
+      )
+    ).address;
+
+    console.log("VAULT TOKEN ACCOUNT");
+    console.log(vaultTokenAcc);
+
+    await program.methods
+      .initializeConditionalExpression(
+        new anchor.BN(proposalNumber),
+        redeemableOnPass
+      )
+      .accounts({
+        conditionalExpression: conditionalExpressionAcc.publicKey,
+        initializer: provider.wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([conditionalExpressionAcc])
+      .rpc();
+
+    await program.methods
+      .initializeConditionalVault()
+      .accounts({
+        conditionalExpression: conditionalExpressionAcc.publicKey,
+        tokenAccount: vaultTokenAcc,
+        conditionalVault: conditionalVaultAcc.publicKey,
+        initializer: provider.wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([conditionalVaultAcc])
+      .rpc();
+
+    const storedConditionalVault = await program.account.conditionalVault.fetch(
+      conditionalVaultAcc.publicKey
+    );
+
+    assert.ok(
+      storedConditionalVault.conditionalExpression.equals(
+        conditionalExpressionAcc.publicKey
+      )
+    );
+    assert.ok(storedConditionalVault.tokenAccount.equals(vaultTokenAcc));
+  });
 
   //it("Can be initialized", async () => {
   //  const conditionalVaultAccount = anchor.web3.Keypair.generate();
-
 
   //it("Accounts can initialize conditional token accounts", async () => {
   //  const conditionalTokenAccount = anchor.web3.Keypair.generate();
@@ -57,7 +135,7 @@ describe("Conditional vault", () => {
 
   //  assert.ok(createdAccount.balance.eq(new anchor.BN(0)));
   //  assert.ok(createdAccount.proposalNumber.eq(new anchor.BN(proposalNumber)));
-  //  assert.ok(createdAccount.authority.equals(provider.wallet.publicKey)); 
+  //  assert.ok(createdAccount.authority.equals(provider.wallet.publicKey));
   //  assert.equal(createdAccount.redeemableOnPass, redeemableOnPass);
   //});
 
@@ -79,7 +157,7 @@ describe("Conditional vault", () => {
 
   ////  assert.ok(createdAccount.balance.eq(new anchor.BN(0)));
   ////  assert.ok(createdAccount.proposalNumber.eq(new anchor.BN(proposalNumber)));
-  ////  assert.ok(createdAccount.authority.equals(provider.wallet.publicKey)); 
+  ////  assert.ok(createdAccount.authority.equals(provider.wallet.publicKey));
   ////  assert.equal(createdAccount.redeemableOnPass, redeemableOnPass);
 
   ////  const mintAuthority = anchor.web3.Keypair.generate();
@@ -101,7 +179,6 @@ describe("Conditional vault", () => {
   ////    true
   ////  )).address;
 
-
   ////  const conditionalVaultTokenAccount = (await token.getOrCreateAssociatedTokenAccount(
   ////    connection,
   ////    provider.wallet.payer,
@@ -110,13 +187,7 @@ describe("Conditional vault", () => {
   ////    true
   ////  )).address;
 
-
-
-
-
-
-
-  ////  
+  ////
   ////  await program.methods.mintConditionalTokens
   ////});
 
@@ -142,6 +213,4 @@ describe("Conditional vault", () => {
   //it("Accounts cannot burn conditional tokens before a proposal has passed or failed", async () => {
   //  //
   //});
-
-
 });
