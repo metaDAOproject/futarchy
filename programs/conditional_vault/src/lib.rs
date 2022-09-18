@@ -28,6 +28,20 @@ pub mod conditional_vault {
 
         Ok(())
     }
+
+    pub fn initialize_conditional_token_account(
+        ctx: Context<InitializeConditionalTokenAccount>,
+    ) -> Result<()> {
+        let conditional_token_account = &mut ctx.accounts.conditional_token_account;
+
+        conditional_token_account.authority = ctx.accounts.authority.key();
+        conditional_token_account.conditional_vault = ctx.accounts.conditional_vault.key();
+
+        conditional_token_account.balance = 0;
+        conditional_token_account.deposited_amount = 0;
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -66,6 +80,7 @@ pub struct InitializeConditionalTokenAccount<'info> {
         space = 8 + 32 + 8 + 8 + 32
     )]
     conditional_token_account: Account<'info, ConditionalTokenAccount>,
+    conditional_vault: Account<'info, ConditionalVault>,
     #[account(mut)]
     authority: Signer<'info>,
     system_program: Program<'info, System>,
