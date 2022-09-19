@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::TokenAccount;
+use anchor_spl::token::{TokenAccount, Mint};
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -24,7 +24,8 @@ pub mod conditional_vault {
         let conditional_vault = &mut ctx.accounts.conditional_vault;
 
         conditional_vault.conditional_expression = ctx.accounts.conditional_expression.key();
-        conditional_vault.token_account = ctx.accounts.token_account.key();
+        conditional_vault.spl_token_account = ctx.accounts.spl_token_account.key();
+        conditional_vault.spl_mint = ctx.accounts.spl_mint.key();
 
         Ok(())
     }
@@ -65,11 +66,14 @@ pub struct InitializeConditionalVault<'info> {
     #[account(
         init,
         payer = initializer,
-        space = 8 + 32 + 32
+        space = 8 + 32 + 32 + 32,
+        seeds = [b"conditional-vault", conditional_expression.key().as_ref(), spl_mint.key().as_ref()], // for now, only SPL tokens
+        bump
     )]
     conditional_vault: Account<'info, ConditionalVault>,
     conditional_expression: Account<'info, ConditionalExpression>,
-    token_account: Account<'info, TokenAccount>,
+    spl_mint: Account<'info, Mint>,
+    spl_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
     initializer: Signer<'info>,
     system_program: Program<'info, System>,
@@ -80,7 +84,9 @@ pub struct InitializeConditionalTokenAccount<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + 32 + 8 + 8 + 32
+        space = 8 + 32 + 8 + 8 + 32,
+        seeds = [b"conditional-token-account", authority.key().as_ref(), conditional_vault.key().as_ref()],
+        bump
     )]
     conditional_token_account: Account<'info, ConditionalTokenAccount>,
     conditional_vault: Account<'info, ConditionalVault>,
@@ -98,7 +104,8 @@ pub struct ConditionalExpression {
 #[account]
 pub struct ConditionalVault {
     conditional_expression: Pubkey,
-    token_account: Pubkey,
+    spl_mint: Pubkey,
+    spl_token_account: Pubkey,
 }
 
 #[account]
