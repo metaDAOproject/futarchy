@@ -85,7 +85,7 @@ pub struct InitializeConditionalTokenAccount<'info> {
         init,
         payer = authority,
         space = 8 + 32 + 8 + 8 + 32,
-        seeds = [b"conditional-token-account", authority.key().as_ref(), conditional_vault.key().as_ref()],
+        seeds = [b"conditional-token-account", conditional_vault.key().as_ref(), authority.key().as_ref()],
         bump
     )]
     conditional_token_account: Account<'info, ConditionalTokenAccount>,
