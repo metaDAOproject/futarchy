@@ -11,7 +11,7 @@ describe("Conditional vault", () => {
   const program = anchor.workspace
     .ConditionalVault as Program<ConditionalVault>;
 
-  it("Conditional expressions can be initialized", async () => {
+  it("Simple minting & burning flow", async () => {
     const proposalNumber = 324;
     const redeemableOnPass = true;
 
@@ -45,18 +45,6 @@ describe("Conditional vault", () => {
       )
     );
     assert.equal(storedConditionalExpression.passOrFailFlag, redeemableOnPass);
-  });
-
-  it("Conditional vaults can be initialized", async () => {
-    const proposalNumber = 123;
-    const redeemableOnPass = false;
-
-    const conditionalExpressionAcc =
-      await generateConditionalExpressionPDAAddress(
-        program,
-        proposalNumber,
-        redeemableOnPass
-      );
 
     const mintAuthority = anchor.web3.Keypair.generate();
 
@@ -83,18 +71,6 @@ describe("Conditional vault", () => {
         true
       )
     ).address;
-
-    await program.methods
-      .initializeConditionalExpression(
-        new anchor.BN(proposalNumber),
-        redeemableOnPass
-      )
-      .accounts({
-        conditionalExpression: conditionalExpressionAcc,
-        initializer: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .rpc();
 
     await program.methods
       .initializeConditionalVault()
@@ -119,74 +95,12 @@ describe("Conditional vault", () => {
     );
     assert.ok(storedConditionalVault.splTokenAccount.equals(vaultTokenAcc));
     assert.ok(storedConditionalVault.splMint.equals(mint));
-  });
-
-  it("Conditional token accounts can be initialized", async () => {
-    const proposalNumber = 482;
-    const redeemableOnPass = true;
-
-    const conditionalExpressionAcc =
-      await generateConditionalExpressionPDAAddress(
-        program,
-        proposalNumber,
-        redeemableOnPass
-      );
-
-    const mintAuthority = anchor.web3.Keypair.generate();
-
-    const mint = await token.createMint(
-      provider.connection,
-      provider.wallet.payer,
-      mintAuthority.publicKey,
-      null,
-      2
-    );
-
-    const conditionalVaultAcc = await generateConditionalVaultPDAAddress(
-      program,
-      conditionalExpressionAcc,
-      mint
-    );
-
-    const vaultTokenAcc = (
-      await token.getOrCreateAssociatedTokenAccount(
-        provider.connection,
-        provider.wallet.payer,
-        mint,
-        conditionalVaultAcc,
-        true
-      )
-    ).address;
 
     const conditionalTokenAcc = await generateConditionalTokenAccountPDAAddress(
       program,
       conditionalVaultAcc,
-      provider.wallet.publicKey
+      provider.wallet.publicKey // the provider's wallet will be the one minting
     );
-
-    await program.methods
-      .initializeConditionalExpression(
-        new anchor.BN(proposalNumber),
-        redeemableOnPass
-      )
-      .accounts({
-        conditionalExpression: conditionalExpressionAcc,
-        initializer: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .rpc();
-
-    await program.methods
-      .initializeConditionalVault()
-      .accounts({
-        conditionalExpression: conditionalExpressionAcc,
-        splTokenAccount: vaultTokenAcc,
-        splMint: mint,
-        conditionalVault: conditionalVaultAcc,
-        initializer: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .rpc();
 
     await program.methods
       .initializeConditionalTokenAccount()
