@@ -62,7 +62,7 @@ describe("Conditional vault", () => {
       mint
     );
 
-    const vaultTokenAcc = (
+    const vaultSplTokenAcc = (
       await token.getOrCreateAssociatedTokenAccount(
         provider.connection,
         provider.wallet.payer,
@@ -76,7 +76,7 @@ describe("Conditional vault", () => {
       .initializeConditionalVault()
       .accounts({
         conditionalExpression: conditionalExpressionAcc,
-        splTokenAccount: vaultTokenAcc,
+        splTokenAccount: vaultSplTokenAcc,
         splMint: mint,
         conditionalVault: conditionalVaultAcc,
         initializer: provider.wallet.publicKey,
@@ -93,7 +93,7 @@ describe("Conditional vault", () => {
         conditionalExpressionAcc
       )
     );
-    assert.ok(storedConditionalVault.splTokenAccount.equals(vaultTokenAcc));
+    assert.ok(storedConditionalVault.splTokenAccount.equals(vaultSplTokenAcc));
     assert.ok(storedConditionalVault.splMint.equals(mint));
 
     const conditionalTokenAcc = await generateConditionalTokenAccountPDAAddress(
@@ -112,7 +112,7 @@ describe("Conditional vault", () => {
       })
       .rpc();
 
-    const storedConditionalTokenAccount =
+    let storedConditionalTokenAccount =
       await program.account.conditionalTokenAccount.fetch(conditionalTokenAcc);
 
     assert.ok(
@@ -124,6 +124,56 @@ describe("Conditional vault", () => {
     assert.ok(storedConditionalTokenAccount.balance.eq(new anchor.BN(0)));
     assert.ok(
       storedConditionalTokenAccount.depositedAmount.eq(new anchor.BN(0))
+    );
+
+    const userSPLTokenAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      mint,
+      provider.wallet.publicKey
+    );
+
+    await token.mintTo(
+      provider.connection,
+      provider.wallet.payer,
+      mint,
+      userSPLTokenAccount,
+      mintAuthority,
+      1000
+    );
+
+    const amountToDeposit = 400;
+
+    await program.methods
+      .mintConditionalTokens(new anchor.BN(amountToDeposit))
+      .accounts({
+        conditionalVault: conditionalVaultAcc,
+        conditionalTokenAccount: conditionalTokenAcc,
+        userSplTokenAccount: userSPLTokenAccount,
+        vaultSplTokenAccount: vaultSplTokenAcc,
+        user: provider.wallet.publicKey,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+
+    storedConditionalTokenAccount =
+      await program.account.conditionalTokenAccount.fetch(conditionalTokenAcc);
+
+    // these should remain the same
+    assert.ok(
+      storedConditionalTokenAccount.conditionalVault.equals(conditionalVaultAcc)
+    );
+    assert.ok(
+      storedConditionalTokenAccount.authority.equals(provider.wallet.publicKey)
+    );
+    // these should increase
+    assert.ok(
+      storedConditionalTokenAccount.balance.eq(new anchor.BN(amountToDeposit))
+    );
+    assert.ok(
+      storedConditionalTokenAccount.depositedAmount.eq(
+        new anchor.BN(amountToDeposit)
+      )
     );
   });
 });

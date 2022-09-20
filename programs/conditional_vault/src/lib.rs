@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, TokenAccount};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -40,6 +40,17 @@ pub mod conditional_vault {
 
         conditional_token_account.balance = 0;
         conditional_token_account.deposited_amount = 0;
+
+        Ok(())
+    }
+
+    pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
+        token::transfer(ctx.accounts.into_transfer_to_vault_context(), amount)?;
+
+        let user_conditional_token_account = &mut ctx.accounts.conditional_token_account;
+
+        user_conditional_token_account.balance += amount;
+        user_conditional_token_account.deposited_amount += amount;
 
         Ok(())
     }
@@ -93,6 +104,30 @@ pub struct InitializeConditionalTokenAccount<'info> {
     #[account(mut)]
     authority: Signer<'info>,
     system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MintConditionalTokens<'info> {
+    #[account(mut)]
+    conditional_token_account: Account<'info, ConditionalTokenAccount>,
+    conditional_vault: Account<'info, ConditionalVault>,
+    #[account(mut)]
+    vault_spl_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    user_spl_token_account: Account<'info, TokenAccount>,
+    user: Signer<'info>,
+    token_program: Program<'info, Token>,
+}
+
+impl<'info> MintConditionalTokens<'info> {
+    fn into_transfer_to_vault_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_spl_token_account.to_account_info().clone(),
+            to: self.vault_spl_token_account.to_account_info().clone(),
+            authority: self.user.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+    }
 }
 
 #[account]
