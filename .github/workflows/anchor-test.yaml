@@ -1,0 +1,8 @@
+name: anchor-test
+on: [push]
+jobs:
+  run-anchor-test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: metadaobuilders/anchor-test@v1
