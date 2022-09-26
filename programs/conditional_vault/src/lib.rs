@@ -52,73 +52,74 @@ pub mod conditional_vault {
         let conditional_vault = &mut ctx.accounts.conditional_vault;
 
         conditional_vault.conditional_expression = ctx.accounts.conditional_expression.key();
-        conditional_vault.spl_token_account = ctx.accounts.spl_token_account.key();
-        conditional_vault.spl_mint = ctx.accounts.spl_mint.key();
+        conditional_vault.underlying_token_mint = ctx.accounts.underlying_token_mint.key();
+        conditional_vault.underlying_token_account = ctx.accounts.vault_underlying_token_account.key();
+        conditional_vault.conditional_token_mint = ctx.accounts.conditional_token_mint.key();
         conditional_vault.bump = *ctx.bumps.get("conditional_vault").unwrap();
 
         Ok(())
     }
 
-    pub fn initialize_conditional_token_account(
-        ctx: Context<InitializeConditionalTokenAccount>,
-    ) -> Result<()> {
-        let conditional_token_account = &mut ctx.accounts.conditional_token_account;
+    // pub fn initialize_conditional_token_account(
+    //     ctx: Context<InitializeConditionalTokenAccount>,
+    // ) -> Result<()> {
+    //     let conditional_token_account = &mut ctx.accounts.conditional_token_account;
 
-        conditional_token_account.authority = ctx.accounts.authority.key();
-        conditional_token_account.conditional_vault = ctx.accounts.conditional_vault.key();
+    //     conditional_token_account.authority = ctx.accounts.authority.key();
+    //     conditional_token_account.conditional_vault = ctx.accounts.conditional_vault.key();
 
-        conditional_token_account.balance = 0;
-        conditional_token_account.deposited_amount = 0;
+    //     conditional_token_account.balance = 0;
+    //     conditional_token_account.deposited_amount = 0;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
-        token::transfer(ctx.accounts.into_transfer_to_vault_context(), amount)?;
+    // pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
+    //     token::transfer(ctx.accounts.into_transfer_to_vault_context(), amount)?;
 
-        let user_conditional_token_account = &mut ctx.accounts.conditional_token_account;
+    //     let user_conditional_token_account = &mut ctx.accounts.conditional_token_account;
 
-        user_conditional_token_account.balance += amount;
-        user_conditional_token_account.deposited_amount += amount;
+    //     user_conditional_token_account.balance += amount;
+    //     user_conditional_token_account.deposited_amount += amount;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    pub fn claim_underlying_tokens(ctx: Context<ClaimUnderlyingTokens>) -> Result<()> {
-        let conditional_vault = &ctx.accounts.conditional_vault;
+    // pub fn claim_underlying_tokens(ctx: Context<ClaimUnderlyingTokens>) -> Result<()> {
+    //     let conditional_vault = &ctx.accounts.conditional_vault;
 
-        let seeds = &[
-            b"conditional-vault",
-            conditional_vault.conditional_expression.as_ref(),
-            conditional_vault.spl_mint.as_ref(),
-            &[ctx.accounts.conditional_vault.bump],
-        ];
-        let signer = &[&seeds[..]];
+    //     let seeds = &[
+    //         b"conditional-vault",
+    //         conditional_vault.conditional_expression.as_ref(),
+    //         conditional_vault.spl_mint.as_ref(),
+    //         &[ctx.accounts.conditional_vault.bump],
+    //     ];
+    //     let signer = &[&seeds[..]];
 
-        let proposal_state = ctx.accounts.proposal.proposal_state;
+    //     let proposal_state = ctx.accounts.proposal.proposal_state;
 
-        if proposal_state == ProposalState::Passed {
-            token::transfer(
-                ctx.accounts
-                    .into_transfer_to_user_context()
-                    .with_signer(signer),
-                ctx.accounts.conditional_token_account.balance,
-            )?;
+    //     if proposal_state == ProposalState::Passed {
+    //         token::transfer(
+    //             ctx.accounts
+    //                 .into_transfer_to_user_context()
+    //                 .with_signer(signer),
+    //             ctx.accounts.conditional_token_account.balance,
+    //         )?;
 
-            (&mut ctx.accounts.conditional_token_account).balance = 0;
-        } else if proposal_state == ProposalState::Failed {
-            token::transfer(
-                ctx.accounts
-                    .into_transfer_to_user_context()
-                    .with_signer(signer),
-                ctx.accounts.conditional_token_account.deposited_amount,
-            )?;
+    //         (&mut ctx.accounts.conditional_token_account).balance = 0;
+    //     } else if proposal_state == ProposalState::Failed {
+    //         token::transfer(
+    //             ctx.accounts
+    //                 .into_transfer_to_user_context()
+    //                 .with_signer(signer),
+    //             ctx.accounts.conditional_token_account.deposited_amount,
+    //         )?;
 
-            (&mut ctx.accounts.conditional_token_account).deposited_amount = 0;
-        }
+    //         (&mut ctx.accounts.conditional_token_account).deposited_amount = 0;
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 }
 
 #[derive(Accounts)]
@@ -167,82 +168,102 @@ pub struct InitializeConditionalVault<'info> {
     #[account(
         init,
         payer = initializer,
-        space = 8 + 32 + 32 + 32 + 1,
-        seeds = [b"conditional-vault", conditional_expression.key().as_ref(), spl_mint.key().as_ref()], // for now, only SPL tokens
+        space = 8 + (32 * 4) + 1,
+        seeds = [b"conditional-vault", conditional_expression.key().as_ref(), underlying_token_mint.key().as_ref()], // for now, only SPL tokens
         bump
     )]
     conditional_vault: Account<'info, ConditionalVault>,
     conditional_expression: Account<'info, ConditionalExpression>,
-    spl_mint: Account<'info, Mint>,
-    spl_token_account: Account<'info, TokenAccount>,
+    /// SPL mint of the underlying token
+    underlying_token_mint: Account<'info, Mint>,
+    /// token account for the vault that matches above mint
+    vault_underlying_token_account: Account<'info, TokenAccount>,
+    /// SPL mint of the conditional token
+    conditional_token_mint: Account<'info, Mint>,
     #[account(mut)]
     initializer: Signer<'info>,
     system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
-pub struct InitializeConditionalTokenAccount<'info> {
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + 32 + 8 + 8 + 32,
-        seeds = [b"conditional-token-account", conditional_vault.key().as_ref(), authority.key().as_ref()],
-        bump
-    )]
-    conditional_token_account: Account<'info, ConditionalTokenAccount>,
-    conditional_vault: Account<'info, ConditionalVault>,
-    #[account(mut)]
-    authority: Signer<'info>,
-    system_program: Program<'info, System>,
-}
+// #[derive(Accounts)]
+// pub struct InitializeConditionalTokenAccount<'info> {
+//     #[account(
+//         init,
+//         payer = authority,
+//         space = 8 + 32 + 8 + 8 + 32,
+//         seeds = [b"conditional-token-account", conditional_vault.key().as_ref(), authority.key().as_ref()],
+//         bump
+//     )]
+//     conditional_token_account: Account<'info, ConditionalTokenAccount>,
+//     conditional_vault: Account<'info, ConditionalVault>,
+//     #[account(mut)]
+//     authority: Signer<'info>,
+//     system_program: Program<'info, System>,
+// }
+
+// #[derive(Accounts)]
+// pub struct MintConditionalTokens<'info> {
+//     #[account(mut)]
+//     conditional_token_account: Account<'info, ConditionalTokenAccount>,
+//     conditional_vault: Account<'info, ConditionalVault>,
+//     #[account(mut)]
+//     vault_spl_token_account: Account<'info, TokenAccount>,
+//     #[account(mut)]
+//     user_spl_token_account: Account<'info, TokenAccount>,
+//     user: Signer<'info>,
+//     token_program: Program<'info, Token>,
+// }
 
 #[derive(Accounts)]
-pub struct MintConditionalTokens<'info> {
-    #[account(mut)]
-    conditional_token_account: Account<'info, ConditionalTokenAccount>,
-    conditional_vault: Account<'info, ConditionalVault>,
-    #[account(mut)]
-    vault_spl_token_account: Account<'info, TokenAccount>,
-    #[account(mut)]
-    user_spl_token_account: Account<'info, TokenAccount>,
+pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
     user: Signer<'info>,
-    token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-pub struct ClaimUnderlyingTokens<'info> {
     #[account(mut)]
-    conditional_token_account: Account<'info, ConditionalTokenAccount>,
+    conditional_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    vault_spl_token_account: Account<'info, TokenAccount>,
+    user_underlying_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    user_spl_token_account: Account<'info, TokenAccount>,
+    vault_underlying_token_account: Account<'info, TokenAccount>,
     conditional_vault: Account<'info, ConditionalVault>,
     proposal: Account<'info, Proposal>,
     token_program: Program<'info, Token>,
 }
 
-impl<'info> MintConditionalTokens<'info> {
-    fn into_transfer_to_vault_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.user_spl_token_account.to_account_info().clone(),
-            to: self.vault_spl_token_account.to_account_info().clone(),
-            authority: self.user.to_account_info().clone(),
-        };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
-    }
+#[derive(Accounts)]
+pub struct RedeemDepositRecordForUnderlyingTokens<'info> {
+    user: Signer<'info>,
+    #[account(mut)]
+    deposit_record: Account<'info, DepositRecord>,
+    #[account(mut)]
+    user_underlying_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    vault_underlying_token_account: Account<'info, TokenAccount>,
+    conditional_vault: Account<'info, ConditionalVault>,
+    proposal: Account<'info, Proposal>,
+    token_program: Program<'info, Token>,
 }
 
-impl<'info> ClaimUnderlyingTokens<'info> {
-    fn into_transfer_to_user_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.vault_spl_token_account.to_account_info().clone(),
-            to: self.user_spl_token_account.to_account_info().clone(),
-            authority: self.conditional_vault.to_account_info().clone(),
-        };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
-    }
-}
+
+// impl<'info> MintConditionalTokens<'info> {
+//     fn into_transfer_to_vault_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+//         let cpi_accounts = Transfer {
+//             from: self.user_underlying_token_account.to_account_info().clone(),
+//             to: self.vault_underlying_token_account.to_account_info().clone(),
+//             authority: self.user.to_account_info().clone(),
+//         };
+//         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+//     }
+// }
+
+// impl<'info> ClaimUnderlyingTokens<'info> {
+//     fn into_transfer_to_user_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+//         let cpi_accounts = Transfer {
+//             from: self.vault_underlying_token_account.to_account_info().clone(),
+//             to: self.user_underlying_token_account.to_account_info().clone(),
+//             authority: self.conditional_vault.to_account_info().clone(),
+//         };
+//         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+//     }
+// }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
 pub enum ProposalState {
@@ -266,15 +287,15 @@ pub struct ConditionalExpression {
 #[account]
 pub struct ConditionalVault {
     conditional_expression: Pubkey,
-    spl_mint: Pubkey,
-    spl_token_account: Pubkey,
+    underlying_token_mint: Pubkey,
+    underlying_token_account: Pubkey,
+    conditional_token_mint: Pubkey,
     bump: u8,
 }
 
 #[account]
-pub struct ConditionalTokenAccount {
+pub struct DepositRecord {
     conditional_vault: Pubkey,
-    balance: u64,
+    depositor: Pubkey,
     deposited_amount: u64,
-    authority: Pubkey,
 }
