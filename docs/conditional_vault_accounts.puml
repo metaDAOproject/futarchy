@@ -1,0 +1,77 @@
+@startuml
+package MetaDAO {
+    map ConditionalExpression {
+        proposal_number => 123
+        pass_or_fail => Pass
+    } 
+
+    map ConditionalVault {
+        conditional_expression => ID
+        underlying_token_mint => ID
+        underlying_token_account => ID
+        conditional_token_mint => ID
+    }
+
+    map DepositRecord {
+        conditional_vault => ID
+        depositor => ID
+        deposited_amount => 400
+    }
+}
+
+package SPLToken {
+    json UnderlyingTokenMint {
+        "symbol": "USDC",
+        "mint_authority": "ID"
+    }
+
+    json ConditionalTokenMint {
+        "symbol": "cndUSDC",
+        "mint_authority": "ID"
+    }
+
+    map ConditionalTokenAccount {
+        mint => ID
+        owner => ID
+        balance => 350
+    }
+
+    map UserUnderlyingTokenAccount {
+        mint => ID
+        owner => ID
+        balance => 1000
+    }
+
+    map VaultUnderlyingTokenAccount {
+        mint => ID
+        owner => ID
+        balance => 15000
+    }
+}
+
+package System {
+    object User
+    object USDCAdmin
+}
+
+ConditionalVault::conditional_expression --> ConditionalExpression
+ConditionalVault::underlying_token_mint --> UnderlyingTokenMint
+ConditionalVault::conditional_token_mint --> ConditionalTokenMint
+ConditionalVault::underlying_token_account --> VaultUnderlyingTokenAccount
+
+DepositRecord::conditional_vault --> ConditionalVault
+DepositRecord::depositor --> User
+
+VaultUnderlyingTokenAccount::mint --> UnderlyingTokenMint
+VaultUnderlyingTokenAccount::owner --> ConditionalVault
+
+UserUnderlyingTokenAccount::mint --> UnderlyingTokenMint
+UserUnderlyingTokenAccount::owner --> User
+
+ConditionalTokenAccount::mint --> ConditionalTokenMint
+ConditionalTokenAccount::owner --> User
+
+UnderlyingTokenMint::mint_authority --> USDCAdmin
+
+ConditionalTokenMint::mint_authority --> ConditionalVault
+@enduml
