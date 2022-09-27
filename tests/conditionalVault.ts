@@ -70,9 +70,6 @@ describe("Conditional vault", () => {
       conditionalVaultAccount, // mint authority
       null,
       2,
-      anchor.web3.Keypair.generate(),
-      null,
-      token.TOKEN_PROGRAM_ID
     );
 
     const vaultUnderlyingTokenAccount = (
@@ -221,57 +218,58 @@ describe("Conditional vault", () => {
       )
     );
 
-    // console.log(
-    //   "Conditional token account successfully credited after deposit."
-    // );
+    console.log(
+      "Conditional token account successfully credited after deposit."
+    );
 
-    // const proposalAcc = anchor.web3.Keypair.generate();
+    const proposalAccount = anchor.web3.Keypair.generate();
 
-    // await program.methods
-    //   .initializeProposal(new anchor.BN(proposalNumber))
-    //   .accounts({
-    //     proposal: proposalAcc.publicKey,
-    //     initializer: provider.wallet.publicKey,
-    //     systemProgram: anchor.web3.SystemProgram.programId,
-    //   })
-    //   .signers([proposalAcc])
-    //   .rpc();
+    await program.methods
+      .initializeProposal(new anchor.BN(proposalNumber))
+      .accounts({
+        proposal: proposalAccount.publicKey,
+        initializer: provider.wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([proposalAccount])
+      .rpc();
 
-    // await program.methods
-    //   .passProposal()
-    //   .accounts({
-    //     proposal: proposalAcc.publicKey,
-    //   })
-    //   .rpc();
+    await program.methods
+      .passProposal()
+      .accounts({
+        proposal: proposalAccount.publicKey,
+      })
+      .rpc();
 
-    // await program.methods
-    //   .claimUnderlyingTokens()
-    //   .accounts({
-    //     proposal: proposalAcc.publicKey,
-    //     conditionalExpression: conditionalExpressionAcc,
-    //     conditionalTokenAccount: conditionalTokenAcc,
-    //     userSplTokenAccount: userSPLTokenAccount,
-    //     vaultSplTokenAccount: vaultSplTokenAcc,
-    //     conditionalVault: conditionalVaultAcc,
-    //     user: provider.wallet.publicKey,
-    //   })
-    //   .rpc();
+    await program.methods
+      .redeemConditionalTokensForUnderlyingTokens()
+      .accounts({
+        user: provider.wallet.publicKey,
+        userConditionalTokenAccount,
+        userUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        conditionalVault: conditionalVaultAccount,
+        proposal: proposalAccount.publicKey,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        conditionalExpression: conditionalExpressionAccount,
+        conditionalTokenMint,
+      })
+      .rpc();
 
-    // storedConditionalTokenAccount =
-    //   await program.account.conditionalTokenAccount.fetch(conditionalTokenAcc);
+    assert.equal(
+      (await token.getAccount(provider.connection, userUnderlyingTokenAccount)).amount,
+      underlyingAmountToMint
+    );
+    assert.equal(
+      (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount)).amount,
+      0
+    );
+    assert.equal(
+      (await token.getAccount(provider.connection, userConditionalTokenAccount)).amount,
+      0
+    );
 
-    // assert.equal(
-    //   (await token.getAccount(provider.connection, userSPLTokenAccount)).amount,
-    //   amountToMint
-    // );
-    // assert.equal(
-    //   (await token.getAccount(provider.connection, vaultSplTokenAcc)).amount,
-    //   0
-    // );
-
-    // assert.ok(storedConditionalTokenAccount.balance.eq(new anchor.BN(0)));
-
-    // console.log("Underlying tokens successfully redeemed after proposal pass");
+    console.log("Underlying tokens successfully redeemed after proposal pass");
   });
 });
 

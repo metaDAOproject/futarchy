@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -97,6 +97,41 @@ pub mod conditional_vault {
         let deposit_account = &mut ctx.accounts.deposit_account;
 
         deposit_account.deposited_amount += amount;
+
+        Ok(())
+    }
+
+    /// Called if the conditional expression evaluates to true
+    pub fn redeem_conditional_tokens_for_underlying_tokens(ctx: Context<RedeemConditionalTokensForUnderlyingTokens>) -> Result<()> {
+        let conditional_vault = &ctx.accounts.conditional_vault;
+        let conditional_expression = &ctx.accounts.conditional_expression;
+
+        let seeds = &[
+            b"conditional-vault",
+            conditional_vault.conditional_expression.as_ref(),
+            conditional_vault.underlying_token_mint.as_ref(),
+            &[ctx.accounts.conditional_vault.bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let proposal_state = ctx.accounts.proposal.proposal_state;
+
+        // require!(proposal_state == conditional_expression.pass_or_fail)
+
+        let amount = ctx.accounts.user_conditional_token_account.amount;
+
+        token::burn(
+            ctx.accounts
+                .into_burn_conditional_tokens_context(),
+            amount
+        )?;
+
+        token::transfer(
+            ctx.accounts
+                .into_transfer_underlying_tokens_to_user_context()
+                .with_signer(signer),
+            amount
+        )?;
 
         Ok(())
     }
@@ -268,7 +303,7 @@ impl<'info> MintConditionalTokens<'info> {
 pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
     user: Signer<'info>,
     #[account(mut)]
-    conditional_token_account: Account<'info, TokenAccount>,
+    user_conditional_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
     user_underlying_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -276,7 +311,31 @@ pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
     conditional_vault: Account<'info, ConditionalVault>,
     proposal: Account<'info, Proposal>,
     token_program: Program<'info, Token>,
+    conditional_expression: Account<'info, ConditionalExpression>,
+    #[account(mut)]
+    conditional_token_mint: Account<'info, Mint>,
 }
+
+impl<'info> RedeemConditionalTokensForUnderlyingTokens<'info> {
+    fn into_burn_conditional_tokens_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
+        let cpi_accounts = Burn {
+            mint: self.conditional_token_mint.to_account_info().clone(),
+            from: self.user_conditional_token_account.to_account_info().clone(),
+            authority: self.user.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+    }
+
+    fn into_transfer_underlying_tokens_to_user_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.vault_underlying_token_account.to_account_info().clone(),
+            to: self.user_underlying_token_account.to_account_info().clone(),
+            authority: self.conditional_vault.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+    }
+}
+
 
 #[derive(Accounts)]
 pub struct RedeemDepositAccountForUnderlyingTokens<'info> {
@@ -291,17 +350,6 @@ pub struct RedeemDepositAccountForUnderlyingTokens<'info> {
     proposal: Account<'info, Proposal>,
     token_program: Program<'info, Token>,
 }
-
-// impl<'info> ClaimUnderlyingTokens<'info> {
-//     fn into_transfer_to_user_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-//         let cpi_accounts = Transfer {
-//             from: self.vault_underlying_token_account.to_account_info().clone(),
-//             to: self.user_underlying_token_account.to_account_info().clone(),
-//             authority: self.conditional_vault.to_account_info().clone(),
-//         };
-//         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
-//     }
-// }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
 pub enum ProposalState {
