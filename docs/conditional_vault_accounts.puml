@@ -12,7 +12,7 @@ package MetaDAO {
         conditional_token_mint => ID
     }
 
-    map DepositRecord {
+    map DepositAccount {
         conditional_vault => ID
         depositor => ID
         deposited_amount => 400
@@ -59,8 +59,8 @@ ConditionalVault::underlying_token_mint --> UnderlyingTokenMint
 ConditionalVault::conditional_token_mint --> ConditionalTokenMint
 ConditionalVault::underlying_token_account --> VaultUnderlyingTokenAccount
 
-DepositRecord::conditional_vault --> ConditionalVault
-DepositRecord::depositor --> User
+DepositAccount::conditional_vault --> ConditionalVault
+DepositAccount::depositor --> User
 
 VaultUnderlyingTokenAccount::mint --> UnderlyingTokenMint
 VaultUnderlyingTokenAccount::owner --> ConditionalVault

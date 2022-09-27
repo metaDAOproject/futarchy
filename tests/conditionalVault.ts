@@ -69,7 +69,10 @@ describe("Conditional vault", () => {
       provider.wallet.payer,
       conditionalVaultAccount, // mint authority
       null,
-      2
+      2,
+      anchor.web3.Keypair.generate(),
+      null,
+      token.TOKEN_PROGRAM_ID
     );
 
     const vaultUnderlyingTokenAccount = (
@@ -104,103 +107,119 @@ describe("Conditional vault", () => {
         conditionalExpressionAccount
       )
     );
-    assert.ok(storedConditionalVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount));
-    assert.ok(storedConditionalVault.underlyingTokenMint.equals(underlyingTokenMint));
-    assert.ok(storedConditionalVault.conditionalTokenMint.equals(conditionalTokenMint));
+    assert.ok(
+      storedConditionalVault.underlyingTokenAccount.equals(
+        vaultUnderlyingTokenAccount
+      )
+    );
+    assert.ok(
+      storedConditionalVault.underlyingTokenMint.equals(underlyingTokenMint)
+    );
+    assert.ok(
+      storedConditionalVault.conditionalTokenMint.equals(conditionalTokenMint)
+    );
 
     console.log("Conditional vault successfully initialized.");
 
-    // const conditionalTokenAcc = await generateConditionalTokenAccountPDAAddress(
-    //   program,
-    //   conditionalVaultAcc,
-    //   provider.wallet.publicKey // the provider's wallet will be the one minting
-    // );
+    const depositAccount = await generateDepositAccountPDAAddress(
+      program,
+      conditionalVaultAccount,
+      provider.wallet.publicKey // the provider's wallet will be the one minting
+    );
 
-    // await program.methods
-    //   .initializeConditionalTokenAccount()
-    //   .accounts({
-    //     conditionalVault: conditionalVaultAcc,
-    //     conditionalTokenAccount: conditionalTokenAcc,
-    //     authority: provider.wallet.publicKey,
-    //     systemProgram: anchor.web3.SystemProgram.programId,
-    //   })
-    //   .rpc();
+    await program.methods
+      .initializeDepositAccount()
+      .accounts({
+        conditionalVault: conditionalVaultAccount,
+        depositAccount,
+        depositor: provider.wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
 
-    // let storedConditionalTokenAccount =
-    //   await program.account.conditionalTokenAccount.fetch(conditionalTokenAcc);
+    let storedDepositAccount = await program.account.depositAccount.fetch(
+      depositAccount
+    );
 
-    // assert.ok(
-    //   storedConditionalTokenAccount.conditionalVault.equals(conditionalVaultAcc)
-    // );
-    // assert.ok(
-    //   storedConditionalTokenAccount.authority.equals(provider.wallet.publicKey)
-    // );
-    // assert.ok(storedConditionalTokenAccount.balance.eq(new anchor.BN(0)));
-    // assert.ok(
-    //   storedConditionalTokenAccount.depositedAmount.eq(new anchor.BN(0))
-    // );
+    assert.ok(
+      storedDepositAccount.conditionalVault.equals(conditionalVaultAccount)
+    );
+    assert.ok(storedDepositAccount.depositor.equals(provider.wallet.publicKey));
+    assert.ok(storedDepositAccount.depositedAmount.eq(new anchor.BN(0)));
 
-    // console.log("Conditional token account successfully initialized.");
+    console.log("Deposit account successfully initialized.");
 
-    // const userSPLTokenAccount = await token.createAccount(
-    //   provider.connection,
-    //   provider.wallet.payer,
-    //   mint,
-    //   provider.wallet.publicKey
-    // );
+    const userUnderlyingTokenAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      underlyingTokenMint,
+      provider.wallet.publicKey
+    );
 
-    // const amountToMint = 1000;
-    // const amountToDeposit = 400;
+    const underlyingAmountToMint = 1000;
+    const conditionalAmountToMint = 400;
 
-    // await token.mintTo(
-    //   provider.connection,
-    //   provider.wallet.payer,
-    //   mint,
-    //   userSPLTokenAccount,
-    //   mintAuthority,
-    //   amountToMint
-    // );
+    await token.mintTo(
+      provider.connection,
+      provider.wallet.payer,
+      underlyingTokenMint,
+      userUnderlyingTokenAccount,
+      underlyingTokenMintAuthority,
+      underlyingAmountToMint
+    );
 
-    // await program.methods
-    //   .mintConditionalTokens(new anchor.BN(amountToDeposit))
-    //   .accounts({
-    //     conditionalVault: conditionalVaultAcc,
-    //     conditionalTokenAccount: conditionalTokenAcc,
-    //     userSplTokenAccount: userSPLTokenAccount,
-    //     vaultSplTokenAccount: vaultSplTokenAcc,
-    //     user: provider.wallet.publicKey,
-    //     tokenProgram: token.TOKEN_PROGRAM_ID,
-    //   })
-    //   .rpc();
+    const userConditionalTokenAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      conditionalTokenMint,
+      provider.wallet.publicKey
+    );
 
-    // storedConditionalTokenAccount =
-    //   await program.account.conditionalTokenAccount.fetch(conditionalTokenAcc);
+    await program.methods
+      .mintConditionalTokens(new anchor.BN(conditionalAmountToMint))
+      .accounts({
+        conditionalVault: conditionalVaultAccount,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        conditionalTokenMint,
+        user: provider.wallet.publicKey,
+        depositAccount,
+        vaultUnderlyingTokenAccount,
+        userUnderlyingTokenAccount,
+        userConditionalTokenAccount,
+      })
+      .rpc();
 
-    // assert.equal(
-    //   (await token.getAccount(provider.connection, userSPLTokenAccount)).amount,
-    //   amountToMint - amountToDeposit
-    // );
-    // assert.equal(
-    //   (await token.getAccount(provider.connection, vaultSplTokenAcc)).amount,
-    //   amountToDeposit
-    // );
+    assert.equal(
+      (await token.getAccount(provider.connection, userUnderlyingTokenAccount))
+        .amount,
+      underlyingAmountToMint - conditionalAmountToMint
+    );
+    assert.equal(
+      (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount))
+        .amount,
+      conditionalAmountToMint
+    );
+    assert.equal(
+      (await token.getAccount(provider.connection, userConditionalTokenAccount))
+        .amount,
+      conditionalAmountToMint
+    );
 
-    // // these should remain the same
-    // assert.ok(
-    //   storedConditionalTokenAccount.conditionalVault.equals(conditionalVaultAcc)
-    // );
-    // assert.ok(
-    //   storedConditionalTokenAccount.authority.equals(provider.wallet.publicKey)
-    // );
-    // // these should increase
-    // assert.ok(
-    //   storedConditionalTokenAccount.balance.eq(new anchor.BN(amountToDeposit))
-    // );
-    // assert.ok(
-    //   storedConditionalTokenAccount.depositedAmount.eq(
-    //     new anchor.BN(amountToDeposit)
-    //   )
-    // );
+    storedDepositAccount = await program.account.depositAccount.fetch(
+      depositAccount
+    );
+
+    // these should remain the same
+    assert.ok(
+      storedDepositAccount.conditionalVault.equals(conditionalVaultAccount)
+    );
+    assert.ok(storedDepositAccount.depositor.equals(provider.wallet.publicKey));
+    // this should increase
+    assert.ok(
+      storedDepositAccount.depositedAmount.eq(
+        new anchor.BN(conditionalAmountToMint)
+      )
+    );
 
     // console.log(
     //   "Conditional token account successfully credited after deposit."
@@ -290,19 +309,19 @@ async function generateConditionalVaultPDAAddress(
   return conditionalVaultAcc;
 }
 
-async function generateConditionalTokenAccountPDAAddress(
+async function generateDepositAccountPDAAddress(
   program: Program,
   conditionalVault: anchor.web3.PublicKey,
   user: anchor.web3.PublicKey
 ) {
-  const [conditionalTokenAcc] = await anchor.web3.PublicKey.findProgramAddress(
+  const [depositAcc] = await anchor.web3.PublicKey.findProgramAddress(
     [
-      anchor.utils.bytes.utf8.encode("conditional-token-account"),
+      anchor.utils.bytes.utf8.encode("deposit-account"),
       conditionalVault.toBuffer(),
       user.toBuffer(),
     ],
     program.programId
   );
 
-  return conditionalTokenAcc;
+  return depositAcc;
 }
