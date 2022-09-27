@@ -69,7 +69,7 @@ describe("Conditional vault", () => {
       provider.wallet.payer,
       conditionalVaultAccount, // mint authority
       null,
-      2,
+      2
     );
 
     const vaultUnderlyingTokenAccount = (
@@ -257,15 +257,18 @@ describe("Conditional vault", () => {
       .rpc();
 
     assert.equal(
-      (await token.getAccount(provider.connection, userUnderlyingTokenAccount)).amount,
+      (await token.getAccount(provider.connection, userUnderlyingTokenAccount))
+        .amount,
       underlyingAmountToMint
     );
     assert.equal(
-      (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount)).amount,
+      (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount))
+        .amount,
       0
     );
     assert.equal(
-      (await token.getAccount(provider.connection, userConditionalTokenAccount)).amount,
+      (await token.getAccount(provider.connection, userConditionalTokenAccount))
+        .amount,
       0
     );
 
@@ -330,7 +333,7 @@ describe("Conditional vault", () => {
       provider.wallet.payer,
       conditionalVaultAccount, // mint authority
       null,
-      2,
+      2
     );
 
     const vaultUnderlyingTokenAccount = (
@@ -517,27 +520,26 @@ describe("Conditional vault", () => {
       .rpc();
 
     assert.equal(
-      (await token.getAccount(provider.connection, userUnderlyingTokenAccount)).amount,
+      (await token.getAccount(provider.connection, userUnderlyingTokenAccount))
+        .amount,
       underlyingAmountToMint
     );
     assert.equal(
-      (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount)).amount,
+      (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount))
+        .amount,
       0
     );
     assert.equal(
-      (await token.getAccount(provider.connection, userConditionalTokenAccount)).amount,
-      conditionalAmountToMint 
+      (await token.getAccount(provider.connection, userConditionalTokenAccount))
+        .amount,
+      conditionalAmountToMint
     ); // conditional token balance should remain the same - these tokens are now worthless
 
     storedDepositAccount = await program.account.depositAccount.fetch(
       depositAccount
     );
 
-    assert.ok(
-      storedDepositAccount.depositedAmount.eq(
-        new anchor.BN(0)
-      )
-    );
+    assert.ok(storedDepositAccount.depositedAmount.eq(new anchor.BN(0)));
 
     console.log("Underlying tokens successfully redeemed after proposal pass");
   });
