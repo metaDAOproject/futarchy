@@ -3,13 +3,16 @@ import { expect, assert } from "chai";
 import * as token from "@solana/spl-token";
 import { ConditionalVault } from "../target/types/conditional_vault";
 
+type Program = anchor.Program<ConditionalVault>;
+type PublicKey = anchor.web3.PublicKey;
+
 export const mintConditionalTokens = async (
-  program: anchor.Program<ConditionalVault>,
-  conditionalVault: anchor.web3.PublicKey,
+  program: Program,
+  conditionalVault: PublicKey,
   amount: number,
-  depositAccount: anchor.web3.PublicKey,
-  userUnderlyingTokenAccount: anchor.web3.PublicKey,
-  userConditionalTokenAccount: anchor.web3.PublicKey
+  depositAccount: PublicKey,
+  userUnderlyingTokenAccount: PublicKey,
+  userConditionalTokenAccount: PublicKey
 ) => {
   const provider = program.provider;
   const storedConditionalVault = await program.account.conditionalVault.fetch(
@@ -81,9 +84,6 @@ export const mintConditionalTokens = async (
 
   console.log("Conditional token account successfully credited after deposit.");
 };
-
-type Program = anchor.Program<ConditionalVault>;
-type PublicKey = anchor.web3.PublicKey;
 
 export const redeemConditionalTokensForUnderlyingTokens = async (
   program: Program,
