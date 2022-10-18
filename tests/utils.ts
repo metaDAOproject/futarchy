@@ -142,3 +142,68 @@ export const redeemConditionalTokensForUnderlyingTokens = async (
 
   console.log("Underlying tokens successfully redeemed after proposal pass");
 };
+
+export const redeemDepositAccountForUnderlyingTokens = async (
+  program: Program,
+  userDepositAccount: PublicKey,
+  userUnderlyingTokenAccount: PublicKey,
+  conditionalVault: PublicKey,
+  proposal: PublicKey
+) => {
+  const provider = program.provider;
+
+  const storedConditionalVault = await program.account.conditionalVault.fetch(
+    conditionalVault
+  );
+  const vaultUnderlyingTokenAccount =
+    storedConditionalVault.underlyingTokenAccount;
+  const conditionalExpression = storedConditionalVault.conditionalExpression;
+
+  const preRedeemUserUnderlyingBalance = (
+    await token.getAccount(provider.connection, userUnderlyingTokenAccount)
+  ).amount;
+
+  let storedDepositAccount = await program.account.depositAccount.fetch(
+    userDepositAccount
+  );
+  const preRedeemUserDepositedAmount = storedDepositAccount.depositedAmount;
+
+  await program.methods
+    .redeemDepositAccountForUnderlyingTokens()
+    .accounts({
+      user: provider.wallet.publicKey,
+      userDepositAccount,
+      userUnderlyingTokenAccount,
+      vaultUnderlyingTokenAccount,
+      conditionalVault,
+      proposal,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+      conditionalExpression,
+    })
+    .rpc();
+
+  assert.equal(
+    (await token.getAccount(provider.connection, userUnderlyingTokenAccount))
+      .amount,
+    preRedeemUserUnderlyingBalance +
+      BigInt(preRedeemUserDepositedAmount.toNumber())
+  );
+  // assert.equal(
+  //   (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount))
+  //     .amount,
+  //   0
+  // );
+  // assert.equal(
+  //   (await token.getAccount(provider.connection, userConditionalTokenAccount))
+  //     .amount,
+  //   conditionalAmountToMint
+  // ); // conditional token balance should remain the same - these tokens are now worthless
+
+  storedDepositAccount = await program.account.depositAccount.fetch(
+    userDepositAccount
+  );
+
+  assert.ok(storedDepositAccount.depositedAmount.eq(new anchor.BN(0)));
+
+  console.log("Underlying tokens successfully redeemed after proposal pass");
+};
