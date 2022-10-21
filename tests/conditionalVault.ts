@@ -305,4 +305,192 @@ describe("Conditional vault", () => {
     );
   });
 
+  it("Adversary cannot redeem conditional tokens when the expression evaluates to false", async () => {
+    const proposalNumber = 38910;
+    const redeemableOnPass = false;
+
+    const proposal = await accountInitUtils.initializeProposalAccount(
+      program,
+      proposalNumber
+    );
+
+    const conditionalExpression =
+      await accountInitUtils.initializeConditionalExpression(
+        program,
+        proposal,
+        redeemableOnPass
+      );
+
+    const [underlyingTokenMint, underlyingTokenMintAuthority] =
+      await accountInitUtils.initializeUnderlyingTokenMint(provider);
+
+    const [
+      conditionalVault,
+      conditionalTokenMint,
+      vaultUnderlyingTokenAccount,
+    ] = await accountInitUtils.initializeConditionalVault(
+      program,
+      conditionalExpression,
+      underlyingTokenMint
+    );
+
+    const depositAccount = await accountInitUtils.initializeDepositAccount(
+      program,
+      conditionalVault
+    );
+
+    const userUnderlyingTokenAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      underlyingTokenMint,
+      provider.wallet.publicKey
+    );
+
+    const underlyingAmountToMint = 1000;
+    const conditionalAmountToMint = 400;
+
+    await token.mintTo(
+      provider.connection,
+      provider.wallet.payer,
+      underlyingTokenMint,
+      userUnderlyingTokenAccount,
+      underlyingTokenMintAuthority,
+      underlyingAmountToMint
+    );
+
+    const userConditionalTokenAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      conditionalTokenMint,
+      provider.wallet.publicKey
+    );
+
+    await utils.mintConditionalTokens(
+      program,
+      conditionalVault,
+      conditionalAmountToMint,
+      depositAccount,
+      userUnderlyingTokenAccount,
+      userConditionalTokenAccount
+    );
+    it("Adversary cannot redeem deposit account or empty conditional token account for underlying tokens when condition evaluates to true.", async () => {
+      const proposalNumber = 38910;
+      const redeemableOnPass = false;
+  
+      const proposal = await accountInitUtils.initializeProposalAccount(
+        program,
+        proposalNumber
+      );
+  
+      const conditionalExpression =
+        await accountInitUtils.initializeConditionalExpression(
+          program,
+          proposal,
+          redeemableOnPass
+        );
+  
+      const [underlyingTokenMint, underlyingTokenMintAuthority] =
+        await accountInitUtils.initializeUnderlyingTokenMint(provider);
+  
+      const [
+        conditionalVault,
+        conditionalTokenMint,
+        vaultUnderlyingTokenAccount,
+      ] = await accountInitUtils.initializeConditionalVault(
+        program,
+        conditionalExpression,
+        underlyingTokenMint
+      );
+  
+      const depositAccount = await accountInitUtils.initializeDepositAccount(
+        program,
+        conditionalVault
+      );
+  
+      const userUnderlyingTokenAccount = await token.createAccount(
+        provider.connection,
+        provider.wallet.payer,
+        underlyingTokenMint,
+        provider.wallet.publicKey
+      );
+  
+      const underlyingAmountToMint = 1000;
+      const conditionalAmountToMint = 400;
+  
+      await token.mintTo(
+        provider.connection,
+        provider.wallet.payer,
+        underlyingTokenMint,
+        userUnderlyingTokenAccount,
+        underlyingTokenMintAuthority,
+        underlyingAmountToMint
+      );
+  
+      const userConditionalTokenAccount = await token.createAccount(
+        provider.connection,
+        provider.wallet.payer,
+        conditionalTokenMint,
+        provider.wallet.publicKey
+      );
+  
+      await utils.mintConditionalTokens(
+        program,
+        conditionalVault,
+        conditionalAmountToMint,
+        depositAccount,
+        userUnderlyingTokenAccount,
+        userConditionalTokenAccount
+      );
+
+      // main user sends away conditional tokens to Bob, who will try to redeem them even though expression evaluates to false
+      const bob = anchor.web3.Keypair.generate();
+      const bobConditionalTokenAccount = await token.createAccount(
+        provider.connection,
+        provider.wallet.payer,
+        conditionalTokenMint,
+        bob.publicKey,
+      );
+      const bobUnderlyingTokenAccount = await token.createAccount(
+        provider.connection,
+        provider.wallet.payer,
+        underlyingTokenMint,
+        bob.publicKey,
+      )
+      await token.transfer(
+        provider.connection,
+        provider.wallet.payer,
+        userConditionalTokenAccount,
+        conditionalTokenBurnAccount,
+        provider.wallet.publicKey,
+        conditionalAmountToMint
+      );
+  
+      await program.methods
+        .failProposal()
+        .accounts({
+          proposal,
+        })
+        .rpc();
+  
+      try {
+        await program.methods.redeemConditionalTokensForUnderlyingTokens()
+          .accounts({
+            user: bob.publicKey,
+            userConditionalTokenAccount: bobConditionalTokenAccount,
+            userUnderlyingTokenAccount: bobUnderlyingTokenAccount,
+            vaultUnderlyingTokenAccount,
+            conditionalVault,
+            proposal,
+            tokenProgram: token.TOKEN_PROGRAM_ID,
+            conditionalExpression,
+            conditionalTokenMint,
+          })
+          .rpc();
+        assert.fail();
+      } catch (err) {
+        assert.strictEqual(err.error.errorCode.number, 6000);
+        assert.strictEqual(err.error.errorMessage, "Conditional expression needs to evaluate to true before conditional tokens can be redeemed for underlying tokens");
+      }
+    });
+  });
 });
