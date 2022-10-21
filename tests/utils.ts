@@ -102,11 +102,14 @@ export const redeemConditionalTokensForUnderlyingTokens = async (
     storedConditionalVault.underlyingTokenAccount;
   const conditionalExpression = storedConditionalVault.conditionalExpression;
 
-  const preMintUserConditionalBalance = (
+  const preRedeemUserConditionalBalance = (
     await token.getAccount(provider.connection, userConditionalTokenAccount)
   ).amount;
-  const preMintUserUnderlyingBalance = (
+  const preRedeemUserUnderlyingBalance = (
     await token.getAccount(provider.connection, userUnderlyingTokenAccount)
+  ).amount;
+  const preRedeemVaultUnderlyingBalance = (
+    await token.getAccount(provider.connection, vaultUnderlyingTokenAccount)
   ).amount;
 
   await program.methods
@@ -127,12 +130,12 @@ export const redeemConditionalTokensForUnderlyingTokens = async (
   assert.equal(
     (await token.getAccount(provider.connection, userUnderlyingTokenAccount))
       .amount,
-    preMintUserConditionalBalance + preMintUserUnderlyingBalance
+    preRedeemUserConditionalBalance + preRedeemUserUnderlyingBalance
   );
   assert.equal(
     (await token.getAccount(provider.connection, vaultUnderlyingTokenAccount))
       .amount,
-    BigInt(0)
+    preRedeemVaultUnderlyingBalance - preRedeemUserConditionalBalance
   );
   assert.equal(
     (await token.getAccount(provider.connection, userConditionalTokenAccount))

@@ -22,10 +22,15 @@ describe("Conditional vault", () => {
     const proposalNumber = 324;
     const redeemableOnPass = true;
 
+    const proposal = await accountInitUtils.initializeProposalAccount(
+      program,
+      proposalNumber
+    );
+
     const conditionalExpression =
       await accountInitUtils.initializeConditionalExpression(
         program,
-        proposalNumber,
+        proposal,
         redeemableOnPass
       );
 
@@ -80,11 +85,6 @@ describe("Conditional vault", () => {
       depositAccount,
       userUnderlyingTokenAccount,
       userConditionalTokenAccount
-    );
-
-    const proposal = await accountInitUtils.initializeProposalAccount(
-      program,
-      proposalNumber
     );
 
     await program.methods
@@ -107,10 +107,15 @@ describe("Conditional vault", () => {
     const proposalNumber = 0;
     const redeemableOnPass = false;
 
+    const proposal = await accountInitUtils.initializeProposalAccount(
+      program,
+      proposalNumber
+    );
+
     const conditionalExpression =
       await accountInitUtils.initializeConditionalExpression(
         program,
-        proposalNumber,
+        proposal,
         redeemableOnPass
       );
 
@@ -167,11 +172,6 @@ describe("Conditional vault", () => {
       userConditionalTokenAccount
     );
 
-    const proposal = await accountInitUtils.initializeProposalAccount(
-      program,
-      proposalNumber
-    );
-
     await program.methods
       .passProposal()
       .accounts({
@@ -187,4 +187,122 @@ describe("Conditional vault", () => {
       proposal
     );
   });
+
+  it("Adversary cannot redeem deposit account or empty conditional token account for underlying tokens when condition evaluates to true.", async () => {
+    const proposalNumber = 38910;
+    const redeemableOnPass = false;
+
+    const proposal = await accountInitUtils.initializeProposalAccount(
+      program,
+      proposalNumber
+    );
+
+    const conditionalExpression =
+      await accountInitUtils.initializeConditionalExpression(
+        program,
+        proposal,
+        redeemableOnPass
+      );
+
+    const [underlyingTokenMint, underlyingTokenMintAuthority] =
+      await accountInitUtils.initializeUnderlyingTokenMint(provider);
+
+    const [
+      conditionalVault,
+      conditionalTokenMint,
+      vaultUnderlyingTokenAccount,
+    ] = await accountInitUtils.initializeConditionalVault(
+      program,
+      conditionalExpression,
+      underlyingTokenMint
+    );
+
+    const depositAccount = await accountInitUtils.initializeDepositAccount(
+      program,
+      conditionalVault
+    );
+
+    const userUnderlyingTokenAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      underlyingTokenMint,
+      provider.wallet.publicKey
+    );
+
+    const underlyingAmountToMint = 1000;
+    const conditionalAmountToMint = 400;
+
+    await token.mintTo(
+      provider.connection,
+      provider.wallet.payer,
+      underlyingTokenMint,
+      userUnderlyingTokenAccount,
+      underlyingTokenMintAuthority,
+      underlyingAmountToMint
+    );
+
+    const userConditionalTokenAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      conditionalTokenMint,
+      provider.wallet.publicKey
+    );
+
+    await utils.mintConditionalTokens(
+      program,
+      conditionalVault,
+      conditionalAmountToMint,
+      depositAccount,
+      userUnderlyingTokenAccount,
+      userConditionalTokenAccount
+    );
+
+    // main user sends away their conditional tokens
+    const conditionalTokenBurnAccount = await token.createAccount(
+      provider.connection,
+      provider.wallet.payer,
+      conditionalTokenMint,
+      anchor.web3.Keypair.generate().publicKey
+    );
+
+    await token.transfer(
+      provider.connection,
+      provider.wallet.payer,
+      userConditionalTokenAccount,
+      conditionalTokenBurnAccount,
+      provider.wallet.publicKey,
+      conditionalAmountToMint
+    );
+
+    await program.methods
+      .failProposal()
+      .accounts({
+        proposal,
+      })
+      .rpc();
+
+    try {
+      await utils.redeemDepositAccountForUnderlyingTokens(
+        program,
+        depositAccount,
+        userUnderlyingTokenAccount,
+        conditionalVault,
+        proposal
+      );
+      assert.fail();
+    } catch (err) {
+      assert.strictEqual(err.error.errorCode.number, 6001);
+      assert.strictEqual(err.error.errorMessage, "Conditional expression needs to evaluate to false before deposit accounts can be redeemed for underlying tokens");
+    }
+
+    // this should pass, but because the user's conditional token account is empty, they should get 0 underlying tokens
+    await utils.redeemConditionalTokensForUnderlyingTokens(program, userConditionalTokenAccount, userUnderlyingTokenAccount, conditionalVault, proposal);
+
+    assert.equal(
+      (await token.getAccount(provider.connection, userUnderlyingTokenAccount))
+        .amount,
+      BigInt(underlyingAmountToMint - conditionalAmountToMint)
+    );
+  });
+
 });

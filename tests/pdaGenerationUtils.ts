@@ -5,14 +5,14 @@ const BIG_ENDIAN = "be";
 
 export async function generateConditionalExpressionPDAAddress(
   program: Program,
-  proposalNumber: number,
+  proposal: anchor.web3.PublicKey,
   redeemableOnPass: boolean
 ) {
   const [conditionalExpressionPDAAddress] =
     await anchor.web3.PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode("conditional-expression"),
-        new anchor.BN(proposalNumber).toBuffer(BIG_ENDIAN, 8),
+        proposal.toBuffer(),
         Buffer.from([redeemableOnPass]),
       ],
       program.programId

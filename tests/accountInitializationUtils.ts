@@ -7,25 +7,23 @@ import { ConditionalVault } from "../target/types/conditional_vault";
 
 export async function initializeConditionalExpression(
   program: Program,
-  proposalNumber: number,
+  proposal: anchor.web3.PublicKey,
   redeemableOnPass: boolean
 ) {
   const conditionalExpressionAccount =
     await pdaGenUtils.generateConditionalExpressionPDAAddress(
       program,
-      proposalNumber,
+      proposal,
       redeemableOnPass
     );
 
   await program.methods
-    .initializeConditionalExpression(
-      new anchor.BN(proposalNumber),
-      redeemableOnPass
-    )
+    .initializeConditionalExpression(redeemableOnPass)
     .accounts({
       conditionalExpression: conditionalExpressionAccount,
       initializer: program.provider.wallet.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
+      proposal,
     })
     .rpc();
 
@@ -34,9 +32,7 @@ export async function initializeConditionalExpression(
       conditionalExpressionAccount
     );
 
-  assert.ok(
-    storedConditionalExpression.proposalNumber.eq(new anchor.BN(proposalNumber))
-  );
+  assert.ok(storedConditionalExpression.proposal.equals(proposal));
   assert.equal(storedConditionalExpression.passOrFailFlag, redeemableOnPass);
 
   // console.log("Conditional expression successfully initialized.");
