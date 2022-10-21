@@ -460,8 +460,7 @@ describe("Conditional vault", () => {
         .rpc();
       assert.fail();
     } catch (err) {
-      console.log(err.logs);
-      assert.ok(err.logs.contains("Program log: Error: insufficient funds"));
+      assert.ok(err.logs.includes("Program log: Error: insufficient funds"));
     }
   });
 
