@@ -1,8 +1,16 @@
 name: anchor-test
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
 jobs:
   run-anchor-test:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: metadaobuilders/anchor-test@v1
+        with:
+            anchor-version: '0.24.2'
+            solana-cli-version: '1.14.3'

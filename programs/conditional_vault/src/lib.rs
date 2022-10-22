@@ -9,12 +9,11 @@ pub mod conditional_vault {
 
     pub fn initialize_conditional_expression(
         ctx: Context<InitializeConditionalExpression>,
-        proposal_number: u64,
         pass_or_fail_flag: bool,
     ) -> Result<()> {
         let conditional_expression = &mut ctx.accounts.conditional_expression;
 
-        conditional_expression.proposal_number = proposal_number;
+        conditional_expression.proposal = ctx.accounts.proposal.key();
         conditional_expression.pass_or_fail_flag = pass_or_fail_flag;
 
         Ok(())
@@ -105,9 +104,16 @@ pub mod conditional_vault {
     pub fn redeem_conditional_tokens_for_underlying_tokens(
         ctx: Context<RedeemConditionalTokensForUnderlyingTokens>,
     ) -> Result<()> {
-        let conditional_vault = &ctx.accounts.conditional_vault;
         let conditional_expression = &ctx.accounts.conditional_expression;
+        let proposal_state = ctx.accounts.proposal.proposal_state;
 
+        if conditional_expression.pass_or_fail_flag {
+            require!(proposal_state == ProposalState::Passed, CantRedeemConditionalTokens);
+        } else {
+            require!(proposal_state == ProposalState::Failed, CantRedeemConditionalTokens);
+        }
+
+        let conditional_vault = &ctx.accounts.conditional_vault;
         let seeds = &[
             b"conditional-vault",
             conditional_vault.conditional_expression.as_ref(),
@@ -115,10 +121,6 @@ pub mod conditional_vault {
             &[ctx.accounts.conditional_vault.bump],
         ];
         let signer = &[&seeds[..]];
-
-        let proposal_state = ctx.accounts.proposal.proposal_state;
-
-        // require!(proposal_state == conditional_expression.pass_or_fail)
 
         let amount = ctx.accounts.user_conditional_token_account.amount;
 
@@ -137,9 +139,17 @@ pub mod conditional_vault {
     pub fn redeem_deposit_account_for_underlying_tokens(
         ctx: Context<RedeemDepositAccountForUnderlyingTokens>,
     ) -> Result<()> {
-        let conditional_vault = &ctx.accounts.conditional_vault;
         let conditional_expression = &ctx.accounts.conditional_expression;
+        let proposal_state = ctx.accounts.proposal.proposal_state;
 
+        // test that expression has evaluated to false
+        if conditional_expression.pass_or_fail_flag {
+            require!(proposal_state == ProposalState::Failed, CantRedeemDepositAccount);
+        } else {
+            require!(proposal_state == ProposalState::Passed, CantRedeemDepositAccount);
+        }
+
+        let conditional_vault = &ctx.accounts.conditional_vault;
         let seeds = &[
             b"conditional-vault",
             conditional_vault.conditional_expression.as_ref(),
@@ -148,7 +158,6 @@ pub mod conditional_vault {
         ];
         let signer = &[&seeds[..]];
 
-        let proposal_state = ctx.accounts.proposal.proposal_state;
 
         // require!((proposal_state == Passed && conditional_expression.pass_or_fail == Fail) ||
         //          (proposal_state == Failed && conditional_expression.pass_or_fail == Passed));
@@ -169,16 +178,17 @@ pub mod conditional_vault {
 }
 
 #[derive(Accounts)]
-#[instruction(proposal_number: u64, pass_or_fail_flag: bool)]
+#[instruction(pass_or_fail_flag: bool)]
 pub struct InitializeConditionalExpression<'info> {
     #[account(
         init,
         payer = initializer,
-        space = 8 + 8 + 1,
-        seeds = [b"conditional-expression", proposal_number.to_be_bytes().as_ref(), &[u8::from(pass_or_fail_flag)]],
+        space = 8 + 32 + 1,
+        seeds = [b"conditional-expression", proposal.key().as_ref(), &[u8::from(pass_or_fail_flag)]],
         bump
     )]
     conditional_expression: Account<'info, ConditionalExpression>,
+    proposal: Account<'info, Proposal>,
     #[account(mut)]
     initializer: Signer<'info>,
     system_program: Program<'info, System>,
@@ -385,7 +395,7 @@ pub struct Proposal {
 
 #[account]
 pub struct ConditionalExpression {
-    proposal_number: u64,
+    proposal: Pubkey,
     pass_or_fail_flag: bool, // true for tokens that are redeemable-on-pass, false for tokens that are redeemable-on-fail
 }
 
@@ -403,4 +413,12 @@ pub struct DepositAccount {
     conditional_vault: Pubkey,
     depositor: Pubkey,
     deposited_amount: u64,
+}
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("Conditional expression needs to evaluate to true before conditional tokens can be redeemed for underlying tokens")]
+    CantRedeemConditionalTokens,
+    #[msg("Conditional expression needs to evaluate to false before deposit accounts can be redeemed for underlying tokens")]
+    CantRedeemDepositAccount,
 }
