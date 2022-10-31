@@ -9,7 +9,7 @@ import {
   generateDepositAccountPDAAddress,
   generateConditionalExpressionPDAAddress,
 } from "./pdaGenerationUtils";
-import * as utils from "./utils";
+import * as utils from "./utils"; 
 
 describe("Conditional vault", () => {
   const provider = anchor.AnchorProvider.env();
@@ -18,7 +18,7 @@ describe("Conditional vault", () => {
   const program = anchor.workspace
     .ConditionalVault as Program<ConditionalVault>;
 
-  it("Flow #1 - user mints, condition evalutes to true, user redeems conditional tokens", async () => {
+  it("User can redeem conditional tokens for underlying tokens after condition evalutes to true", async () => {
     const proposalNumber = 324;
     const redeemableOnPass = true;
 
@@ -103,7 +103,7 @@ describe("Conditional vault", () => {
     );
   });
 
-  it("Flow #2 - user mints, condition evaluates to false, user redeems deposit account", async () => {
+  it("User can redeem a deposit account for underlying tokens if the condition evaluates to false", async () => {
     const proposalNumber = 0;
     const redeemableOnPass = false;
 

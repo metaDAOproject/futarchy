@@ -82,7 +82,6 @@ export const mintConditionalTokens = async (
     )
   );
 
-  console.log("Conditional token account successfully credited after deposit.");
 };
 
 export const redeemConditionalTokensForUnderlyingTokens = async (
@@ -143,7 +142,6 @@ export const redeemConditionalTokensForUnderlyingTokens = async (
     BigInt(0)
   );
 
-  console.log("Underlying tokens successfully redeemed after proposal pass");
 };
 
 export const redeemDepositAccountForUnderlyingTokens = async (
@@ -208,5 +206,4 @@ export const redeemDepositAccountForUnderlyingTokens = async (
 
   assert.ok(storedDepositAccount.depositedAmount.eq(new anchor.BN(0)));
 
-  console.log("Underlying tokens successfully redeemed after proposal pass");
 };

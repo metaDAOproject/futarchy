@@ -119,7 +119,7 @@ export const initializeConditionalVault = async (
     storedConditionalVault.conditionalTokenMint.equals(conditionalTokenMint)
   );
 
-  console.log("Conditional vault successfully initialized.");
+  // console.log("Conditional vault successfully initialized.");
 
   return [conditionalVault, conditionalTokenMint, vaultUnderlyingTokenAccount];
 };
@@ -154,7 +154,7 @@ export const initializeDepositAccount = async (
   assert.ok(storedDepositAccount.depositor.equals(provider.wallet.publicKey));
   assert.ok(storedDepositAccount.depositedAmount.eq(new anchor.BN(0)));
 
-  console.log("Deposit account successfully initialized.");
+  // console.log("Deposit account successfully initialized.");
 
   return depositAccount;
 };

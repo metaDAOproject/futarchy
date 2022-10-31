@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
 
+pub mod state;
+use state::*;
+
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
@@ -380,40 +383,6 @@ impl<'info> RedeemDepositAccountForUnderlyingTokens<'info> {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
-pub enum ProposalState {
-    Pending,
-    Passed,
-    Failed,
-}
-
-#[account] // will eventually be split into a separate program, just here for testing
-pub struct Proposal {
-    proposal_number: u64,
-    proposal_state: ProposalState,
-}
-
-#[account]
-pub struct ConditionalExpression {
-    proposal: Pubkey,
-    pass_or_fail_flag: bool, // true for tokens that are redeemable-on-pass, false for tokens that are redeemable-on-fail
-}
-
-#[account]
-pub struct ConditionalVault {
-    conditional_expression: Pubkey,
-    underlying_token_mint: Pubkey,
-    underlying_token_account: Pubkey,
-    conditional_token_mint: Pubkey,
-    bump: u8,
-}
-
-#[account]
-pub struct DepositAccount {
-    conditional_vault: Pubkey,
-    depositor: Pubkey,
-    deposited_amount: u64,
-}
 
 #[error_code]
 pub enum ErrorCode {
