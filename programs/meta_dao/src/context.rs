@@ -2,6 +2,38 @@ use anchor_spl::token::{Burn, Mint, MintTo, Token, TokenAccount, Transfer};
 
 use super::*;
 
+
+#[derive(Accounts)]
+pub struct InitializeMetaDAO<'info> {
+    #[account(
+        init,
+        payer = initializer,
+        space = 8 + 4 + (100 * 32), // 100 member max
+        seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], // abbreviation of the last two sentences of the Declaration of Independence of Cyberspace
+        bump
+    )]
+    pub meta_dao: Account<'info, MetaDao>,
+    #[account(mut)]
+    pub initializer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(name: String)]
+pub struct InitializeMemberDAO<'info> {
+    #[account(
+        init,
+        payer = initializer,
+        space = 8 + 21,
+        seeds = [b"member-dao", name.as_bytes()], // 256^20 possible names, so practically impossible for all names to be exhausted
+        bump
+    )]
+    pub member_dao: Account<'info, MemberDAO>,
+    #[account(mut)]
+    pub initializer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
 #[derive(Accounts)]
 #[instruction(pass_or_fail_flag: bool)]
 pub struct InitializeConditionalExpression<'info> {
@@ -147,7 +179,9 @@ pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
 }
 
 impl<'info> RedeemConditionalTokensForUnderlyingTokens<'info> {
-    pub fn into_burn_conditional_tokens_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
+    pub fn into_burn_conditional_tokens_context(
+        &self,
+    ) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         let cpi_accounts = Burn {
             mint: self.conditional_token_mint.to_account_info().clone(),
             from: self
@@ -204,4 +238,3 @@ impl<'info> RedeemDepositAccountForUnderlyingTokens<'info> {
         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
     }
 }
-

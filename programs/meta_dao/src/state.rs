@@ -1,5 +1,15 @@
 use anchor_lang::prelude::*;
 
+#[account]
+pub struct MetaDao {
+    pub members: Vec<Pubkey>, // TODO: add commons DAO
+}
+
+#[account]
+pub struct MemberDAO {
+    pub name: String, // 20 byte max
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
 pub enum ProposalState {
     Pending,

@@ -2,8 +2,30 @@ import * as anchor from "@project-serum/anchor";
 import { expect, assert } from "chai";
 import * as pdaGenUtils from "./pdaGenerationUtils";
 import * as token from "@solana/spl-token";
-import { Program } from "@project-serum/anchor";
-import { ConditionalVault } from "../target/types/conditional_vault";
+import {Program} from "./metaDAO";
+
+export async function initializeMetaDAO(
+  program: Program
+) {
+  const metaDAOAccount = await pdaGenUtils.generateMetaDAOPDAAddress(program);
+
+  const tx = await program.methods.initializeMetaDao()
+    .accounts({
+      metaDao: metaDAOAccount,
+      initializer: program.provider.wallet.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  const storedMetaDAO =
+    await program.account.metaDao.fetch(
+      metaDAOAccount
+    );
+
+  assert.equal(storedMetaDAO.members.length, 0);
+
+  return metaDAOAccount;
+}
 
 export async function initializeConditionalExpression(
   program: Program,
@@ -160,7 +182,7 @@ export const initializeDepositAccount = async (
 };
 
 export const initializeProposalAccount = async (
-  program: Program<ConditionalVault>,
+  program: Program,
   proposalNumber: number
 ) => {
   const provider = program.provider;

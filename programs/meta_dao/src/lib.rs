@@ -13,17 +13,15 @@ use error_code::ErrorCode;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
-pub mod conditional_vault {
+pub mod meta_dao {
     use super::*;
 
-    pub fn initialize_conditional_expression(
-        ctx: Context<InitializeConditionalExpression>,
-        pass_or_fail_flag: bool,
+    pub fn initialize_meta_dao(
+        ctx: Context<InitializeMetaDAO>,
     ) -> Result<()> {
-        let conditional_expression = &mut ctx.accounts.conditional_expression;
+        let meta_dao = &mut ctx.accounts.meta_dao;
 
-        conditional_expression.proposal = ctx.accounts.proposal.key();
-        conditional_expression.pass_or_fail_flag = pass_or_fail_flag;
+        meta_dao.members = Vec::new();
 
         Ok(())
     }
@@ -56,6 +54,27 @@ pub mod conditional_vault {
         Ok(())
     }
 
+    /// Create an immutable conditional expression by combining a proposal and a
+    /// `pass_or_fail_flag`.
+    ///
+    /// Because conditional expressions are PDAs and are deterministically derived
+    /// from their proposal and pass_or_fail_flag, there can only exist one canonical
+    /// conditional expression for a specified proposal and pass_or_fail_flag.
+    ///
+    /// If `pass_or_fail_flag` is true, the expression will evaluate to true if the
+    /// proposal passes and false if it fails. If the flag is set to false, the
+    /// expression will evalaute to false if the proposal passes and true if it fails.
+    pub fn initialize_conditional_expression(
+        ctx: Context<InitializeConditionalExpression>,
+        pass_or_fail_flag: bool,
+    ) -> Result<()> {
+        let conditional_expression = &mut ctx.accounts.conditional_expression;
+
+        conditional_expression.proposal = ctx.accounts.proposal.key();
+        conditional_expression.pass_or_fail_flag = pass_or_fail_flag;
+
+        Ok(())
+    }
     pub fn initialize_conditional_vault(ctx: Context<InitializeConditionalVault>) -> Result<()> {
         let conditional_vault = &mut ctx.accounts.conditional_vault;
 
@@ -117,9 +136,15 @@ pub mod conditional_vault {
         let proposal_state = ctx.accounts.proposal.proposal_state;
 
         if conditional_expression.pass_or_fail_flag {
-            require!(proposal_state == ProposalState::Passed, CantRedeemConditionalTokens);
+            require!(
+                proposal_state == ProposalState::Passed,
+                CantRedeemConditionalTokens
+            );
         } else {
-            require!(proposal_state == ProposalState::Failed, CantRedeemConditionalTokens);
+            require!(
+                proposal_state == ProposalState::Failed,
+                CantRedeemConditionalTokens
+            );
         }
 
         let conditional_vault = &ctx.accounts.conditional_vault;
@@ -153,9 +178,15 @@ pub mod conditional_vault {
 
         // test that expression has evaluated to false
         if conditional_expression.pass_or_fail_flag {
-            require!(proposal_state == ProposalState::Failed, CantRedeemDepositAccount);
+            require!(
+                proposal_state == ProposalState::Failed,
+                CantRedeemDepositAccount
+            );
         } else {
-            require!(proposal_state == ProposalState::Passed, CantRedeemDepositAccount);
+            require!(
+                proposal_state == ProposalState::Passed,
+                CantRedeemDepositAccount
+            );
         }
 
         let conditional_vault = &ctx.accounts.conditional_vault;
@@ -166,7 +197,6 @@ pub mod conditional_vault {
             &[ctx.accounts.conditional_vault.bump],
         ];
         let signer = &[&seeds[..]];
-
 
         // require!((proposal_state == Passed && conditional_expression.pass_or_fail == Fail) ||
         //          (proposal_state == Failed && conditional_expression.pass_or_fail == Passed));
