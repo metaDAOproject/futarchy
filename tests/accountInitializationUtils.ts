@@ -9,7 +9,7 @@ export async function initializeMetaDAO(
 ) {
   const metaDAOAccount = await pdaGenUtils.generateMetaDAOPDAAddress(program);
 
-  const tx = await program.methods.initializeMetaDao()
+  await program.methods.initializeMetaDao()
     .accounts({
       metaDao: metaDAOAccount,
       initializer: program.provider.wallet.publicKey,
@@ -25,6 +25,30 @@ export async function initializeMetaDAO(
   assert.equal(storedMetaDAO.members.length, 0);
 
   return metaDAOAccount;
+}
+
+export async function initializeMemberDAO(
+  program: Program,
+  name: string,
+) {
+  const memberDAOAccount = await pdaGenUtils.generateMemberDAOPDAAddress(program, name);
+
+  await program.methods.initializeMemberDao(name)
+    .accounts({
+      memberDao: memberDAOAccount,
+      initializer: program.provider.wallet.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  const storedMemberDAO =
+    await program.account.memberDao.fetch(
+      memberDAOAccount
+    );
+  
+  assert.equal(storedMemberDAO.name, name);
+
+  return memberDAOAccount;
 }
 
 export async function initializeConditionalExpression(

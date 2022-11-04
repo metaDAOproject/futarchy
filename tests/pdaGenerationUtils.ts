@@ -17,6 +17,22 @@ export async function generateMetaDAOPDAAddress(
   return metaDAOPDAAddress;
 }
 
+export async function generateMemberDAOPDAAddress(
+  program: Program,
+  name: string,
+) {
+  const [memberDAOPDAAddress] =
+    await anchor.web3.PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode("member-dao"),
+        anchor.utils.bytes.utf8.encode(name),
+      ],
+      program.programId
+    );
+
+  return memberDAOPDAAddress;
+}
+
 export async function generateConditionalExpressionPDAAddress(
   program: Program,
   proposal: anchor.web3.PublicKey,

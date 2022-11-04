@@ -6,7 +6,7 @@ pub struct MetaDao {
 }
 
 #[account]
-pub struct MemberDAO {
+pub struct MemberDao {
     pub name: String, // 20 byte max
 }
 

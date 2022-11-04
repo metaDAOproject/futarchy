@@ -20,20 +20,13 @@ describe("Meta-DAO", () => {
   const program = anchor.workspace
     .MetaDao as Program<MetaDAO>;
 
-  it("Can be initialized", async () => {
-    const proposal = await accountInitUtils.initializeProposalAccount(
-      program,
-      123
-    );
-    const conditionalExpression =
-      await accountInitUtils.initializeConditionalExpression(
-        program,
-        proposal,
-        true
-      );
-    console.log(program.programId);
+  it("Meta-DAO can be initialized", async () => {
     await accountInitUtils.initializeMetaDAO(program);
-
   });
+
+  it("Member DAOs can be initialized", async () => {
+    await accountInitUtils.initializeMemberDAO(program, "Foo DAO");
+  });
+
 });
 

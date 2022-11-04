@@ -22,6 +22,17 @@ pub mod meta_dao {
         Ok(())
     }
 
+    pub fn initialize_member_dao(
+        ctx: Context<InitializeMemberDAO>,
+        name: String
+    ) -> Result<()> {
+        let member_dao = &mut ctx.accounts.member_dao;
+
+        member_dao.name = name;
+
+        Ok(())
+    }
+
     pub fn initialize_proposal(
         ctx: Context<InitializeProposal>,
         proposal_number: u64,

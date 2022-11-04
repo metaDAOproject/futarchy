@@ -24,11 +24,11 @@ pub struct InitializeMemberDAO<'info> {
     #[account(
         init,
         payer = initializer,
-        space = 8 + 21,
+        space = 8 + 4 + 20,
         seeds = [b"member-dao", name.as_bytes()], // 256^20 possible names, so practically impossible for all names to be exhausted
         bump
     )]
-    pub member_dao: Account<'info, MemberDAO>,
+    pub member_dao: Account<'info, MemberDao>,
     #[account(mut)]
     pub initializer: Signer<'info>,
     pub system_program: Program<'info, System>,
