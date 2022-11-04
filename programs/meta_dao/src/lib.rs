@@ -17,12 +17,8 @@ pub mod meta_dao {
     use super::*;
 
     pub fn initialize_meta_dao(
-        ctx: Context<InitializeMetaDAO>,
+        _ctx: Context<InitializeMetaDAO>,
     ) -> Result<()> {
-        let meta_dao = &mut ctx.accounts.meta_dao;
-
-        meta_dao.members = Vec::new();
-
         Ok(())
     }
 
