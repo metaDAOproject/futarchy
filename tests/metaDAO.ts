@@ -25,7 +25,7 @@ describe("Meta-DAO", () => {
   });
 
   it("Member DAOs can be initialized", async () => {
-    await accountInitUtils.initializeMemberDAO(program, "Foo DAO");
+    await accountInitUtils.initializeMemberDAO(program, "abcdefghijkwrft DAO");
   });
 
 });

@@ -8,6 +8,7 @@ pub struct MetaDao {
 #[account]
 pub struct MemberDao {
     pub name: String, // 20 byte max
+    pub proposal_counter: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
@@ -17,10 +18,26 @@ pub enum ProposalState {
     Failed,
 }
 
-#[account] // will eventually be split into a separate program, just here for testing
+#[account] 
 pub struct Proposal {
+    // Instructions to execute if proposal passes
+    pub instruction: Vec<ProposalInstruction>,
     pub proposal_number: u64,
     pub proposal_state: ProposalState,
+}
+
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct ProposalInstruction {
+    pub program_id: Pubkey,
+    pub accounts: Vec<ProposalAccount>,
+    pub data: Vec<u8>,
+}
+
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct ProposalAccount {
+    pub pubkey: Pubkey,
+    pub is_signer: bool,
+    pub is_writable: bool,
 }
 
 #[account]

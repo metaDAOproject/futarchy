@@ -24,11 +24,24 @@ pub struct InitializeMemberDAO<'info> {
     #[account(
         init,
         payer = initializer,
-        space = 8 + 4 + 20,
+        space = 8 + 4 + 20 + 8,
         seeds = [b"member-dao", name.as_bytes()], // 256^20 possible names, so practically impossible for all names to be exhausted
         bump
     )]
     pub member_dao: Account<'info, MemberDao>,
+    #[account(mut)]
+    pub initializer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct InitializeProposal<'info> {
+    #[account(
+        init,
+        payer = initializer,
+        space = 8 + 8 + 1
+    )]
+    pub proposal: Account<'info, Proposal>,
     #[account(mut)]
     pub initializer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -51,18 +64,6 @@ pub struct InitializeConditionalExpression<'info> {
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
-pub struct InitializeProposal<'info> {
-    #[account(
-        init,
-        payer = initializer,
-        space = 8 + 8 + 1
-    )]
-    pub proposal: Account<'info, Proposal>,
-    #[account(mut)]
-    pub initializer: Signer<'info>,
-    pub system_program: Program<'info, System>,
-}
 
 #[derive(Accounts)]
 pub struct PassProposal<'info> {
