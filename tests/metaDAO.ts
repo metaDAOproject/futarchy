@@ -1,32 +1,37 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
-import { MetaDao as MetaDAO } from "../target/types/meta_dao";
+
 import { expect, assert } from "chai";
-import * as token from "@solana/spl-token";
-import * as accountInitUtils from "./accountInitializationUtils";
-import {
-  generateConditionalVaultPDAAddress,
-  generateDepositAccountPDAAddress,
-  generateConditionalExpressionPDAAddress,
-} from "./pdaGenerationUtils";
-import * as utils from "./utils"; 
+import { randomBytes } from "crypto";
+
+import { MetaDao as MetaDAO } from "../target/types/meta_dao";
+import { AccountInitializer } from "./accountInitializer";
 
 export type Program = anchor.Program<MetaDAO>;
+export type PublicKey = anchor.web3.PublicKey;
 
-describe("Meta-DAO", () => {
+const randomMemberName = () => randomBytes(5).toString("hex");
+
+describe("meta_dao", async function () {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace
-    .MetaDao as Program<MetaDAO>;
+  const program = anchor.workspace.MetaDao as Program;
 
-  it("Meta-DAO can be initialized", async () => {
-    await accountInitUtils.initializeMetaDAO(program);
+  let initializer: AccountInitializer;
+  before(function () {
+    initializer = new AccountInitializer(program);
   });
 
-  it("Member DAOs can be initialized", async () => {
-    await accountInitUtils.initializeMemberDAO(program, "abcdefghijkwrft DAO");
+  describe("#initialize_member", async function () {
+    it("initializes members", async function () {
+      await initializer.initializeMember(randomMemberName());
+    });
   });
 
+  describe("#initialize_meta_dao", async function () {
+    it("initializes the Meta-DAO", async function () {
+      const seedMember = await initializer.initializeMember(randomMemberName());
+      await initializer.initializeMetaDAO(seedMember);
+    })
+  })
 });
-
