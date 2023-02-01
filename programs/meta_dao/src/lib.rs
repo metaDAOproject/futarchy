@@ -1,5 +1,10 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program;
 use anchor_spl::token;
+
+use solana_program::instruction::{AccountMeta, Instruction};
+
+use std::borrow::Borrow;
 
 pub mod state;
 use state::*;
@@ -8,58 +13,133 @@ pub mod context;
 use context::*;
 
 pub mod error_code;
-use error_code::ErrorCode;
+pub use error_code::ErrorCode;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod meta_dao {
+
     use super::*;
 
-    pub fn initialize_meta_dao(
-        _ctx: Context<InitializeMetaDAO>,
-    ) -> Result<()> {
+    pub fn initialize_meta_dao(ctx: Context<InitializeMetaDAO>) -> Result<()> {
+        let meta_dao = &mut ctx.accounts.meta_dao;
+
+        // The Meta-DAO needs an initial seed member. Otherwise, it can't
+        // evaluate proposals (including ones that would add new members).
+        meta_dao.members.push(ctx.accounts.seed_member.key());
+
         Ok(())
     }
 
-    pub fn initialize_member_dao(
-        ctx: Context<InitializeMemberDAO>,
-        name: String
-    ) -> Result<()> {
-        let member_dao = &mut ctx.accounts.member_dao;
+    pub fn initialize_member(ctx: Context<InitializeMember>, name: String) -> Result<()> {
+        let member = &mut ctx.accounts.member;
 
-        member_dao.name = name;
+        member.name = name;
+        member.treasury_bump = *ctx.bumps.get("treasury").unwrap();
+        member.token_mint = ctx.accounts.token_mint.key();
+
+        Ok(())
+    }
+
+    pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
+        let meta_dao = &mut ctx.accounts.meta_dao;
+        let new_member = ctx.accounts.member.key();
+
+        let member_already_active = meta_dao
+            .members
+            .iter()
+            .any(|&existing_member| existing_member.key() == new_member);
+
+        require!(!member_already_active, MemberAlreadyActive);
+
+        meta_dao.members.push(new_member);
 
         Ok(())
     }
 
     pub fn initialize_proposal(
         ctx: Context<InitializeProposal>,
-        proposal_number: u64,
+        instructions: Vec<ProposalInstruction>,
+        accts: Vec<ProposalAccount>,
     ) -> Result<()> {
+        let meta_dao = &ctx.accounts.meta_dao;
+
+        for instruction in &instructions {
+            match instruction.signer.kind {
+                ProposalSignerKind::MetaDAO => require!(
+                    instruction.signer.pubkey == meta_dao.key(),
+                    InvalidMetaDAOSigner
+                ),
+                ProposalSignerKind::Member => require!(
+                    meta_dao.members.contains(&instruction.signer.pubkey),
+                    InactiveMember
+                ),
+            };
+        }
+
         let proposal = &mut ctx.accounts.proposal;
 
-        proposal.proposal_number = proposal_number;
-        proposal.proposal_state = ProposalState::Pending;
+        proposal.state = ProposalState::Pending;
+        proposal.instructions = instructions;
+        proposal.accounts = accts;
 
         Ok(())
     }
 
-    pub fn pass_proposal(ctx: Context<PassProposal>) -> Result<()> {
+    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
 
-        proposal.proposal_state = ProposalState::Passed;
+        require!(proposal.state == ProposalState::Pending, NoProposalReplay);
+
+        proposal.state = ProposalState::Passed;
+
+        for instruction in &proposal.instructions {
+            // Collect accounts relevant to this instruction
+            let mut account_metas = Vec::new();
+            let mut account_infos = Vec::new();
+
+            for i in instruction.account_indexes.iter() {
+                account_metas.push(proposal.accounts[*i as usize].borrow().into());
+                account_infos.push(ctx.remaining_accounts[*i as usize].clone());
+            }
+
+            let solana_instruction = Instruction {
+                program_id: instruction.program_id,
+                accounts: account_metas,
+                data: instruction.data.clone(),
+            };
+
+            let signer_pubkey = instruction.signer.pubkey.as_ref();
+            let pda_bump = &[instruction.signer.pda_bump];
+
+            let mut seeds: Vec<&[u8]> = Vec::new();
+
+            match instruction.signer.kind {
+                ProposalSignerKind::MetaDAO => {
+                    seeds.push(b"WWCACOTMICMIBMHAFTTWYGHMB");
+                }
+                ProposalSignerKind::Member => {
+                    seeds.push(b"treasury");
+                    seeds.push(signer_pubkey);
+                }
+            };
+            seeds.push(pda_bump);
+            let signer = &[&seeds[..]];
+
+            solana_program::program::invoke_signed(&solana_instruction, &account_infos, signer)?;
+        }
 
         Ok(())
     }
 
-    pub fn fail_proposal(ctx: Context<FailProposal>) -> Result<()> {
-        let proposal = &mut ctx.accounts.proposal;
+    // pub fn fail_proposal(ctx: Context<FailProposal>) -> Result<()> {
+    //     let proposal = &mut ctx.accounts.proposal;
 
-        proposal.proposal_state = ProposalState::Failed;
+    //     proposal.proposal_state = ProposalState::Failed;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     /// Create an immutable conditional expression by combining a proposal and a
     /// `pass_or_fail_flag`.
@@ -82,6 +162,7 @@ pub mod meta_dao {
 
         Ok(())
     }
+
     pub fn initialize_conditional_vault(ctx: Context<InitializeConditionalVault>) -> Result<()> {
         let conditional_vault = &mut ctx.accounts.conditional_vault;
 
@@ -90,17 +171,17 @@ pub mod meta_dao {
         conditional_vault.underlying_token_account =
             ctx.accounts.vault_underlying_token_account.key();
         conditional_vault.conditional_token_mint = ctx.accounts.conditional_token_mint.key();
-        conditional_vault.bump = *ctx.bumps.get("conditional_vault").unwrap();
+        conditional_vault.pda_bump = *ctx.bumps.get("conditional_vault").unwrap();
 
         Ok(())
     }
 
-    pub fn initialize_deposit_account(ctx: Context<InitializeDepositAccount>) -> Result<()> {
-        let deposit_account = &mut ctx.accounts.deposit_account;
+    pub fn initialize_deposit_slip(ctx: Context<InitializeDepositSlip>, depositor: Pubkey) -> Result<()> {
+        let deposit_slip = &mut ctx.accounts.deposit_slip;
 
-        deposit_account.depositor = ctx.accounts.depositor.key();
-        deposit_account.conditional_vault = ctx.accounts.conditional_vault.key();
-        deposit_account.deposited_amount = 0;
+        deposit_slip.depositor = depositor;
+        deposit_slip.conditional_vault = ctx.accounts.conditional_vault.key();
+        deposit_slip.deposited_amount = 0;
 
         Ok(())
     }
@@ -109,10 +190,10 @@ pub mod meta_dao {
         let conditional_vault = &ctx.accounts.conditional_vault;
 
         let seeds = &[
-            b"conditional-vault",
+            b"conditional_vault",
             conditional_vault.conditional_expression.as_ref(),
             conditional_vault.underlying_token_mint.as_ref(),
-            &[ctx.accounts.conditional_vault.bump],
+            &[ctx.accounts.conditional_vault.pda_bump],
         ];
         let signer = &[&seeds[..]];
 
@@ -128,9 +209,9 @@ pub mod meta_dao {
             amount,
         )?;
 
-        let deposit_account = &mut ctx.accounts.deposit_account;
+        let deposit_slip = &mut ctx.accounts.deposit_slip;
 
-        deposit_account.deposited_amount += amount;
+        deposit_slip.deposited_amount += amount;
 
         Ok(())
     }
@@ -140,18 +221,17 @@ pub mod meta_dao {
         ctx: Context<RedeemConditionalTokensForUnderlyingTokens>,
     ) -> Result<()> {
         let conditional_expression = &ctx.accounts.conditional_expression;
-        let proposal_state = ctx.accounts.proposal.proposal_state;
+        let proposal_state = ctx.accounts.proposal.state;
 
-        if conditional_expression.pass_or_fail_flag {
-            require!(
+        match conditional_expression.pass_or_fail_flag {
+            true => require!(
                 proposal_state == ProposalState::Passed,
                 CantRedeemConditionalTokens
-            );
-        } else {
-            require!(
+            ),
+            false => require!(
                 proposal_state == ProposalState::Failed,
                 CantRedeemConditionalTokens
-            );
+            ),
         }
 
         let conditional_vault = &ctx.accounts.conditional_vault;
@@ -159,10 +239,11 @@ pub mod meta_dao {
             b"conditional-vault",
             conditional_vault.conditional_expression.as_ref(),
             conditional_vault.underlying_token_mint.as_ref(),
-            &[ctx.accounts.conditional_vault.bump],
+            &[ctx.accounts.conditional_vault.pda_bump],
         ];
         let signer = &[&seeds[..]];
 
+        // no partial redemptions
         let amount = ctx.accounts.user_conditional_token_account.amount;
 
         token::burn(ctx.accounts.into_burn_conditional_tokens_context(), amount)?;
@@ -177,48 +258,48 @@ pub mod meta_dao {
         Ok(())
     }
 
-    pub fn redeem_deposit_account_for_underlying_tokens(
-        ctx: Context<RedeemDepositAccountForUnderlyingTokens>,
-    ) -> Result<()> {
-        let conditional_expression = &ctx.accounts.conditional_expression;
-        let proposal_state = ctx.accounts.proposal.proposal_state;
+    // pub fn redeem_deposit_account_for_underlying_tokens(
+    //     ctx: Context<RedeemDepositAccountForUnderlyingTokens>,
+    // ) -> Result<()> {
+    //     let conditional_expression = &ctx.accounts.conditional_expression;
+    //     let proposal_state = ctx.accounts.proposal.proposal_state;
 
-        // test that expression has evaluated to false
-        if conditional_expression.pass_or_fail_flag {
-            require!(
-                proposal_state == ProposalState::Failed,
-                CantRedeemDepositAccount
-            );
-        } else {
-            require!(
-                proposal_state == ProposalState::Passed,
-                CantRedeemDepositAccount
-            );
-        }
+    //     // test that expression has evaluated to false
+    //     if conditional_expression.pass_or_fail_flag {
+    //         require!(
+    //             proposal_state == ProposalState::Failed,
+    //             CantRedeemDepositAccount
+    //         );
+    //     } else {
+    //         require!(
+    //             proposal_state == ProposalState::Passed,
+    //             CantRedeemDepositAccount
+    //         );
+    //     }
 
-        let conditional_vault = &ctx.accounts.conditional_vault;
-        let seeds = &[
-            b"conditional-vault",
-            conditional_vault.conditional_expression.as_ref(),
-            conditional_vault.underlying_token_mint.as_ref(),
-            &[ctx.accounts.conditional_vault.bump],
-        ];
-        let signer = &[&seeds[..]];
+    //     let conditional_vault = &ctx.accounts.conditional_vault;
+    //     let seeds = &[
+    //         b"conditional-vault",
+    //         conditional_vault.conditional_expression.as_ref(),
+    //         conditional_vault.underlying_token_mint.as_ref(),
+    //         &[ctx.accounts.conditional_vault.bump],
+    //     ];
+    //     let signer = &[&seeds[..]];
 
-        // require!((proposal_state == Passed && conditional_expression.pass_or_fail == Fail) ||
-        //          (proposal_state == Failed && conditional_expression.pass_or_fail == Passed));
+    //     // require!((proposal_state == Passed && conditional_expression.pass_or_fail == Fail) ||
+    //     //          (proposal_state == Failed && conditional_expression.pass_or_fail == Passed));
 
-        let amount = ctx.accounts.user_deposit_account.deposited_amount;
+    //     let amount = ctx.accounts.user_deposit_account.deposited_amount;
 
-        (&mut ctx.accounts.user_deposit_account).deposited_amount -= amount;
+    //     (&mut ctx.accounts.user_deposit_account).deposited_amount -= amount;
 
-        token::transfer(
-            ctx.accounts
-                .into_transfer_underlying_tokens_to_user_context()
-                .with_signer(signer),
-            amount,
-        )?;
+    //     token::transfer(
+    //         ctx.accounts
+    //             .into_transfer_underlying_tokens_to_user_context()
+    //             .with_signer(signer),
+    //         amount,
+    //     )?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 }

@@ -1,16 +1,28 @@
-use anchor_lang::prelude::*;
+use super::*;
 
 #[account]
-pub struct MetaDao {
-    pub members: Vec<Pubkey>, // TODO: add commons DAO
+pub struct MetaDAO {
+    pub members: Vec<Pubkey>,
 }
 
 #[account]
-pub struct MemberDao {
-    pub name: String, // 20 byte max
-    pub proposal_counter: u64,
+pub struct Member {
+    // Name of this member. 20 byte max.
+    pub name: String,
+    // Bump used to derive this PDA.
+    pub treasury_bump: u8,
+    // SPL mint of this member's token.
+    pub token_mint: Pubkey,
 }
 
+#[account]
+pub struct Proposal {
+    pub state: ProposalState,
+    pub instructions: Vec<ProposalInstruction>,
+    pub accounts: Vec<ProposalAccount>,
+}
+
+// TODO: rename `ProposalState` to `ProposalStatus`
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
 pub enum ProposalState {
     Pending,
@@ -18,19 +30,30 @@ pub enum ProposalState {
     Failed,
 }
 
-#[account] 
-pub struct Proposal {
-    // Instructions to execute if proposal passes
-    pub instruction: Vec<ProposalInstruction>,
-    pub proposal_number: u64,
-    pub proposal_state: ProposalState,
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct ProposalInstruction {
+    // Configures which account will sign this instruction
+    pub signer: ProposalSigner,
+    // Program ID of target program
+    pub program_id: Pubkey,
+    // Accounts to pass to the target program, stored as
+    // indexes into the `proposal.accounts` vector
+    pub account_indexes: Vec<u8>,
+    // Data to pass to target program
+    pub data: Vec<u8>,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct ProposalInstruction {
-    pub program_id: Pubkey,
-    pub accounts: Vec<ProposalAccount>,
-    pub data: Vec<u8>,
+pub struct ProposalSigner {
+    pub kind: ProposalSignerKind,
+    pub pubkey: Pubkey,
+    pub pda_bump: u8,
+}
+
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+pub enum ProposalSignerKind {
+    MetaDAO,
+    Member,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -38,6 +61,16 @@ pub struct ProposalAccount {
     pub pubkey: Pubkey,
     pub is_signer: bool,
     pub is_writable: bool,
+}
+
+impl From<&ProposalAccount> for AccountMeta {
+    fn from(acc: &ProposalAccount) -> Self {
+        Self {
+            pubkey: acc.pubkey,
+            is_signer: acc.is_signer,
+            is_writable: acc.is_writable,
+        }
+    }
 }
 
 #[account]
@@ -52,11 +85,11 @@ pub struct ConditionalVault {
     pub underlying_token_mint: Pubkey,
     pub underlying_token_account: Pubkey,
     pub conditional_token_mint: Pubkey,
-    pub bump: u8,
+    pub pda_bump: u8,
 }
 
 #[account]
-pub struct DepositAccount {
+pub struct VaultDepositSlip {
     pub conditional_vault: Pubkey,
     pub depositor: Pubkey,
     pub deposited_amount: u64,
