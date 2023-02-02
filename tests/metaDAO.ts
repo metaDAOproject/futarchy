@@ -10,7 +10,7 @@ import {
 } from "./testUtils";
 
 import { MetaDao as MetaDAO } from "../target/types/meta_dao";
-import { AccountInitializer } from "./accountInitializer";
+import { ProgramFacade } from "./programFacade";
 import { PDAGenerator } from "./pdaGenerator";
 
 export type Program = anchor.Program<MetaDAO>;
@@ -22,16 +22,16 @@ describe("meta_dao", async function () {
 
   const program = anchor.workspace.MetaDao as Program;
 
-  let initializer: AccountInitializer;
+  let programFacade: ProgramFacade;
   let metaDAO: PublicKey;
   before(async function () {
-    initializer = new AccountInitializer(program);
-    metaDAO = await initializer.getOrCreateMetaDAO();
+    programFacade = new ProgramFacade(program);
+    metaDAO = await programFacade.getOrCreateMetaDAO();
   });
 
   describe("#initialize_member", async function () {
     it("initializes members", async function () {
-      await initializer.initializeMember(randomMemberName());
+      await programFacade.initializeMember(randomMemberName());
     });
   });
 
@@ -43,7 +43,7 @@ describe("meta_dao", async function () {
 
   describe("#initialize_proposal", async function () {
     it("initializes proposals", async function () {
-      await initializeSampleProposal(initializer);
+      await initializeSampleProposal(programFacade);
     });
 
     it("rejects proposals that have non-members as signers", async function () {
@@ -51,15 +51,15 @@ describe("meta_dao", async function () {
         sampleProposalAccountsAndInstructions(
           program,
           metaDAO,
-          await initializer.initializeMember(randomMemberName())
+          await programFacade.initializeMember(randomMemberName())
         );
 
       proposalInstructions[0]["signer"] = {
         kind: { member: {} },
-        pubkey: await initializer.initializeMember(randomMemberName()),
+        pubkey: await programFacade.initializeMember(randomMemberName()),
         pdaBump: 200,
       };
-      await initializer
+      await programFacade
         .initializeProposal(metaDAO, proposalInstructions, proposalAccounts)
         .then(
           () =>
@@ -75,15 +75,15 @@ describe("meta_dao", async function () {
         sampleProposalAccountsAndInstructions(
           program,
           metaDAO,
-          await initializer.initializeMember(randomMemberName())
+          await programFacade.initializeMember(randomMemberName())
         );
 
       proposalInstructions[0]["signer"] = {
         kind: { metaDao: {} },
-        pubkey: await initializer.initializeMember(randomMemberName()),
+        pubkey: await programFacade.initializeMember(randomMemberName()),
         pdaBump: 255,
       };
-      await initializer
+      await programFacade
         .initializeProposal(metaDAO, proposalInstructions, proposalAccounts)
         .then(
           () =>
@@ -100,10 +100,10 @@ describe("meta_dao", async function () {
   describe("#execute_proposal", async function () {
     it("executes proposals", async function () {
       const [proposal, memberToAdd] = await initializeSampleProposal(
-        initializer
+        programFacade
       );
 
-      await executeSampleProposal(proposal, memberToAdd, initializer);
+      await executeSampleProposal(proposal, memberToAdd, programFacade);
     });
 
     it("", async function () {});

@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 
-import { AccountInitializer } from "./accountInitializer";
+import { ProgramFacade } from "./programFacade";
 
 import { Program, PublicKey } from "./metaDAO";
 
@@ -42,18 +42,18 @@ export const sampleProposalAccountsAndInstructions = (
 };
 
 export const initializeSampleProposal = async (
-  initializer: AccountInitializer
+  program: ProgramFacade
 ): Promise<[PublicKey, PublicKey]> => {
-  const memberToAdd = await initializer.initializeMember(randomMemberName());
-  const metaDAO = await initializer.getOrCreateMetaDAO();
+  const memberToAdd = await program.initializeMember(randomMemberName());
+  const metaDAO = await program.getOrCreateMetaDAO();
 
   const [proposalAccounts, proposalInstructions] =
     sampleProposalAccountsAndInstructions(
-      initializer.program,
+      program.program,
       metaDAO,
       memberToAdd
     );
-  const proposal = await initializer.initializeProposal(
+  const proposal = await program.initializeProposal(
     metaDAO,
     proposalInstructions,
     proposalAccounts
@@ -65,10 +65,10 @@ export const initializeSampleProposal = async (
 export const executeSampleProposal = async (
   sampleProposal: PublicKey,
   memberToAdd: PublicKey,
-  initializer: AccountInitializer
+  programFacade: ProgramFacade
 ) => {
-  const metaDAO = await initializer.getOrCreateMetaDAO();
-  const program = initializer.program;
+  const metaDAO = await programFacade.getOrCreateMetaDAO();
+  const program = programFacade.program;
 
   let accountInfos = program.instruction.addMember
     .accounts({ metaDao: metaDAO, member: memberToAdd })
@@ -82,12 +82,6 @@ export const executeSampleProposal = async (
       isWritable: false,
       isSigner: false,
     });
-
-  await program.methods
-    .executeProposal()
-    .accounts({
-      proposal: sampleProposal,
-    })
-    .remainingAccounts(accountInfos)
-    .rpc();
+  
+  await programFacade.executeProposal(sampleProposal, accountInfos);
 };

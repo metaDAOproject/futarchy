@@ -7,7 +7,7 @@ import { randomMemberName } from "./testUtils";
 import { PDAGenerator } from "./pdaGenerator";
 import { Program, PublicKey } from "./metaDAO";
 
-export class AccountInitializer {
+export class ProgramFacade {
   program: Program;
   generator: PDAGenerator;
   connection: anchor.web3.Connection;
@@ -126,6 +126,28 @@ export class AccountInitializer {
     }
 
     return proposalKeypair.publicKey;
+  }
+
+  async executeProposal(proposal: PublicKey, remainingAccounts?: []) {
+    let builder = this.program.methods
+      .executeProposal()
+      .accounts({
+        proposal,
+      });
+
+      if (typeof remainingAccounts != 'undefined') {
+        builder = builder.remainingAccounts(remainingAccounts);
+      }
+
+    await builder.rpc();
+
+    const storedProposal =
+      await this.program.account.proposal.fetch(
+        proposal
+      );
+    
+    assert.notExists(storedProposal.state.pending);
+    assert.exists(storedProposal.state.passed);
   }
 
   async initializeConditionalExpression(
