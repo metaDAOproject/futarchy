@@ -85,3 +85,15 @@ export const executeSampleProposal = async (
 
   await programFacade.executeProposal(sampleProposal, accountInfos);
 };
+
+export const initializeSampleConditionalExpression = async (
+  program: ProgramFacade,
+  passOrFailFlag: boolean = true,
+): Promise<[PublicKey, PublicKey, PublicKey]> => {
+  const [proposal, memberToAdd] = await initializeSampleProposal(program);
+
+  const conditionalExpression =
+    await program.initializeConditionalExpression(proposal, passOrFailFlag);
+  
+  return [conditionalExpression, proposal, memberToAdd];
+};

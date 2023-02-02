@@ -7,6 +7,7 @@ import {
   sampleProposalAccountsAndInstructions,
   initializeSampleProposal,
   executeSampleProposal,
+  initializeSampleConditionalExpression,
 } from "./testUtils";
 
 import { MetaDao as MetaDAO } from "../target/types/meta_dao";
@@ -122,10 +123,7 @@ describe("meta_dao", async function () {
 
   describe.only("#initialize_conditional_vault", async function () {
     it("initializes conditional vaults", async function () {
-      const [proposal] = await initializeSampleProposal(programFacade);
-
-      const conditionalExpression =
-        await programFacade.initializeConditionalExpression(proposal, true);
+      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint();
 
@@ -136,10 +134,7 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `conditional_token_mint` and `underlying_token_mint` have the same number of decimals", async function () {
-      const [proposal] = await initializeSampleProposal(programFacade);
-
-      const conditionalExpression =
-        await programFacade.initializeConditionalExpression(proposal, true);
+      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint(3);
 
@@ -155,10 +150,7 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `vault_underlying_token_account` is owned by the vault", async function () {
-      const [proposal] = await initializeSampleProposal(programFacade);
-
-      const conditionalExpression =
-        await programFacade.initializeConditionalExpression(proposal, true);
+      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint();
 
@@ -186,10 +178,7 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `vault_underlying_token_account` matches `underlying_token_mint`", async function () {
-      const [proposal] = await initializeSampleProposal(programFacade);
-
-      const conditionalExpression =
-        await programFacade.initializeConditionalExpression(proposal, true);
+      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint();
 
@@ -213,10 +202,7 @@ describe("meta_dao", async function () {
     });
 
     it("checks that the vault is the mint authority of `conditional_token_mint`", async function () {
-      const [proposal] = await initializeSampleProposal(programFacade);
-
-      const conditionalExpression =
-        await programFacade.initializeConditionalExpression(proposal, true);
+      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint();
 
@@ -243,11 +229,7 @@ describe("meta_dao", async function () {
   });
 
   describe("#initialize_deposit_slip", async function () {
-    it("", async function () {});
-
-    it("", async function () {});
-
-    it("", async function () {});
+    it("initializes deposit slips", async function () {});
   });
 
   describe("#mint_conditional_tokens", async function () {
