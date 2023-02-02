@@ -5,6 +5,8 @@ import { expect, assert } from "chai";
 import {
   randomMemberName,
   sampleProposalAccountsAndInstructions,
+  initializeSampleProposal,
+  executeSampleProposal,
 } from "./testUtils";
 
 import { MetaDao as MetaDAO } from "../target/types/meta_dao";
@@ -41,17 +43,7 @@ describe("meta_dao", async function () {
 
   describe("#initialize_proposal", async function () {
     it("initializes proposals", async function () {
-      const [proposalAccounts, proposalInstructions] =
-        sampleProposalAccountsAndInstructions(
-          program,
-          metaDAO,
-          await initializer.initializeMember(randomMemberName())
-        );
-      await initializer.initializeProposal(
-        metaDAO,
-        proposalInstructions,
-        proposalAccounts
-      );
+      await initializeSampleProposal(initializer);
     });
 
     it("rejects proposals that have non-members as signers", async function () {
@@ -106,7 +98,13 @@ describe("meta_dao", async function () {
   });
 
   describe("#execute_proposal", async function () {
-    it("", async function () {});
+    it("executes proposals", async function () {
+      const [proposal, memberToAdd] = await initializeSampleProposal(
+        initializer
+      );
+
+      await executeSampleProposal(proposal, memberToAdd, initializer);
+    });
 
     it("", async function () {});
 
