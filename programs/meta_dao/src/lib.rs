@@ -178,11 +178,11 @@ pub mod meta_dao {
 
     pub fn initialize_deposit_slip(
         ctx: Context<InitializeDepositSlip>,
-        depositor: Pubkey,
+        user: Pubkey,
     ) -> Result<()> {
         let deposit_slip = &mut ctx.accounts.deposit_slip;
 
-        deposit_slip.depositor = depositor;
+        deposit_slip.user = user;
         deposit_slip.conditional_vault = ctx.accounts.conditional_vault.key();
         deposit_slip.deposited_amount = 0;
 

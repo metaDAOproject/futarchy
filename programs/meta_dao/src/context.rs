@@ -129,13 +129,13 @@ pub struct InitializeConditionalVault<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(depositor: Pubkey)]
+#[instruction(user: Pubkey)]
 pub struct InitializeDepositSlip<'info> {
     #[account(
         init,
         payer = initializer,
         space = 8 + 32 + 32 + 8,
-        seeds = [b"deposit_slip", conditional_vault.key().as_ref(), depositor.key().as_ref()],
+        seeds = [b"deposit_slip", conditional_vault.key().as_ref(), user.key().as_ref()],
         bump
     )]
     pub deposit_slip: Account<'info, VaultDepositSlip>,
@@ -147,19 +147,19 @@ pub struct InitializeDepositSlip<'info> {
 
 #[derive(Accounts)]
 pub struct MintConditionalTokens<'info> {
-    pub conditional_vault: Account<'info, ConditionalVault>,
-    pub token_program: Program<'info, Token>,
-    #[account(mut)]
-    pub conditional_token_mint: Account<'info, Mint>,
-    pub depositor: Signer<'info>,
-    #[account(mut, has_one = depositor)]
+    pub user: Signer<'info>,
+    #[account(mut, has_one = user)]
     pub deposit_slip: Account<'info, VaultDepositSlip>,
+    pub conditional_vault: Account<'info, ConditionalVault>,
     #[account(mut)]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user_underlying_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
+    pub conditional_token_mint: Account<'info, Mint>,
+    #[account(mut)]
     pub user_conditional_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
 }
 
 impl<'info> MintConditionalTokens<'info> {
@@ -172,7 +172,7 @@ impl<'info> MintConditionalTokens<'info> {
                 .vault_underlying_token_account
                 .to_account_info()
                 .clone(),
-            authority: self.depositor.to_account_info().clone(),
+            authority: self.user.to_account_info().clone(),
         };
         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
     }

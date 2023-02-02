@@ -91,6 +91,6 @@ pub struct ConditionalVault {
 #[account]
 pub struct VaultDepositSlip {
     pub conditional_vault: Pubkey,
-    pub depositor: Pubkey,
+    pub user: Pubkey,
     pub deposited_amount: u64,
 }
