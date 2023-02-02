@@ -21,6 +21,27 @@ export class ProgramFacade {
     this.payer = program.provider.wallet.payer;
   }
 
+  async createTokenAccount(mint: PublicKey, owner: PublicKey): Promise<PublicKey> {
+    return await token.createAccount(this.connection, this.payer, mint, owner);
+  }
+
+  async createMint(): Promise<
+    [anchor.web3.PublicKey, anchor.web3.Keypair]
+  > {
+    const provider = this.program.provider;
+    const mintAuthority = anchor.web3.Keypair.generate();
+
+    const mint = await token.createMint(
+      provider.connection,
+      this.payer,
+      mintAuthority.publicKey,
+      null,
+      2
+    );
+
+    return [mint, mintAuthority];
+  }
+
   async initializeMember(name: string): Promise<PublicKey> {
     const [member] = this.generator.generateMemberPDAAddress(name);
     const [treasury] = this.generator.generateTreasuryPDAAddress(member);
@@ -129,23 +150,18 @@ export class ProgramFacade {
   }
 
   async executeProposal(proposal: PublicKey, remainingAccounts?: []) {
-    let builder = this.program.methods
-      .executeProposal()
-      .accounts({
-        proposal,
-      });
+    let builder = this.program.methods.executeProposal().accounts({
+      proposal,
+    });
 
-      if (typeof remainingAccounts != 'undefined') {
-        builder = builder.remainingAccounts(remainingAccounts);
-      }
+    if (typeof remainingAccounts != "undefined") {
+      builder = builder.remainingAccounts(remainingAccounts);
+    }
 
     await builder.rpc();
 
-    const storedProposal =
-      await this.program.account.proposal.fetch(
-        proposal
-      );
-    
+    const storedProposal = await this.program.account.proposal.fetch(proposal);
+
     assert.notExists(storedProposal.state.pending);
     assert.exists(storedProposal.state.passed);
   }
@@ -181,52 +197,37 @@ export class ProgramFacade {
     return conditionalExpression;
   }
 
-  async initializeUnderlyingTokenMint(): Promise<
-    [anchor.web3.PublicKey, anchor.web3.Keypair]
-  > {
-    const provider = this.program.provider;
-    const underlyingTokenMintAuthority = anchor.web3.Keypair.generate();
-
-    const underlyingTokenMint = await token.createMint(
-      provider.connection,
-      this.payer,
-      underlyingTokenMintAuthority.publicKey,
-      null,
-      2
-    );
-
-    return [underlyingTokenMint, underlyingTokenMintAuthority];
-  }
 
   async initializeConditionalVault(
     conditionalExpression: PublicKey,
-    underlyingTokenMint: PublicKey
+    underlyingTokenMint: PublicKey,
+    _vaultUnderlyingTokenAccount?: PublicKey,
+    _vaultUnderlyingTokenAccountMint?: PublicKey,
+    _conditionalTokenMint?: PublicKey,
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
-    const provider = this.program.provider;
-
     const [conditionalVault] =
       this.generator.generateConditionalVaultPDAAddress(
         conditionalExpression,
         underlyingTokenMint
       );
 
-    const conditionalTokenMint = await token.createMint(
+    const conditionalTokenMint = typeof _conditionalTokenMint == "undefined" ? await token.createMint(
       this.connection,
       this.payer,
       conditionalVault, // mint authority
       null,
       2
-    );
+    ) : _conditionalTokenMint;
 
-    const vaultUnderlyingTokenAccount = (
+    const vaultUnderlyingTokenAccount = typeof _vaultUnderlyingTokenAccount == "undefined" ? (
       await token.getOrCreateAssociatedTokenAccount(
         this.connection,
         this.payer,
-        underlyingTokenMint,
+        typeof _vaultUnderlyingTokenAccountMint == "undefined" ? underlyingTokenMint : _vaultUnderlyingTokenAccountMint,
         conditionalVault,
         true
       )
-    ).address;
+    ).address : _vaultUnderlyingTokenAccount;
 
     await this.program.methods
       .initializeConditionalVault()

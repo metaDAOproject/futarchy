@@ -82,6 +82,6 @@ export const executeSampleProposal = async (
       isWritable: false,
       isSigner: false,
     });
-  
+
   await programFacade.executeProposal(sampleProposal, accountInfos);
 };

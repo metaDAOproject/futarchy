@@ -113,21 +113,90 @@ describe("meta_dao", async function () {
 
   describe("#initialize_conditional_expression", async function () {
     it("initializes conditional expressions", async function () {
-      const [proposal] = await initializeSampleProposal(
-        programFacade
-      );
+      const [proposal] = await initializeSampleProposal(programFacade);
 
       await programFacade.initializeConditionalExpression(proposal, true);
       await programFacade.initializeConditionalExpression(proposal, false);
     });
   });
 
-  describe("#initialize_conditional_vault", async function () {
-    it("", async function () {});
+  describe.only("#initialize_conditional_vault", async function () {
+    it("initializes conditional vaults", async function () {
+      const [proposal] = await initializeSampleProposal(programFacade);
 
-    it("", async function () {});
+      const conditionalExpression =
+        await programFacade.initializeConditionalExpression(proposal, true);
 
-    it("", async function () {});
+      const [underlyingTokenMint] =
+        await programFacade.createMint();
+
+      await programFacade.initializeConditionalVault(
+        conditionalExpression,
+        underlyingTokenMint
+      );
+    });
+
+    it("checks that `vault_underlying_token_account` is owned by the vault", async function () {
+      const [proposal] = await initializeSampleProposal(programFacade);
+
+      const conditionalExpression =
+        await programFacade.initializeConditionalExpression(proposal, true);
+
+      const [underlyingTokenMint] =
+        await programFacade.createMint();
+      
+      const maliciousUser = anchor.web3.Keypair.generate();
+      
+      const maliciousVaultUnderlyingTokenAccount = await programFacade.createTokenAccount(underlyingTokenMint, maliciousUser.publicKey);
+
+      await programFacade.initializeConditionalVault(
+        conditionalExpression,
+        underlyingTokenMint,
+        maliciousVaultUnderlyingTokenAccount,
+      ).then(() => assert.fail("program didn't block a `vault_underlying_token_account` that wasn't owned by the vault"));
+    });
+
+    it("checks that `vault_underlying_token_account` matches `underlying_token_mint`", async function () {
+      const [proposal] = await initializeSampleProposal(programFacade);
+
+      const conditionalExpression =
+        await programFacade.initializeConditionalExpression(proposal, true);
+
+      const [underlyingTokenMint] =
+        await programFacade.createMint();
+
+      const [vaultUnderlyingTokenAccountMint] =
+        await programFacade.createMint();
+      
+      await programFacade.initializeConditionalVault(
+        conditionalExpression,
+        underlyingTokenMint,
+        undefined,
+        vaultUnderlyingTokenAccountMint,
+      ).then(() => assert.fail("program didn't block a `vault_underlying_token_account` with a mint other than `underlying_token_mint`"));
+    });
+
+    it("checks that the vault is the mint authority of `conditional_token_mint`", async function () {
+      const [proposal] = await initializeSampleProposal(programFacade);
+
+      const conditionalExpression =
+        await programFacade.initializeConditionalExpression(proposal, true);
+
+      const [underlyingTokenMint] =
+        await programFacade.createMint();
+      
+      // vault isn't the mint authority of this one
+      const [maliciousConditionalTokenMint]
+       = await programFacade.createMint();
+      
+      await programFacade.initializeConditionalVault(
+        conditionalExpression,
+        underlyingTokenMint,
+        undefined,
+        undefined,
+        maliciousConditionalTokenMint
+      ).then(() => assert.fail("program didn't block a `conditional_token_mint` that had a mint authority other than the vault"));
+    });
   });
 
   describe("#initialize_deposit_slip", async function () {
