@@ -68,7 +68,6 @@ pub struct InitializeProposal<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 #[derive(Accounts)]
 pub struct ExecuteProposal<'info> {
     #[account(mut)]
@@ -112,8 +111,17 @@ pub struct InitializeConditionalVault<'info> {
     /// SPL mint of the underlying token
     pub underlying_token_mint: Account<'info, Mint>,
     /// token account for the vault that matches above mint
+    #[account(
+        token::authority = conditional_vault, 
+        token::mint = underlying_token_mint
+    )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     /// SPL mint of the conditional token
+    #[account(
+        mint::authority = conditional_vault, 
+        mint::freeze_authority = conditional_vault, 
+        mint::decimals = underlying_token_mint.decimals
+    )]
     pub conditional_token_mint: Account<'info, Mint>,
     #[account(mut)]
     pub initializer: Signer<'info>,

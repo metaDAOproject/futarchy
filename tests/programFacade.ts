@@ -21,13 +21,16 @@ export class ProgramFacade {
     this.payer = program.provider.wallet.payer;
   }
 
-  async createTokenAccount(mint: PublicKey, owner: PublicKey): Promise<PublicKey> {
+  async createTokenAccount(
+    mint: PublicKey,
+    owner: PublicKey
+  ): Promise<PublicKey> {
     return await token.createAccount(this.connection, this.payer, mint, owner);
   }
 
-  async createMint(): Promise<
-    [anchor.web3.PublicKey, anchor.web3.Keypair]
-  > {
+  async createMint(
+    decimals?: number
+  ): Promise<[anchor.web3.PublicKey, anchor.web3.Keypair]> {
     const provider = this.program.provider;
     const mintAuthority = anchor.web3.Keypair.generate();
 
@@ -35,8 +38,8 @@ export class ProgramFacade {
       provider.connection,
       this.payer,
       mintAuthority.publicKey,
-      null,
-      2
+      mintAuthority.publicKey,
+      typeof decimals != "undefined" ? decimals : 2
     );
 
     return [mint, mintAuthority];
@@ -197,13 +200,12 @@ export class ProgramFacade {
     return conditionalExpression;
   }
 
-
   async initializeConditionalVault(
     conditionalExpression: PublicKey,
     underlyingTokenMint: PublicKey,
     _vaultUnderlyingTokenAccount?: PublicKey,
     _vaultUnderlyingTokenAccountMint?: PublicKey,
-    _conditionalTokenMint?: PublicKey,
+    _conditionalTokenMint?: PublicKey
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
     const [conditionalVault] =
       this.generator.generateConditionalVaultPDAAddress(
@@ -211,23 +213,31 @@ export class ProgramFacade {
         underlyingTokenMint
       );
 
-    const conditionalTokenMint = typeof _conditionalTokenMint == "undefined" ? await token.createMint(
-      this.connection,
-      this.payer,
-      conditionalVault, // mint authority
-      null,
-      2
-    ) : _conditionalTokenMint;
+    const conditionalTokenMint =
+      typeof _conditionalTokenMint == "undefined"
+        ? await token.createMint(
+            this.connection,
+            this.payer,
+            conditionalVault, // mint authority
+            conditionalVault,
+            2
+          )
+        : _conditionalTokenMint;
 
-    const vaultUnderlyingTokenAccount = typeof _vaultUnderlyingTokenAccount == "undefined" ? (
-      await token.getOrCreateAssociatedTokenAccount(
-        this.connection,
-        this.payer,
-        typeof _vaultUnderlyingTokenAccountMint == "undefined" ? underlyingTokenMint : _vaultUnderlyingTokenAccountMint,
-        conditionalVault,
-        true
-      )
-    ).address : _vaultUnderlyingTokenAccount;
+    const vaultUnderlyingTokenAccount =
+      typeof _vaultUnderlyingTokenAccount == "undefined"
+        ? (
+            await token.getOrCreateAssociatedTokenAccount(
+              this.connection,
+              this.payer,
+              typeof _vaultUnderlyingTokenAccountMint == "undefined"
+                ? underlyingTokenMint
+                : _vaultUnderlyingTokenAccountMint,
+              conditionalVault,
+              true
+            )
+          ).address
+        : _vaultUnderlyingTokenAccount;
 
     await this.program.methods
       .initializeConditionalVault()

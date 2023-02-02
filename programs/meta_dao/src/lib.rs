@@ -176,7 +176,10 @@ pub mod meta_dao {
         Ok(())
     }
 
-    pub fn initialize_deposit_slip(ctx: Context<InitializeDepositSlip>, depositor: Pubkey) -> Result<()> {
+    pub fn initialize_deposit_slip(
+        ctx: Context<InitializeDepositSlip>,
+        depositor: Pubkey,
+    ) -> Result<()> {
         let deposit_slip = &mut ctx.accounts.deposit_slip;
 
         deposit_slip.depositor = depositor;
