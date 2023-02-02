@@ -112,11 +112,14 @@ describe("meta_dao", async function () {
   });
 
   describe("#initialize_conditional_expression", async function () {
-    it("", async function () {});
+    it("initializes conditional expressions", async function () {
+      const [proposal] = await initializeSampleProposal(
+        programFacade
+      );
 
-    it("", async function () {});
-
-    it("", async function () {});
+      await programFacade.initializeConditionalExpression(proposal, true);
+      await programFacade.initializeConditionalExpression(proposal, false);
+    });
   });
 
   describe("#initialize_conditional_vault", async function () {
