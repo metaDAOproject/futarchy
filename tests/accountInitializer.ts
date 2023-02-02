@@ -2,6 +2,8 @@ import * as anchor from "@project-serum/anchor";
 import { assert } from "chai";
 import * as token from "@solana/spl-token";
 
+import { randomMemberName } from "./testUtils";
+
 import { PDAGenerator } from "./pdaGenerator";
 import { Program, PublicKey } from "./metaDAO";
 
@@ -10,6 +12,7 @@ export class AccountInitializer {
   generator: PDAGenerator;
   connection: anchor.web3.Connection;
   payer: anchor.web3.Signer;
+  metaDAO: PublicKey;
 
   constructor(program: Program) {
     this.generator = new PDAGenerator(program);
@@ -66,10 +69,21 @@ export class AccountInitializer {
 
     assert.equal(storedMetaDAO.members.length, 1);
 
+    this.metaDAO = metaDAO;
+
     return metaDAO;
   }
 
-  async initializeProposalAccount(
+  async getOrCreateMetaDAO() {
+    if (this.metaDAO == null) {
+      let seedMember = await this.initializeMember(randomMemberName());
+      await this.initializeMetaDAO(seedMember);
+    }
+
+    return this.metaDAO;
+  }
+
+  async initializeProposal(
     metaDAO: PublicKey,
     instructions: [],
     accounts: []
