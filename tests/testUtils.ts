@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 
 import { ProgramFacade } from "./programFacade";
 
-import { Program, PublicKey } from "./metaDAO";
+import { Program, PublicKey, Signer } from "./metaDAO";
 
 export const randomMemberName = () => randomBytes(5).toString("hex");
 
@@ -96,4 +96,17 @@ export const initializeSampleConditionalExpression = async (
     await program.initializeConditionalExpression(proposal, passOrFailFlag);
   
   return [conditionalExpression, proposal, memberToAdd];
+};
+
+export const initializeSampleConditionalVault = async (
+  program: ProgramFacade,
+  passOrFailFlag: boolean = true,
+): Promise<[PublicKey, PublicKey, Signer, PublicKey, PublicKey, PublicKey]> => {
+  const [conditionalExpression, proposal, memberToAdd] = await initializeSampleConditionalExpression(program, passOrFailFlag);
+
+  const [underlyingTokenMint, underlyingTokenMintAuthority] = await program.createMint();
+
+  const [conditionalVault] = await program.initializeConditionalVault(conditionalExpression, underlyingTokenMint);
+
+  return [conditionalVault, underlyingTokenMint, underlyingTokenMintAuthority, conditionalExpression, proposal, memberToAdd];
 };

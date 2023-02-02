@@ -8,6 +8,7 @@ import {
   initializeSampleProposal,
   executeSampleProposal,
   initializeSampleConditionalExpression,
+  initializeSampleConditionalVault,
 } from "./testUtils";
 
 import { MetaDao as MetaDAO } from "../target/types/meta_dao";
@@ -16,6 +17,7 @@ import { PDAGenerator } from "./pdaGenerator";
 
 export type Program = anchor.Program<MetaDAO>;
 export type PublicKey = anchor.web3.PublicKey;
+export type Signer = anchor.web3.Signer;
 
 describe("meta_dao", async function () {
   const provider = anchor.AnchorProvider.env();
@@ -123,14 +125,7 @@ describe("meta_dao", async function () {
 
   describe.only("#initialize_conditional_vault", async function () {
     it("initializes conditional vaults", async function () {
-      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
-
-      const [underlyingTokenMint] = await programFacade.createMint();
-
-      await programFacade.initializeConditionalVault(
-        conditionalExpression,
-        underlyingTokenMint
-      );
+      await initializeSampleConditionalVault(programFacade);
     });
 
     it("checks that `conditional_token_mint` and `underlying_token_mint` have the same number of decimals", async function () {

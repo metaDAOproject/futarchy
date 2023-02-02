@@ -5,13 +5,13 @@ import * as token from "@solana/spl-token";
 import { randomMemberName } from "./testUtils";
 
 import { PDAGenerator } from "./pdaGenerator";
-import { Program, PublicKey } from "./metaDAO";
+import { Program, PublicKey, Signer } from "./metaDAO";
 
 export class ProgramFacade {
   program: Program;
   generator: PDAGenerator;
   connection: anchor.web3.Connection;
-  payer: anchor.web3.Signer;
+  payer: Signer;
   metaDAO: PublicKey;
 
   constructor(program: Program) {
