@@ -133,13 +133,13 @@ pub mod meta_dao {
         Ok(())
     }
 
-    // pub fn fail_proposal(ctx: Context<FailProposal>) -> Result<()> {
-    //     let proposal = &mut ctx.accounts.proposal;
+    pub fn fail_proposal(ctx: Context<FailProposal>) -> Result<()> {
+        let proposal = &mut ctx.accounts.proposal;
 
-    //     proposal.proposal_state = ProposalState::Failed;
+        proposal.state = ProposalState::Failed;
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     /// Create an immutable conditional expression by combining a proposal and a
     /// `pass_or_fail_flag`.
