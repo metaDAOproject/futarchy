@@ -414,4 +414,70 @@ export class ProgramFacade {
       userConditionalTokenAccountBefore.amount + BigInt(amount)
     );
   }
+
+  async redeemConditionalForUnderlyingTokens(
+    user: Signer,
+    userConditionalTokenAccount: PublicKey,
+    userUnderlyingTokenAccount: PublicKey,
+    vaultUnderlyingTokenAccount: PublicKey,
+    conditionalVault: PublicKey,
+    proposal: PublicKey,
+    conditionalExpression: PublicKey,
+    conditionalTokenMint: PublicKey
+  ) {
+    const vaultUnderlyingTokenAccountBefore = await token.getAccount(
+      this.connection,
+      vaultUnderlyingTokenAccount
+    );
+    const userUnderlyingTokenAccountBefore = await token.getAccount(
+      this.connection,
+      userUnderlyingTokenAccount
+    );
+    const userConditionalTokenAccountBefore = await token.getAccount(
+      this.connection,
+      userConditionalTokenAccount
+    );
+
+    await this.program.methods
+      .redeemConditionalTokensForUnderlyingTokens()
+      .accounts({
+        user: user.publicKey,
+        userConditionalTokenAccount,
+        userUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        conditionalVault,
+        proposal,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        conditionalExpression,
+        conditionalTokenMint,
+      })
+      .signers([user])
+      .rpc();
+
+    const vaultUnderlyingTokenAccountAfter = await token.getAccount(
+      this.connection,
+      vaultUnderlyingTokenAccount
+    );
+    const userUnderlyingTokenAccountAfter = await token.getAccount(
+      this.connection,
+      userUnderlyingTokenAccount
+    );
+    const userConditionalTokenAccountAfter = await token.getAccount(
+      this.connection,
+      userConditionalTokenAccount
+    );
+
+    assert.equal(
+      vaultUnderlyingTokenAccountAfter.amount,
+      vaultUnderlyingTokenAccountBefore.amount - BigInt(userConditionalTokenAccountBefore.amount)
+    );
+    assert.equal(
+      userUnderlyingTokenAccountAfter.amount,
+      userUnderlyingTokenAccountBefore.amount + BigInt(userConditionalTokenAccountBefore.amount)
+    );
+    assert.equal(
+      userConditionalTokenAccountAfter.amount,
+      BigInt(0)
+    );
+  }
 }

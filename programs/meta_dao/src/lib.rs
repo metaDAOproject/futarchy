@@ -239,7 +239,7 @@ pub mod meta_dao {
 
         let conditional_vault = &ctx.accounts.conditional_vault;
         let seeds = &[
-            b"conditional-vault",
+            b"conditional_vault",
             conditional_vault.conditional_expression.as_ref(),
             conditional_vault.underlying_token_mint.as_ref(),
             &[ctx.accounts.conditional_vault.pda_bump],
@@ -287,6 +287,8 @@ pub mod meta_dao {
     //         conditional_vault.underlying_token_mint.as_ref(),
     //         &[ctx.accounts.conditional_vault.bump],
     //     ];
+
+
     //     let signer = &[&seeds[..]];
 
     //     // require!((proposal_state == Passed && conditional_expression.pass_or_fail == Fail) ||

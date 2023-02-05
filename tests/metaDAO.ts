@@ -240,7 +240,7 @@ describe("meta_dao", async function () {
     });
   });
 
-  describe.only("#mint_conditional_tokens", async function () {
+  describe("#mint_conditional_tokens", async function () {
     let conditionalVault: PublicKey;
     let conditionalTokenMint: PublicKey;
     let vaultUnderlyingTokenAccount: PublicKey;
@@ -407,9 +407,15 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `user_conditional_token_account` has `conditional_token_mint` as its mint", async function () {
-      const [wrongConditionalTokenMint] = await programFacade.createMint(undefined, conditionalVault);
+      const [wrongConditionalTokenMint] = await programFacade.createMint(
+        undefined,
+        conditionalVault
+      );
       const wrongMintUserConditionalTokenAccount =
-        await programFacade.createTokenAccount(wrongConditionalTokenMint, user.publicKey);
+        await programFacade.createTokenAccount(
+          wrongConditionalTokenMint,
+          user.publicKey
+        );
 
       const callbacks = expectError(
         "ConstraintTokenMint",
@@ -491,7 +497,10 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `conditional_token_mint` is the one stored in the conditional vault", async function () {
-      const [wrongConditionalTokenMint] = await programFacade.createMint(undefined, conditionalVault);
+      const [wrongConditionalTokenMint] = await programFacade.createMint(
+        undefined,
+        conditionalVault
+      );
 
       const wrongMintUserConditionalTokenAccount =
         await programFacade.createTokenAccount(
@@ -519,12 +528,83 @@ describe("meta_dao", async function () {
     });
   });
 
-  describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
-    it("", async function () {});
+  describe.only("#redeem_conditional_tokens_for_underlying_tokens", async function () {
+    const redeemTest = async (
+      passOrFailFlag: boolean,
+      passProposal: boolean
+    ) => {
+      const [
+        conditionalVault,
+        conditionalTokenMint,
+        vaultUnderlyingTokenAccount,
+        underlyingTokenMint,
+        underlyingTokenMintAuthority,
+        conditionalExpression,
+        proposal,
+        memberToAdd,
+      ] = await initializeSampleConditionalVault(programFacade, passOrFailFlag);
 
-    it("", async function () {});
+      let user = anchor.web3.Keypair.generate();
+      let amount = 1000;
 
-    it("", async function () {});
+      let userUnderlyingTokenAccount = await programFacade.createTokenAccount(
+        underlyingTokenMint,
+        user.publicKey
+      );
+
+      let userConditionalTokenAccount = await programFacade.createTokenAccount(
+        conditionalTokenMint,
+        user.publicKey
+      );
+
+      let depositSlip = await programFacade.initializeDepositSlip(
+        conditionalVault,
+        user.publicKey
+      );
+
+      await programFacade.mintTo(
+        underlyingTokenMint,
+        userUnderlyingTokenAccount,
+        underlyingTokenMintAuthority,
+        amount
+      );
+
+      await programFacade.mintConditionalTokens(
+        amount,
+        user,
+        depositSlip,
+        conditionalVault,
+        vaultUnderlyingTokenAccount,
+        userUnderlyingTokenAccount,
+        conditionalTokenMint,
+        userConditionalTokenAccount
+      );
+
+      if (passProposal) {
+        await executeSampleProposal(proposal, memberToAdd, programFacade);
+      } else {
+        // TODO: fail proposal
+      }
+
+      await programFacade.redeemConditionalForUnderlyingTokens(
+        user,
+        userConditionalTokenAccount,
+        userUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        conditionalVault,
+        proposal,
+        conditionalExpression,
+        conditionalTokenMint
+      );
+    };
+
+    it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has passed", async function () { await redeemTest(true, true)});
+
+    it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has failed", async function () {});
+
+    it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has failed", async function () {});
+
+    it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has passed", async function () {});
   });
 
   describe("#redeem_deposit_slip_for_underlying_tokens", async function () {
