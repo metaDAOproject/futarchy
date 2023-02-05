@@ -469,15 +469,18 @@ export class ProgramFacade {
 
     assert.equal(
       vaultUnderlyingTokenAccountAfter.amount,
-      vaultUnderlyingTokenAccountBefore.amount - BigInt(userConditionalTokenAccountBefore.amount)
+      vaultUnderlyingTokenAccountBefore.amount -
+        BigInt(userConditionalTokenAccountBefore.amount)
     );
     assert.equal(
       userUnderlyingTokenAccountAfter.amount,
-      userUnderlyingTokenAccountBefore.amount + BigInt(userConditionalTokenAccountBefore.amount)
+      userUnderlyingTokenAccountBefore.amount +
+        BigInt(userConditionalTokenAccountBefore.amount)
     );
-    assert.equal(
-      userConditionalTokenAccountAfter.amount,
-      BigInt(0)
-    );
+    assert.equal(userConditionalTokenAccountAfter.amount, BigInt(0));
+  }
+
+  async failProposal(proposal: PublicKey) {
+    await this.program.methods.failProposal().accounts({ proposal }).rpc();
   }
 }

@@ -528,10 +528,11 @@ describe("meta_dao", async function () {
     });
   });
 
-  describe.only("#redeem_conditional_tokens_for_underlying_tokens", async function () {
+  describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
     const redeemTest = async (
       passOrFailFlag: boolean,
-      passProposal: boolean
+      passProposal: boolean,
+      overrideAndLeaveProposalPending?: boolean
     ) => {
       const [
         conditionalVault,
@@ -580,11 +581,15 @@ describe("meta_dao", async function () {
         userConditionalTokenAccount
       );
 
-      if (passProposal) {
-        await executeSampleProposal(proposal, memberToAdd, programFacade);
-      } else {
-        // TODO: fail proposal
+      if (typeof overrideAndLeaveProposalPending == "undefined" || overrideAndLeaveProposalPending == false) {
+        if (passProposal) {
+          await executeSampleProposal(proposal, memberToAdd, programFacade);
+        } else {
+          await programFacade.failProposal(proposal);
+        }
       }
+
+      const shouldGoThrough = passOrFailFlag == passProposal && (typeof overrideAndLeaveProposalPending == "undefined" || overrideAndLeaveProposalPending == false);
 
       await programFacade.redeemConditionalForUnderlyingTokens(
         user,
@@ -595,16 +600,42 @@ describe("meta_dao", async function () {
         proposal,
         conditionalExpression,
         conditionalTokenMint
-      );
+      ).then(() => {
+        if (!shouldGoThrough) {
+          assert.fail("a redemption should have failed but instead suceeded");
+        }
+      }, (e) => {
+        if(shouldGoThrough) {
+          assert.fail(e);
+        } else {
+          assert(
+            e["error"] != undefined,
+            `the program threw for a reason that we didn't expect. error: ${e}`
+          );
+          assert.equal(e.error.errorCode.code, "CantRedeemConditionalTokens");
+        }
+      });
     };
 
-    it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has passed", async function () { await redeemTest(true, true)});
+    it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has passed", async function () {
+      await redeemTest(true, true);
+    });
 
-    it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has failed", async function () {});
+    it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has failed", async function () {
+      await redeemTest(false, false);
+    });
 
-    it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has failed", async function () {});
+    it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has failed", async function () {
+      await redeemTest(true, false);
+    });
 
-    it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has passed", async function () {});
+    it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has passed", async function () {
+      await redeemTest(false, true);
+    });
+
+    it("prevents users from redeeming conditional tokens while a proposal is still pending", async function () {
+      await redeemTest(true, true, true);
+    });
   });
 
   describe("#redeem_deposit_slip_for_underlying_tokens", async function () {
