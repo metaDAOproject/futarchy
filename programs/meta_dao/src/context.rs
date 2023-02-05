@@ -213,15 +213,28 @@ impl<'info> MintConditionalTokens<'info> {
 #[derive(Accounts)]
 pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
     pub user: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::authority = user,
+        token::mint = conditional_vault.conditional_token_mint
+    )]
     pub user_conditional_token_account: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::authority = user,
+        token::mint = conditional_vault.underlying_token_mint
+    )]
     pub user_underlying_token_account: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = vault_underlying_token_account.key() == conditional_vault.underlying_token_account @ ErrorCode::InvalidVaultUnderlyingTokenAccount
+    )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
+    #[account(has_one = conditional_expression)]
     pub conditional_vault: Account<'info, ConditionalVault>,
     pub proposal: Account<'info, Proposal>,
     pub token_program: Program<'info, Token>,
+    #[account(has_one = proposal)]
     pub conditional_expression: Account<'info, ConditionalExpression>,
     #[account(mut)]
     pub conditional_token_mint: Account<'info, Mint>,
