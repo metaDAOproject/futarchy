@@ -112,8 +112,8 @@ pub struct InitializeConditionalVault<'info> {
     pub underlying_token_mint: Account<'info, Mint>,
     /// token account for the vault that matches above mint
     #[account(
-        token::authority = conditional_vault, 
-        token::mint = underlying_token_mint
+        associated_token::authority = conditional_vault, 
+        associated_token::mint = underlying_token_mint
     )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     /// SPL mint of the conditional token
@@ -146,18 +146,36 @@ pub struct InitializeDepositSlip<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(amount: u64)]
 pub struct MintConditionalTokens<'info> {
     pub user: Signer<'info>,
-    #[account(mut, has_one = user)]
+    #[account(
+        mut, 
+        has_one = user,
+        has_one = conditional_vault
+    )]
     pub deposit_slip: Account<'info, VaultDepositSlip>,
+    #[account(has_one = conditional_token_mint @ ErrorCode::InvalidConditionalTokenMint)]
     pub conditional_vault: Account<'info, ConditionalVault>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = vault_underlying_token_account.key() == conditional_vault.underlying_token_account @  ErrorCode::InvalidVaultUnderlyingTokenAccount
+    )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::authority = user,
+        token::mint = conditional_vault.underlying_token_mint,
+        constraint = user_underlying_token_account.amount >= amount @ ErrorCode::InsufficientUnderlyingTokens
+    )]
     pub user_underlying_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub conditional_token_mint: Account<'info, Mint>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::authority = user,
+        token::mint = conditional_token_mint
+    )]
     pub user_conditional_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
 }

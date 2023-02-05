@@ -29,20 +29,46 @@ export class ProgramFacade {
   }
 
   async createMint(
-    decimals?: number
-  ): Promise<[anchor.web3.PublicKey, anchor.web3.Keypair]> {
-    const provider = this.program.provider;
-    const mintAuthority = anchor.web3.Keypair.generate();
+    decimals?: number,
+    mintAuthority?: PublicKey
+  ): Promise<[PublicKey, Signer | PublicKey]> {
+    let mintAuthorityToUse;
+    let mintAuthorityToReturn;
+
+    if (typeof mintAuthority != "undefined") {
+      mintAuthorityToUse = mintAuthority;
+      mintAuthorityToReturn = mintAuthority;
+    } else {
+      let signer = anchor.web3.Keypair.generate();
+      mintAuthorityToUse = signer.publicKey;
+      mintAuthorityToReturn = signer;
+    }
 
     const mint = await token.createMint(
-      provider.connection,
+      this.connection,
       this.payer,
-      mintAuthority.publicKey,
-      mintAuthority.publicKey,
+      mintAuthorityToUse,
+      mintAuthorityToUse,
       typeof decimals != "undefined" ? decimals : 2
     );
 
-    return [mint, mintAuthority];
+    return [mint, mintAuthorityToReturn];
+  }
+
+  async mintTo(
+    mint: PublicKey,
+    destination: PublicKey,
+    mintAuthority: Signer,
+    amount: number
+  ) {
+    await token.mintTo(
+      this.connection,
+      this.payer,
+      mint,
+      destination,
+      mintAuthority,
+      amount
+    );
   }
 
   async initializeMember(name: string): Promise<PublicKey> {
@@ -306,9 +332,86 @@ export class ProgramFacade {
     );
 
     assert.ok(storedDepositSlip.conditionalVault.equals(conditionalVault));
-    assert.ok(storedDepositSlip.depositor.equals(depositor));
+    assert.ok(storedDepositSlip.user.equals(depositor));
     assert.ok(storedDepositSlip.depositedAmount.eq(new anchor.BN(0)));
 
     return depositSlip;
+  }
+
+  async mintConditionalTokens(
+    amount: number,
+    user: Signer,
+    depositSlip: PublicKey,
+    conditionalVault: PublicKey,
+    vaultUnderlyingTokenAccount: PublicKey,
+    userUnderlyingTokenAccount: PublicKey,
+    conditionalTokenMint: PublicKey,
+    userConditionalTokenAccount: PublicKey
+  ) {
+    const depositSlipBefore = await this.program.account.vaultDepositSlip.fetch(
+      depositSlip
+    );
+    const vaultUnderlyingTokenAccountBefore = await token.getAccount(
+      this.connection,
+      vaultUnderlyingTokenAccount
+    );
+    const userUnderlyingTokenAccountBefore = await token.getAccount(
+      this.connection,
+      userUnderlyingTokenAccount
+    );
+    const userConditionalTokenAccountBefore = await token.getAccount(
+      this.connection,
+      userConditionalTokenAccount
+    );
+
+    const bnAmount = new anchor.BN(amount);
+    await this.program.methods
+      .mintConditionalTokens(bnAmount)
+      .accounts({
+        user: user.publicKey,
+        depositSlip,
+        conditionalVault,
+        vaultUnderlyingTokenAccount,
+        userUnderlyingTokenAccount,
+        conditionalTokenMint,
+        userConditionalTokenAccount,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+      })
+      .signers([user])
+      .rpc();
+
+    const depositSlipAfter = await this.program.account.vaultDepositSlip.fetch(
+      depositSlip
+    );
+    const vaultUnderlyingTokenAccountAfter = await token.getAccount(
+      this.connection,
+      vaultUnderlyingTokenAccount
+    );
+    const userUnderlyingTokenAccountAfter = await token.getAccount(
+      this.connection,
+      userUnderlyingTokenAccount
+    );
+    const userConditionalTokenAccountAfter = await token.getAccount(
+      this.connection,
+      userConditionalTokenAccount
+    );
+
+    assert.ok(
+      depositSlipAfter.depositedAmount.eq(
+        depositSlipBefore.depositedAmount.add(bnAmount)
+      )
+    );
+    assert.equal(
+      vaultUnderlyingTokenAccountAfter.amount,
+      vaultUnderlyingTokenAccountBefore.amount + BigInt(amount)
+    );
+    assert.equal(
+      userUnderlyingTokenAccountAfter.amount,
+      userUnderlyingTokenAccountBefore.amount - BigInt(amount)
+    );
+    assert.equal(
+      userConditionalTokenAccountAfter.amount,
+      userConditionalTokenAccountBefore.amount + BigInt(amount)
+    );
   }
 }

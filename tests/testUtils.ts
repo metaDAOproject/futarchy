@@ -1,8 +1,22 @@
+import { expect, assert } from "chai";
 import { randomBytes } from "crypto";
 
 import { ProgramFacade } from "./programFacade";
 
 import { Program, PublicKey, Signer } from "./metaDAO";
+
+export const expectError = (
+  expectedErrorCode: string,
+  message: string
+): [() => void, (e: any) => void] => {
+  return [
+    () => assert.fail(message),
+    (e) => {
+      assert(e["error"] != undefined, `the program threw for a reason that we didn't expect. error: ${e}`);
+      assert.equal(e.error.errorCode.code, expectedErrorCode);
+    },
+  ];
+};
 
 export const randomMemberName = () => randomBytes(5).toString("hex");
 
@@ -88,25 +102,53 @@ export const executeSampleProposal = async (
 
 export const initializeSampleConditionalExpression = async (
   program: ProgramFacade,
-  passOrFailFlag: boolean = true,
+  passOrFailFlag: boolean = true
 ): Promise<[PublicKey, PublicKey, PublicKey]> => {
   const [proposal, memberToAdd] = await initializeSampleProposal(program);
 
-  const conditionalExpression =
-    await program.initializeConditionalExpression(proposal, passOrFailFlag);
-  
+  const conditionalExpression = await program.initializeConditionalExpression(
+    proposal,
+    passOrFailFlag
+  );
+
   return [conditionalExpression, proposal, memberToAdd];
 };
 
 export const initializeSampleConditionalVault = async (
   program: ProgramFacade,
-  passOrFailFlag: boolean = true,
-): Promise<[PublicKey, PublicKey, Signer, PublicKey, PublicKey, PublicKey]> => {
-  const [conditionalExpression, proposal, memberToAdd] = await initializeSampleConditionalExpression(program, passOrFailFlag);
+  passOrFailFlag: boolean = true
+): Promise<
+  [
+    PublicKey,
+    PublicKey,
+    PublicKey,
+    PublicKey,
+    Signer,
+    PublicKey,
+    PublicKey,
+    PublicKey
+  ]
+> => {
+  const [conditionalExpression, proposal, memberToAdd] =
+    await initializeSampleConditionalExpression(program, passOrFailFlag);
 
-  const [underlyingTokenMint, underlyingTokenMintAuthority] = await program.createMint();
+  const [underlyingTokenMint, underlyingTokenMintAuthority] =
+    await program.createMint();
 
-  const [conditionalVault] = await program.initializeConditionalVault(conditionalExpression, underlyingTokenMint);
+  const [conditionalVault, conditionalTokenMint, vaultUnderlyingTokenAccount] =
+    await program.initializeConditionalVault(
+      conditionalExpression,
+      underlyingTokenMint
+    );
 
-  return [conditionalVault, underlyingTokenMint, underlyingTokenMintAuthority, conditionalExpression, proposal, memberToAdd];
+  return [
+    conditionalVault,
+    conditionalTokenMint,
+    vaultUnderlyingTokenAccount,
+    underlyingTokenMint,
+    underlyingTokenMintAuthority,
+    conditionalExpression,
+    proposal,
+    memberToAdd,
+  ];
 };

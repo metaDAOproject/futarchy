@@ -9,6 +9,7 @@ import {
   executeSampleProposal,
   initializeSampleConditionalExpression,
   initializeSampleConditionalVault,
+  expectError,
 } from "./testUtils";
 
 import { MetaDao as MetaDAO } from "../target/types/meta_dao";
@@ -123,13 +124,14 @@ describe("meta_dao", async function () {
     });
   });
 
-  describe.only("#initialize_conditional_vault", async function () {
+  describe("#initialize_conditional_vault", async function () {
     it("initializes conditional vaults", async function () {
       await initializeSampleConditionalVault(programFacade);
     });
 
     it("checks that `conditional_token_mint` and `underlying_token_mint` have the same number of decimals", async function () {
-      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
+      const [conditionalExpression] =
+        await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint(3);
 
@@ -145,7 +147,8 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `vault_underlying_token_account` is owned by the vault", async function () {
-      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
+      const [conditionalExpression] =
+        await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint();
 
@@ -173,7 +176,8 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `vault_underlying_token_account` matches `underlying_token_mint`", async function () {
-      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
+      const [conditionalExpression] =
+        await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint();
 
@@ -192,12 +196,13 @@ describe("meta_dao", async function () {
             assert.fail(
               "program didn't block a `vault_underlying_token_account` with a mint other than `underlying_token_mint`"
             ),
-          (e) => assert.equal(e.error.errorCode.code, "ConstraintTokenMint")
+          (e) => assert.equal(e.error.errorCode.code, "ConstraintAssociated")
         );
     });
 
     it("checks that the vault is the mint authority of `conditional_token_mint`", async function () {
-      const [conditionalExpression] = await initializeSampleConditionalExpression(programFacade);
+      const [conditionalExpression] =
+        await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint();
 
@@ -224,15 +229,294 @@ describe("meta_dao", async function () {
   });
 
   describe("#initialize_deposit_slip", async function () {
-    it("initializes deposit slips", async function () {});
+    it("initializes deposit slips", async function () {
+      const [conditionalVault] = await initializeSampleConditionalVault(
+        programFacade
+      );
+      await programFacade.initializeDepositSlip(
+        conditionalVault,
+        anchor.web3.Keypair.generate().publicKey
+      );
+    });
   });
 
-  describe("#mint_conditional_tokens", async function () {
-    it("", async function () {});
+  describe.only("#mint_conditional_tokens", async function () {
+    let conditionalVault: PublicKey;
+    let conditionalTokenMint: PublicKey;
+    let vaultUnderlyingTokenAccount: PublicKey;
+    let underlyingTokenMint: PublicKey;
+    let underlyingTokenMintAuthority: Signer;
 
-    it("", async function () {});
+    let user: Signer;
+    let amount: number;
+    let userUnderlyingTokenAccount: PublicKey;
+    let userConditionalTokenAccount: PublicKey;
+    let depositSlip: PublicKey;
 
-    it("", async function () {});
+    before(async function () {
+      [
+        conditionalVault,
+        conditionalTokenMint,
+        vaultUnderlyingTokenAccount,
+        underlyingTokenMint,
+        underlyingTokenMintAuthority,
+      ] = await initializeSampleConditionalVault(programFacade);
+    });
+
+    beforeEach(async function () {
+      user = anchor.web3.Keypair.generate();
+      amount = 1000;
+
+      userUnderlyingTokenAccount = await programFacade.createTokenAccount(
+        underlyingTokenMint,
+        user.publicKey
+      );
+
+      userConditionalTokenAccount = await programFacade.createTokenAccount(
+        conditionalTokenMint,
+        user.publicKey
+      );
+
+      depositSlip = await programFacade.initializeDepositSlip(
+        conditionalVault,
+        user.publicKey
+      );
+
+      await programFacade.mintTo(
+        underlyingTokenMint,
+        userUnderlyingTokenAccount,
+        underlyingTokenMintAuthority,
+        amount
+      );
+    });
+
+    it("mints conditional tokens", async function () {
+      await programFacade.mintConditionalTokens(
+        amount,
+        user,
+        depositSlip,
+        conditionalVault,
+        vaultUnderlyingTokenAccount,
+        userUnderlyingTokenAccount,
+        conditionalTokenMint,
+        userConditionalTokenAccount
+      );
+    });
+
+    it("blocks mints when the user doesn't have enough underlying tokens", async function () {
+      const callbacks = expectError(
+        "InsufficientUnderlyingTokens",
+        "mint suceeded despite user not having enough underlying tokens"
+      );
+      await programFacade
+        .mintConditionalTokens(
+          amount + 10,
+          user,
+          depositSlip,
+          conditionalVault,
+          vaultUnderlyingTokenAccount,
+          userUnderlyingTokenAccount,
+          conditionalTokenMint,
+          userConditionalTokenAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that `vault_underlying_token_account` and `conditional_vault` match up", async function () {
+      const maliciousVaultUnderlyingTokenAccount =
+        await programFacade.createTokenAccount(
+          underlyingTokenMint,
+          anchor.web3.Keypair.generate().publicKey
+        );
+
+      const callbacks = expectError(
+        "InvalidVaultUnderlyingTokenAccount",
+        "was able to mint conditional tokens while supplying an invalid vault underlying account"
+      );
+      await programFacade
+        .mintConditionalTokens(
+          amount,
+          user,
+          depositSlip,
+          conditionalVault,
+          maliciousVaultUnderlyingTokenAccount,
+          userUnderlyingTokenAccount,
+          conditionalTokenMint,
+          userConditionalTokenAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that `user_underlying_token_account` is owned by the user", async function () {
+      const nonOwnedUserUnderlyingAccount =
+        await programFacade.createTokenAccount(
+          underlyingTokenMint,
+          anchor.web3.Keypair.generate().publicKey
+        );
+
+      await programFacade.mintTo(
+        underlyingTokenMint,
+        nonOwnedUserUnderlyingAccount,
+        underlyingTokenMintAuthority,
+        amount
+      );
+
+      const callbacks = expectError(
+        "ConstraintTokenOwner",
+        "mint suceeded despite `user_underlying_token_account` not being owned by the user"
+      );
+
+      await programFacade
+        .mintConditionalTokens(
+          amount,
+          user,
+          depositSlip,
+          conditionalVault,
+          vaultUnderlyingTokenAccount,
+          nonOwnedUserUnderlyingAccount,
+          conditionalTokenMint,
+          userConditionalTokenAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that `user_conditional_token_account` is owned by the user", async function () {
+      const nonOwnedUserConditionalAccount =
+        await programFacade.createTokenAccount(
+          conditionalTokenMint,
+          anchor.web3.Keypair.generate().publicKey
+        );
+
+      const callbacks = expectError(
+        "ConstraintTokenOwner",
+        "mint suceeded despite `user_conditional_token_account` not being owned by the user"
+      );
+
+      await programFacade
+        .mintConditionalTokens(
+          amount,
+          user,
+          depositSlip,
+          conditionalVault,
+          vaultUnderlyingTokenAccount,
+          userUnderlyingTokenAccount,
+          conditionalTokenMint,
+          nonOwnedUserConditionalAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that `user_conditional_token_account` has `conditional_token_mint` as its mint", async function () {
+      const [wrongConditionalTokenMint] = await programFacade.createMint(undefined, conditionalVault);
+      const wrongMintUserConditionalTokenAccount =
+        await programFacade.createTokenAccount(wrongConditionalTokenMint, user.publicKey);
+
+      const callbacks = expectError(
+        "ConstraintTokenMint",
+        "mint suceeded despite `user_conditional_token_account` having a wrong mint"
+      );
+
+      await programFacade
+        .mintConditionalTokens(
+          amount,
+          user,
+          depositSlip,
+          conditionalVault,
+          vaultUnderlyingTokenAccount,
+          userUnderlyingTokenAccount,
+          conditionalTokenMint,
+          wrongMintUserConditionalTokenAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that `user_underlying_token_account` has the correct mint", async function () {
+      const [randomMint, mintAuthority] = await programFacade.createMint();
+      const wrongMintUserUnderlyingAccount =
+        await programFacade.createTokenAccount(randomMint, user.publicKey);
+
+      await programFacade.mintTo(
+        randomMint,
+        wrongMintUserUnderlyingAccount,
+        mintAuthority,
+        amount
+      );
+
+      const callbacks = expectError(
+        "ConstraintTokenMint",
+        "mint suceeded despite `user_underlying_token_account` having the wrong mint"
+      );
+
+      await programFacade
+        .mintConditionalTokens(
+          amount,
+          user,
+          depositSlip,
+          conditionalVault,
+          vaultUnderlyingTokenAccount,
+          wrongMintUserUnderlyingAccount,
+          conditionalTokenMint,
+          userConditionalTokenAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that `deposit_slip` was created for this conditional vault", async function () {
+      const [secondConditionalVault] = await initializeSampleConditionalVault(
+        programFacade
+      );
+
+      const badDepositSlip = await programFacade.initializeDepositSlip(
+        secondConditionalVault,
+        user.publicKey
+      );
+
+      const callbacks = expectError(
+        "ConstraintHasOne",
+        "mint suceeded despite `deposit_slip` having the wrong conditional vault"
+      );
+
+      await programFacade
+        .mintConditionalTokens(
+          amount,
+          user,
+          badDepositSlip,
+          conditionalVault,
+          vaultUnderlyingTokenAccount,
+          userUnderlyingTokenAccount,
+          conditionalTokenMint,
+          userConditionalTokenAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that `conditional_token_mint` is the one stored in the conditional vault", async function () {
+      const [wrongConditionalTokenMint] = await programFacade.createMint(undefined, conditionalVault);
+
+      const wrongMintUserConditionalTokenAccount =
+        await programFacade.createTokenAccount(
+          wrongConditionalTokenMint,
+          user.publicKey
+        );
+
+      const callbacks = expectError(
+        "InvalidConditionalTokenMint",
+        "mint suceeded despite `conditional_token_mint` not being the one stored in the conditional vault"
+      );
+
+      await programFacade
+        .mintConditionalTokens(
+          amount,
+          user,
+          depositSlip,
+          conditionalVault,
+          vaultUnderlyingTokenAccount,
+          userUnderlyingTokenAccount,
+          wrongConditionalTokenMint,
+          wrongMintUserConditionalTokenAccount
+        )
+        .then(callbacks[0], callbacks[1]);
+    });
   });
 
   describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
