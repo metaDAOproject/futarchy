@@ -51,7 +51,7 @@ pub mod meta_dao {
             .iter()
             .any(|&existing_member| existing_member.key() == new_member);
 
-        require!(!member_already_active, MemberAlreadyActive);
+        require!(!member_already_active, ErrorCode::MemberAlreadyActive);
 
         meta_dao.members.push(new_member);
 
@@ -69,11 +69,11 @@ pub mod meta_dao {
             match instruction.signer.kind {
                 ProposalSignerKind::MetaDAO => require!(
                     instruction.signer.pubkey == meta_dao.key(),
-                    InvalidMetaDAOSigner
+                    ErrorCode::InvalidMetaDAOSigner
                 ),
                 ProposalSignerKind::Member => require!(
                     meta_dao.members.contains(&instruction.signer.pubkey),
-                    InactiveMember
+                    ErrorCode::InactiveMember
                 ),
             };
         }
@@ -90,7 +90,7 @@ pub mod meta_dao {
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
 
-        require!(proposal.state == ProposalState::Pending, NoProposalReplay);
+        require!(proposal.state == ProposalState::Pending, ErrorCode::NoProposalReplay);
 
         proposal.state = ProposalState::Passed;
 
@@ -229,11 +229,11 @@ pub mod meta_dao {
         match conditional_expression.pass_or_fail_flag {
             true => require!(
                 proposal_state == ProposalState::Passed,
-                CantRedeemConditionalTokens
+                ErrorCode::CantRedeemConditionalTokens
             ),
             false => require!(
                 proposal_state == ProposalState::Failed,
-                CantRedeemConditionalTokens
+                ErrorCode::CantRedeemConditionalTokens
             ),
         }
 
@@ -264,49 +264,41 @@ pub mod meta_dao {
     pub fn redeem_deposit_slip_for_underlying_tokens(
         ctx: Context<RedeemDepositSlipForUnderlyingTokens>,
     ) -> Result<()> {
+        let conditional_expression = &ctx.accounts.conditional_expression;
+        let deposit_slip = &mut ctx.accounts.user_deposit_slip;
+        let proposal_state = ctx.accounts.proposal.state;
+
+        match conditional_expression.pass_or_fail_flag {
+            true => require!(
+                proposal_state == ProposalState::Failed,
+                ErrorCode::CantRedeemDepositSlip
+            ),
+            false => require!(
+                proposal_state == ProposalState::Passed,
+                ErrorCode::CantRedeemDepositSlip
+            ),
+        };
+
+        let conditional_vault = &ctx.accounts.conditional_vault;
+        let seeds = &[
+            b"conditional_vault",
+            conditional_vault.conditional_expression.as_ref(),
+            conditional_vault.underlying_token_mint.as_ref(),
+            &[ctx.accounts.conditional_vault.pda_bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let amount = deposit_slip.deposited_amount;
+
+        deposit_slip.deposited_amount -= amount;
+
+        token::transfer(
+            ctx.accounts
+                .into_transfer_underlying_tokens_to_user_context()
+                .with_signer(signer),
+            amount,
+        )?;
+
         Ok(())
     }
-    //     let conditional_expression = &ctx.accounts.conditional_expression;
-    //     let proposal_state = ctx.accounts.proposal.proposal_state;
-
-    //     // test that expression has evaluated to false
-    //     if conditional_expression.pass_or_fail_flag {
-    //         require!(
-    //             proposal_state == ProposalState::Failed,
-    //             CantRedeemDepositAccount
-    //         );
-    //     } else {
-    //         require!(
-    //             proposal_state == ProposalState::Passed,
-    //             CantRedeemDepositAccount
-    //         );
-    //     }
-
-    //     let conditional_vault = &ctx.accounts.conditional_vault;
-    //     let seeds = &[
-    //         b"conditional-vault",
-    //         conditional_vault.conditional_expression.as_ref(),
-    //         conditional_vault.underlying_token_mint.as_ref(),
-    //         &[ctx.accounts.conditional_vault.bump],
-    //     ];
-
-
-    //     let signer = &[&seeds[..]];
-
-    //     // require!((proposal_state == Passed && conditional_expression.pass_or_fail == Fail) ||
-    //     //          (proposal_state == Failed && conditional_expression.pass_or_fail == Passed));
-
-    //     let amount = ctx.accounts.user_deposit_account.deposited_amount;
-
-    //     (&mut ctx.accounts.user_deposit_account).deposited_amount -= amount;
-
-    //     token::transfer(
-    //         ctx.accounts
-    //             .into_transfer_underlying_tokens_to_user_context()
-    //             .with_signer(signer),
-    //         amount,
-    //     )?;
-
-    //     Ok(())
-    // }
 }
