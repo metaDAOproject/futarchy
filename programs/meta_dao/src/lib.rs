@@ -261,9 +261,11 @@ pub mod meta_dao {
         Ok(())
     }
 
-    // pub fn redeem_deposit_account_for_underlying_tokens(
-    //     ctx: Context<RedeemDepositAccountForUnderlyingTokens>,
-    // ) -> Result<()> {
+    pub fn redeem_deposit_slip_for_underlying_tokens(
+        ctx: Context<RedeemDepositSlipForUnderlyingTokens>,
+    ) -> Result<()> {
+        Ok(())
+    }
     //     let conditional_expression = &ctx.accounts.conditional_expression;
     //     let proposal_state = ctx.accounts.proposal.proposal_state;
 

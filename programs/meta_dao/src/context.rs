@@ -270,33 +270,33 @@ impl<'info> RedeemConditionalTokensForUnderlyingTokens<'info> {
     }
 }
 
-// #[derive(Accounts)]
-// pub struct RedeemDepositAccountForUnderlyingTokens<'info> {
-//     pub user: Signer<'info>,
-//     #[account(mut)]
-//     pub user_deposit_account: Account<'info, DepositAccount>,
-//     #[account(mut)]
-//     pub user_underlying_token_account: Account<'info, TokenAccount>,
-//     #[account(mut)]
-//     pub vault_underlying_token_account: Account<'info, TokenAccount>,
-//     pub conditional_vault: Account<'info, ConditionalVault>,
-//     pub proposal: Account<'info, Proposal>,
-//     pub token_program: Program<'info, Token>,
-//     pub conditional_expression: Account<'info, ConditionalExpression>,
-// }
+#[derive(Accounts)]
+pub struct RedeemDepositSlipForUnderlyingTokens<'info> {
+    pub user: Signer<'info>,
+    #[account(mut)]
+    pub user_deposit_slip: Account<'info, VaultDepositSlip>,
+    #[account(mut)]
+    pub user_underlying_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub vault_underlying_token_account: Account<'info, TokenAccount>,
+    pub conditional_vault: Account<'info, ConditionalVault>,
+    pub proposal: Account<'info, Proposal>,
+    pub token_program: Program<'info, Token>,
+    pub conditional_expression: Account<'info, ConditionalExpression>,
+}
 
-// impl<'info> RedeemDepositAccountForUnderlyingTokens<'info> {
-//     pub fn into_transfer_underlying_tokens_to_user_context(
-//         &self,
-//     ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-//         let cpi_accounts = Transfer {
-//             from: self
-//                 .vault_underlying_token_account
-//                 .to_account_info()
-//                 .clone(),
-//             to: self.user_underlying_token_account.to_account_info().clone(),
-//             authority: self.conditional_vault.to_account_info().clone(),
-//         };
-//         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
-//     }
-// }
+impl<'info> RedeemDepositSlipForUnderlyingTokens<'info> {
+    pub fn into_transfer_underlying_tokens_to_user_context(
+        &self,
+    ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self
+                .vault_underlying_token_account
+                .to_account_info()
+                .clone(),
+            to: self.user_underlying_token_account.to_account_info().clone(),
+            authority: self.conditional_vault.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+    }
+}

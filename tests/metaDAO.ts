@@ -20,6 +20,12 @@ export type Program = anchor.Program<MetaDAO>;
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 
+enum ProposalState {
+  Passed,
+  Failed,
+  Pending,
+}
+
 describe("meta_dao", async function () {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
@@ -638,12 +644,108 @@ describe("meta_dao", async function () {
     });
   });
 
-  describe("#redeem_deposit_slip_for_underlying_tokens", async function () {
-    it("", async function () {});
+  describe.only("#redeem_deposit_slip_for_underlying_tokens", async function () {
+    const redeemTest = async (passOrFailFlag: boolean, desiredProposalState: ProposalState) => {
+      const [
+        conditionalVault,
+        conditionalTokenMint,
+        vaultUnderlyingTokenAccount,
+        underlyingTokenMint,
+        underlyingTokenMintAuthority,
+        conditionalExpression,
+        proposal,
+        memberToAdd,
+      ] = await initializeSampleConditionalVault(programFacade, passOrFailFlag);
 
-    it("", async function () {});
+      let user = anchor.web3.Keypair.generate();
+      let amount = 1000;
 
-    it("", async function () {});
+      let userUnderlyingTokenAccount = await programFacade.createTokenAccount(
+        underlyingTokenMint,
+        user.publicKey
+      );
+
+      let userConditionalTokenAccount = await programFacade.createTokenAccount(
+        conditionalTokenMint,
+        user.publicKey
+      );
+
+      let depositSlip = await programFacade.initializeDepositSlip(
+        conditionalVault,
+        user.publicKey
+      );
+
+      await programFacade.mintTo(
+        underlyingTokenMint,
+        userUnderlyingTokenAccount,
+        underlyingTokenMintAuthority,
+        amount
+      );
+
+      await programFacade.mintConditionalTokens(
+        amount,
+        user,
+        depositSlip,
+        conditionalVault,
+        vaultUnderlyingTokenAccount,
+        userUnderlyingTokenAccount,
+        conditionalTokenMint,
+        userConditionalTokenAccount
+      );
+
+      if (desiredProposalState == ProposalState.Passed) {
+        await executeSampleProposal(proposal, memberToAdd, programFacade);
+      } else if (desiredProposalState == ProposalState.Failed) {
+        await programFacade.failProposal(proposal);
+      }
+
+      const shouldGoThrough = (desiredProposalState == ProposalState.Passed && !passOrFailFlag) 
+        || (desiredProposalState == ProposalState.Failed && passOrFailFlag);
+
+      await programFacade.redeemDepositSlipForUnderlyingTokens(
+        user,
+        depositSlip,
+        userUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        conditionalVault,
+        proposal,
+        conditionalExpression,
+      ).then(() => {
+        if (!shouldGoThrough) {
+          assert.fail("a redemption should have failed but instead suceeded");
+        }
+      }, (e) => {
+        if(shouldGoThrough) {
+          assert.fail(e);
+        } else {
+          assert(
+            e["error"] != undefined,
+            `the program threw for a reason that we didn't expect. error: ${e}`
+          );
+          assert.equal(e.error.errorCode.code, "CantRedeemDepositSlip");
+        }
+      });
+    };
+
+    it("allows users to redeem deposit slips when `pass_or_fail_flag` is set to true and a proposal fails", async function () {
+      await redeemTest(true, ProposalState.Failed);
+    });
+
+    it("allows users to redeem deposit slips when `pass_or_fail_flag` is set to false and a proposal passes", async function () {
+      await redeemTest(false, ProposalState.Passed);
+    });
+
+    it("prevents users from redeeming deposit slips when `pass_or_fail_flag` is set to true and a proposal passes", async function () {
+      await redeemTest(true, ProposalState.Passed);
+    });
+
+    it("prevents users from redeeming deposit slips when `pass_or_fail_flag` is set to false and a proposal fails", async function () {
+      await redeemTest(false, ProposalState.Failed);
+    });
+
+    it("prevents users from redeeming deposit slips while the proposal is pending", async function () {
+      await redeemTest(true, ProposalState.Pending);
+    });
   });
 
   describe("#", async function () {
