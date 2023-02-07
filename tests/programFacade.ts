@@ -247,38 +247,12 @@ export class ProgramFacade {
   async initializeVault(
     conditionalExpression: PublicKey,
     underlyingTokenMint: PublicKey,
-    _vaultUnderlyingTokenAccount?: PublicKey,
-    _vaultUnderlyingTokenAccountMint?: PublicKey,
-    _conditionalTokenMint?: PublicKey
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
     const [vault] =
       this.generator.generateVaultPDAAddress(conditionalExpression, underlyingTokenMint);
-
-    const conditionalTokenMint =
-      typeof _conditionalTokenMint == "undefined"
-        ? await token.createMint(
-            this.connection,
-            this.payer,
-            vault, // mint authority
-            vault,
-            2
-          )
-        : _conditionalTokenMint;
-
-    const vaultUnderlyingTokenAccount =
-      typeof _vaultUnderlyingTokenAccount == "undefined"
-        ? (
-            await token.getOrCreateAssociatedTokenAccount(
-              this.connection,
-              this.payer,
-              typeof _vaultUnderlyingTokenAccountMint == "undefined"
-                ? underlyingTokenMint
-                : _vaultUnderlyingTokenAccountMint,
-              vault,
-              true
-            )
-          ).address
-        : _vaultUnderlyingTokenAccount;
+    
+    const conditionalTokenMint: Signer = anchor.web3.Keypair.generate();
+    const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(underlyingTokenMint, vault, true);
 
     await this.program.methods
       .initializeVault()
@@ -286,11 +260,11 @@ export class ProgramFacade {
         vault,
         conditionalExpression,
         underlyingTokenMint,
-        conditionalTokenMint,
+        conditionalTokenMint: conditionalTokenMint.publicKey,
         vaultUnderlyingTokenAccount,
         initializer: this.payer.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
       })
+      .signers([conditionalTokenMint])
       .rpc();
 
     const storedVault =
@@ -308,12 +282,12 @@ export class ProgramFacade {
       storedVault.underlyingTokenMint.equals(underlyingTokenMint)
     );
     assert.ok(
-      storedVault.conditionalTokenMint.equals(conditionalTokenMint)
+      storedVault.conditionalTokenMint.equals(conditionalTokenMint.publicKey)
     );
 
     return [
       vault,
-      conditionalTokenMint,
+      conditionalTokenMint.publicKey,
       vaultUnderlyingTokenAccount,
     ];
   }

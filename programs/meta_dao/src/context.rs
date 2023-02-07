@@ -1,4 +1,7 @@
-use anchor_spl::token::{Burn, Mint, MintTo, Token, TokenAccount, Transfer};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Burn, Mint, MintTo, Token, TokenAccount, Transfer}
+};
 
 use super::*;
 
@@ -120,12 +123,16 @@ pub struct InitializeVault<'info> {
     pub underlying_token_mint: Account<'info, Mint>,
     /// token account for the vault that matches above mint
     #[account(
+        init,
+        payer = initializer,
         associated_token::authority = vault,
         associated_token::mint = underlying_token_mint
     )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     /// SPL mint of the conditional token
     #[account(
+        init,
+        payer = initializer,
         mint::authority = vault,
         mint::freeze_authority = vault,
         mint::decimals = underlying_token_mint.decimals
@@ -133,6 +140,8 @@ pub struct InitializeVault<'info> {
     pub conditional_token_mint: Account<'info, Mint>,
     #[account(mut)]
     pub initializer: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
