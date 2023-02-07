@@ -138,9 +138,7 @@ describe("meta_dao", async function () {
 
   describe("#initialize_deposit_slip", async function () {
     it("initializes deposit slips", async function () {
-      const [vault] = await initializeSampleVault(
-        programFacade
-      );
+      const [vault] = await initializeSampleVault(programFacade);
       await programFacade.initializeDepositSlip(
         vault,
         anchor.web3.Keypair.generate().publicKey
@@ -442,7 +440,13 @@ describe("meta_dao", async function () {
       desiredProposalState: ProposalState,
       shouldGoThrough: boolean
     ) => {
-      await _testRedemption(programFacade, passOrFailFlag, desiredProposalState, RedemptionType.ConditionalToken, shouldGoThrough);
+      await _testRedemption(
+        programFacade,
+        passOrFailFlag,
+        desiredProposalState,
+        RedemptionType.ConditionalToken,
+        shouldGoThrough
+      );
     };
 
     it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has passed", async function () {
@@ -472,7 +476,13 @@ describe("meta_dao", async function () {
       desiredProposalState: ProposalState,
       shouldGoThrough: boolean
     ) => {
-      await _testRedemption(programFacade, passOrFailFlag, desiredProposalState, RedemptionType.DepositSlip, shouldGoThrough);
+      await _testRedemption(
+        programFacade,
+        passOrFailFlag,
+        desiredProposalState,
+        RedemptionType.DepositSlip,
+        shouldGoThrough
+      );
     };
 
     it("allows users to redeem deposit slips when `pass_or_fail_flag` is set to true and a proposal fails", async function () {

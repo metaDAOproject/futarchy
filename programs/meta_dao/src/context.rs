@@ -1,6 +1,6 @@
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Burn, Mint, MintTo, Token, TokenAccount, Transfer}
+    token::{Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 
 use super::*;

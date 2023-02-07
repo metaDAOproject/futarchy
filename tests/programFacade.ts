@@ -220,8 +220,8 @@ export class ProgramFacade {
         proposal,
         redeemableOnPass
       );
-    
-    const passOrFail = redeemableOnPass ? { "pass": {} } : { "fail": {} };
+
+    const passOrFail = redeemableOnPass ? { pass: {} } : { fail: {} };
 
     await this.program.methods
       .initializeConditionalExpression(passOrFail)
@@ -246,13 +246,19 @@ export class ProgramFacade {
 
   async initializeVault(
     conditionalExpression: PublicKey,
-    underlyingTokenMint: PublicKey,
+    underlyingTokenMint: PublicKey
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
-    const [vault] =
-      this.generator.generateVaultPDAAddress(conditionalExpression, underlyingTokenMint);
-    
+    const [vault] = this.generator.generateVaultPDAAddress(
+      conditionalExpression,
+      underlyingTokenMint
+    );
+
     const conditionalTokenMint: Signer = anchor.web3.Keypair.generate();
-    const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(underlyingTokenMint, vault, true);
+    const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
+      underlyingTokenMint,
+      vault,
+      true
+    );
 
     await this.program.methods
       .initializeVault()
@@ -267,29 +273,18 @@ export class ProgramFacade {
       .signers([conditionalTokenMint])
       .rpc();
 
-    const storedVault =
-      await this.program.account.vault.fetch(vault);
+    const storedVault = await this.program.account.vault.fetch(vault);
 
+    assert.ok(storedVault.conditionalExpression.equals(conditionalExpression));
     assert.ok(
-      storedVault.conditionalExpression.equals(conditionalExpression)
+      storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount)
     );
-    assert.ok(
-      storedVault.underlyingTokenAccount.equals(
-        vaultUnderlyingTokenAccount
-      )
-    );
-    assert.ok(
-      storedVault.underlyingTokenMint.equals(underlyingTokenMint)
-    );
+    assert.ok(storedVault.underlyingTokenMint.equals(underlyingTokenMint));
     assert.ok(
       storedVault.conditionalTokenMint.equals(conditionalTokenMint.publicKey)
     );
 
-    return [
-      vault,
-      conditionalTokenMint.publicKey,
-      vaultUnderlyingTokenAccount,
-    ];
+    return [vault, conditionalTokenMint.publicKey, vaultUnderlyingTokenAccount];
   }
 
   async initializeDepositSlip(

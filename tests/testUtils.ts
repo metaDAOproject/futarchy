@@ -147,10 +147,7 @@ export const initializeSampleVault = async (
     await program.createMint();
 
   const [vault, conditionalTokenMint, vaultUnderlyingTokenAccount] =
-    await program.initializeVault(
-      conditionalExpression,
-      underlyingTokenMint
-    );
+    await program.initializeVault(conditionalExpression, underlyingTokenMint);
 
   return [
     vault,
