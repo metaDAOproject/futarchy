@@ -20,6 +20,10 @@ pub enum ErrorCode {
     InvalidVaultUnderlyingTokenAccount,
     #[msg("This `conditional_token_mint` is not this vault's `conditional_token_mint`")]
     InvalidConditionalTokenMint,
+    #[msg("This `conditional_expression` is not the vault's `conditional_expression`")]
+    InvalidConditionalExpression,
+    #[msg("This `proposal` is not the one referenced by this `conditional_expression`")]
+    InvalidProposal,
     #[msg("Cannot evaluate this conditional expression yet because the proposal is still pending")]
     ConditionalExpressionNotEvaluatable,
     #[msg("Conditional expression needs to evaluate to true before conditional tokens can be redeemed for underlying tokens")]

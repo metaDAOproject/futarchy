@@ -130,7 +130,7 @@ describe("meta_dao", async function () {
     });
   });
 
-  describe.only("#initialize_vault", async function () {
+  describe("#initialize_vault", async function () {
     it("initializes vaults", async function () {
       await initializeSampleVault(programFacade);
     });
