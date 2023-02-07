@@ -36,7 +36,7 @@ pub mod meta_dao {
         let member = &mut ctx.accounts.member;
 
         member.name = name;
-        member.treasury_bump = *ctx.bumps.get("treasury").unwrap();
+        member.treasury_pda_bump = *ctx.bumps.get("treasury").unwrap();
         member.token_mint = ctx.accounts.token_mint.key();
 
         Ok(())
@@ -80,7 +80,7 @@ pub mod meta_dao {
 
         let proposal = &mut ctx.accounts.proposal;
 
-        proposal.state = ProposalState::Pending;
+        proposal.status = ProposalStatus::Pending;
         proposal.instructions = instructions;
         proposal.accounts = accts;
 
@@ -90,18 +90,21 @@ pub mod meta_dao {
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
 
-        require!(proposal.state == ProposalState::Pending, ErrorCode::NoProposalReplay);
+        require!(
+            proposal.status == ProposalStatus::Pending,
+            ErrorCode::NoProposalReplay
+        );
 
-        proposal.state = ProposalState::Passed;
+        proposal.status = ProposalStatus::Passed;
 
         for instruction in &proposal.instructions {
             // Collect accounts relevant to this instruction
             let mut account_metas = Vec::new();
             let mut account_infos = Vec::new();
 
-            for i in instruction.account_indexes.iter() {
-                account_metas.push(proposal.accounts[*i as usize].borrow().into());
-                account_infos.push(ctx.remaining_accounts[*i as usize].clone());
+            for idx in instruction.accounts.iter() {
+                account_metas.push(proposal.accounts[*idx as usize].borrow().into());
+                account_infos.push(ctx.remaining_accounts[*idx as usize].clone());
             }
 
             let solana_instruction = Instruction {
@@ -136,42 +139,31 @@ pub mod meta_dao {
     pub fn fail_proposal(ctx: Context<FailProposal>) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
 
-        proposal.state = ProposalState::Failed;
+        proposal.status = ProposalStatus::Failed;
 
         Ok(())
     }
 
-    /// Create an immutable conditional expression by combining a proposal and a
-    /// `pass_or_fail_flag`.
-    ///
-    /// Because conditional expressions are PDAs and are deterministically derived
-    /// from their proposal and pass_or_fail_flag, there can only exist one canonical
-    /// conditional expression for a specified proposal and pass_or_fail_flag.
-    ///
-    /// If `pass_or_fail_flag` is true, the expression will evaluate to true if the
-    /// proposal passes and false if it fails. If the flag is set to false, the
-    /// expression will evalaute to false if the proposal passes and true if it fails.
     pub fn initialize_conditional_expression(
         ctx: Context<InitializeConditionalExpression>,
-        pass_or_fail_flag: bool,
+        pass_or_fail: PassOrFail,
     ) -> Result<()> {
         let conditional_expression = &mut ctx.accounts.conditional_expression;
 
         conditional_expression.proposal = ctx.accounts.proposal.key();
-        conditional_expression.pass_or_fail_flag = pass_or_fail_flag;
+        conditional_expression.pass_or_fail = pass_or_fail;
 
         Ok(())
     }
 
-    pub fn initialize_conditional_vault(ctx: Context<InitializeConditionalVault>) -> Result<()> {
-        let conditional_vault = &mut ctx.accounts.conditional_vault;
+    pub fn initialize_vault(ctx: Context<InitializeVault>) -> Result<()> {
+        let vault = &mut ctx.accounts.vault;
 
-        conditional_vault.conditional_expression = ctx.accounts.conditional_expression.key();
-        conditional_vault.underlying_token_mint = ctx.accounts.underlying_token_mint.key();
-        conditional_vault.underlying_token_account =
-            ctx.accounts.vault_underlying_token_account.key();
-        conditional_vault.conditional_token_mint = ctx.accounts.conditional_token_mint.key();
-        conditional_vault.pda_bump = *ctx.bumps.get("conditional_vault").unwrap();
+        vault.conditional_expression = ctx.accounts.conditional_expression.key();
+        vault.underlying_token_mint = ctx.accounts.underlying_token_mint.key();
+        vault.underlying_token_account = ctx.accounts.vault_underlying_token_account.key();
+        vault.conditional_token_mint = ctx.accounts.conditional_token_mint.key();
+        vault.pda_bump = *ctx.bumps.get("vault").unwrap();
 
         Ok(())
     }
@@ -183,20 +175,20 @@ pub mod meta_dao {
         let deposit_slip = &mut ctx.accounts.deposit_slip;
 
         deposit_slip.user = user;
-        deposit_slip.conditional_vault = ctx.accounts.conditional_vault.key();
+        deposit_slip.vault = ctx.accounts.vault.key();
         deposit_slip.deposited_amount = 0;
 
         Ok(())
     }
 
     pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
-        let conditional_vault = &ctx.accounts.conditional_vault;
+        let vault = &ctx.accounts.vault;
 
         let seeds = &[
-            b"conditional_vault",
-            conditional_vault.conditional_expression.as_ref(),
-            conditional_vault.underlying_token_mint.as_ref(),
-            &[ctx.accounts.conditional_vault.pda_bump],
+            b"vault",
+            vault.conditional_expression.as_ref(),
+            vault.underlying_token_mint.as_ref(),
+            &[ctx.accounts.vault.pda_bump],
         ];
         let signer = &[&seeds[..]];
 
@@ -224,25 +216,19 @@ pub mod meta_dao {
         ctx: Context<RedeemConditionalTokensForUnderlyingTokens>,
     ) -> Result<()> {
         let conditional_expression = &ctx.accounts.conditional_expression;
-        let proposal_state = ctx.accounts.proposal.state;
+        let proposal_status = ctx.accounts.proposal.status;
 
-        match conditional_expression.pass_or_fail_flag {
-            true => require!(
-                proposal_state == ProposalState::Passed,
-                ErrorCode::CantRedeemConditionalTokens
-            ),
-            false => require!(
-                proposal_state == ProposalState::Failed,
-                ErrorCode::CantRedeemConditionalTokens
-            ),
-        }
+        require!(
+            conditional_expression.evaluate(proposal_status)?,
+            ErrorCode::CantRedeemConditionalTokens
+        );
 
-        let conditional_vault = &ctx.accounts.conditional_vault;
+        let vault = &ctx.accounts.vault;
         let seeds = &[
-            b"conditional_vault",
-            conditional_vault.conditional_expression.as_ref(),
-            conditional_vault.underlying_token_mint.as_ref(),
-            &[ctx.accounts.conditional_vault.pda_bump],
+            b"vault",
+            vault.conditional_expression.as_ref(),
+            vault.underlying_token_mint.as_ref(),
+            &[vault.pda_bump],
         ];
         let signer = &[&seeds[..]];
 
@@ -266,25 +252,19 @@ pub mod meta_dao {
     ) -> Result<()> {
         let conditional_expression = &ctx.accounts.conditional_expression;
         let deposit_slip = &mut ctx.accounts.user_deposit_slip;
-        let proposal_state = ctx.accounts.proposal.state;
+        let proposal_status = ctx.accounts.proposal.status;
 
-        match conditional_expression.pass_or_fail_flag {
-            true => require!(
-                proposal_state == ProposalState::Failed,
-                ErrorCode::CantRedeemDepositSlip
-            ),
-            false => require!(
-                proposal_state == ProposalState::Passed,
-                ErrorCode::CantRedeemDepositSlip
-            ),
-        };
+        require!(
+            !conditional_expression.evaluate(proposal_status)?,
+            ErrorCode::CantRedeemDepositSlip
+        );
 
-        let conditional_vault = &ctx.accounts.conditional_vault;
+        let vault = &ctx.accounts.vault;
         let seeds = &[
-            b"conditional_vault",
-            conditional_vault.conditional_expression.as_ref(),
-            conditional_vault.underlying_token_mint.as_ref(),
-            &[ctx.accounts.conditional_vault.pda_bump],
+            b"vault",
+            vault.conditional_expression.as_ref(),
+            vault.underlying_token_mint.as_ref(),
+            &[vault.pda_bump],
         ];
         let signer = &[&seeds[..]];
 

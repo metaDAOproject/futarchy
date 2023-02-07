@@ -49,13 +49,13 @@ export class PDAGenerator {
     );
   }
 
-  generateConditionalVaultPDAAddress(
+  generateVaultPDAAddress(
     conditionalExpressionAddress: PublicKey,
     underlyingMint: PublicKey
   ): AddressAndBump {
     return anchor.web3.PublicKey.findProgramAddressSync(
       [
-        anchor.utils.bytes.utf8.encode("conditional_vault"),
+        anchor.utils.bytes.utf8.encode("vault"),
         conditionalExpressionAddress.toBuffer(),
         underlyingMint.toBuffer(),
       ],

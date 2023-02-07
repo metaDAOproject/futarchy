@@ -8,22 +8,28 @@ import {
   initializeSampleProposal,
   executeSampleProposal,
   initializeSampleConditionalExpression,
-  initializeSampleConditionalVault,
+  initializeSampleVault,
   expectError,
+  mintConditionalTokens,
+  testRedemption as _testRedemption,
 } from "./testUtils";
 
 import { MetaDao as MetaDAO } from "../target/types/meta_dao";
 import { ProgramFacade } from "./programFacade";
-import { PDAGenerator } from "./pdaGenerator";
 
 export type Program = anchor.Program<MetaDAO>;
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 
-enum ProposalState {
+export enum ProposalState {
   Passed,
   Failed,
   Pending,
+}
+
+export enum RedemptionType {
+  ConditionalToken,
+  DepositSlip,
 }
 
 describe("meta_dao", async function () {
@@ -103,8 +109,6 @@ describe("meta_dao", async function () {
           (e) => assert.equal(e.error.errorCode.code, "InvalidMetaDAOSigner")
         );
     });
-
-    it("", async function () {});
   });
 
   describe("#execute_proposal", async function () {
@@ -115,10 +119,6 @@ describe("meta_dao", async function () {
 
       await executeSampleProposal(proposal, memberToAdd, programFacade);
     });
-
-    it("", async function () {});
-
-    it("", async function () {});
   });
 
   describe("#initialize_conditional_expression", async function () {
@@ -130,19 +130,19 @@ describe("meta_dao", async function () {
     });
   });
 
-  describe("#initialize_conditional_vault", async function () {
-    it("initializes conditional vaults", async function () {
-      await initializeSampleConditionalVault(programFacade);
+  describe("#initialize_vault", async function () {
+    it("initializes vaults", async function () {
+      await initializeSampleVault(programFacade);
     });
 
-    it("checks that `conditional_token_mint` and `underlying_token_mint` have the same number of decimals", async function () {
+    it("enforces that `conditional_token_mint` and `underlying_token_mint` have the same number of decimals", async function () {
       const [conditionalExpression] =
         await initializeSampleConditionalExpression(programFacade);
 
       const [underlyingTokenMint] = await programFacade.createMint(3);
 
       await programFacade
-        .initializeConditionalVault(conditionalExpression, underlyingTokenMint)
+        .initializeVault(conditionalExpression, underlyingTokenMint)
         .then(
           () =>
             assert.fail(
@@ -167,7 +167,7 @@ describe("meta_dao", async function () {
         );
 
       await programFacade
-        .initializeConditionalVault(
+        .initializeVault(
           conditionalExpression,
           underlyingTokenMint,
           maliciousVaultUnderlyingTokenAccount
@@ -191,7 +191,7 @@ describe("meta_dao", async function () {
         await programFacade.createMint();
 
       await programFacade
-        .initializeConditionalVault(
+        .initializeVault(
           conditionalExpression,
           underlyingTokenMint,
           undefined,
@@ -216,7 +216,7 @@ describe("meta_dao", async function () {
       const [maliciousConditionalTokenMint] = await programFacade.createMint();
 
       await programFacade
-        .initializeConditionalVault(
+        .initializeVault(
           conditionalExpression,
           underlyingTokenMint,
           undefined,
@@ -236,18 +236,18 @@ describe("meta_dao", async function () {
 
   describe("#initialize_deposit_slip", async function () {
     it("initializes deposit slips", async function () {
-      const [conditionalVault] = await initializeSampleConditionalVault(
+      const [vault] = await initializeSampleVault(
         programFacade
       );
       await programFacade.initializeDepositSlip(
-        conditionalVault,
+        vault,
         anchor.web3.Keypair.generate().publicKey
       );
     });
   });
 
   describe("#mint_conditional_tokens", async function () {
-    let conditionalVault: PublicKey;
+    let vault: PublicKey;
     let conditionalTokenMint: PublicKey;
     let vaultUnderlyingTokenAccount: PublicKey;
     let underlyingTokenMint: PublicKey;
@@ -261,12 +261,12 @@ describe("meta_dao", async function () {
 
     before(async function () {
       [
-        conditionalVault,
+        vault,
         conditionalTokenMint,
         vaultUnderlyingTokenAccount,
         underlyingTokenMint,
         underlyingTokenMintAuthority,
-      ] = await initializeSampleConditionalVault(programFacade);
+      ] = await initializeSampleVault(programFacade);
     });
 
     beforeEach(async function () {
@@ -284,7 +284,7 @@ describe("meta_dao", async function () {
       );
 
       depositSlip = await programFacade.initializeDepositSlip(
-        conditionalVault,
+        vault,
         user.publicKey
       );
 
@@ -301,7 +301,7 @@ describe("meta_dao", async function () {
         amount,
         user,
         depositSlip,
-        conditionalVault,
+        vault,
         vaultUnderlyingTokenAccount,
         userUnderlyingTokenAccount,
         conditionalTokenMint,
@@ -319,7 +319,7 @@ describe("meta_dao", async function () {
           amount + 10,
           user,
           depositSlip,
-          conditionalVault,
+          vault,
           vaultUnderlyingTokenAccount,
           userUnderlyingTokenAccount,
           conditionalTokenMint,
@@ -344,7 +344,7 @@ describe("meta_dao", async function () {
           amount,
           user,
           depositSlip,
-          conditionalVault,
+          vault,
           maliciousVaultUnderlyingTokenAccount,
           userUnderlyingTokenAccount,
           conditionalTokenMint,
@@ -377,7 +377,7 @@ describe("meta_dao", async function () {
           amount,
           user,
           depositSlip,
-          conditionalVault,
+          vault,
           vaultUnderlyingTokenAccount,
           nonOwnedUserUnderlyingAccount,
           conditionalTokenMint,
@@ -403,7 +403,7 @@ describe("meta_dao", async function () {
           amount,
           user,
           depositSlip,
-          conditionalVault,
+          vault,
           vaultUnderlyingTokenAccount,
           userUnderlyingTokenAccount,
           conditionalTokenMint,
@@ -415,7 +415,7 @@ describe("meta_dao", async function () {
     it("checks that `user_conditional_token_account` has `conditional_token_mint` as its mint", async function () {
       const [wrongConditionalTokenMint] = await programFacade.createMint(
         undefined,
-        conditionalVault
+        vault
       );
       const wrongMintUserConditionalTokenAccount =
         await programFacade.createTokenAccount(
@@ -433,7 +433,7 @@ describe("meta_dao", async function () {
           amount,
           user,
           depositSlip,
-          conditionalVault,
+          vault,
           vaultUnderlyingTokenAccount,
           userUnderlyingTokenAccount,
           conditionalTokenMint,
@@ -464,7 +464,7 @@ describe("meta_dao", async function () {
           amount,
           user,
           depositSlip,
-          conditionalVault,
+          vault,
           vaultUnderlyingTokenAccount,
           wrongMintUserUnderlyingAccount,
           conditionalTokenMint,
@@ -474,7 +474,7 @@ describe("meta_dao", async function () {
     });
 
     it("checks that `deposit_slip` was created for this conditional vault", async function () {
-      const [secondConditionalVault] = await initializeSampleConditionalVault(
+      const [secondConditionalVault] = await initializeSampleVault(
         programFacade
       );
 
@@ -493,7 +493,7 @@ describe("meta_dao", async function () {
           amount,
           user,
           badDepositSlip,
-          conditionalVault,
+          vault,
           vaultUnderlyingTokenAccount,
           userUnderlyingTokenAccount,
           conditionalTokenMint,
@@ -505,7 +505,7 @@ describe("meta_dao", async function () {
     it("checks that `conditional_token_mint` is the one stored in the conditional vault", async function () {
       const [wrongConditionalTokenMint] = await programFacade.createMint(
         undefined,
-        conditionalVault
+        vault
       );
 
       const wrongMintUserConditionalTokenAccount =
@@ -524,7 +524,7 @@ describe("meta_dao", async function () {
           amount,
           user,
           depositSlip,
-          conditionalVault,
+          vault,
           vaultUnderlyingTokenAccount,
           userUnderlyingTokenAccount,
           wrongConditionalTokenMint,
@@ -535,224 +535,62 @@ describe("meta_dao", async function () {
   });
 
   describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
-    const redeemTest = async (
+    const testRedemption = async (
       passOrFailFlag: boolean,
-      passProposal: boolean,
-      overrideAndLeaveProposalPending?: boolean
+      desiredProposalState: ProposalState,
+      shouldGoThrough: boolean
     ) => {
-      const [
-        conditionalVault,
-        conditionalTokenMint,
-        vaultUnderlyingTokenAccount,
-        underlyingTokenMint,
-        underlyingTokenMintAuthority,
-        conditionalExpression,
-        proposal,
-        memberToAdd,
-      ] = await initializeSampleConditionalVault(programFacade, passOrFailFlag);
-
-      let user = anchor.web3.Keypair.generate();
-      let amount = 1000;
-
-      let userUnderlyingTokenAccount = await programFacade.createTokenAccount(
-        underlyingTokenMint,
-        user.publicKey
-      );
-
-      let userConditionalTokenAccount = await programFacade.createTokenAccount(
-        conditionalTokenMint,
-        user.publicKey
-      );
-
-      let depositSlip = await programFacade.initializeDepositSlip(
-        conditionalVault,
-        user.publicKey
-      );
-
-      await programFacade.mintTo(
-        underlyingTokenMint,
-        userUnderlyingTokenAccount,
-        underlyingTokenMintAuthority,
-        amount
-      );
-
-      await programFacade.mintConditionalTokens(
-        amount,
-        user,
-        depositSlip,
-        conditionalVault,
-        vaultUnderlyingTokenAccount,
-        userUnderlyingTokenAccount,
-        conditionalTokenMint,
-        userConditionalTokenAccount
-      );
-
-      if (typeof overrideAndLeaveProposalPending == "undefined" || overrideAndLeaveProposalPending == false) {
-        if (passProposal) {
-          await executeSampleProposal(proposal, memberToAdd, programFacade);
-        } else {
-          await programFacade.failProposal(proposal);
-        }
-      }
-
-      const shouldGoThrough = passOrFailFlag == passProposal && (typeof overrideAndLeaveProposalPending == "undefined" || overrideAndLeaveProposalPending == false);
-
-      await programFacade.redeemConditionalForUnderlyingTokens(
-        user,
-        userConditionalTokenAccount,
-        userUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        conditionalVault,
-        proposal,
-        conditionalExpression,
-        conditionalTokenMint
-      ).then(() => {
-        if (!shouldGoThrough) {
-          assert.fail("a redemption should have failed but instead suceeded");
-        }
-      }, (e) => {
-        if(shouldGoThrough) {
-          assert.fail(e);
-        } else {
-          assert(
-            e["error"] != undefined,
-            `the program threw for a reason that we didn't expect. error: ${e}`
-          );
-          assert.equal(e.error.errorCode.code, "CantRedeemConditionalTokens");
-        }
-      });
+      await _testRedemption(programFacade, passOrFailFlag, desiredProposalState, RedemptionType.ConditionalToken, shouldGoThrough);
     };
 
     it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has passed", async function () {
-      await redeemTest(true, true);
+      await testRedemption(true, ProposalState.Passed, true);
     });
 
     it("allows users to redeem conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has failed", async function () {
-      await redeemTest(false, false);
+      await testRedemption(false, ProposalState.Failed, true);
     });
 
     it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to true and the proposal has failed", async function () {
-      await redeemTest(true, false);
+      await testRedemption(true, ProposalState.Failed, false);
     });
 
     it("prevents users from redeeming conditional tokens for underlying tokens when `pass_or_fail_flag` is set to false and the proposal has passed", async function () {
-      await redeemTest(false, true);
+      await testRedemption(false, ProposalState.Passed, false);
     });
 
     it("prevents users from redeeming conditional tokens while a proposal is still pending", async function () {
-      await redeemTest(true, true, true);
+      await testRedemption(true, ProposalState.Pending, false);
     });
   });
 
-  describe.only("#redeem_deposit_slip_for_underlying_tokens", async function () {
-    const redeemTest = async (passOrFailFlag: boolean, desiredProposalState: ProposalState) => {
-      const [
-        conditionalVault,
-        conditionalTokenMint,
-        vaultUnderlyingTokenAccount,
-        underlyingTokenMint,
-        underlyingTokenMintAuthority,
-        conditionalExpression,
-        proposal,
-        memberToAdd,
-      ] = await initializeSampleConditionalVault(programFacade, passOrFailFlag);
-
-      let user = anchor.web3.Keypair.generate();
-      let amount = 1000;
-
-      let userUnderlyingTokenAccount = await programFacade.createTokenAccount(
-        underlyingTokenMint,
-        user.publicKey
-      );
-
-      let userConditionalTokenAccount = await programFacade.createTokenAccount(
-        conditionalTokenMint,
-        user.publicKey
-      );
-
-      let depositSlip = await programFacade.initializeDepositSlip(
-        conditionalVault,
-        user.publicKey
-      );
-
-      await programFacade.mintTo(
-        underlyingTokenMint,
-        userUnderlyingTokenAccount,
-        underlyingTokenMintAuthority,
-        amount
-      );
-
-      await programFacade.mintConditionalTokens(
-        amount,
-        user,
-        depositSlip,
-        conditionalVault,
-        vaultUnderlyingTokenAccount,
-        userUnderlyingTokenAccount,
-        conditionalTokenMint,
-        userConditionalTokenAccount
-      );
-
-      if (desiredProposalState == ProposalState.Passed) {
-        await executeSampleProposal(proposal, memberToAdd, programFacade);
-      } else if (desiredProposalState == ProposalState.Failed) {
-        await programFacade.failProposal(proposal);
-      }
-
-      const shouldGoThrough = (desiredProposalState == ProposalState.Passed && !passOrFailFlag) 
-        || (desiredProposalState == ProposalState.Failed && passOrFailFlag);
-
-      await programFacade.redeemDepositSlipForUnderlyingTokens(
-        user,
-        depositSlip,
-        userUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        conditionalVault,
-        proposal,
-        conditionalExpression,
-      ).then(() => {
-        if (!shouldGoThrough) {
-          assert.fail("a redemption should have failed but instead suceeded");
-        }
-      }, (e) => {
-        if(shouldGoThrough) {
-          assert.fail(e);
-        } else {
-          assert(
-            e["error"] != undefined,
-            `the program threw for a reason that we didn't expect. error: ${e}`
-          );
-          assert.equal(e.error.errorCode.code, "CantRedeemDepositSlip");
-        }
-      });
+  describe("#redeem_deposit_slip_for_underlying_tokens", async function () {
+    const testRedemption = async (
+      passOrFailFlag: boolean,
+      desiredProposalState: ProposalState,
+      shouldGoThrough: boolean
+    ) => {
+      await _testRedemption(programFacade, passOrFailFlag, desiredProposalState, RedemptionType.DepositSlip, shouldGoThrough);
     };
 
     it("allows users to redeem deposit slips when `pass_or_fail_flag` is set to true and a proposal fails", async function () {
-      await redeemTest(true, ProposalState.Failed);
+      await testRedemption(true, ProposalState.Failed, true);
     });
 
     it("allows users to redeem deposit slips when `pass_or_fail_flag` is set to false and a proposal passes", async function () {
-      await redeemTest(false, ProposalState.Passed);
+      await testRedemption(false, ProposalState.Passed, true);
     });
 
     it("prevents users from redeeming deposit slips when `pass_or_fail_flag` is set to true and a proposal passes", async function () {
-      await redeemTest(true, ProposalState.Passed);
+      await testRedemption(true, ProposalState.Passed, false);
     });
 
     it("prevents users from redeeming deposit slips when `pass_or_fail_flag` is set to false and a proposal fails", async function () {
-      await redeemTest(false, ProposalState.Failed);
+      await testRedemption(false, ProposalState.Failed, false);
     });
 
     it("prevents users from redeeming deposit slips while the proposal is pending", async function () {
-      await redeemTest(true, ProposalState.Pending);
+      await testRedemption(true, ProposalState.Pending, false);
     });
-  });
-
-  describe("#", async function () {
-    it("", async function () {});
-
-    it("", async function () {});
-
-    it("", async function () {});
   });
 });

@@ -81,13 +81,17 @@ pub struct FailProposal<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(pass_or_fail_flag: bool)]
+#[instruction(pass_or_fail: PassOrFail)]
 pub struct InitializeConditionalExpression<'info> {
     #[account(
         init,
         payer = initializer,
         space = 8 + 32 + 1,
-        seeds = [b"conditional_expression", proposal.key().as_ref(), &[u8::from(pass_or_fail_flag)]],
+        seeds = [
+            b"conditional_expression", 
+            proposal.key().as_ref(),
+            &[pass_or_fail as u8]
+        ],
         bump
     )]
     pub conditional_expression: Account<'info, ConditionalExpression>,
@@ -98,28 +102,32 @@ pub struct InitializeConditionalExpression<'info> {
 }
 
 #[derive(Accounts)]
-pub struct InitializeConditionalVault<'info> {
+pub struct InitializeVault<'info> {
     #[account(
         init,
         payer = initializer,
         space = 8 + (32 * 4) + 1,
-        seeds = [b"conditional_vault", conditional_expression.key().as_ref(), underlying_token_mint.key().as_ref()], // for now, only SPL tokens
+        seeds = [
+            b"vault", 
+            conditional_expression.key().as_ref(),
+            underlying_token_mint.key().as_ref()
+        ],
         bump
     )]
-    pub conditional_vault: Account<'info, ConditionalVault>,
+    pub vault: Account<'info, Vault>,
     pub conditional_expression: Account<'info, ConditionalExpression>,
     /// SPL mint of the underlying token
     pub underlying_token_mint: Account<'info, Mint>,
     /// token account for the vault that matches above mint
     #[account(
-        associated_token::authority = conditional_vault, 
+        associated_token::authority = vault,
         associated_token::mint = underlying_token_mint
     )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     /// SPL mint of the conditional token
     #[account(
-        mint::authority = conditional_vault, 
-        mint::freeze_authority = conditional_vault, 
+        mint::authority = vault,
+        mint::freeze_authority = vault,
         mint::decimals = underlying_token_mint.decimals
     )]
     pub conditional_token_mint: Account<'info, Mint>,
@@ -135,11 +143,11 @@ pub struct InitializeDepositSlip<'info> {
         init,
         payer = initializer,
         space = 8 + 32 + 32 + 8,
-        seeds = [b"deposit_slip", conditional_vault.key().as_ref(), user.key().as_ref()],
+        seeds = [b"deposit_slip", vault.key().as_ref(), user.key().as_ref()],
         bump
     )]
-    pub deposit_slip: Account<'info, VaultDepositSlip>,
-    pub conditional_vault: Account<'info, ConditionalVault>,
+    pub deposit_slip: Account<'info, DepositSlip>,
+    pub vault: Account<'info, Vault>,
     #[account(mut)]
     pub initializer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -150,22 +158,24 @@ pub struct InitializeDepositSlip<'info> {
 pub struct MintConditionalTokens<'info> {
     pub user: Signer<'info>,
     #[account(
-        mut, 
+        mut,
         has_one = user,
-        has_one = conditional_vault
+        has_one = vault
     )]
-    pub deposit_slip: Account<'info, VaultDepositSlip>,
-    #[account(has_one = conditional_token_mint @ ErrorCode::InvalidConditionalTokenMint)]
-    pub conditional_vault: Account<'info, ConditionalVault>,
+    pub deposit_slip: Account<'info, DepositSlip>,
+    #[account(
+        has_one = conditional_token_mint @ ErrorCode::InvalidConditionalTokenMint,
+    )]
+    pub vault: Account<'info, Vault>,
     #[account(
         mut,
-        constraint = vault_underlying_token_account.key() == conditional_vault.underlying_token_account @  ErrorCode::InvalidVaultUnderlyingTokenAccount
+        constraint = vault_underlying_token_account.key() == vault.underlying_token_account @  ErrorCode::InvalidVaultUnderlyingTokenAccount
     )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     #[account(
         mut,
         token::authority = user,
-        token::mint = conditional_vault.underlying_token_mint,
+        token::mint = vault.underlying_token_mint,
         constraint = user_underlying_token_account.amount >= amount @ ErrorCode::InsufficientUnderlyingTokens
     )]
     pub user_underlying_token_account: Account<'info, TokenAccount>,
@@ -204,7 +214,7 @@ impl<'info> MintConditionalTokens<'info> {
                 .user_conditional_token_account
                 .to_account_info()
                 .clone(),
-            authority: self.conditional_vault.to_account_info().clone(),
+            authority: self.vault.to_account_info().clone(),
         };
         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
     }
@@ -216,22 +226,22 @@ pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
     #[account(
         mut,
         token::authority = user,
-        token::mint = conditional_vault.conditional_token_mint
+        token::mint = vault.conditional_token_mint
     )]
     pub user_conditional_token_account: Account<'info, TokenAccount>,
     #[account(
         mut,
         token::authority = user,
-        token::mint = conditional_vault.underlying_token_mint
+        token::mint = vault.underlying_token_mint
     )]
     pub user_underlying_token_account: Account<'info, TokenAccount>,
     #[account(
         mut,
-        constraint = vault_underlying_token_account.key() == conditional_vault.underlying_token_account @ ErrorCode::InvalidVaultUnderlyingTokenAccount
+        constraint = vault_underlying_token_account.key() == vault.underlying_token_account @ ErrorCode::InvalidVaultUnderlyingTokenAccount
     )]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     #[account(has_one = conditional_expression)]
-    pub conditional_vault: Account<'info, ConditionalVault>,
+    pub vault: Account<'info, Vault>,
     pub proposal: Account<'info, Proposal>,
     pub token_program: Program<'info, Token>,
     #[account(has_one = proposal)]
@@ -264,7 +274,7 @@ impl<'info> RedeemConditionalTokensForUnderlyingTokens<'info> {
                 .to_account_info()
                 .clone(),
             to: self.user_underlying_token_account.to_account_info().clone(),
-            authority: self.conditional_vault.to_account_info().clone(),
+            authority: self.vault.to_account_info().clone(),
         };
         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
     }
@@ -274,12 +284,12 @@ impl<'info> RedeemConditionalTokensForUnderlyingTokens<'info> {
 pub struct RedeemDepositSlipForUnderlyingTokens<'info> {
     pub user: Signer<'info>,
     #[account(mut)]
-    pub user_deposit_slip: Account<'info, VaultDepositSlip>,
+    pub user_deposit_slip: Account<'info, DepositSlip>,
     #[account(mut)]
     pub user_underlying_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
-    pub conditional_vault: Account<'info, ConditionalVault>,
+    pub vault: Account<'info, Vault>,
     pub proposal: Account<'info, Proposal>,
     pub token_program: Program<'info, Token>,
     pub conditional_expression: Account<'info, ConditionalExpression>,
@@ -295,7 +305,7 @@ impl<'info> RedeemDepositSlipForUnderlyingTokens<'info> {
                 .to_account_info()
                 .clone(),
             to: self.user_underlying_token_account.to_account_info().clone(),
-            authority: self.conditional_vault.to_account_info().clone(),
+            authority: self.vault.to_account_info().clone(),
         };
         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
     }

@@ -71,6 +71,22 @@ export class ProgramFacade {
     );
   }
 
+  async transfer(
+    from: PublicKey,
+    to: PublicKey,
+    amount: number,
+    authority: Signer
+  ) {
+    await token.transfer(
+      this.connection,
+      this.payer,
+      from,
+      to,
+      authority,
+      amount
+    );
+  }
+
   async initializeMember(name: string): Promise<PublicKey> {
     const [member] = this.generator.generateMemberPDAAddress(name);
     const [treasury] = this.generator.generateTreasuryPDAAddress(member);
@@ -162,7 +178,7 @@ export class ProgramFacade {
       proposalKeypair.publicKey
     );
 
-    assert.exists(storedProposal.state.pending);
+    assert.exists(storedProposal.status.pending);
     assert.equal(storedProposal.instructions.length, instructions.length);
 
     for (let i = 0; i < instructions.length; i++) {
@@ -191,8 +207,8 @@ export class ProgramFacade {
 
     const storedProposal = await this.program.account.proposal.fetch(proposal);
 
-    assert.notExists(storedProposal.state.pending);
-    assert.exists(storedProposal.state.passed);
+    assert.notExists(storedProposal.status.pending);
+    assert.exists(storedProposal.status.passed);
   }
 
   async initializeConditionalExpression(
@@ -204,9 +220,11 @@ export class ProgramFacade {
         proposal,
         redeemableOnPass
       );
+    
+    const passOrFail = redeemableOnPass ? { "pass": {} } : { "fail": {} };
 
     await this.program.methods
-      .initializeConditionalExpression(redeemableOnPass)
+      .initializeConditionalExpression(passOrFail)
       .accounts({
         conditionalExpression,
         initializer: this.payer.publicKey,
@@ -221,31 +239,28 @@ export class ProgramFacade {
       );
 
     assert.ok(storedConditionalExpression.proposal.equals(proposal));
-    assert.equal(storedConditionalExpression.passOrFailFlag, redeemableOnPass);
+    assert.deepEqual(storedConditionalExpression.passOrFail, passOrFail);
 
     return conditionalExpression;
   }
 
-  async initializeConditionalVault(
+  async initializeVault(
     conditionalExpression: PublicKey,
     underlyingTokenMint: PublicKey,
     _vaultUnderlyingTokenAccount?: PublicKey,
     _vaultUnderlyingTokenAccountMint?: PublicKey,
     _conditionalTokenMint?: PublicKey
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
-    const [conditionalVault] =
-      this.generator.generateConditionalVaultPDAAddress(
-        conditionalExpression,
-        underlyingTokenMint
-      );
+    const [vault] =
+      this.generator.generateVaultPDAAddress(conditionalExpression, underlyingTokenMint);
 
     const conditionalTokenMint =
       typeof _conditionalTokenMint == "undefined"
         ? await token.createMint(
             this.connection,
             this.payer,
-            conditionalVault, // mint authority
-            conditionalVault,
+            vault, // mint authority
+            vault,
             2
           )
         : _conditionalTokenMint;
@@ -259,16 +274,16 @@ export class ProgramFacade {
               typeof _vaultUnderlyingTokenAccountMint == "undefined"
                 ? underlyingTokenMint
                 : _vaultUnderlyingTokenAccountMint,
-              conditionalVault,
+              vault,
               true
             )
           ).address
         : _vaultUnderlyingTokenAccount;
 
     await this.program.methods
-      .initializeConditionalVault()
+      .initializeVault()
       .accounts({
-        conditionalVault,
+        vault,
         conditionalExpression,
         underlyingTokenMint,
         conditionalTokenMint,
@@ -278,33 +293,33 @@ export class ProgramFacade {
       })
       .rpc();
 
-    const storedConditionalVault =
-      await this.program.account.conditionalVault.fetch(conditionalVault);
+    const storedVault =
+      await this.program.account.vault.fetch(vault);
 
     assert.ok(
-      storedConditionalVault.conditionalExpression.equals(conditionalExpression)
+      storedVault.conditionalExpression.equals(conditionalExpression)
     );
     assert.ok(
-      storedConditionalVault.underlyingTokenAccount.equals(
+      storedVault.underlyingTokenAccount.equals(
         vaultUnderlyingTokenAccount
       )
     );
     assert.ok(
-      storedConditionalVault.underlyingTokenMint.equals(underlyingTokenMint)
+      storedVault.underlyingTokenMint.equals(underlyingTokenMint)
     );
     assert.ok(
-      storedConditionalVault.conditionalTokenMint.equals(conditionalTokenMint)
+      storedVault.conditionalTokenMint.equals(conditionalTokenMint)
     );
 
     return [
-      conditionalVault,
+      vault,
       conditionalTokenMint,
       vaultUnderlyingTokenAccount,
     ];
   }
 
   async initializeDepositSlip(
-    conditionalVault: PublicKey,
+    vault: PublicKey,
     _depositor?: PublicKey
   ): Promise<PublicKey> {
     const provider = this.program.provider;
@@ -313,25 +328,25 @@ export class ProgramFacade {
       typeof _depositor == "undefined" ? this.payer.publicKey : _depositor;
 
     const [depositSlip] = this.generator.generateDepositSlipPDAAddress(
-      conditionalVault,
+      vault,
       depositor
     );
 
     await this.program.methods
       .initializeDepositSlip(depositor)
       .accounts({
-        conditionalVault,
+        vault,
         depositSlip,
         initializer: this.payer.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();
 
-    let storedDepositSlip = await this.program.account.vaultDepositSlip.fetch(
+    let storedDepositSlip = await this.program.account.depositSlip.fetch(
       depositSlip
     );
 
-    assert.ok(storedDepositSlip.conditionalVault.equals(conditionalVault));
+    assert.ok(storedDepositSlip.vault.equals(vault));
     assert.ok(storedDepositSlip.user.equals(depositor));
     assert.ok(storedDepositSlip.depositedAmount.eq(new anchor.BN(0)));
 
@@ -342,13 +357,13 @@ export class ProgramFacade {
     amount: number,
     user: Signer,
     depositSlip: PublicKey,
-    conditionalVault: PublicKey,
+    vault: PublicKey,
     vaultUnderlyingTokenAccount: PublicKey,
     userUnderlyingTokenAccount: PublicKey,
     conditionalTokenMint: PublicKey,
     userConditionalTokenAccount: PublicKey
   ) {
-    const depositSlipBefore = await this.program.account.vaultDepositSlip.fetch(
+    const depositSlipBefore = await this.program.account.depositSlip.fetch(
       depositSlip
     );
     const vaultUnderlyingTokenAccountBefore = await token.getAccount(
@@ -370,7 +385,7 @@ export class ProgramFacade {
       .accounts({
         user: user.publicKey,
         depositSlip,
-        conditionalVault,
+        vault,
         vaultUnderlyingTokenAccount,
         userUnderlyingTokenAccount,
         conditionalTokenMint,
@@ -380,7 +395,7 @@ export class ProgramFacade {
       .signers([user])
       .rpc();
 
-    const depositSlipAfter = await this.program.account.vaultDepositSlip.fetch(
+    const depositSlipAfter = await this.program.account.depositSlip.fetch(
       depositSlip
     );
     const vaultUnderlyingTokenAccountAfter = await token.getAccount(
@@ -420,7 +435,7 @@ export class ProgramFacade {
     userConditionalTokenAccount: PublicKey,
     userUnderlyingTokenAccount: PublicKey,
     vaultUnderlyingTokenAccount: PublicKey,
-    conditionalVault: PublicKey,
+    vault: PublicKey,
     proposal: PublicKey,
     conditionalExpression: PublicKey,
     conditionalTokenMint: PublicKey
@@ -445,7 +460,7 @@ export class ProgramFacade {
         userConditionalTokenAccount,
         userUnderlyingTokenAccount,
         vaultUnderlyingTokenAccount,
-        conditionalVault,
+        vault,
         proposal,
         tokenProgram: token.TOKEN_PROGRAM_ID,
         conditionalExpression,
@@ -485,9 +500,9 @@ export class ProgramFacade {
     userDepositSlip: PublicKey,
     userUnderlyingTokenAccount: PublicKey,
     vaultUnderlyingTokenAccount: PublicKey,
-    conditionalVault: PublicKey,
+    vault: PublicKey,
     proposal: PublicKey,
-    conditionalExpression: PublicKey,
+    conditionalExpression: PublicKey
   ) {
     // const vaultUnderlyingTokenAccountBefore = await token.getAccount(
     //   this.connection,
@@ -509,7 +524,7 @@ export class ProgramFacade {
         userDepositSlip,
         userUnderlyingTokenAccount,
         vaultUnderlyingTokenAccount,
-        conditionalVault,
+        vault,
         proposal,
         tokenProgram: token.TOKEN_PROGRAM_ID,
         conditionalExpression,
@@ -542,6 +557,7 @@ export class ProgramFacade {
     // );
     // assert.equal(userConditionalTokenAccountAfter.amount, BigInt(0));
   }
+
   async failProposal(proposal: PublicKey) {
     await this.program.methods.failProposal().accounts({ proposal }).rpc();
   }
