@@ -41,10 +41,17 @@ pub struct InitializeMember<'info> {
     )]
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub treasury: UncheckedAccount<'info>,
-    // TODO: check this mint
+    #[account(
+        init,
+        payer = initializer,
+        mint::authority = member,
+        mint::freeze_authority = member,
+        mint::decimals = 9
+    )]
     pub token_mint: Account<'info, Mint>,
     #[account(mut)]
     pub initializer: Signer<'info>,
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 

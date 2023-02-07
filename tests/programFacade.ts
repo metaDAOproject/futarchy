@@ -91,29 +91,23 @@ export class ProgramFacade {
     const [member] = this.generator.generateMemberPDAAddress(name);
     const [treasury] = this.generator.generateTreasuryPDAAddress(member);
 
-    const tokenMint = await token.createMint(
-      this.connection,
-      this.payer,
-      treasury,
-      null,
-      2
-    );
+    const tokenMint = anchor.web3.Keypair.generate();
 
     await this.program.methods
       .initializeMember(name)
       .accounts({
         member,
         treasury,
-        tokenMint,
+        tokenMint: tokenMint.publicKey,
         initializer: this.payer.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
       })
+      .signers([tokenMint])
       .rpc();
 
     const storedMember = await this.program.account.member.fetch(member);
 
     assert.equal(storedMember.name, name);
-    assert.ok(storedMember.tokenMint.equals(tokenMint));
+    assert.ok(storedMember.tokenMint.equals(tokenMint.publicKey));
 
     return member;
   }
