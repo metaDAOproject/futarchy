@@ -1,12 +1,12 @@
 [package]
-name = "conditional-vault"
+name = "meta-dao"
 version = "0.1.0"
 description = "Allows users to mint and burn conditional tokens that are tied to improvement proposals"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "conditional_vault"
+name = "meta_dao"
 
 [features]
 no-entrypoint = []
@@ -16,5 +16,5 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.25.0"
-anchor-spl = "0.25.0"
+anchor-lang = "0.26.0"
+anchor-spl = "0.26.0"
