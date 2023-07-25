@@ -11,7 +11,7 @@ import {
   Signer,
   ProposalState,
   RedemptionType,
-} from "./metaDAO";
+} from "./autocrat";
 
 export const expectError = (
   expectedErrorCode: string,

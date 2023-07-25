@@ -14,10 +14,10 @@ import {
   testRedemption as _testRedemption,
 } from "./testUtils";
 
-import { MetaDao as MetaDAO } from "../target/types/meta_dao";
+import { Autocrat } from "../target/types/autocrat";
 import { ProgramFacade } from "./programFacade";
 
-export type Program = anchor.Program<MetaDAO>;
+export type Program = anchor.Program<Autocrat>;
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 
@@ -32,11 +32,11 @@ export enum RedemptionType {
   DepositSlip,
 }
 
-describe("meta_dao", async function () {
+describe("autocrat", async function () {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.MetaDao as Program;
+  const program = anchor.workspace.Autocrat as Program;
 
   let programFacade: ProgramFacade;
   let metaDAO: PublicKey;

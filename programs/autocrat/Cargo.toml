@@ -1,12 +1,12 @@
 [package]
-name = "meta-dao"
+name = "autocrat"
 version = "0.1.0"
 description = "Allows users to mint and burn conditional tokens that are tied to improvement proposals"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "meta_dao"
+name = "autocrat"
 
 [features]
 no-entrypoint = []
