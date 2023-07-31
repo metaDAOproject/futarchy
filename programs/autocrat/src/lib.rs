@@ -66,6 +66,9 @@ pub mod autocrat {
         let meta_dao = &ctx.accounts.meta_dao;
 
         for instruction in &instructions {
+            // TODO: get rid of this branching and convert it all into just
+            // instruction.signer.pubkey == meta_dao.key() ||
+            // meta_dao.members.contains(&instruction.signer.pubkey)
             match instruction.signer.kind {
                 ProposalSignerKind::MetaDAO => require!(
                     instruction.signer.pubkey == meta_dao.key(),
@@ -83,6 +86,15 @@ pub mod autocrat {
         proposal.status = ProposalStatus::Pending;
         proposal.instructions = instructions;
         proposal.accounts = accts;
+
+        // somehow, a conditional vault needs to be created *before* or during
+        // this instruction. A conditional vault should always be created in a
+        // proposal anyway, so it kinda makes sense to combine them. Flow would
+        // look like:
+        // - above sanitization
+        // - create vault
+
+        // create a token
 
         Ok(())
     }

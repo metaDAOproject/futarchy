@@ -1,4 +1,5 @@
 import * as anchor from "@project-serum/anchor";
+import clobIDL from "./clob.json";
 
 import { expect, assert } from "chai";
 
@@ -36,18 +37,19 @@ describe("autocrat", async function () {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.Autocrat as Program;
+  const autocrat = anchor.workspace.Autocrat as Program;
+  const clob = new anchor.Program(clobIDL, "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD");
 
-  let programFacade: ProgramFacade;
+  let autocratFacade: ProgramFacade;
   let metaDAO: PublicKey;
   before(async function () {
-    programFacade = new ProgramFacade(program);
-    metaDAO = await programFacade.getOrCreateMetaDAO();
+    autocratFacade = new ProgramFacade(autocrat);
+    metaDAO = await autocratFacade.getOrCreateMetaDAO();
   });
 
   describe("#initialize_member", async function () {
     it("initializes members", async function () {
-      await programFacade.initializeMember(randomMemberName());
+      await autocratFacade.initializeMember(randomMemberName());
     });
   });
 
@@ -59,23 +61,23 @@ describe("autocrat", async function () {
 
   describe("#initialize_proposal", async function () {
     it("initializes proposals", async function () {
-      await initializeSampleProposal(programFacade);
+      await initializeSampleProposal(autocratFacade);
     });
 
     it("rejects proposals that have non-members as signers", async function () {
       const [proposalAccounts, proposalInstructions] =
         sampleProposalAccountsAndInstructions(
-          program,
+          autocrat,
           metaDAO,
-          await programFacade.initializeMember(randomMemberName())
+          await autocratFacade.initializeMember(randomMemberName())
         );
 
       proposalInstructions[0]["signer"] = {
         kind: { member: {} },
-        pubkey: await programFacade.initializeMember(randomMemberName()),
+        pubkey: await autocratFacade.initializeMember(randomMemberName()),
         pdaBump: 200,
       };
-      await programFacade
+      await autocratFacade
         .initializeProposal(metaDAO, proposalInstructions, proposalAccounts)
         .then(
           () =>
@@ -89,17 +91,17 @@ describe("autocrat", async function () {
     it("rejects proposals that mis-configure Meta-DAO signer objects", async function () {
       const [proposalAccounts, proposalInstructions] =
         sampleProposalAccountsAndInstructions(
-          program,
+          autocrat,
           metaDAO,
-          await programFacade.initializeMember(randomMemberName())
+          await autocratFacade.initializeMember(randomMemberName())
         );
 
       proposalInstructions[0]["signer"] = {
         kind: { metaDao: {} },
-        pubkey: await programFacade.initializeMember(randomMemberName()),
+        pubkey: await autocratFacade.initializeMember(randomMemberName()),
         pdaBump: 255,
       };
-      await programFacade
+      await autocratFacade
         .initializeProposal(metaDAO, proposalInstructions, proposalAccounts)
         .then(
           () =>
@@ -114,32 +116,32 @@ describe("autocrat", async function () {
   describe("#execute_proposal", async function () {
     it("executes proposals", async function () {
       const [proposal, memberToAdd] = await initializeSampleProposal(
-        programFacade
+        autocratFacade
       );
 
-      await executeSampleProposal(proposal, memberToAdd, programFacade);
+      await executeSampleProposal(proposal, memberToAdd, autocratFacade);
     });
   });
 
   describe("#initialize_conditional_expression", async function () {
     it("initializes conditional expressions", async function () {
-      const [proposal] = await initializeSampleProposal(programFacade);
+      const [proposal] = await initializeSampleProposal(autocratFacade);
 
-      await programFacade.initializeConditionalExpression(proposal, true);
-      await programFacade.initializeConditionalExpression(proposal, false);
+      await autocratFacade.initializeConditionalExpression(proposal, true);
+      await autocratFacade.initializeConditionalExpression(proposal, false);
     });
   });
 
   describe("#initialize_vault", async function () {
     it("initializes vaults", async function () {
-      await initializeSampleVault(programFacade);
+      await initializeSampleVault(autocratFacade);
     });
   });
 
   describe("#initialize_deposit_slip", async function () {
     it("initializes deposit slips", async function () {
-      const [vault] = await initializeSampleVault(programFacade);
-      await programFacade.initializeDepositSlip(
+      const [vault] = await initializeSampleVault(autocratFacade);
+      await autocratFacade.initializeDepositSlip(
         vault,
         anchor.web3.Keypair.generate().publicKey
       );
@@ -166,29 +168,29 @@ describe("autocrat", async function () {
         vaultUnderlyingTokenAccount,
         underlyingTokenMint,
         underlyingTokenMintAuthority,
-      ] = await initializeSampleVault(programFacade);
+      ] = await initializeSampleVault(autocratFacade);
     });
 
     beforeEach(async function () {
       user = anchor.web3.Keypair.generate();
       amount = 1000;
 
-      userUnderlyingTokenAccount = await programFacade.createTokenAccount(
+      userUnderlyingTokenAccount = await autocratFacade.createTokenAccount(
         underlyingTokenMint,
         user.publicKey
       );
 
-      userConditionalTokenAccount = await programFacade.createTokenAccount(
+      userConditionalTokenAccount = await autocratFacade.createTokenAccount(
         conditionalTokenMint,
         user.publicKey
       );
 
-      depositSlip = await programFacade.initializeDepositSlip(
+      depositSlip = await autocratFacade.initializeDepositSlip(
         vault,
         user.publicKey
       );
 
-      await programFacade.mintTo(
+      await autocratFacade.mintTo(
         underlyingTokenMint,
         userUnderlyingTokenAccount,
         underlyingTokenMintAuthority,
@@ -197,7 +199,7 @@ describe("autocrat", async function () {
     });
 
     it("mints conditional tokens", async function () {
-      await programFacade.mintConditionalTokens(
+      await autocratFacade.mintConditionalTokens(
         amount,
         user,
         depositSlip,
@@ -214,7 +216,7 @@ describe("autocrat", async function () {
         "InsufficientUnderlyingTokens",
         "mint suceeded despite user not having enough underlying tokens"
       );
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount + 10,
           user,
@@ -230,7 +232,7 @@ describe("autocrat", async function () {
 
     it("checks that `vault_underlying_token_account` and `conditional_vault` match up", async function () {
       const maliciousVaultUnderlyingTokenAccount =
-        await programFacade.createTokenAccount(
+        await autocratFacade.createTokenAccount(
           underlyingTokenMint,
           anchor.web3.Keypair.generate().publicKey
         );
@@ -239,7 +241,7 @@ describe("autocrat", async function () {
         "InvalidVaultUnderlyingTokenAccount",
         "was able to mint conditional tokens while supplying an invalid vault underlying account"
       );
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount,
           user,
@@ -255,12 +257,12 @@ describe("autocrat", async function () {
 
     it("checks that `user_underlying_token_account` is owned by the user", async function () {
       const nonOwnedUserUnderlyingAccount =
-        await programFacade.createTokenAccount(
+        await autocratFacade.createTokenAccount(
           underlyingTokenMint,
           anchor.web3.Keypair.generate().publicKey
         );
 
-      await programFacade.mintTo(
+      await autocratFacade.mintTo(
         underlyingTokenMint,
         nonOwnedUserUnderlyingAccount,
         underlyingTokenMintAuthority,
@@ -272,7 +274,7 @@ describe("autocrat", async function () {
         "mint suceeded despite `user_underlying_token_account` not being owned by the user"
       );
 
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount,
           user,
@@ -288,7 +290,7 @@ describe("autocrat", async function () {
 
     it("checks that `user_conditional_token_account` is owned by the user", async function () {
       const nonOwnedUserConditionalAccount =
-        await programFacade.createTokenAccount(
+        await autocratFacade.createTokenAccount(
           conditionalTokenMint,
           anchor.web3.Keypair.generate().publicKey
         );
@@ -298,7 +300,7 @@ describe("autocrat", async function () {
         "mint suceeded despite `user_conditional_token_account` not being owned by the user"
       );
 
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount,
           user,
@@ -313,12 +315,12 @@ describe("autocrat", async function () {
     });
 
     it("checks that `user_conditional_token_account` has `conditional_token_mint` as its mint", async function () {
-      const [wrongConditionalTokenMint] = await programFacade.createMint(
+      const [wrongConditionalTokenMint] = await autocratFacade.createMint(
         undefined,
         vault
       );
       const wrongMintUserConditionalTokenAccount =
-        await programFacade.createTokenAccount(
+        await autocratFacade.createTokenAccount(
           wrongConditionalTokenMint,
           user.publicKey
         );
@@ -328,7 +330,7 @@ describe("autocrat", async function () {
         "mint suceeded despite `user_conditional_token_account` having a wrong mint"
       );
 
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount,
           user,
@@ -343,11 +345,11 @@ describe("autocrat", async function () {
     });
 
     it("checks that `user_underlying_token_account` has the correct mint", async function () {
-      const [randomMint, mintAuthority] = await programFacade.createMint();
+      const [randomMint, mintAuthority] = await autocratFacade.createMint();
       const wrongMintUserUnderlyingAccount =
-        await programFacade.createTokenAccount(randomMint, user.publicKey);
+        await autocratFacade.createTokenAccount(randomMint, user.publicKey);
 
-      await programFacade.mintTo(
+      await autocratFacade.mintTo(
         randomMint,
         wrongMintUserUnderlyingAccount,
         mintAuthority,
@@ -359,7 +361,7 @@ describe("autocrat", async function () {
         "mint suceeded despite `user_underlying_token_account` having the wrong mint"
       );
 
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount,
           user,
@@ -375,10 +377,10 @@ describe("autocrat", async function () {
 
     it("checks that `deposit_slip` was created for this conditional vault", async function () {
       const [secondConditionalVault] = await initializeSampleVault(
-        programFacade
+        autocratFacade
       );
 
-      const badDepositSlip = await programFacade.initializeDepositSlip(
+      const badDepositSlip = await autocratFacade.initializeDepositSlip(
         secondConditionalVault,
         user.publicKey
       );
@@ -388,7 +390,7 @@ describe("autocrat", async function () {
         "mint suceeded despite `deposit_slip` having the wrong conditional vault"
       );
 
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount,
           user,
@@ -403,13 +405,13 @@ describe("autocrat", async function () {
     });
 
     it("checks that `conditional_token_mint` is the one stored in the conditional vault", async function () {
-      const [wrongConditionalTokenMint] = await programFacade.createMint(
+      const [wrongConditionalTokenMint] = await autocratFacade.createMint(
         undefined,
         vault
       );
 
       const wrongMintUserConditionalTokenAccount =
-        await programFacade.createTokenAccount(
+        await autocratFacade.createTokenAccount(
           wrongConditionalTokenMint,
           user.publicKey
         );
@@ -419,7 +421,7 @@ describe("autocrat", async function () {
         "mint suceeded despite `conditional_token_mint` not being the one stored in the conditional vault"
       );
 
-      await programFacade
+      await autocratFacade
         .mintConditionalTokens(
           amount,
           user,
@@ -441,7 +443,7 @@ describe("autocrat", async function () {
       shouldGoThrough: boolean
     ) => {
       await _testRedemption(
-        programFacade,
+        autocratFacade,
         passOrFailFlag,
         desiredProposalState,
         RedemptionType.ConditionalToken,
@@ -477,7 +479,7 @@ describe("autocrat", async function () {
       shouldGoThrough: boolean
     ) => {
       await _testRedemption(
-        programFacade,
+        autocratFacade,
         passOrFailFlag,
         desiredProposalState,
         RedemptionType.DepositSlip,

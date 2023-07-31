@@ -3,12 +3,17 @@ seeds = false
 skip-lint = false
 [programs.localnet]
 autocrat = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+conditional_vault = "4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip"
+
+[[test.genesis]]
+address = "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD"
+program = "./dependencies/clob.so"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "Localnet"
 wallet = "/home/user/.config/solana/id.json"
 
 [scripts]
