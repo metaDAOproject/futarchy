@@ -67,35 +67,6 @@ pub mod conditional_vault {
 
 		Ok(())
 	}
-	// impl<'info> MintConditionalTokens<'info> {
-	//     pub fn into_transfer_underlying_tokens_to_vault_context(
-	//         &self,
-	//     ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-	//         let cpi_accounts = Transfer {
-	//             from: self.user_underlying_token_account.to_account_info().clone(),
-	//             to: self
-	//                 .vault_underlying_token_account
-	//                 .to_account_info()
-	//                 .clone(),
-	//             authority: self.user.to_account_info().clone(),
-	//         };
-	//         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
-	//     }
-
-	//     pub fn into_mint_conditional_tokens_to_user_context(
-	//         &self,
-	//     ) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
-	//         let cpi_accounts = MintTo {
-	//             mint: self.conditional_token_mint.to_account_info().clone(),
-	//             to: self
-	//                 .user_conditional_token_account
-	//                 .to_account_info()
-	//                 .clone(),
-	//             authority: self.vault.to_account_info().clone(),
-	//         };
-	//         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
-	//     }
-	// }
 
 	pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
 		let accs = &ctx.accounts;
@@ -108,15 +79,6 @@ pub mod conditional_vault {
 			&[vault.pda_bump],
 		];
 		let signer = &[&seeds[..]];
-		//         let cpi_accounts = Transfer {
-		//             from: self.user_underlying_token_account.to_account_info().clone(),
-		//             to: self
-		//                 .vault_underlying_token_account
-		//                 .to_account_info()
-		//                 .clone(),
-		//             authority: self.user.to_account_info().clone(),
-		//         };
-		//         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
 
 		token::transfer(
 			CpiContext::new(
@@ -129,12 +91,18 @@ pub mod conditional_vault {
 			),
 			amount,
 		)?;
-		// token::mint_to(
-		//     ctx.accounts
-		//         .into_mint_conditional_tokens_to_user_context()
-		//         .with_signer(signer),
-		//     amount,
-		// )?;
+		token::mint_to(
+            CpiContext::new_with_signer(
+                accs.token_program.to_account_info(),
+                MintTo {
+                    mint: accs.conditional_token_mint.to_account_info(),
+                    to: accs.user_conditional_token_account.to_account_info(),
+                    authority: accs.vault.to_account_info(),
+                },
+                signer
+            ),
+		    amount,
+		)?;
 
 		let deposit_slip = &mut ctx.accounts.deposit_slip;
 
@@ -143,78 +111,87 @@ pub mod conditional_vault {
 		Ok(())
 	}
 
-	// pub fn redeem_conditional_tokens_for_underlying_tokens(
-	//     ctx: Context<RedeemConditionalTokensForUnderlyingTokens>,
-	// ) -> Result<()> {
-	//     let conditional_expression = &ctx.accounts.conditional_expression;
-	//     let proposal_status = ctx.accounts.proposal.status;
+	pub fn redeem_conditional_tokens_for_underlying_tokens(
+	    ctx: Context<RedeemConditionalTokensForUnderlyingTokens>,
+	) -> Result<()> {
+        let accs = &ctx.accounts;
+	    let vault = &accs.vault;
+        // TODO: factor this out to a macro
+	    let seeds = &[
+	        b"conditional_vault",
+	        vault.settlement_authority.as_ref(),
+	        vault.underlying_token_mint.as_ref(),
+	        &[vault.pda_bump],
+	    ];
+	    let signer = &[&seeds[..]];
 
-	//     require!(
-	//         conditional_expression.evaluate(proposal_status)?,
-	//         ErrorCode::CantRedeemConditionalTokens
-	//     );
+	    // no partial redemptions
+	    let amount = accs.user_conditional_token_account.amount;
 
-	//     let vault = &ctx.accounts.vault;
-	//     let seeds = &[
-	//         b"vault",
-	//         vault.conditional_expression.as_ref(),
-	//         vault.underlying_token_mint.as_ref(),
-	//         &[vault.pda_bump],
-	//     ];
-	//     let signer = &[&seeds[..]];
+        token::burn(
+            CpiContext::new(
+                accs.token_program.to_account_info(),
+                Burn {
+                    mint: accs.conditional_token_mint.to_account_info(),
+                    from: accs.user_conditional_token_account.to_account_info(),
+                    authority: accs.authority.to_account_info(),
+                }
+            ),
+            amount
+        )?;
 
-	//     // no partial redemptions
-	//     let amount = ctx.accounts.user_conditional_token_account.amount;
+        token::transfer(
+            CpiContext::new_with_signer(
+                accs.token_program.to_account_info(),
+                Transfer {
+                    from: accs.vault_underlying_token_account.to_account_info(),
+                    to: accs.user_underlying_token_account.to_account_info(),
+                    authority: accs.vault.to_account_info(),
+                },
+                signer
+            ),
+            amount
+        )?;
 
-	//     token::burn(ctx.accounts.into_burn_conditional_tokens_context(), amount)?;
+	    Ok(())
+	}
 
-	//     token::transfer(
-	//         ctx.accounts
-	//             .into_transfer_underlying_tokens_to_user_context()
-	//             .with_signer(signer),
-	//         amount,
-	//     )?;
+	pub fn redeem_deposit_slip_for_underlying_tokens(
+	    ctx: Context<RedeemDepositSlipForUnderlyingTokens>,
+	) -> Result<()> {
+        let deposit_slip = &mut ctx.accounts.user_deposit_slip;
+	    let vault = &ctx.accounts.vault;
+	    let seeds = &[
+	        b"vault",
+	        vault.settlement_authority.as_ref(),
+	        vault.underlying_token_mint.as_ref(),
+	        &[vault.pda_bump],
+	    ];
+	    let signer = &[&seeds[..]];
 
-	//     Ok(())
-	// }
+	    let amount = deposit_slip.deposited_amount;
 
-	// pub fn redeem_deposit_slip_for_underlying_tokens(
-	//     ctx: Context<RedeemDepositSlipForUnderlyingTokens>,
-	// ) -> Result<()> {
-	//     let conditional_expression = &ctx.accounts.conditional_expression;
-	//     let deposit_slip = &mut ctx.accounts.user_deposit_slip;
-	//     let proposal_status = ctx.accounts.proposal.status;
+	    deposit_slip.deposited_amount -= amount;
 
-	//     require!(
-	//         !conditional_expression.evaluate(proposal_status)?,
-	//         ErrorCode::CantRedeemDepositSlip
-	//     );
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    from: ctx.accounts.vault_underlying_token_account.to_account_info(),
+                    to: ctx.accounts.user_underlying_token_account.to_account_info(),
+                    authority: ctx.accounts.vault.to_account_info(),
+                },
+                signer
+            ),
+            amount
+        )?;
 
-	//     let vault = &ctx.accounts.vault;
-	//     let seeds = &[
-	//         b"vault",
-	//         vault.conditional_expression.as_ref(),
-	//         vault.underlying_token_mint.as_ref(),
-	//         &[vault.pda_bump],
-	//     ];
-	//     let signer = &[&seeds[..]];
-
-	//     let amount = deposit_slip.deposited_amount;
-
-	//     deposit_slip.deposited_amount -= amount;
-
-	//     token::transfer(
-	//         ctx.accounts
-	//             .into_transfer_underlying_tokens_to_user_context()
-	//             .with_signer(signer),
-	//         amount,
-	//     )?;
-
-	//     Ok(())
-	// }
+	    Ok(())
+	}
 }
 
 #[derive(Accounts)]
+#[instruction(settlement_authority: Pubkey)]
 pub struct InitializeConditionalVault<'info> {
 	#[account(
         init,
@@ -222,14 +199,12 @@ pub struct InitializeConditionalVault<'info> {
         space = 8 + (32 * 4) + 1,
         seeds = [
             b"conditional_vault", 
-            authority.key().as_ref(),
+            settlement_authority.as_ref(),
             underlying_token_mint.key().as_ref()
         ],
         bump
     )]
 	pub vault: Account<'info, ConditionalVault>,
-	/// CHECK: CNBC 11/Nov/2022 Sam Bankman-Fried steps down, FTX files for bankruptcy
-	pub authority: UncheckedAccount<'info>,
 	pub underlying_token_mint: Account<'info, Mint>,
 	#[account(
         init,
@@ -311,7 +286,7 @@ pub struct MintConditionalTokens<'info> {
 pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
 	#[account(
         has_one = conditional_token_mint @ ErrorCode::InvalidConditionalTokenMint,
-        constraint = vault.status == VaultStatus::Finalized
+        constraint = vault.status == VaultStatus::Finalized @ ErrorCode::CantRedeemConditionalTokens
     )]
 	pub vault: Account<'info, ConditionalVault>,
 	#[account(mut)]
@@ -340,7 +315,7 @@ pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
 #[derive(Accounts)]
 pub struct RedeemDepositSlipForUnderlyingTokens<'info> {
 	#[account(
-        constraint = vault.status == VaultStatus::Reverted
+        constraint = vault.status == VaultStatus::Reverted @ ErrorCode::CantRedeemDepositSlip
     )]
 	pub vault: Account<'info, ConditionalVault>,
 	#[account(
@@ -348,11 +323,13 @@ pub struct RedeemDepositSlipForUnderlyingTokens<'info> {
         constraint = vault_underlying_token_account.key() == vault.underlying_token_account @ ErrorCode::InvalidVaultUnderlyingTokenAccount
     )]
 	pub vault_underlying_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
 	pub authority: Signer<'info>,
 	#[account(
         mut,
         has_one = authority,
-        has_one = vault
+        has_one = vault,
+        close = authority
     )]
 	pub user_deposit_slip: Account<'info, DepositSlip>,
 	#[account(
@@ -366,32 +343,14 @@ pub struct RedeemDepositSlipForUnderlyingTokens<'info> {
 
 #[error_code]
 pub enum ErrorCode {
-	#[msg("Proposal signers need to be either active members or the Meta-DAO.")]
-	InvalidSigner,
-	#[msg("Function can only be called recursively (during execution of a passed proposal)")]
-	UnauthorizedFunctionCall,
-	#[msg("This member is already active and thus cannot be added")]
-	MemberAlreadyActive,
-	#[msg("A signer pubkey should have been set to the Meta-DAO account pubkey but it wasn't")]
-	InvalidMetaDAOSigner,
-	#[msg("Proposals cannot be re-executed")]
-	NoProposalReplay,
-	#[msg("An inactive member (one that is not a part of the Meta-DAO `members` vector) cannot execute proposals")]
-	InactiveMember,
 	#[msg("Insufficient underlying token balance to mint this amount of conditional tokens")]
 	InsufficientUnderlyingTokens,
 	#[msg("This `vault_underlying_token_account` is not this vault's `underlying_token_account`")]
 	InvalidVaultUnderlyingTokenAccount,
 	#[msg("This `conditional_token_mint` is not this vault's `conditional_token_mint`")]
 	InvalidConditionalTokenMint,
-	#[msg("This `conditional_expression` is not the vault's `conditional_expression`")]
-	InvalidConditionalExpression,
-	#[msg("This `proposal` is not the one referenced by this `conditional_expression`")]
-	InvalidProposal,
-	#[msg("Cannot evaluate this conditional expression yet because the proposal is still pending")]
-	ConditionalExpressionNotEvaluatable,
-	#[msg("Conditional expression needs to evaluate to true before conditional tokens can be redeemed for underlying tokens")]
+	#[msg("Vault needs to be settled as finalized before users can redeem conditional tokens for underlying tokens")]
 	CantRedeemConditionalTokens,
-	#[msg("Conditional expression needs to evaluate to false before deposit slips can be redeemed for underlying tokens")]
+	#[msg("Vault needs to be settled as reverted before users can redeem deposit slips for underlying tokens")]
 	CantRedeemDepositSlip,
 }

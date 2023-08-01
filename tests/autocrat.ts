@@ -38,7 +38,10 @@ describe("autocrat", async function () {
   anchor.setProvider(provider);
 
   const autocrat = anchor.workspace.Autocrat as Program;
-  const clob = new anchor.Program(clobIDL, "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD");
+  const clob = new anchor.Program(
+    clobIDL,
+    "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD"
+  );
 
   let autocratFacade: ProgramFacade;
   let metaDAO: PublicKey;
