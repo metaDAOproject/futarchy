@@ -312,8 +312,8 @@ pub struct RedeemDepositSlipForUnderlyingTokens<'info> {
     pub vault_underlying_token_account: Account<'info, TokenAccount>,
     pub user: Signer<'info>,
     #[account(
-        mut, 
-        has_one = user, 
+        mut,
+        has_one = user,
         has_one = vault
     )]
     pub user_deposit_slip: Account<'info, DepositSlip>,
