@@ -82,6 +82,10 @@ pub mod conditional_vault {
 
     pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
+
+        let pre_user_conditional_balance = accs.user_conditional_token_account.amount;
+        let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
+
         let vault = &accs.vault;
 
         let seeds = generate_vault_seeds!(vault);
@@ -111,9 +115,19 @@ pub mod conditional_vault {
             amount,
         )?;
 
+        ctx.accounts.user_conditional_token_account.reload()?;
+        ctx.accounts.vault_underlying_token_account.reload()?;
+
         let deposit_slip = &mut ctx.accounts.deposit_slip;
 
         deposit_slip.deposited_amount += amount;
+
+        let post_user_conditional_balance = ctx.accounts.user_conditional_token_account.amount;
+        let post_vault_underlying_balance = ctx.accounts.vault_underlying_token_account.amount;
+
+        // Only the paranoid survive ;)
+        assert!(post_vault_underlying_balance == pre_vault_underlying_balance + amount);
+        assert!(post_user_conditional_balance == pre_user_conditional_balance + amount);
 
         Ok(())
     }
