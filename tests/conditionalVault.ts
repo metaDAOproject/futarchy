@@ -381,34 +381,93 @@ describe("conditional_vault", async function () {
         payer,
         vault,
         null,
-        10,
+        10
       );
 
-      const wrongMintBobConditionalTokenAccount =
-        await token.createAccount(
-          connection,
-          payer,
-          wrongConditionalTokenMint,
-          bob.publicKey
-        );
+      const wrongMintBobConditionalTokenAccount = await token.createAccount(
+        connection,
+        payer,
+        wrongConditionalTokenMint,
+        bob.publicKey
+      );
 
       const callbacks = expectError(
         "InvalidConditionalTokenMint",
         "mint suceeded despite `conditional_token_mint` not being the one stored in the conditional vault"
       );
 
-      await 
-        mintConditionalTokens(
-          vaultProgram,
-          amount,
-          bob,
-          bobDepositSlip,
+      await mintConditionalTokens(
+        vaultProgram,
+        amount,
+        bob,
+        bobDepositSlip,
+        vault,
+        vaultUnderlyingTokenAccount,
+        bobUnderlyingTokenAccount,
+        wrongConditionalTokenMint,
+        wrongMintBobConditionalTokenAccount
+      ).then(callbacks[0], callbacks[1]);
+    });
+  });
+
+  describe("#settle_conditional_vault", async function () {
+    it("allows vaults to be finalized", async function () {
+      let [vault, _, settlementAuthority] = await generateRandomVault(
+        vaultProgram
+      );
+
+      await vaultProgram.methods
+        .settleConditionalVault({ finalized: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
           vault,
-          vaultUnderlyingTokenAccount,
-          bobUnderlyingTokenAccount,
-          wrongConditionalTokenMint,
-          wrongMintBobConditionalTokenAccount
-        )
+        })
+        .signers([settlementAuthority])
+        .rpc();
+    });
+
+    it("allows vaults to be reverted", async function () {
+      let [vault, _, settlementAuthority] = await generateRandomVault(
+        vaultProgram
+      );
+
+      await vaultProgram.methods
+        .settleConditionalVault({ reverted: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+    });
+
+    it("disallows vaults from being finalized twice", async function () {
+      let [vault, _, settlementAuthority] = await generateRandomVault(
+        vaultProgram
+      );
+
+      await vaultProgram.methods
+        .settleConditionalVault({ finalized: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      const callbacks = expectError(
+        "VaultAlreadySettled",
+        "settle suceeded even though this vault had already been settled"
+      );
+
+      await vaultProgram.methods
+        .settleConditionalVault({ reverted: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc()
         .then(callbacks[0], callbacks[1]);
     });
   });

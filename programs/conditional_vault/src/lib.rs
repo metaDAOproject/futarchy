@@ -67,6 +67,16 @@ pub mod conditional_vault {
         Ok(())
     }
 
+    pub fn settle_conditional_vault(
+        ctx: Context<SettleConditionalVault>,
+        new_status: VaultStatus,
+    ) -> Result<()> {
+        let vault = &mut ctx.accounts.vault;
+        vault.status = new_status;
+
+        Ok(())
+    }
+
     pub fn initialize_deposit_slip(
         ctx: Context<InitializeDepositSlip>,
         authority: Pubkey,
@@ -83,8 +93,10 @@ pub mod conditional_vault {
     pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
 
-        let pre_user_conditional_balance = accs.user_conditional_token_account.amount;
-        let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
+        let pre_user_conditional_balance = 
+            accs.user_conditional_token_account.amount;
+        let pre_vault_underlying_balance = 
+            accs.vault_underlying_token_account.amount;
 
         let vault = &accs.vault;
 
@@ -244,6 +256,17 @@ pub struct InitializeConditionalVault<'info> {
 }
 
 #[derive(Accounts)]
+pub struct SettleConditionalVault<'info> {
+    pub settlement_authority: Signer<'info>,
+    #[account(
+        mut,
+        has_one = settlement_authority,
+        constraint = vault.status == VaultStatus::Active @ ErrorCode::VaultAlreadySettled
+    )]
+    pub vault: Account<'info, ConditionalVault>,
+}
+
+#[derive(Accounts)]
 #[instruction(authority: Pubkey)]
 pub struct InitializeDepositSlip<'info> {
     #[account(
@@ -368,4 +391,6 @@ pub enum ErrorCode {
     CantRedeemConditionalTokens,
     #[msg("Vault needs to be settled as reverted before users can redeem deposit slips for underlying tokens")]
     CantRedeemDepositSlip,
+    #[msg("Once a vault has been settled, its status as either finalized or reverted cannot be changed")]
+    VaultAlreadySettled,
 }
