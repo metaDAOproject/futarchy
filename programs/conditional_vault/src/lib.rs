@@ -50,7 +50,7 @@ pub mod conditional_vault {
 		vault.underlying_token_mint = ctx.accounts.underlying_token_mint.key();
 		vault.underlying_token_account = ctx.accounts.vault_underlying_token_account.key();
 		vault.conditional_token_mint = ctx.accounts.conditional_token_mint.key();
-		vault.pda_bump = *ctx.bumps.get("conditional_vault").unwrap();
+		vault.pda_bump = *ctx.bumps.get("vault").unwrap();
 
 		Ok(())
 	}
@@ -196,10 +196,10 @@ pub struct InitializeConditionalVault<'info> {
 	#[account(
         init,
         payer = payer,
-        space = 8 + (32 * 4) + 1,
+        space = 8 + std::mem::size_of::<VaultStatus>() + (4 * 32) + 1,
         seeds = [
             b"conditional_vault", 
-            settlement_authority.as_ref(),
+            settlement_authority.key().as_ref(),
             underlying_token_mint.key().as_ref()
         ],
         bump
@@ -209,18 +209,18 @@ pub struct InitializeConditionalVault<'info> {
 	#[account(
         init,
         payer = payer,
-        associated_token::authority = vault,
-        associated_token::mint = underlying_token_mint
-    )]
-	pub vault_underlying_token_account: Account<'info, TokenAccount>,
-	#[account(
-        init,
-        payer = payer,
         mint::authority = vault,
         mint::freeze_authority = vault,
         mint::decimals = underlying_token_mint.decimals
     )]
 	pub conditional_token_mint: Account<'info, Mint>,
+	#[account(
+        init,
+        payer = payer,
+        associated_token::authority = vault,
+        associated_token::mint = underlying_token_mint
+    )]
+	pub vault_underlying_token_account: Account<'info, TokenAccount>,
 	#[account(mut)]
 	pub payer: Signer<'info>,
 	pub token_program: Program<'info, Token>,

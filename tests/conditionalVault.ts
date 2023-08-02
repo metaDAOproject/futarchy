@@ -13,9 +13,9 @@ describe("conditional_vault", async function () {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const connection = provider.connection;
-  const payer = provider.wallet.payer;
 
   const vaultProgram = anchor.workspace.ConditionalVault as VaultProgram;
+  const payer = vaultProgram.provider.wallet.payer;
 
   let underlyingMintAuthority,
     settlementAuthority,
@@ -23,7 +23,8 @@ describe("conditional_vault", async function () {
     underlyingTokenMint,
     vault,
     vaultUnderlyingTokenAccount,
-    conditionalTokenMint;
+    conditionalTokenMint,
+    depositSlip;
 
   before(async function () {
     underlyingMintAuthority = anchor.web3.Keypair.generate();
@@ -47,21 +48,19 @@ describe("conditional_vault", async function () {
       vaultProgram.programId
     );
 
-    vaultUnderlyingTokenAccount = (await token.getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
+    vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
       underlyingTokenMint,
       vault,
       true
-    )).address;
-
-    conditionalTokenMint = await token.createMint(
-      connection,
-      payer,
-      vault,
-      vault,
-      8
     );
+
+/*     vaultUnderlyingTokenAccount = (await token.getOrCreateAssociatedTokenAccount( */
+/*       connection, */
+/*       payer, */
+/*       underlyingTokenMint, */
+/*       vault, */
+/*       true */
+/*     )).address; */
   });
 
   /* const underlyingToken */
@@ -74,16 +73,43 @@ describe("conditional_vault", async function () {
 
   describe("#initialize_conditional_vault", async function () {
     it("initializes vaults", async function () {
-      vaultProgram.methods
+      let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
+
+      await vaultProgram.methods
         .initializeConditionalVault(settlementAuthority.publicKey)
         .accounts({
           vault,
           underlyingTokenMint,
           vaultUnderlyingTokenAccount,
-          conditionalTokenMint,
+          conditionalTokenMint: conditionalTokenMintKeypair.publicKey,
           payer: payer.publicKey,
           tokenProgram: token.TOKEN_PROGRAM_ID,
           associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([conditionalTokenMintKeypair])
+        .rpc();
+
+      conditionalTokenMint = conditionalTokenMintKeypair.publicKey;
+    });
+  });
+
+  describe("#initialize_deposit_slip", async function () {
+    it("initializes deposit slips", async function () {
+      [depositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode("deposit_slip"),
+          vault.toBuffer(),
+          alice.publicKey.toBuffer(),
+        ],
+        vaultProgram.programId
+      );
+
+      await vaultProgram.methods.initializeDepositSlip(alice.publicKey)
+        .accounts({
+          depositSlip,
+          vault,
+          payer: payer.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .rpc();
