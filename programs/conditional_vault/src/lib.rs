@@ -148,6 +148,14 @@ pub mod conditional_vault {
         ctx: Context<RedeemConditionalTokensForUnderlyingTokens>,
     ) -> Result<()> {
         let accs = &ctx.accounts;
+
+        let pre_user_conditional_balance = 
+            accs.user_conditional_token_account.amount;
+        let pre_vault_underlying_balance = 
+            accs.vault_underlying_token_account.amount;
+        let pre_mint_supply =
+            accs.conditional_token_mint.supply;
+
         let vault = &accs.vault;
 
         let seeds = generate_vault_seeds!(vault);
@@ -180,6 +188,18 @@ pub mod conditional_vault {
             ),
             amount,
         )?;
+
+        ctx.accounts.user_conditional_token_account.reload()?;
+        ctx.accounts.vault_underlying_token_account.reload()?;
+        ctx.accounts.conditional_token_mint.reload()?;
+
+        let post_user_conditional_balance = ctx.accounts.user_conditional_token_account.amount;
+        let post_vault_underlying_balance = ctx.accounts.vault_underlying_token_account.amount;
+        let post_mint_supply = ctx.accounts.conditional_token_mint.supply;
+
+        assert!(post_vault_underlying_balance == pre_vault_underlying_balance - amount);
+        assert!(post_user_conditional_balance == pre_user_conditional_balance - amount);
+        assert!(post_mint_supply == pre_mint_supply - amount);
 
         Ok(())
     }
