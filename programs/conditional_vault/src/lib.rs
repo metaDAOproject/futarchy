@@ -207,7 +207,7 @@ pub mod conditional_vault {
     pub fn redeem_deposit_slip_for_underlying_tokens(
         ctx: Context<RedeemDepositSlipForUnderlyingTokens>,
     ) -> Result<()> {
-        let deposit_slip = &mut ctx.accounts.user_deposit_slip;
+        let deposit_slip = &mut ctx.accounts.deposit_slip;
         let vault = &ctx.accounts.vault;
 
         let seeds = generate_vault_seeds!(vault);
@@ -215,7 +215,7 @@ pub mod conditional_vault {
 
         let amount = deposit_slip.deposited_amount;
 
-        deposit_slip.deposited_amount -= amount;
+        deposit_slip.deposited_amount = 0;
 
         token::transfer(
             CpiContext::new_with_signer(
@@ -389,7 +389,7 @@ pub struct RedeemDepositSlipForUnderlyingTokens<'info> {
         has_one = vault,
         close = authority
     )]
-    pub user_deposit_slip: Account<'info, DepositSlip>,
+    pub deposit_slip: Account<'info, DepositSlip>,
     #[account(
         mut,
         token::authority = authority,

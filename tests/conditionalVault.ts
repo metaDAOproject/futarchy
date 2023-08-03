@@ -611,25 +611,171 @@ describe("conditional_vault", async function () {
     });
   });
 
-  describe.skip("#redeem_deposit_slip_for_underlying_tokens", async function () {
-    it("allows users to redeem deposit slips when `pass_or_fail_flag` is set to true and a proposal fails", async function () {
-      await testRedemption(true, ProposalState.Failed, true);
+  describe("#redeem_deposit_slip_for_underlying_tokens", async function () {
+    let bob: Signer;
+    let amount = 1000;
+    let bobUnderlyingTokenAccount: PublicKey;
+    let bobConditionalTokenAccount: PublicKey;
+    let bobDepositSlip: PublicKey;
+
+    beforeEach(async function () {
+      [vault, underlyingMintAuthority, settlementAuthority] = await generateRandomVault(vaultProgram);
+      let storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
+      underlyingTokenMint = storedVault.underlyingTokenMint;
+      conditionalTokenMint = storedVault.conditionalTokenMint;
+      vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
+      bob = anchor.web3.Keypair.generate();
+
+      bobUnderlyingTokenAccount = await token.createAccount(
+        connection,
+        payer,
+        underlyingTokenMint,
+        bob.publicKey
+      );
+
+      bobConditionalTokenAccount = await token.createAccount(
+        connection,
+        payer,
+        conditionalTokenMint,
+        bob.publicKey
+      );
+
+      bobDepositSlip = await initializeDepositSlip(vaultProgram, vault, bob);
+
+      await token.mintTo(
+        connection,
+        payer,
+        underlyingTokenMint,
+        bobUnderlyingTokenAccount,
+        underlyingMintAuthority,
+        amount
+      );
+
+      await mintConditionalTokens(
+        vaultProgram,
+        amount,
+        bob,
+        bobDepositSlip,
+        vault,
+        vaultUnderlyingTokenAccount,
+        bobUnderlyingTokenAccount,
+        conditionalTokenMint,
+        bobConditionalTokenAccount
+      );
     });
 
-    it("allows users to redeem deposit slips when `pass_or_fail_flag` is set to false and a proposal passes", async function () {
-      await testRedemption(false, ProposalState.Passed, true);
+    it.skip("allows users to redeem underlying tokens", async function () {
+      await vaultProgram.methods
+        .settleConditionalVault({ reverted: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      await redeemDepositSlip(
+        vaultProgram,
+        bob,
+        bobDepositSlip,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+      );
     });
 
-    it("prevents users from redeeming deposit slips when `pass_or_fail_flag` is set to true and a proposal passes", async function () {
-      await testRedemption(true, ProposalState.Passed, false);
+    it.skip("prevents users from redeeming when the vault is still active", async function () {
+      const callbacks = expectError(
+        "CantRedeemDepositSlip",
+        "redemption suceeded even though this vault was still active",
+      );
+
+      await redeemDepositSlip(
+        vaultProgram,
+        bob,
+        bobDepositSlip,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+      ).then(callbacks[0], callbacks[1]);
     });
 
-    it("prevents users from redeeming deposit slips when `pass_or_fail_flag` is set to false and a proposal fails", async function () {
-      await testRedemption(false, ProposalState.Failed, false);
+    it.skip("prevents users from redeeming if the vault is finalized", async function () {
+      const callbacks = expectError(
+        "CantRedeemDepositSlip",
+        "redemption suceeded even though this vault was finalized",
+      );
+
+      await vaultProgram.methods
+        .settleConditionalVault({ finalized: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      await redeemDepositSlip(
+        vaultProgram,
+        bob,
+        bobDepositSlip,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+      ).then(callbacks[0], callbacks[1]);
     });
 
-    it("prevents users from redeeming deposit slips while the proposal is pending", async function () {
-      await testRedemption(true, ProposalState.Pending, false);
+    it.skip("checks that the deposit slip is owned by the user", async function () {
+      await vaultProgram.methods
+        .settleConditionalVault({ reverted: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      let aliceDepositSlip = await initializeDepositSlip(vaultProgram, vault, alice);
+      const callbacks = expectError(
+        "ConstraintHasOne",
+        "redemption suceeded even though this deposit slip was owned by another user"
+      );
+
+      await redeemDepositSlip(
+        vaultProgram,
+        bob,
+        aliceDepositSlip,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+      ).then(callbacks[0], callbacks[1]);
+    });
+
+    it("checks that the deposit slip is for this vault", async function () {
+      await vaultProgram.methods
+        .settleConditionalVault({ reverted: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+      let [vault2, underlyingMintAuthority2, settlementAuthority2] = await generateRandomVault(vaultProgram);
+
+      let wrongVaultDepositSlip = await initializeDepositSlip(vaultProgram, vault2, bob);
+      const callbacks = expectError(
+        "ConstraintHasOne",
+        "redemption suceeded even though this deposit slip was for another vault"
+      );
+
+      await redeemDepositSlip(
+        vaultProgram,
+        bob,
+        wrongVaultDepositSlip,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+      ).then(callbacks[0], callbacks[1]);
     });
   });
 });
@@ -851,3 +997,61 @@ async function redeemConditionalTokens(
     );
     assert.equal(userConditionalTokenAccountAfter.amount, BigInt(0));
   }
+
+
+  async function redeemDepositSlip(
+  vaultProgram: VaultProgram,
+    user: Signer,
+    depositSlip: PublicKey,
+    userUnderlyingTokenAccount: PublicKey,
+    vaultUnderlyingTokenAccount: PublicKey,
+    vault: PublicKey,
+  ) {
+  const connection = vaultProgram.provider.connection;
+     const vaultUnderlyingTokenAccountBefore = await token.getAccount(
+       connection,
+       vaultUnderlyingTokenAccount
+     );
+     const userUnderlyingTokenAccountBefore = await token.getAccount(
+       connection,
+       userUnderlyingTokenAccount
+     );
+     const depositSlipBefore = await vaultProgram.account.depositSlip.fetch(depositSlip);
+
+    await vaultProgram.methods
+      .redeemDepositSlipForUnderlyingTokens()
+      .accounts({
+        authority: user.publicKey,
+        depositSlip,
+        userUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+      })
+      .signers([user])
+      .rpc();
+
+     const vaultUnderlyingTokenAccountAfter = await token.getAccount(
+       connection,
+       vaultUnderlyingTokenAccount
+     );
+     const userUnderlyingTokenAccountAfter = await token.getAccount(
+       connection,
+       userUnderlyingTokenAccount
+     );
+
+    assert.isNull(await connection.getAccountInfo(depositSlip));
+
+     assert.equal(
+       vaultUnderlyingTokenAccountAfter.amount,
+       vaultUnderlyingTokenAccountBefore.amount -
+         BigInt(depositSlipBefore.depositedAmount)
+     );
+     assert.equal(
+       userUnderlyingTokenAccountAfter.amount,
+       userUnderlyingTokenAccountBefore.amount +
+         BigInt(depositSlipBefore.depositedAmount)
+     );
+  }
+
+
