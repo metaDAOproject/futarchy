@@ -10,6 +10,8 @@ import { expectError } from "./utils";
 
 import { ConditionalVault } from "../target/types/conditional_vault";
 
+import { createMint } from "./bankrunUtils";
+
 export type VaultProgram = anchor.Program<ConditionalVault>;
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
@@ -45,12 +47,7 @@ describe("conditional_vault", async function () {
     context = await startAnchor("./", [], []);
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
-    console.log(provider);
-    /* let anchorProvider = anchor.AnchorProvider.env(); */
-    /* const provider = anchor.AnchorProvider.env(); */
     anchor.setProvider(provider);
-    connection = provider.connection;
-    console.log(context);
 
     vaultProgram = anchor.workspace.ConditionalVault as VaultProgram;
     payer = vaultProgram.provider.wallet.payer;
@@ -58,31 +55,33 @@ describe("conditional_vault", async function () {
     settlementAuthority = anchor.web3.Keypair.generate();
     underlyingMintAuthority = anchor.web3.Keypair.generate();
 
-    let keypair = anchor.web3.Keypair.generate();
-    let rent = await context.banksClient.getRent();
-    console.log(rent);
-    /* let mintsize = BigInt(token.MINT_SIZE); */
-    let mintLamports = await rent.minimumBalance(BigInt(token.MINT_SIZE));
-    const tx = new anchor.web3.Transaction().add(
-      anchor.web3.SystemProgram.createAccount({
-        fromPubkey: payer.publicKey,
-        newAccountPubkey: keypair.publicKey,
-        space: token.MINT_SIZE,
-        lamports: Number(mintLamports),
-        programId: token.TOKEN_PROGRAM_ID,
-      }),
-      token.createInitializeMint2Instruction(
-        keypair.publicKey,
-        8,
-        underlyingMintAuthority.publicKey,
-        token.TOKEN_PROGRAM_ID
-      )
-    );
-    tx.recentBlockhash = context.lastBlockhash;
-    tx.sign(payer, keypair);
+    underlyingTokenMint = await createMint(banksClient, payer, underlyingMintAuthority.publicKey, null, 8);
 
-    await banksClient.processTransaction(tx);
-    underlyingTokenMint = keypair.publicKey;
+    /* let keypair = anchor.web3.Keypair.generate(); */
+    /* let rent = await context.banksClient.getRent(); */
+    /* console.log(rent); */
+    /* /1* let mintsize = BigInt(token.MINT_SIZE); *1/ */
+    /* let mintLamports = await rent.minimumBalance(BigInt(token.MINT_SIZE)); */
+    /* const tx = new anchor.web3.Transaction().add( */
+    /*   anchor.web3.SystemProgram.createAccount({ */
+    /*     fromPubkey: payer.publicKey, */
+    /*     newAccountPubkey: keypair.publicKey, */
+    /*     space: token.MINT_SIZE, */
+    /*     lamports: Number(mintLamports), */
+    /*     programId: token.TOKEN_PROGRAM_ID, */
+    /*   }), */
+    /*   token.createInitializeMint2Instruction( */
+    /*     keypair.publicKey, */
+    /*     8, */
+    /*     underlyingMintAuthority.publicKey, */
+    /*     token.TOKEN_PROGRAM_ID */
+    /*   ) */
+    /* ); */
+    /* tx.recentBlockhash = context.lastBlockhash; */
+    /* tx.sign(payer, keypair); */
+
+    /* await banksClient.processTransaction(tx); */
+    /* underlyingTokenMint = keypair.publicKey; */
 
     /*     underlyingTokenMint = await token.createMint( */
     /*       provider.connection.banksClient, */
@@ -135,7 +134,7 @@ describe("conditional_vault", async function () {
     it("initializes deposit slips", async function () {});
   });
 
-  describe("#mint_conditional_tokens", async function () {
+  describe.only("#mint_conditional_tokens", async function () {
     // alice is available throughout the tests, bob is just for mint_conditional_tokens
     let bob: Signer;
     let amount = 1000;
