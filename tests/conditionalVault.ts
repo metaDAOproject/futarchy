@@ -88,7 +88,7 @@ describe("conditional_vault", async function () {
     });
   });
 
-  describe.skip("#initialize_deposit_slip", async function () {
+  describe("#initialize_deposit_slip", async function () {
     it("initializes deposit slips", async function () {});
   });
 
@@ -146,7 +146,7 @@ describe("conditional_vault", async function () {
       );
     });
 
-    it.skip("mints conditional tokens", async function () {
+    it("mints conditional tokens", async function () {
       await mintConditionalTokens(
         vaultProgram,
         amount,
@@ -160,7 +160,7 @@ describe("conditional_vault", async function () {
       );
     });
 
-    it.skip("blocks mints when the user doesn't have enough underlying tokens", async function () {
+    it("blocks mints when the user doesn't have enough underlying tokens", async function () {
       const callbacks = expectError(
         "InsufficientUnderlyingTokens",
         "mint suceeded despite user not having enough underlying tokens"
@@ -178,7 +178,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that `vault_underlying_token_account` and `conditional_vault` match up", async function () {
+    it("checks that `vault_underlying_token_account` and `conditional_vault` match up", async function () {
       const maliciousVaultUnderlyingTokenAccount = await token.createAccount(
         connection,
         payer,
@@ -203,7 +203,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that `user_underlying_token_account` is owned by the user", async function () {
+    it("checks that `user_underlying_token_account` is owned by the user", async function () {
       const nonOwnedUserUnderlyingAccount = await token.createAccount(
         connection,
         payer,
@@ -238,7 +238,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that `user_conditional_token_account` is owned by the user", async function () {
+    it("checks that `user_conditional_token_account` is owned by the user", async function () {
       const nonOwnedUserConditionalAccount = await token.createAccount(
         connection,
         payer,
@@ -264,7 +264,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that `user_conditional_token_account` has `conditional_token_mint` as its mint", async function () {
+    it("checks that `user_conditional_token_account` has `conditional_token_mint` as its mint", async function () {
       const wrongConditionalTokenMint = await token.createMint(
         connection,
         payer,
@@ -297,7 +297,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that `user_underlying_token_account` has the correct mint", async function () {
+    it("checks that `user_underlying_token_account` has the correct mint", async function () {
       const mintAuthority = anchor.web3.Keypair.generate();
       const randomMint = await token.createMint(
         connection,
@@ -340,7 +340,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that `deposit_slip` was created for this conditional vault", async function () {
+    it("checks that `deposit_slip` was created for this conditional vault", async function () {
       const [secondConditionalVault] = await generateRandomVault(vaultProgram);
 
       const badDepositSlip = await initializeDepositSlip(
@@ -367,7 +367,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that `conditional_token_mint` is the one stored in the conditional vault", async function () {
+    it("checks that `conditional_token_mint` is the one stored in the conditional vault", async function () {
       const wrongConditionalTokenMint = await token.createMint(
         connection,
         payer,
@@ -402,7 +402,7 @@ describe("conditional_vault", async function () {
     });
   });
 
-  describe.skip("#settle_conditional_vault", async function () {
+  describe("#settle_conditional_vault", async function () {
     it("allows vaults to be finalized", async function () {
       let [vault, _, settlementAuthority] = await generateRandomVault(
         vaultProgram
@@ -464,7 +464,7 @@ describe("conditional_vault", async function () {
     });
   });
 
-  describe.skip("#redeem_conditional_tokens_for_underlying_tokens", async function () {
+  describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
     let bob: Signer;
     let amount = 1000;
     let bobUnderlyingTokenAccount: PublicKey;
@@ -664,7 +664,7 @@ describe("conditional_vault", async function () {
       );
     });
 
-    it.skip("allows users to redeem underlying tokens", async function () {
+    it("allows users to redeem underlying tokens", async function () {
       await vaultProgram.methods
         .settleConditionalVault({ reverted: {} })
         .accounts({
@@ -684,7 +684,7 @@ describe("conditional_vault", async function () {
       );
     });
 
-    it.skip("prevents users from redeeming when the vault is still active", async function () {
+    it("prevents users from redeeming when the vault is still active", async function () {
       const callbacks = expectError(
         "CantRedeemDepositSlip",
         "redemption suceeded even though this vault was still active",
@@ -700,7 +700,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("prevents users from redeeming if the vault is finalized", async function () {
+    it("prevents users from redeeming if the vault is finalized", async function () {
       const callbacks = expectError(
         "CantRedeemDepositSlip",
         "redemption suceeded even though this vault was finalized",
@@ -725,7 +725,7 @@ describe("conditional_vault", async function () {
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it.skip("checks that the deposit slip is owned by the user", async function () {
+    it("checks that the deposit slip is owned by the user", async function () {
       await vaultProgram.methods
         .settleConditionalVault({ reverted: {} })
         .accounts({
