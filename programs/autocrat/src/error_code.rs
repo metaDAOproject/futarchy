@@ -14,20 +14,8 @@ pub enum ErrorCode {
     NoProposalReplay,
     #[msg("An inactive member (one that is not a part of the Meta-DAO `members` vector) cannot execute proposals")]
     InactiveMember,
-    #[msg("Insufficient underlying token balance to mint this amount of conditional tokens")]
-    InsufficientUnderlyingTokens,
-    #[msg("This `vault_underlying_token_account` is not this vault's `underlying_token_account`")]
-    InvalidVaultUnderlyingTokenAccount,
-    #[msg("This `conditional_token_mint` is not this vault's `conditional_token_mint`")]
-    InvalidConditionalTokenMint,
-    #[msg("This `conditional_expression` is not the vault's `conditional_expression`")]
-    InvalidConditionalExpression,
     #[msg("This `proposal` is not the one referenced by this `conditional_expression`")]
     InvalidProposal,
     #[msg("Cannot evaluate this conditional expression yet because the proposal is still pending")]
     ConditionalExpressionNotEvaluatable,
-    #[msg("Conditional expression needs to evaluate to true before conditional tokens can be redeemed for underlying tokens")]
-    CantRedeemConditionalTokens,
-    #[msg("Conditional expression needs to evaluate to false before deposit slips can be redeemed for underlying tokens")]
-    CantRedeemDepositSlip,
 }

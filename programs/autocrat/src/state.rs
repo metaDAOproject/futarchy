@@ -108,36 +108,3 @@ pub enum PassOrFail {
     Fail = 0,
 }
 
-#[account]
-pub struct Vault {
-    // The conditional expression that this vault is tied to.
-    // If the expression evaluates to true, conditional token
-    // holders can redeem their tokens 1:1 for underlying tokens.
-    // If it evaluates to false, minters of conditional tokens
-    // can claim their original underlying tokens, irrespective
-    // of whether they still hold those conditional tokens.
-    pub conditional_expression: Pubkey,
-    // SPL mint of the underlying token, which is likely WSOL
-    // or a member token
-    pub underlying_token_mint: Pubkey,
-    // Where the vault holds underlying tokens while a proposal
-    // is still active.
-    pub underlying_token_account: Pubkey,
-    // SPL mint of the conditional token, guaranteed to have
-    // the same number of decimals as the underlying token.
-    pub conditional_token_mint: Pubkey,
-    // Bump used to generate this PDA.
-    pub pda_bump: u8,
-}
-
-#[account]
-pub struct DepositSlip {
-    // The vault in which a user deposited underlying tokens
-    // in the process of minting conditional tokens.
-    pub vault: Pubkey,
-    // The user who deposited and minted.
-    pub user: Pubkey,
-    // The total amount of underlying tokens that a user has
-    // deposited into this vault.
-    pub deposited_amount: u64,
-}
