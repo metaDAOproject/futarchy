@@ -19,7 +19,6 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod autocrat {
-
     use super::*;
 
     pub fn initialize_meta_dao(ctx: Context<InitializeMetaDAO>) -> Result<()> {
@@ -41,18 +40,17 @@ pub mod autocrat {
         Ok(())
     }
 
-    pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
+    pub fn add_member(ctx: Context<Auth>, member: Pubkey) -> Result<()> {
         let meta_dao = &mut ctx.accounts.meta_dao;
-        let new_member = ctx.accounts.member.key();
 
         let member_already_active = meta_dao
             .members
             .iter()
-            .any(|&existing_member| existing_member.key() == new_member);
+            .any(|&existing_member| existing_member.key() == member);
 
         require!(!member_already_active, ErrorCode::MemberAlreadyActive);
 
-        meta_dao.members.push(new_member);
+        meta_dao.members.push(member);
 
         Ok(())
     }

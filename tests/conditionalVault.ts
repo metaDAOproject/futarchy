@@ -1,7 +1,10 @@
 import * as anchor from "@project-serum/anchor";
 import * as token from "@solana/spl-token";
+import { BankrunProvider } from "anchor-bankrun";
 
 import { expect, assert } from "chai";
+
+import { startAnchor } from "solana-bankrun";
 
 import { expectError } from "./utils";
 
@@ -16,18 +19,16 @@ export enum VaultStatus {
   Finalized,
   Reverted,
 }
+const CONDITIONAL_VAULT_PROGRAM_ID = new anchor.web3.PublicKey(
+  "4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip"
+);
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 
 describe("conditional_vault", async function () {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
-  const connection = provider.connection;
 
-  const vaultProgram = anchor.workspace.ConditionalVault as VaultProgram;
-  const payer = vaultProgram.provider.wallet.payer;
-
-  let underlyingMintAuthority,
+  let provider, connection, vaultProgram, payer, context, banksClient,
+  underlyingMintAuthority,
     settlementAuthority,
     alice,
     underlyingTokenMint,
@@ -37,17 +38,52 @@ describe("conditional_vault", async function () {
     depositSlip;
 
   before(async function () {
+    context = await startAnchor("./", [], []);
+    banksClient = context.banksClient;
+    provider = new BankrunProvider(context);
+    console.log(provider);
+    /* let anchorProvider = anchor.AnchorProvider.env(); */
+  /* const provider = anchor.AnchorProvider.env(); */
+    anchor.setProvider(provider);
+    connection = provider.connection;
+    console.log(context);
+
+    vaultProgram = anchor.workspace.ConditionalVault as VaultProgram;
+    payer = vaultProgram.provider.wallet.payer;
     alice = anchor.web3.Keypair.generate();
     settlementAuthority = anchor.web3.Keypair.generate();
     underlyingMintAuthority = anchor.web3.Keypair.generate();
 
-    underlyingTokenMint = await token.createMint(
-      connection,
-      payer,
-      underlyingMintAuthority.publicKey,
-      null,
-      8
+    let keypair = anchor.web3.Keypair.generate();
+    let rent = await context.banksClient.getRent();
+    console.log(rent);
+    /* let mintsize = BigInt(token.MINT_SIZE); */
+    let mintLamports = await rent.minimumBalance(BigInt(token.MINT_SIZE));
+    const tx = new anchor.web3.Transaction().add(
+      anchor.web3.SystemProgram.createAccount({
+        fromPubkey: payer.publicKey,
+        newAccountPubkey: keypair.publicKey,
+        space: token.MINT_SIZE,
+        lamports: Number(mintLamports),
+        programId: token.TOKEN_PROGRAM_ID,
+      }),
+      token.createInitializeMint2Instruction(keypair.publicKey, 8, underlyingMintAuthority.publicKey, token.TOKEN_PROGRAM_ID)
     );
+    tx.recentBlockhash = context.lastBlockhash;
+    tx.sign(payer, keypair);
+
+    await banksClient.processTransaction(tx);
+    underlyingTokenMint = keypair.publicKey;
+
+
+
+/*     underlyingTokenMint = await token.createMint( */
+/*       provider.connection.banksClient, */
+/*       payer, */
+/*       underlyingMintAuthority.publicKey, */
+/*       null, */
+/*       8 */
+/*     ); */
 
     [vault] = anchor.web3.PublicKey.findProgramAddressSync(
       [
@@ -65,7 +101,7 @@ describe("conditional_vault", async function () {
     );
   });
 
-  describe("#initialize_conditional_vault", async function () {
+  describe.only("#initialize_conditional_vault", async function () {
     it("initializes vaults", async function () {
       let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
 

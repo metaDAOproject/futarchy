@@ -47,7 +47,7 @@ pub struct InitializeMember<'info> {
 }
 
 #[derive(Accounts)]
-pub struct AddMember<'info> {
+pub struct Auth<'info> {
     #[account(
         signer @ ErrorCode::UnauthorizedFunctionCall,
         mut,
@@ -55,7 +55,6 @@ pub struct AddMember<'info> {
         bump
     )]
     pub meta_dao: Account<'info, MetaDAO>,
-    pub member: Account<'info, Member>,
 }
 
 #[derive(Accounts)]
