@@ -36,7 +36,6 @@ pub mod autocrat {
         let member = &mut ctx.accounts.member;
 
         member.name = name;
-        member.treasury_pda_bump = *ctx.bumps.get("treasury").unwrap();
         member.token_mint = ctx.accounts.token_mint.key();
 
         Ok(())

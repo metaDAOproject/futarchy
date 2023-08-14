@@ -35,15 +35,6 @@ pub struct InitializeMember<'info> {
     #[account(
         init,
         payer = initializer,
-        space = 8,
-        seeds = [b"treasury", member.key().as_ref()],
-        bump
-    )]
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    pub treasury: UncheckedAccount<'info>,
-    #[account(
-        init,
-        payer = initializer,
         mint::authority = member,
         mint::freeze_authority = member,
         mint::decimals = 9
@@ -88,26 +79,5 @@ pub struct ExecuteProposal<'info> {
 pub struct FailProposal<'info> {
     #[account(mut)]
     pub proposal: Account<'info, Proposal>,
-}
-
-#[derive(Accounts)]
-#[instruction(pass_or_fail: PassOrFail)]
-pub struct InitializeConditionalExpression<'info> {
-    #[account(
-        init,
-        payer = initializer,
-        space = 8 + 32 + 1,
-        seeds = [
-            b"conditional_expression", 
-            proposal.key().as_ref(),
-            &[pass_or_fail as u8]
-        ],
-        bump
-    )]
-    pub conditional_expression: Account<'info, ConditionalExpression>,
-    pub proposal: Account<'info, Proposal>,
-    #[account(mut)]
-    pub initializer: Signer<'info>,
-    pub system_program: Program<'info, System>,
 }
 
