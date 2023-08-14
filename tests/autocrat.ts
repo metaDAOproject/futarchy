@@ -64,7 +64,9 @@ describe("autocrat", async function () {
 
   describe("#initialize_proposal", async function () {
     it("initializes proposals", async function () {
-      const memberToAdd = await autocratFacade.initializeMember(randomMemberName());
+      const memberToAdd = await autocratFacade.initializeMember(
+        randomMemberName()
+      );
       const proposalPid = autocrat.programId;
       const proposalAccounts = [
         {
@@ -73,7 +75,10 @@ describe("autocrat", async function () {
           isWritable: true,
         },
       ];
-      const proposalData = autocrat.coder.instruction.encode("add_member", memberToAdd);
+      const proposalData = autocrat.coder.instruction.encode(
+        "add_member",
+        memberToAdd
+      );
       const proposalInstructions = [
         {
           signer: {
@@ -110,13 +115,11 @@ describe("autocrat", async function () {
       /*     data: proposalData, */
       /*   }, */
       /* ]; */
-
       /*   sampleProposalAccountsAndInstructions( */
       /*     autocrat, */
       /*     metaDAO, */
       /*     await autocratFacade.initializeMember(randomMemberName()) */
       /*   ); */
-
       /* proposalInstructions[0]["signer"] = { */
       /*   kind: { member: {} }, */
       /*   pubkey: await autocratFacade.initializeMember(randomMemberName()), */

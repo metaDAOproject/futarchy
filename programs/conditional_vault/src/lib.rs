@@ -93,10 +93,8 @@ pub mod conditional_vault {
     pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
 
-        let pre_user_conditional_balance = 
-            accs.user_conditional_token_account.amount;
-        let pre_vault_underlying_balance = 
-            accs.vault_underlying_token_account.amount;
+        let pre_user_conditional_balance = accs.user_conditional_token_account.amount;
+        let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
 
         let vault = &accs.vault;
 
@@ -149,12 +147,9 @@ pub mod conditional_vault {
     ) -> Result<()> {
         let accs = &ctx.accounts;
 
-        let pre_user_conditional_balance = 
-            accs.user_conditional_token_account.amount;
-        let pre_vault_underlying_balance = 
-            accs.vault_underlying_token_account.amount;
-        let pre_mint_supply =
-            accs.conditional_token_mint.supply;
+        let pre_user_conditional_balance = accs.user_conditional_token_account.amount;
+        let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
+        let pre_mint_supply = accs.conditional_token_mint.supply;
 
         let vault = &accs.vault;
 

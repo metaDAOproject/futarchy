@@ -68,4 +68,3 @@ impl From<&ProposalAccount> for AccountMeta {
         }
     }
 }
-

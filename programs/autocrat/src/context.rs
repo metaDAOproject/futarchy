@@ -79,4 +79,3 @@ pub struct FailProposal<'info> {
     #[account(mut)]
     pub proposal: Account<'info, Proposal>,
 }
-

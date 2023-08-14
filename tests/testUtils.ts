@@ -31,7 +31,6 @@ export const expectError = (
 
 export const randomMemberName = () => randomBytes(5).toString("hex");
 
-
 export const initializeSampleProposal = async (
   program: ProgramFacade
 ): Promise<[PublicKey, PublicKey]> => {
