@@ -12,6 +12,7 @@ import { ConditionalVault } from "../target/types/conditional_vault";
 
 import {
   createMint,
+  createAccount,
   createAssociatedTokenAccount,
   mintTo,
   getAccount,
@@ -84,7 +85,7 @@ describe("conditional_vault", async function () {
     );
   });
 
-  describe.only("#initialize_conditional_vault", async function () {
+  describe("#initialize_conditional_vault", async function () {
     it("initializes vaults", async function () {
       let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
 
@@ -111,7 +112,7 @@ describe("conditional_vault", async function () {
     it("initializes deposit slips", async function () {});
   });
 
-  describe.only("#mint_conditional_tokens", async function () {
+  describe("#mint_conditional_tokens", async function () {
     // alice is available throughout the tests, bob is just for mint_conditional_tokens
     let bob: Signer;
     let amount = 1000;
@@ -184,8 +185,9 @@ describe("conditional_vault", async function () {
       );
     });
 
-    it.skip("blocks mints when the user doesn't have enough underlying tokens", async function () {
+    it("blocks mints when the user doesn't have enough underlying tokens", async function () {
       const callbacks = expectError(
+        vaultProgram,
         "InsufficientUnderlyingTokens",
         "mint suceeded despite user not having enough underlying tokens"
       );
@@ -203,14 +205,15 @@ describe("conditional_vault", async function () {
     });
 
     it("checks that `vault_underlying_token_account` and `conditional_vault` match up", async function () {
-      const maliciousVaultUnderlyingTokenAccount = await token.createAccount(
-        connection,
+      const maliciousVaultUnderlyingTokenAccount = await createAccount(
+        banksClient,
         payer,
         underlyingTokenMint,
         anchor.web3.Keypair.generate().publicKey
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "InvalidVaultUnderlyingTokenAccount",
         "was able to mint conditional tokens while supplying an invalid vault underlying account"
       );
@@ -228,15 +231,15 @@ describe("conditional_vault", async function () {
     });
 
     it("checks that `user_underlying_token_account` is owned by the user", async function () {
-      const nonOwnedUserUnderlyingAccount = await token.createAccount(
-        connection,
+      const nonOwnedUserUnderlyingAccount = await createAccount(
+        banksClient,
         payer,
         underlyingTokenMint,
         anchor.web3.Keypair.generate().publicKey
       );
 
-      await token.mintTo(
-        connection,
+      await mintTo(
+        banksClient,
         payer,
         underlyingTokenMint,
         nonOwnedUserUnderlyingAccount,
@@ -245,6 +248,7 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "ConstraintTokenOwner",
         "mint suceeded despite `user_underlying_token_account` not being owned by the user"
       );
@@ -263,14 +267,15 @@ describe("conditional_vault", async function () {
     });
 
     it("checks that `user_conditional_token_account` is owned by the user", async function () {
-      const nonOwnedUserConditionalAccount = await token.createAccount(
-        connection,
+      const nonOwnedUserConditionalAccount = await createAccount(
+        banksClient,
         payer,
         conditionalTokenMint,
         anchor.web3.Keypair.generate().publicKey
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "ConstraintTokenOwner",
         "mint suceeded despite `user_conditional_token_account` not being owned by the user"
       );
@@ -289,21 +294,22 @@ describe("conditional_vault", async function () {
     });
 
     it("checks that `user_conditional_token_account` has `conditional_token_mint` as its mint", async function () {
-      const wrongConditionalTokenMint = await token.createMint(
-        connection,
+      const wrongConditionalTokenMint = await createMint(
+        banksClient,
         payer,
         vault,
         vault,
         8
       );
-      const wrongMintBobConditionalTokenAccount = await token.createAccount(
-        connection,
+      const wrongMintBobConditionalTokenAccount = await createAccount(
+        banksClient,
         payer,
         wrongConditionalTokenMint,
         bob.publicKey
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "ConstraintTokenMint",
         "mint suceeded despite `user_conditional_token_account` having a wrong mint"
       );
@@ -323,22 +329,22 @@ describe("conditional_vault", async function () {
 
     it("checks that `user_underlying_token_account` has the correct mint", async function () {
       const mintAuthority = anchor.web3.Keypair.generate();
-      const randomMint = await token.createMint(
-        connection,
+      const randomMint = await createMint(
+        banksClient,
         payer,
         mintAuthority.publicKey,
         mintAuthority.publicKey,
         8
       );
-      const wrongMintBobUnderlyingAccount = await token.createAccount(
-        connection,
+      const wrongMintBobUnderlyingAccount = await createAccount(
+        banksClient,
         payer,
         randomMint,
         bob.publicKey
       );
 
-      await token.mintTo(
-        connection,
+      await mintTo(
+        banksClient,
         payer,
         randomMint,
         wrongMintBobUnderlyingAccount,
@@ -347,6 +353,7 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "ConstraintTokenMint",
         "mint suceeded despite `user_underlying_token_account` having the wrong mint"
       );
@@ -374,6 +381,7 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "ConstraintHasOne",
         "mint suceeded despite `deposit_slip` having the wrong conditional vault"
       );
@@ -392,22 +400,23 @@ describe("conditional_vault", async function () {
     });
 
     it("checks that `conditional_token_mint` is the one stored in the conditional vault", async function () {
-      const wrongConditionalTokenMint = await token.createMint(
-        connection,
+      const wrongConditionalTokenMint = await createMint(
+        banksClient,
         payer,
         vault,
         null,
         10
       );
 
-      const wrongMintBobConditionalTokenAccount = await token.createAccount(
-        connection,
+      const wrongMintBobConditionalTokenAccount = await createAccount(
+        banksClient,
         payer,
         wrongConditionalTokenMint,
         bob.publicKey
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "InvalidConditionalTokenMint",
         "mint suceeded despite `conditional_token_mint` not being the one stored in the conditional vault"
       );
@@ -472,6 +481,7 @@ describe("conditional_vault", async function () {
         .rpc();
 
       const callbacks = expectError(
+        vaultProgram,
         "VaultAlreadySettled",
         "settle suceeded even though this vault had already been settled"
       );
@@ -506,15 +516,15 @@ describe("conditional_vault", async function () {
       vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
       bob = anchor.web3.Keypair.generate();
 
-      bobUnderlyingTokenAccount = await token.createAccount(
-        connection,
+      bobUnderlyingTokenAccount = await createAccount(
+        banksClient,
         payer,
         underlyingTokenMint,
         bob.publicKey
       );
 
-      bobConditionalTokenAccount = await token.createAccount(
-        connection,
+      bobConditionalTokenAccount = await createAccount(
+        banksClient,
         payer,
         conditionalTokenMint,
         bob.publicKey
@@ -522,8 +532,8 @@ describe("conditional_vault", async function () {
 
       bobDepositSlip = await initializeDepositSlip(vaultProgram, vault, bob);
 
-      await token.mintTo(
-        connection,
+      await mintTo(
+        banksClient,
         payer,
         underlyingTokenMint,
         bobUnderlyingTokenAccount,
@@ -567,6 +577,7 @@ describe("conditional_vault", async function () {
 
     it("prevents users from redeeming conditional tokens while a vault is still active", async function () {
       const callbacks = expectError(
+        vaultProgram,
         "CantRedeemConditionalTokens",
         "redemption suceeded even though this vault was still active"
       );
@@ -592,6 +603,7 @@ describe("conditional_vault", async function () {
         .rpc();
 
       const callbacks = expectError(
+        vaultProgram,
         "CantRedeemConditionalTokens",
         "redemption suceeded even though this vault was reverted"
       );
@@ -607,22 +619,23 @@ describe("conditional_vault", async function () {
     });
 
     it("checks that the user has provided the correct conditional token mint", async function () {
-      const wrongConditionalTokenMint = await token.createMint(
-        connection,
+      const wrongConditionalTokenMint = await createMint(
+        banksClient,
         payer,
         vault,
         null,
         10
       );
 
-      const wrongMintBobConditionalTokenAccount = await token.createAccount(
-        connection,
+      const wrongMintBobConditionalTokenAccount = await createAccount(
+        banksClient,
         payer,
         wrongConditionalTokenMint,
         bob.publicKey
       );
 
       const callbacks = expectError(
+        vaultProgram,
         "InvalidConditionalTokenMint",
         "redemption suceeded despite `conditional_token_mint` not being the one stored in the conditional vault"
       );
@@ -656,15 +669,15 @@ describe("conditional_vault", async function () {
       vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
       bob = anchor.web3.Keypair.generate();
 
-      bobUnderlyingTokenAccount = await token.createAccount(
-        connection,
+      bobUnderlyingTokenAccount = await createAccount(
+        banksClient,
         payer,
         underlyingTokenMint,
         bob.publicKey
       );
 
-      bobConditionalTokenAccount = await token.createAccount(
-        connection,
+      bobConditionalTokenAccount = await createAccount(
+        banksClient,
         payer,
         conditionalTokenMint,
         bob.publicKey
@@ -672,8 +685,8 @@ describe("conditional_vault", async function () {
 
       bobDepositSlip = await initializeDepositSlip(vaultProgram, vault, bob);
 
-      await token.mintTo(
-        connection,
+      await mintTo(
+        banksClient,
         payer,
         underlyingTokenMint,
         bobUnderlyingTokenAccount,
@@ -716,6 +729,7 @@ describe("conditional_vault", async function () {
 
     it("prevents users from redeeming when the vault is still active", async function () {
       const callbacks = expectError(
+        vaultProgram,
         "CantRedeemDepositSlip",
         "redemption suceeded even though this vault was still active"
       );
@@ -732,6 +746,7 @@ describe("conditional_vault", async function () {
 
     it("prevents users from redeeming if the vault is finalized", async function () {
       const callbacks = expectError(
+        vaultProgram,
         "CantRedeemDepositSlip",
         "redemption suceeded even though this vault was finalized"
       );
@@ -771,6 +786,7 @@ describe("conditional_vault", async function () {
         alice
       );
       const callbacks = expectError(
+        vaultProgram,
         "ConstraintHasOne",
         "redemption suceeded even though this deposit slip was owned by another user"
       );
@@ -803,6 +819,7 @@ describe("conditional_vault", async function () {
         bob
       );
       const callbacks = expectError(
+        vaultProgram,
         "ConstraintHasOne",
         "redemption suceeded even though this deposit slip was for another vault"
       );
@@ -851,12 +868,13 @@ async function generateRandomVault(
   vaultProgram: VaultProgram,
   settlementAuthority: Keypair = anchor.web3.Keypair.generate()
 ): [PublicKey, Keypair, Keypair] {
-  const connection = vaultProgram.provider.connection;
+  const banksClient = vaultProgram.provider.connection.banksClient;
+  /* const connection = vaultProgram.provider.connection; */
   const payer = vaultProgram.provider.wallet.payer;
   const underlyingMintAuthority = anchor.web3.Keypair.generate();
 
-  const underlyingTokenMint = await token.createMint(
-    connection,
+  const underlyingTokenMint = await createMint(
+    banksClient,
     payer,
     underlyingMintAuthority.publicKey,
     null,
@@ -926,7 +944,8 @@ async function mintConditionalTokens(
   );
 
   const bnAmount = new anchor.BN(amount);
-  await program.methods
+  /* try { */
+    await program.methods
     .mintConditionalTokens(bnAmount)
     .accounts({
       authority: user.publicKey,
@@ -940,6 +959,10 @@ async function mintConditionalTokens(
     })
     .signers([user])
     .rpc();
+  /* } catch (err) { */
+  /*   console.log(program.idl.errors); */
+  /*   console.log(err); */
+  /* } */
 
   const depositSlipAfter = await program.account.depositSlip.fetch(depositSlip);
   const vaultUnderlyingTokenAccountAfter = await getAccount(
@@ -983,17 +1006,18 @@ async function redeemConditionalTokens(
   vault: PublicKey,
   conditionalTokenMint: PublicKey
 ) {
-  const connection = vaultProgram.provider.connection;
-  const vaultUnderlyingTokenAccountBefore = await token.getAccount(
-    connection,
+  /* const connection = vaultProgram.provider.connection; */
+  const banksClient = vaultProgram.provider.connection.banksClient;
+  const vaultUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
     vaultUnderlyingTokenAccount
   );
-  const userUnderlyingTokenAccountBefore = await token.getAccount(
-    connection,
+  const userUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
     userUnderlyingTokenAccount
   );
-  const userConditionalTokenAccountBefore = await token.getAccount(
-    connection,
+  const userConditionalTokenAccountBefore = await getAccount(
+    banksClient,
     userConditionalTokenAccount
   );
 
@@ -1006,21 +1030,21 @@ async function redeemConditionalTokens(
       vaultUnderlyingTokenAccount,
       vault,
       conditionalTokenMint,
-      tokenProgram: token.TOKEN_PROGRAM_ID,
+      rogram: token.TOKEN_PROGRAM_ID,
     })
     .signers([user])
     .rpc();
 
-  const vaultUnderlyingTokenAccountAfter = await token.getAccount(
-    connection,
+  const vaultUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
     vaultUnderlyingTokenAccount
   );
-  const userUnderlyingTokenAccountAfter = await token.getAccount(
-    connection,
+  const userUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
     userUnderlyingTokenAccount
   );
-  const userConditionalTokenAccountAfter = await token.getAccount(
-    connection,
+  const userConditionalTokenAccountAfter = await getAccount(
+    banksClient,
     userConditionalTokenAccount
   );
 
@@ -1045,13 +1069,14 @@ async function redeemDepositSlip(
   vaultUnderlyingTokenAccount: PublicKey,
   vault: PublicKey
 ) {
-  const connection = vaultProgram.provider.connection;
-  const vaultUnderlyingTokenAccountBefore = await token.getAccount(
-    connection,
+  /* const connection = vaultProgram.provider.connection; */
+  const banksClient = vaultProgram.provider.connection.banksClient;
+  const vaultUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
     vaultUnderlyingTokenAccount
   );
-  const userUnderlyingTokenAccountBefore = await token.getAccount(
-    connection,
+  const userUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
     userUnderlyingTokenAccount
   );
   const depositSlipBefore = await vaultProgram.account.depositSlip.fetch(
@@ -1071,16 +1096,16 @@ async function redeemDepositSlip(
     .signers([user])
     .rpc();
 
-  const vaultUnderlyingTokenAccountAfter = await token.getAccount(
-    connection,
+  const vaultUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
     vaultUnderlyingTokenAccount
   );
-  const userUnderlyingTokenAccountAfter = await token.getAccount(
-    connection,
+  const userUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
     userUnderlyingTokenAccount
   );
 
-  assert.isNull(await connection.getAccountInfo(depositSlip));
+  assert.isNull(await banksClient.getAccount(depositSlip));
 
   assert.equal(
     vaultUnderlyingTokenAccountAfter.amount,
