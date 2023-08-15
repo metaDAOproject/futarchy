@@ -7,6 +7,7 @@ export const expectError = (
   return [
     () => assert.fail(message),
     (e) => {
+      console.log(JSON.stringify(e));
       assert(
         e["error"] != undefined,
         `the program threw for a reason that we didn't expect. error: ${e}`

@@ -21,5 +21,5 @@ wallet = "/home/user/.config/solana/id.json"
 #test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocrat.ts"
 ## test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts"
 #=======
-# test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocrat.ts"
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.*"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocrat.ts"
+# test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.*"

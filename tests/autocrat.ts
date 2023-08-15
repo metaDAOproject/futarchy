@@ -10,10 +10,13 @@ import {
   executeSampleProposal,
   initializeSampleConditionalExpression,
   initializeSampleVault,
-  expectError,
   mintConditionalTokens,
   testRedemption as _testRedemption,
 } from "./testUtils";
+
+import {
+  expectError
+} from "./utils";
 
 import { Autocrat } from "../target/types/autocrat";
 import { ProgramFacade } from "./programFacade";
@@ -136,13 +139,34 @@ describe("autocrat", async function () {
       /*   ); */
     });
 
-    it.skip("rejects proposals that mis-configure Meta-DAO signer objects", async function () {
-      const [proposalAccounts, proposalInstructions] =
-        sampleProposalAccountsAndInstructions(
-          autocrat,
-          metaDAO,
-          await autocratFacade.initializeMember(randomMemberName())
-        );
+    it("rejects proposals that mis-configure Meta-DAO signer objects", async function () {
+      const memberToAdd = await autocratFacade.initializeMember(
+        randomMemberName()
+      );
+      const proposalPid = autocrat.programId;
+      const proposalAccounts = [
+        {
+          pubkey: metaDAO,
+          isSigner: true,
+          isWritable: true,
+        },
+      ];
+      const proposalData = autocrat.coder.instruction.encode(
+        "add_member",
+        memberToAdd
+      );
+      const proposalInstructions = [
+        {
+          signer: {
+            kind: { metaDao: {} },
+            pubkey: metaDAO,
+            pdaBump: 255,
+          },
+          programId: proposalPid,
+          accounts: Buffer.from([0, 1]),
+          data: proposalData,
+        },
+      ];
 
       proposalInstructions[0]["signer"] = {
         kind: { metaDao: {} },
@@ -156,7 +180,10 @@ describe("autocrat", async function () {
             assert.fail(
               "proposal failed to throw when there was an invalid Meta-DAO signer"
             ),
-          (e) => assert.equal(e.error.errorCode.code, "InvalidMetaDAOSigner")
+          (e) => { 
+            console.log(JSON.stringify(e));
+            assert.equal(e.error.errorCode.code, "InvalidMetaDAOSigner")
+          }
         );
     });
   });
