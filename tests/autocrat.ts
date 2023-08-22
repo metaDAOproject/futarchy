@@ -12,11 +12,8 @@ import {
   initializeSampleVault,
   mintConditionalTokens,
   testRedemption as _testRedemption,
-} from "./testUtils";
-
-import {
   expectError
-} from "./utils";
+} from "./testUtils";
 
 import { Autocrat } from "../target/types/autocrat";
 import { ProgramFacade } from "./programFacade";
@@ -94,49 +91,48 @@ describe("autocrat", async function () {
           data: proposalData,
         },
       ];
+      await autocratFacade.initializeProposal(metaDAO, proposalInstructions, proposalAccounts);
     });
 
     it("rejects proposals that have non-members as signers", async function () {
-      /* const proposalPid = autocrat.programId; */
-      /* const proposalAccounts = [ */
-      /*   { */
-      /*     pubkey: metaDAO, */
-      /*     isSigner: true, */
-      /*     isWritable: true, */
-      /*   }, */
-      /* ]; */
-      /* const proposalData = autocrat.coder.instruction.encode("add_member", memberToAdd,); */
-      /* const proposalInstructions = [ */
-      /*   { */
-      /*     signer: { */
-      /*       kind: { metaDao: {} }, */
-      /*       pubkey: metaDAO, */
-      /*       pdaBump: 255, */
-      /*     }, */
-      /*     programId: proposalPid, */
-      /*     accounts: Buffer.from([0, 1]), */
-      /*     data: proposalData, */
-      /*   }, */
-      /* ]; */
-      /*   sampleProposalAccountsAndInstructions( */
-      /*     autocrat, */
-      /*     metaDAO, */
-      /*     await autocratFacade.initializeMember(randomMemberName()) */
-      /*   ); */
-      /* proposalInstructions[0]["signer"] = { */
-      /*   kind: { member: {} }, */
-      /*   pubkey: await autocratFacade.initializeMember(randomMemberName()), */
-      /*   pdaBump: 200, */
-      /* }; */
-      /* await autocratFacade */
-      /*   .initializeProposal(metaDAO, proposalInstructions, proposalAccounts) */
-      /*   .then( */
-      /*     () => */
-      /*       assert.fail( */
-      /*         "proposal failed to throw when there was a non-member signer" */
-      /*       ), */
-      /*     (e) => assert.equal(e.error.errorCode.code, "InactiveMember") */
-      /*   ); */
+      const memberToAdd = await autocratFacade.initializeMember(
+        randomMemberName()
+      );
+      const proposalPid = autocrat.programId;
+      const proposalAccounts = [
+        {
+          pubkey: metaDAO,
+          isSigner: true,
+          isWritable: true,
+        },
+      ];
+      const proposalData = autocrat.coder.instruction.encode("add_member", memberToAdd,);
+      const proposalInstructions = [
+        {
+          signer: {
+            kind: { metaDao: {} },
+            pubkey: metaDAO,
+            pdaBump: 255,
+          },
+          programId: proposalPid,
+          accounts: Buffer.from([0, 1]),
+          data: proposalData,
+        },
+      ];
+      proposalInstructions[0]["signer"] = {
+        kind: { member: {} },
+        pubkey: memberToAdd,
+        pdaBump: 200,
+      };
+      await autocratFacade
+        .initializeProposal(metaDAO, proposalInstructions, proposalAccounts)
+        .then(
+          () =>
+            assert.fail(
+              "proposal failed to throw when there was a non-member signer"
+            ),
+          (e) => assert.equal(e.error.errorCode.code, "InactiveMember")
+        );
     });
 
     it("rejects proposals that mis-configure Meta-DAO signer objects", async function () {
