@@ -22,12 +22,6 @@ export type AutocratProgram = anchor.Program<AutocratV0>;
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 
-export enum VaultStatus {
-  Active,
-  Finalized,
-  Reverted,
-}
-
 // this test file isn't 'clean' or DRY or whatever; sorry!
 
 describe("autocrat_v0", async function () {
@@ -36,7 +30,8 @@ describe("autocrat_v0", async function () {
     autocrat,
     payer,
     context,
-    banksClient;
+    banksClient,
+    dao;
 
    before(async function () {
     context = await startAnchor("./", [], []);
@@ -48,9 +43,22 @@ describe("autocrat_v0", async function () {
     payer = autocrat.provider.wallet.payer;
   });
 
-  describe("#initialize", async function () {
-    it("initializes", async function () {
-      await autocrat.methods.initialize(new anchor.BN(400)).rpc();
+  describe("#initialize_dao", async function () {
+    it("initializes the DAO", async function () {
+      [dao] = anchor.web3.PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB"),
+        ],
+        autocrat.programId
+      );
+
+      await autocrat.methods.initializeDao()
+        .accounts({
+          dao,
+          payer: payer.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
     });
   });
 });
