@@ -11,6 +11,29 @@ pub struct DAO {
     pub token: Pubkey,
 }
 
+#[account]
+pub struct Proposal {
+    pub did_execute: bool,
+    pub instructions: Vec<ProposalInstruction>,
+    pub accounts: Vec<ProposalAccount>,
+}
+
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct ProposalInstruction {
+    pub program_id: Pubkey,
+    // Accounts to pass to the target program, stored as
+    // indexes into the `proposal.accounts` vector.
+    pub accounts: Vec<u8>,
+    pub data: Vec<u8>,
+}
+
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct ProposalAccount {
+    pub pubkey: Pubkey,
+    pub is_signer: bool,
+    pub is_writable: bool,
+}
+
 #[program]
 pub mod autocrat_v0 {
     use super::*;
@@ -39,4 +62,14 @@ pub struct InitializeDAO<'info> {
     pub system_program: Program<'info, System>,
     #[account(mint::decimals = 9)]
     pub token: Account<'info, Mint>,
+}
+
+impl From<&ProposalAccount> for AccountMeta {
+    fn from(acc: &ProposalAccount) -> Self {
+        Self {
+            pubkey: acc.pubkey,
+            is_signer: acc.is_signer,
+            is_writable: acc.is_writable,
+        }
+    }
 }
