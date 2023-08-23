@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-autocrat = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+autocrat_v1 = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 conditional_vault = "4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip"
 
 [[test.genesis]]

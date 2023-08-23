@@ -15,7 +15,7 @@ import {
   expectError
 } from "./testUtils";
 
-import { Autocrat } from "../target/types/autocrat";
+import { AutocratV1 } from "../target/types/autocrat_v1";
 import { ProgramFacade } from "./programFacade";
 
 export type Program = anchor.Program<Autocrat>;
@@ -37,7 +37,9 @@ describe("autocrat", async function () {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const autocrat = anchor.workspace.Autocrat as Program;
+  const autocrat = anchor.workspace.AutocratV1 as Program;
+  console.log(autocrat);
+  console.log(anchor.workspace);
   const clob = new anchor.Program(
     clobIDL,
     "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD"

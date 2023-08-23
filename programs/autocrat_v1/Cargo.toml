@@ -1,12 +1,12 @@
 [package]
-name = "autocrat"
+name = "autocrat_v1"
 version = "0.1.0"
 description = "Allows users to mint and burn conditional tokens that are tied to improvement proposals"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "autocrat"
+name = "autocrat_v1"
 
 [features]
 no-entrypoint = []

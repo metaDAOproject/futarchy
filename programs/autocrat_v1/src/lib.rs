@@ -18,7 +18,7 @@ pub use error_code::ErrorCode;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
-pub mod autocrat {
+pub mod autocrat_v1 {
     use super::*;
 
     pub fn initialize_meta_dao(ctx: Context<InitializeMetaDAO>) -> Result<()> {
