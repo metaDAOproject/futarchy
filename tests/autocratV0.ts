@@ -31,7 +31,8 @@ describe("autocrat_v0", async function () {
     payer,
     context,
     banksClient,
-    dao;
+    dao,
+    mint;
 
    before(async function () {
     context = await startAnchor("./", [], []);
@@ -52,13 +53,25 @@ describe("autocrat_v0", async function () {
         autocrat.programId
       );
 
+      mint = await createMint(
+        banksClient,
+        payer,
+        dao,
+        dao,
+        9
+      );
+
       await autocrat.methods.initializeDao()
         .accounts({
           dao,
           payer: payer.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
+          token: mint,
         })
         .rpc();
+
+      const daoAcc = await autocrat.account.dao.fetch(dao);
+      assert(daoAcc.token.equals(mint));
     });
   });
 });
