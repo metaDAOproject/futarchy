@@ -2,9 +2,7 @@
 //     associated_token::AssociatedToken,
 //     token::{Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 // };
-use anchor_spl::{
-    token::{Mint, Token},
-};
+use anchor_spl::token::{Mint, Token};
 
 use super::*;
 

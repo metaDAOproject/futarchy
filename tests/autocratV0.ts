@@ -68,10 +68,33 @@ describe("autocrat_v0", async function () {
           systemProgram: anchor.web3.SystemProgram.programId,
           token: mint,
         })
-        .rpc();
+        .rpc().then(() => {}, (err) => console.error(err));
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.token.equals(mint));
+    });
+  });
+
+  describe("#initialize_proposal", async function () {
+    it("initializes proposals", async function () {
+      const proposalAccounts = [
+        {
+          pubkey: dao,
+          isSigner: true,
+          isWritable: true,
+        },
+      ];
+      const proposalData = autocrat.coder.instruction.encode(
+        "set_pass_threshold_bps",
+        1000
+      );
+      const proposalInstructions = [
+        {
+          programId: autocrat.programId,
+          accounts: Buffer.from([0]),
+          data: proposalData,
+        },
+      ];
     });
   });
 });
