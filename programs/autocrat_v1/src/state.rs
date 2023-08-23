@@ -1,6 +1,6 @@
 use super::*;
 
-use ProposalStatus::*;
+// use ProposalStatus::*;
 
 #[account]
 pub struct MetaDAO {
