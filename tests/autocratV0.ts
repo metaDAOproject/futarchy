@@ -1,6 +1,8 @@
 import * as anchor from "@project-serum/anchor";
 import * as token from "@solana/spl-token";
-import { BankrunProvider } from "anchor-bankrun";
+import { BankrunProvider } from "../../anchor-bankrun";
+
+const { PublicKey, Signer, Keypair, SystemProgram } = anchor.web3;
 
 import { expect, assert } from "chai";
 
@@ -20,11 +22,9 @@ import {
 } from "./bankrunUtils";
 
 export type AutocratProgram = anchor.Program<AutocratV0>;
-export type PublicKey = anchor.web3.PublicKey;
-export type Signer = anchor.web3.Signer;
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
-const AUTOCRAT_PROGRAM_ID = new anchor.web3.PublicKey(
+const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "5QBbGKFSoL1hS4s5dsCBdNRVnJcMuHXFwhooKk2ar25S"
 );
 
@@ -55,7 +55,7 @@ describe("autocrat_v0", async function () {
 
   describe("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
-      [dao] = anchor.web3.PublicKey.findProgramAddressSync(
+      [dao] = PublicKey.findProgramAddressSync(
         [
           anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB"),
         ],
@@ -86,25 +86,64 @@ describe("autocrat_v0", async function () {
 
   describe("#initialize_proposal", async function () {
     it("initializes proposals", async function () {
-      const proposalAccounts = [
+      const accounts = [
         {
           pubkey: dao,
           isSigner: true,
           isWritable: true,
         },
       ];
-      const proposalData = autocrat.coder.instruction.encode(
+      const data = autocrat.coder.instruction.encode(
         "set_pass_threshold_bps",
         1000
       );
-      const proposalInstructions = [
+      const instructions = [
         {
           programId: autocrat.programId,
           accounts: Buffer.from([0]),
-          data: proposalData,
+          data: data,
         },
       ];
+
+      await initializeProposal(autocrat, instructions, accounts);
     });
   });
 });
 
+async function initializeProposal(autocrat: AutocratProgram, instructions: [], accounts: []): PublicKey {
+  const payer = autocrat.provider.wallet.payer;
+  const proposalKeypair = Keypair.generate();
+
+  await autocrat.methods.initializeProposal(instructions, accounts)
+  .preInstructions([
+    await autocrat.account.proposal.createInstruction(
+      proposalKeypair,
+      1000
+    ),
+  ])
+  .accounts({
+    proposal: proposalKeypair.publicKey,
+    initializer: payer.publicKey,
+    systemProgram: anchor.web3.SystemProgram.programId,
+  })
+  .signers([proposalKeypair])
+  .rpc();
+
+  const storedProposal = await autocrat.account.proposal.fetch(
+    proposalKeypair.publicKey
+  );
+
+  assert.equal(storedProposal.didExecute, false);
+  assert.equal(storedProposal.instructions.length, instructions.length);
+
+  for (let i = 0; i < instructions.length; i++) {
+    const ix = instructions[i];
+    const storedIx = storedProposal.instructions[i];
+
+    assert.ok(storedIx.programId.equals(ix.programId));
+    assert.deepEqual(storedIx.accounts, ix.accounts);
+    assert.deepEqual(storedIx.data, ix.data);
+  }
+
+  return proposalKeypair.publicKey;
+}

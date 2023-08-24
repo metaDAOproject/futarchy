@@ -91,7 +91,6 @@ pub struct InitializeDAO<'info> {
 pub struct InitializeProposal<'info> {
     #[account(zero)]
     pub proposal: Account<'info, Proposal>,
-    pub dao: Account<'info, DAO>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
