@@ -9,6 +9,7 @@ import { startAnchor } from "solana-bankrun";
 import { expectError } from "./utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
+import * as AutocratIDL from "../target/idl/autocrat_v0.json";
 
 import {
   createMint,
@@ -23,6 +24,9 @@ export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
+const AUTOCRAT_PROGRAM_ID = new anchor.web3.PublicKey(
+  "5QBbGKFSoL1hS4s5dsCBdNRVnJcMuHXFwhooKk2ar25S"
+);
 
 describe("autocrat_v0", async function () {
   let provider,
@@ -40,7 +44,12 @@ describe("autocrat_v0", async function () {
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
 
-    autocrat = anchor.workspace.AutocratV0 as AutocratProgram;
+    autocrat = new anchor.Program<AutocratProgram>(
+      AutocratIDL,
+      AUTOCRAT_PROGRAM_ID,
+      provider,
+    );
+
     payer = autocrat.provider.wallet.payer;
   });
 
