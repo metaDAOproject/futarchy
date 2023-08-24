@@ -12,7 +12,7 @@ import {
   initializeSampleVault,
   mintConditionalTokens,
   testRedemption as _testRedemption,
-  expectError
+  expectError,
 } from "./testUtils";
 
 import { AutocratV1 } from "../target/types/autocrat_v1";
@@ -93,7 +93,11 @@ describe("autocrat", async function () {
           data: proposalData,
         },
       ];
-      await autocratFacade.initializeProposal(metaDAO, proposalInstructions, proposalAccounts);
+      await autocratFacade.initializeProposal(
+        metaDAO,
+        proposalInstructions,
+        proposalAccounts
+      );
     });
 
     it("rejects proposals that have non-members as signers", async function () {
@@ -108,7 +112,10 @@ describe("autocrat", async function () {
           isWritable: true,
         },
       ];
-      const proposalData = autocrat.coder.instruction.encode("add_member", memberToAdd,);
+      const proposalData = autocrat.coder.instruction.encode(
+        "add_member",
+        memberToAdd
+      );
       const proposalInstructions = [
         {
           signer: {
@@ -178,9 +185,9 @@ describe("autocrat", async function () {
             assert.fail(
               "proposal failed to throw when there was an invalid Meta-DAO signer"
             ),
-          (e) => { 
+          (e) => {
             console.log(JSON.stringify(e));
-            assert.equal(e.error.errorCode.code, "InvalidMetaDAOSigner")
+            assert.equal(e.error.errorCode.code, "InvalidMetaDAOSigner");
           }
         );
     });

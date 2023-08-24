@@ -945,7 +945,7 @@ async function mintConditionalTokens(
 
   const bnAmount = new anchor.BN(amount);
   /* try { */
-    await program.methods
+  await program.methods
     .mintConditionalTokens(bnAmount)
     .accounts({
       authority: user.publicKey,
