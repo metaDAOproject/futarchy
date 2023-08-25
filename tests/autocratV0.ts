@@ -12,7 +12,10 @@ import { startAnchor } from "solana-bankrun";
 import { expectError } from "./utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
+import { ConditionalVault } from "../target/types/conditional_vault";
+
 import * as AutocratIDL from "../target/idl/autocrat_v0.json";
+import * as ConditionalVaultIDL from "../target/idl/conditional_vault.json";
 
 import {
   createMint,
@@ -22,15 +25,20 @@ import {
   getAccount,
 } from "./bankrunUtils";
 
-export type AutocratProgram = anchor.Program<AutocratV0>;
+export type AutocratProgram = Program<AutocratV0>;
+export type ConditionalVaultProgram = Program<ConditionalVault>;
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "5QBbGKFSoL1hS4s5dsCBdNRVnJcMuHXFwhooKk2ar25S"
 );
 
+const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
+  "4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip"
+);
+
 describe("autocrat_v0", async function () {
-  let provider, connection, autocrat, payer, context, banksClient, dao, mint;
+  let provider, connection, autocrat, payer, context, banksClient, dao, mint, vaultProgram;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -41,6 +49,12 @@ describe("autocrat_v0", async function () {
     autocrat = new anchor.Program<AutocratProgram>(
       AutocratIDL,
       AUTOCRAT_PROGRAM_ID,
+      provider
+    );
+
+    vaultProgram = new Program<ConditionalVaultProgram>(
+      ConditionalVaultIDL,
+      CONDITIONAL_VAULT_PROGRAM_ID,
       provider
     );
 
@@ -84,7 +98,6 @@ describe("autocrat_v0", async function () {
           isWritable: true,
         },
       ];
-      console.log(autocrat.coder.instruction);
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 1000
       });
@@ -96,7 +109,8 @@ describe("autocrat_v0", async function () {
         },
       ];
 
-      await initializeProposal(autocrat, instructions, accounts);
+
+      await initializeProposal(autocrat, instructions, accounts, vaultProgram, dao);
     });
 
     it("works for multi-ix proposals", async function () {
@@ -126,7 +140,7 @@ describe("autocrat_v0", async function () {
         },
       ];
 
-      await initializeProposal(autocrat, instructions, accounts);
+      await initializeProposal(autocrat, instructions, accounts, vaultProgram, dao);
     });
   });
 });
@@ -134,10 +148,56 @@ describe("autocrat_v0", async function () {
 async function initializeProposal(
   autocrat: AutocratProgram,
   instructions: [],
-  accounts: []
+  accounts: [],
+  vaultProgram: ConditionalVaultProgram,
+  dao: PublicKey,
 ): PublicKey {
   const payer = autocrat.provider.wallet.payer;
   const proposalKeypair = Keypair.generate();
+
+  const [quotePassVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
+    [
+      proposalKeypair.publicKey.toBuffer(),
+      anchor.utils.bytes.utf8.encode("quote_pass"),
+    ],
+    autocrat.programId
+  );
+
+  const storedDAO = await autocrat.account.dao.fetch(dao);
+
+  const [quotePassVault] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("conditional_vault"),
+      quotePassVaultSettlementAuthority.toBuffer(),
+      storedDAO.token.toBuffer(),
+    ],
+    vaultProgram.programId
+  );
+
+  const quotePassConditionalTokenMintKeypair = Keypair.generate();
+
+  const quotePassVaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
+    storedDAO.token,
+    quotePassVault,
+    true
+  );
+
+  await vaultProgram.methods
+    .initializeConditionalVault(quotePassVaultSettlementAuthority)
+    .accounts({
+      vault: quotePassVault,
+      underlyingTokenMint: storedDAO.token,
+      vaultUnderlyingTokenAccount: quotePassVaultUnderlyingTokenAccount,
+      conditionalTokenMint: quotePassConditionalTokenMintKeypair.publicKey,
+      payer: payer.publicKey,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+      associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .signers([quotePassConditionalTokenMintKeypair])
+    .rpc();
+
+  /* conditionalTokenMint = conditionalTokenMintKeypair.publicKey; */
 
   await autocrat.methods
     .initializeProposal(instructions, accounts)
@@ -146,11 +206,14 @@ async function initializeProposal(
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
+      dao,
+      quotePassVault,
+      quotePassVaultSettlementAuthority,
       initializer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
     .signers([proposalKeypair])
-    .rpc();
+    .rpc().then(() => {}, (err) => console.error(err));
 
   const storedProposal = await autocrat.account.proposal.fetch(
     proposalKeypair.publicKey
@@ -167,7 +230,6 @@ async function initializeProposal(
     assert.deepEqual(storedIx.accounts, ix.accounts);
     assert.deepEqual(storedIx.data, ix.data);
   }
-  console.log(storedProposal);
 
   return proposalKeypair.publicKey;
 }

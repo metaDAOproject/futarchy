@@ -526,6 +526,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
+ "conditional_vault",
 ]
 
 [[package]]

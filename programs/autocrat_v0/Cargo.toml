@@ -18,3 +18,4 @@ default = []
 [dependencies]
 anchor-lang = "0.28.0"
 anchor-spl = "0.28.0"
+conditional_vault = { path = "../conditional_vault", features = ["cpi"] }

@@ -1,4 +1,6 @@
 use anchor_lang::prelude::*;
+// use conditional_vault::program::ConditionalVault;
+use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 
 use anchor_spl::token::{Mint, Token};
 
@@ -91,6 +93,18 @@ pub struct InitializeDAO<'info> {
 pub struct InitializeProposal<'info> {
     #[account(zero)]
     pub proposal: Account<'info, Proposal>,
+    pub dao: Account<'info, DAO>,
+    #[account(
+        constraint = quote_pass_vault.settlement_authority == quote_pass_vault_settlement_authority.key(),
+        constraint = quote_pass_vault.underlying_token_mint == dao.token,
+    )]
+    pub quote_pass_vault: Account<'info, ConditionalVaultAccount>,
+    /// CHECK: I do what I want
+    #[account(
+        seeds = [proposal.key().as_ref(), b"quote_pass"],
+        bump
+    )]
+    pub quote_pass_vault_settlement_authority: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
