@@ -1,11 +1,20 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{Mint, Token};
 // use conditional_vault::program::ConditionalVault;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 
-use anchor_spl::token::{Mint, Token};
+use std::str::FromStr;
+
 
 // by default, the pass price needs to be 20% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2000;
+// pub const WSOL: Pubkey = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
+
+pub use wsol::ID as WSOL;
+mod wsol {
+    use super::*;
+    declare_id!("So11111111111111111111111111111111111111112");
+}
 
 declare_id!("5QBbGKFSoL1hS4s5dsCBdNRVnJcMuHXFwhooKk2ar25S");
 
@@ -104,6 +113,16 @@ pub struct InitializeProposal<'info> {
         constraint = quote_fail_vault.underlying_token_mint == dao.token,
     )]
     pub quote_fail_vault: Account<'info, ConditionalVaultAccount>,
+    #[account(
+        constraint = base_pass_vault.settlement_authority == base_pass_vault_settlement_authority.key(),
+        constraint = base_pass_vault.underlying_token_mint == WSOL,
+    )]
+    pub base_pass_vault: Account<'info, ConditionalVaultAccount>,
+    #[account(
+        constraint = base_fail_vault.settlement_authority == base_fail_vault_settlement_authority.key(),
+        constraint = base_fail_vault.underlying_token_mint == WSOL,
+    )]
+    pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
     /// CHECK: I do what I want
     #[account(
         seeds = [proposal.key().as_ref(), b"quote_pass"],
@@ -116,6 +135,18 @@ pub struct InitializeProposal<'info> {
         bump
     )]
     pub quote_fail_vault_settlement_authority: UncheckedAccount<'info>,
+    /// CHECK: I do what I want
+    #[account(
+        seeds = [proposal.key().as_ref(), b"base_pass"],
+        bump
+    )]
+    pub base_pass_vault_settlement_authority: UncheckedAccount<'info>,
+    /// CHECK: I do what I want
+    #[account(
+        seeds = [proposal.key().as_ref(), b"base_fail"],
+        bump
+    )]
+    pub base_fail_vault_settlement_authority: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
