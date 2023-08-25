@@ -188,11 +188,25 @@ async function initializeProposal(
     autocrat.programId
   );
 
+  const [quoteFailVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
+    [
+      proposalKeypair.publicKey.toBuffer(),
+      anchor.utils.bytes.utf8.encode("quote_fail"),
+    ],
+    autocrat.programId
+  );
+
   const storedDAO = await autocrat.account.dao.fetch(dao);
 
   const quotePassVault = await initializeVault(
     vaultProgram,
     quotePassVaultSettlementAuthority,
+    storedDAO.token
+  );
+
+  const quoteFailVault = await initializeVault(
+    vaultProgram,
+    quoteFailVaultSettlementAuthority,
     storedDAO.token
   );
 
@@ -205,7 +219,9 @@ async function initializeProposal(
       proposal: proposalKeypair.publicKey,
       dao,
       quotePassVault,
+      quoteFailVault,
       quotePassVaultSettlementAuthority,
+      quoteFailVaultSettlementAuthority,
       initializer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })

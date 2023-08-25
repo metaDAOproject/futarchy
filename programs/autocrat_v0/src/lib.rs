@@ -99,12 +99,23 @@ pub struct InitializeProposal<'info> {
         constraint = quote_pass_vault.underlying_token_mint == dao.token,
     )]
     pub quote_pass_vault: Account<'info, ConditionalVaultAccount>,
+    #[account(
+        constraint = quote_fail_vault.settlement_authority == quote_fail_vault_settlement_authority.key(),
+        constraint = quote_fail_vault.underlying_token_mint == dao.token,
+    )]
+    pub quote_fail_vault: Account<'info, ConditionalVaultAccount>,
     /// CHECK: I do what I want
     #[account(
         seeds = [proposal.key().as_ref(), b"quote_pass"],
         bump
     )]
     pub quote_pass_vault_settlement_authority: UncheckedAccount<'info>,
+    /// CHECK: I do what I want
+    #[account(
+        seeds = [proposal.key().as_ref(), b"quote_fail"],
+        bump
+    )]
+    pub quote_fail_vault_settlement_authority: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
