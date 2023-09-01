@@ -13,9 +13,11 @@ import { expectError } from "./utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
+import { Clob } from "../target/types/clob";
 
 import * as AutocratIDL from "../target/idl/autocrat_v0.json";
 import * as ConditionalVaultIDL from "../target/idl/conditional_vault.json";
+import * as ClobIDL from "../target/idl/clob.json";
 
 import {
   createMint,
@@ -27,6 +29,7 @@ import {
 
 export type AutocratProgram = Program<AutocratV0>;
 export type ConditionalVaultProgram = Program<ConditionalVault>;
+export type ClobProgram = Program<Clob>;
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
@@ -35,6 +38,10 @@ const AUTOCRAT_PROGRAM_ID = new PublicKey(
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip"
+);
+
+const CLOB_PROGRAM_ID = new PublicKey(
+  "Ap4Y89Jo1Xx7jtimjoWMGCPAKEgrarasU9iQ6Dc6Pxor"
 );
 
 describe("autocrat_v0", async function () {
@@ -46,7 +53,8 @@ describe("autocrat_v0", async function () {
     banksClient,
     dao,
     mint,
-    vaultProgram;
+    vaultProgram,
+    clobProgram;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -63,6 +71,12 @@ describe("autocrat_v0", async function () {
     vaultProgram = new Program<ConditionalVaultProgram>(
       ConditionalVaultIDL,
       CONDITIONAL_VAULT_PROGRAM_ID,
+      provider
+    );
+
+    clobProgram = new Program<ClobProgram>(
+      ClobIDL,
+      CLOB_PROGRAM_ID,
       provider
     );
 
