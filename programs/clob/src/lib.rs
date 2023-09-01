@@ -106,7 +106,7 @@ pub mod clob {
         new_min_base_limit_amount: u64,
         new_min_quote_limit_amount: u64,
     ) -> Result<()> {
-        let mut order_book = ctx.accounts.order_book.load_init()?;
+        let mut order_book = ctx.accounts.order_book.load_mut()?;
 
         require!(
             new_max_observation_change_per_update_bps <= MAX_MAX_OBSERVATION_CHANGE_PER_CHANGE_BPS,

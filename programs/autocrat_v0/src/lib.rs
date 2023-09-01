@@ -68,6 +68,11 @@ pub mod autocrat_v0 {
         instructions: Vec<ProposalInstruction>,
         accts: Vec<ProposalAccount>,
     ) -> Result<()> {
+        let pass_market = ctx.accounts.pass_market.load()?;
+
+        require!(pass_market.base == ctx.accounts.base_pass_vault.conditional_token_mint, AutocratError::InvalidMarket);
+        require!(pass_market.quote == ctx.accounts.quote_pass_vault.conditional_token_mint, AutocratError::InvalidMarket);
+
         let proposal = &mut ctx.accounts.proposal;
 
         proposal.did_execute = false;
@@ -148,7 +153,6 @@ pub struct InitializeProposal<'info> {
         bump
     )]
     pub base_fail_vault_settlement_authority: UncheckedAccount<'info>,
-    // #[account(mut, has_one = base_vault, has_one = quote_vault)]
     pub pass_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -172,4 +176,10 @@ impl From<&ProposalAccount> for AccountMeta {
             is_writable: acc.is_writable,
         }
     }
+}
+
+#[error_code]
+pub enum AutocratError {
+    #[msg("Either the `pass_market` or the `fail_market`'s tokens doesn't match the vaults supplied")]
+    InvalidMarket,
 }
