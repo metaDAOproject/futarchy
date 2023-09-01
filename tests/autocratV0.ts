@@ -324,31 +324,31 @@ async function initializeProposal(
     true
   );
 
-      await clobProgram.methods
-        .initializeOrderBook()
-        .accounts({
-          orderBook: passMarket,
-          payer: payer.publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          base: passBaseMint,
-          quote: passQuoteMint,
-          baseVault: passBaseVault,
-          quoteVault: passQuoteVault,
-        })
-        .rpc();
+  await clobProgram.methods
+    .initializeOrderBook()
+    .accounts({
+      orderBook: passMarket,
+      payer: payer.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+      base: passBaseMint,
+      quote: passQuoteMint,
+      baseVault: passBaseVault,
+      quoteVault: passQuoteVault,
+    })
+    .rpc();
 
-      await clobProgram.methods
-        .initializeOrderBook()
-        .accounts({
-          orderBook: failMarket,
-          payer: payer.publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          base: failBaseMint,
-          quote: failQuoteMint,
-          baseVault: failBaseVault,
-          quoteVault: failQuoteVault,
-        })
-        .rpc();
+  await clobProgram.methods
+    .initializeOrderBook()
+    .accounts({
+      orderBook: failMarket,
+      payer: payer.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+      base: failBaseMint,
+      quote: failQuoteMint,
+      baseVault: failBaseVault,
+      quoteVault: failQuoteVault,
+    })
+    .rpc();
 
   await autocrat.methods
     .initializeProposal(instructions, accounts)

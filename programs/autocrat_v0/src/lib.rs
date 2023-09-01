@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token};
 // use conditional_vault::program::ConditionalVault;
-use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use clob::state::order_book::OrderBook;
+use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 
 use std::str::FromStr;
-
 
 // by default, the pass price needs to be 20% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2000;
@@ -71,15 +70,51 @@ pub mod autocrat_v0 {
         let pass_market = ctx.accounts.pass_market.load()?;
         let fail_market = ctx.accounts.fail_market.load()?;
 
-        require!(pass_market.base == ctx.accounts.base_pass_vault.conditional_token_mint, AutocratError::InvalidMarket);
-        require!(pass_market.quote == ctx.accounts.quote_pass_vault.conditional_token_mint, AutocratError::InvalidMarket);
+        require!(
+            pass_market.base == ctx.accounts.base_pass_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            pass_market.quote == ctx.accounts.quote_pass_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
 
-        require!(fail_market.base == ctx.accounts.base_fail_vault.conditional_token_mint, AutocratError::InvalidMarket);
-        require!(fail_market.quote == ctx.accounts.quote_fail_vault.conditional_token_mint, AutocratError::InvalidMarket);
-
-        // TODO: add key checking logic here
+        require!(
+            fail_market.base == ctx.accounts.base_fail_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            fail_market.quote == ctx.accounts.quote_fail_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
 
         let proposal = &mut ctx.accounts.proposal;
+
+        let (quote_pass_settlement_authority, _) =
+            Pubkey::find_program_address(&[proposal.key().as_ref(), b"quote_pass"], &self::ID);
+        let (base_pass_settlement_authority, _) =
+            Pubkey::find_program_address(&[proposal.key().as_ref(), b"base_pass"], &self::ID);
+        let (quote_fail_settlement_authority, _) =
+            Pubkey::find_program_address(&[proposal.key().as_ref(), b"quote_fail"], &self::ID);
+        let (base_fail_settlement_authority, _) =
+            Pubkey::find_program_address(&[proposal.key().as_ref(), b"base_fail"], &self::ID);
+
+        require!(
+            ctx.accounts.quote_pass_vault.settlement_authority == quote_pass_settlement_authority,
+            AutocratError::InvalidSettlementAuthority
+        );
+        require!(
+            ctx.accounts.base_pass_vault.settlement_authority == base_pass_settlement_authority,
+            AutocratError::InvalidSettlementAuthority
+        );
+        require!(
+            ctx.accounts.quote_fail_vault.settlement_authority == quote_fail_settlement_authority,
+            AutocratError::InvalidSettlementAuthority
+        );
+        require!(
+            ctx.accounts.base_fail_vault.settlement_authority == base_fail_settlement_authority,
+            AutocratError::InvalidSettlementAuthority
+        );
 
         proposal.did_execute = false;
         proposal.instructions = instructions;
@@ -116,49 +151,21 @@ pub struct InitializeProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     pub dao: Account<'info, DAO>,
     #[account(
-        constraint = quote_pass_vault.settlement_authority == quote_pass_vault_settlement_authority.key(),
         constraint = quote_pass_vault.underlying_token_mint == dao.token,
     )]
     pub quote_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = quote_fail_vault.settlement_authority == quote_fail_vault_settlement_authority.key(),
         constraint = quote_fail_vault.underlying_token_mint == dao.token,
     )]
     pub quote_fail_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_pass_vault.settlement_authority == base_pass_vault_settlement_authority.key(),
         constraint = base_pass_vault.underlying_token_mint == WSOL,
     )]
     pub base_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        // constraint = base_fail_vault.settlement_authority == base_fail_vault_settlement_authority.key(),
         constraint = base_fail_vault.underlying_token_mint == WSOL,
     )]
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
-    /// CHECK: I do what I want
-    #[account(
-        seeds = [proposal.key().as_ref(), b"quote_pass"],
-        bump
-    )]
-    pub quote_pass_vault_settlement_authority: UncheckedAccount<'info>,
-    /// CHECK: I do what I want
-    #[account(
-        seeds = [proposal.key().as_ref(), b"quote_fail"],
-        bump
-    )]
-    pub quote_fail_vault_settlement_authority: UncheckedAccount<'info>,
-    /// CHECK: I do what I want
-    #[account(
-        seeds = [proposal.key().as_ref(), b"base_pass"],
-        bump
-    )]
-    pub base_pass_vault_settlement_authority: UncheckedAccount<'info>,
-    /// CHECK: I do what I want
-    // #[account(
-    //     seeds = [proposal.key().as_ref(), b"base_fail"],
-    //     bump
-    // )]
-    // pub base_fail_vault_settlement_authority: UncheckedAccount<'info>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]
@@ -187,6 +194,10 @@ impl From<&ProposalAccount> for AccountMeta {
 
 #[error_code]
 pub enum AutocratError {
-    #[msg("Either the `pass_market` or the `fail_market`'s tokens doesn't match the vaults supplied")]
+    #[msg(
+        "Either the `pass_market` or the `fail_market`'s tokens doesn't match the vaults supplied"
+    )]
     InvalidMarket,
+    #[msg("One of the vaults has an invalid `settlement_authority`")]
+    InvalidSettlementAuthority,
 }
