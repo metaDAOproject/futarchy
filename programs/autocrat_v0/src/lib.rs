@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token};
 // use conditional_vault::program::ConditionalVault;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
+use clob::state::order_book::OrderBook;
 
 use std::str::FromStr;
 
@@ -147,6 +148,8 @@ pub struct InitializeProposal<'info> {
         bump
     )]
     pub base_fail_vault_settlement_authority: UncheckedAccount<'info>,
+    // #[account(mut, has_one = base_vault, has_one = quote_vault)]
+    pub pass_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,

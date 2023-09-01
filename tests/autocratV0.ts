@@ -54,7 +54,8 @@ describe("autocrat_v0", async function () {
     dao,
     mint,
     vaultProgram,
-    clobProgram;
+    clobProgram,
+    clobGlobalState;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -74,13 +75,24 @@ describe("autocrat_v0", async function () {
       provider
     );
 
-    clobProgram = new Program<ClobProgram>(
-      ClobIDL,
-      CLOB_PROGRAM_ID,
-      provider
-    );
+    clobProgram = new Program<ClobProgram>(ClobIDL, CLOB_PROGRAM_ID, provider);
 
     payer = autocrat.provider.wallet.payer;
+
+    [clobGlobalState] = anchor.web3.PublicKey.findProgramAddressSync(
+      [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+      clobProgram.programId
+    );
+    const admin = anchor.web3.Keypair.generate();
+
+    await clobProgram.methods
+      .initializeGlobalState(admin.publicKey)
+      .accounts({
+        globalState: clobGlobalState,
+        payer: payer.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
   });
 
   describe("#initialize_dao", async function () {
@@ -136,7 +148,8 @@ describe("autocrat_v0", async function () {
         instructions,
         accounts,
         vaultProgram,
-        dao
+        dao,
+        clobProgram
       );
     });
 
@@ -178,7 +191,8 @@ describe("autocrat_v0", async function () {
         instructions,
         accounts,
         vaultProgram,
-        dao
+        dao,
+        clobProgram
       );
     });
   });
@@ -189,7 +203,8 @@ async function initializeProposal(
   instructions: [],
   accounts: [],
   vaultProgram: ConditionalVaultProgram,
-  dao: PublicKey
+  dao: PublicKey,
+  clobProgram: ClobProgram
 ): PublicKey {
   const payer = autocrat.provider.wallet.payer;
   const proposalKeypair = Keypair.generate();
@@ -254,6 +269,47 @@ async function initializeProposal(
     wsol
   );
 
+  const passBaseMint = (
+    await vaultProgram.account.conditionalVault.fetch(basePassVault)
+  ).conditionalTokenMint;
+  const passQuoteMint = (
+    await vaultProgram.account.conditionalVault.fetch(quotePassVault)
+  ).conditionalTokenMint;
+
+  const [passMarket] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("order_book"),
+      passBaseMint.toBuffer(),
+      passQuoteMint.toBuffer(),
+    ],
+    clobProgram.programId
+  );
+
+  const passBaseVault = await token.getAssociatedTokenAddress(
+    passBaseMint,
+    passMarket,
+    true
+  );
+
+  const passQuoteVault = await token.getAssociatedTokenAddress(
+    passQuoteMint,
+    passMarket,
+    true
+  );
+
+      await clobProgram.methods
+        .initializeOrderBook()
+        .accounts({
+          orderBook: passMarket,
+          payer: payer.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          base: passBaseMint,
+          quote: passQuoteMint,
+          baseVault: passBaseVault,
+          quoteVault: passQuoteVault,
+        })
+        .rpc();
+
   await autocrat.methods
     .initializeProposal(instructions, accounts)
     .preInstructions([
@@ -270,6 +326,7 @@ async function initializeProposal(
       quoteFailVaultSettlementAuthority,
       basePassVaultSettlementAuthority,
       baseFailVaultSettlementAuthority,
+      passMarket,
       initializer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
