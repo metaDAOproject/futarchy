@@ -69,9 +69,15 @@ pub mod autocrat_v0 {
         accts: Vec<ProposalAccount>,
     ) -> Result<()> {
         let pass_market = ctx.accounts.pass_market.load()?;
+        let fail_market = ctx.accounts.fail_market.load()?;
 
         require!(pass_market.base == ctx.accounts.base_pass_vault.conditional_token_mint, AutocratError::InvalidMarket);
         require!(pass_market.quote == ctx.accounts.quote_pass_vault.conditional_token_mint, AutocratError::InvalidMarket);
+
+        require!(fail_market.base == ctx.accounts.base_fail_vault.conditional_token_mint, AutocratError::InvalidMarket);
+        require!(fail_market.quote == ctx.accounts.quote_fail_vault.conditional_token_mint, AutocratError::InvalidMarket);
+
+        // TODO: add key checking logic here
 
         let proposal = &mut ctx.accounts.proposal;
 
@@ -125,7 +131,7 @@ pub struct InitializeProposal<'info> {
     )]
     pub base_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_fail_vault.settlement_authority == base_fail_vault_settlement_authority.key(),
+        // constraint = base_fail_vault.settlement_authority == base_fail_vault_settlement_authority.key(),
         constraint = base_fail_vault.underlying_token_mint == WSOL,
     )]
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
@@ -148,12 +154,13 @@ pub struct InitializeProposal<'info> {
     )]
     pub base_pass_vault_settlement_authority: UncheckedAccount<'info>,
     /// CHECK: I do what I want
-    #[account(
-        seeds = [proposal.key().as_ref(), b"base_fail"],
-        bump
-    )]
-    pub base_fail_vault_settlement_authority: UncheckedAccount<'info>,
+    // #[account(
+    //     seeds = [proposal.key().as_ref(), b"base_fail"],
+    //     bump
+    // )]
+    // pub base_fail_vault_settlement_authority: UncheckedAccount<'info>,
     pub pass_market: AccountLoader<'info, OrderBook>,
+    pub fail_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,

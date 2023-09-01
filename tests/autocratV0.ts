@@ -275,12 +275,27 @@ async function initializeProposal(
   const passQuoteMint = (
     await vaultProgram.account.conditionalVault.fetch(quotePassVault)
   ).conditionalTokenMint;
+  const failBaseMint = (
+    await vaultProgram.account.conditionalVault.fetch(baseFailVault)
+  ).conditionalTokenMint;
+  const failQuoteMint = (
+    await vaultProgram.account.conditionalVault.fetch(quoteFailVault)
+  ).conditionalTokenMint;
 
   const [passMarket] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("order_book"),
       passBaseMint.toBuffer(),
       passQuoteMint.toBuffer(),
+    ],
+    clobProgram.programId
+  );
+
+  const [failMarket] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("order_book"),
+      failBaseMint.toBuffer(),
+      failQuoteMint.toBuffer(),
     ],
     clobProgram.programId
   );
@@ -297,6 +312,18 @@ async function initializeProposal(
     true
   );
 
+  const failBaseVault = await token.getAssociatedTokenAddress(
+    failBaseMint,
+    failMarket,
+    true
+  );
+
+  const failQuoteVault = await token.getAssociatedTokenAddress(
+    failQuoteMint,
+    failMarket,
+    true
+  );
+
       await clobProgram.methods
         .initializeOrderBook()
         .accounts({
@@ -307,6 +334,19 @@ async function initializeProposal(
           quote: passQuoteMint,
           baseVault: passBaseVault,
           quoteVault: passQuoteVault,
+        })
+        .rpc();
+
+      await clobProgram.methods
+        .initializeOrderBook()
+        .accounts({
+          orderBook: failMarket,
+          payer: payer.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          base: failBaseMint,
+          quote: failQuoteMint,
+          baseVault: failBaseVault,
+          quoteVault: failQuoteVault,
         })
         .rpc();
 
@@ -327,6 +367,7 @@ async function initializeProposal(
       basePassVaultSettlementAuthority,
       baseFailVaultSettlementAuthority,
       passMarket,
+      failMarket,
       initializer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
