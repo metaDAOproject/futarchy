@@ -7,7 +7,7 @@ const { BN, Program } = anchor;
 
 import { expect, assert } from "chai";
 
-import { startAnchor } from "solana-bankrun";
+import { startAnchor, Clock } from "solana-bankrun";
 
 import { expectError } from "./utils";
 
@@ -206,8 +206,20 @@ async function initializeProposal(
   dao: PublicKey,
   clobProgram: ClobProgram
 ): PublicKey {
+  const context = autocrat.provider.context;
   const payer = autocrat.provider.wallet.payer;
   const proposalKeypair = Keypair.generate();
+
+  const currentClock = await context.banksClient.getClock();
+  const slot = currentClock.slot + 1n;
+  context.setClock(new Clock(
+    slot,
+    currentClock.epochStartTimestamp,
+    currentClock.epoch,
+    currentClock.leaderScheduleEpoch,
+    currentClock.unixTimestamp,
+  ));
+
 
   const [quotePassVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
     [
@@ -382,6 +394,7 @@ async function initializeProposal(
     proposalKeypair.publicKey
   );
 
+  assert.equal(storedProposal.slotEnqueued, slot);
   assert.equal(storedProposal.didExecute, false);
   assert.equal(storedProposal.instructions.length, instructions.length);
 

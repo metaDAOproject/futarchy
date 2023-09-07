@@ -26,6 +26,7 @@ pub struct DAO {
 
 #[account]
 pub struct Proposal {
+    pub slot_enqueued: u64,
     pub did_execute: bool,
     pub instructions: Vec<ProposalInstruction>,
     pub accounts: Vec<ProposalAccount>,
@@ -114,6 +115,9 @@ pub mod autocrat_v0 {
             AutocratError::InvalidSettlementAuthority
         );
 
+        let clock = Clock::get()?;
+
+        proposal.slot_enqueued = clock.slot;
         proposal.did_execute = false;
         proposal.instructions = instructions;
         proposal.accounts = accts;
