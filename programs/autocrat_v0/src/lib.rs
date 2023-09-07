@@ -6,7 +6,8 @@ use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 
 // by default, the pass price needs to be 20% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2000;
-// pub const WSOL: Pubkey = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
+pub const SLOTS_PER_10_SECS: u64 = 25;
+pub const TEN_DAYS_IN_SLOTS: u64 = 10 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
 pub use wsol::ID as WSOL;
 mod wsol {
@@ -126,7 +127,13 @@ pub mod autocrat_v0 {
     }
 
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
-        // TODO: verify that 10 days worth of slot time has passed
+        let proposal = &ctx.accounts.proposal;
+        let clock = Clock::get()?;
+
+        require!(
+            clock.slot >= proposal.slot_enqueued + TEN_DAYS_IN_SLOTS,
+            AutocratError::ProposalTooYoung
+        );
         // TODO: verify that pass price TWAP is `threshold_percent` over the fail price
         // TODO: execute proposal
         Ok(())
@@ -218,4 +225,6 @@ pub enum AutocratError {
     InvalidMarket,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
     InvalidSettlementAuthority,
+    #[msg("Proposal is too young to be executed or rejected")]
+    ProposalTooYoung,
 }
