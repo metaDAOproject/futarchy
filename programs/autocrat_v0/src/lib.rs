@@ -132,6 +132,9 @@ pub mod autocrat_v0 {
     }
 
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+        let pass_market = ctx.accounts.pass_market.load()?;
+        let fail_market = ctx.accounts.fail_market.load()?;
+
         let proposal = &ctx.accounts.proposal;
         let clock = Clock::get()?;
 
@@ -139,6 +142,10 @@ pub mod autocrat_v0 {
             clock.slot >= proposal.slot_enqueued + TEN_DAYS_IN_SLOTS,
             AutocratError::ProposalTooYoung
         );
+
+        let pass_market_twap = pass_market.twap_oracle;
+        let fail_market_twap = fail_market.twap_oracle;
+
         // TODO: verify that pass price TWAP is `threshold_percent` over the fail price
         // TODO: execute proposal
         Ok(())
@@ -200,7 +207,10 @@ pub struct InitializeProposal<'info> {
 
 #[derive(Accounts)]
 pub struct ExecuteProposal<'info> {
+    #[account(has_one = pass_market, has_one = fail_market)]
     pub proposal: Account<'info, Proposal>,
+    pub pass_market: AccountLoader<'info, OrderBook>,
+    pub fail_market: AccountLoader<'info, OrderBook>,
 }
 
 #[derive(Accounts)]

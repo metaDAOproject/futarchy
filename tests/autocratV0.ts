@@ -226,6 +226,10 @@ describe("autocrat_v0", async function () {
         clobProgram
       );
 
+      const storedProposal = await autocrat.account.proposal.fetch(proposal);
+      const { passMarket } = storedProposal;
+      const { failMarket } = storedProposal;
+
       const callbacks = expectError(
         autocrat,
         "ProposalTooYoung",
@@ -235,6 +239,8 @@ describe("autocrat_v0", async function () {
       await autocrat.methods.executeProposal()
         .accounts({
           proposal,
+          passMarket,
+          failMarket,
         })
         .rpc()
         .then(callbacks[0], callbacks[1]);
