@@ -196,6 +196,50 @@ describe("autocrat_v0", async function () {
       );
     });
   });
+
+  describe("#execute_proposal", async function () {
+    it("doesn't execute proposals that are too young", async function () {
+      const accounts = [
+        {
+          pubkey: dao,
+          isSigner: true,
+          isWritable: true,
+        },
+      ];
+      const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
+        passThresholdBps: 1000,
+      });
+      const instructions = [
+        {
+          programId: autocrat.programId,
+          accounts: Buffer.from([0]),
+          data: data,
+        },
+      ];
+
+      const proposal = await initializeProposal(
+        autocrat,
+        instructions,
+        accounts,
+        vaultProgram,
+        dao,
+        clobProgram
+      );
+
+      const callbacks = expectError(
+        autocrat,
+        "ProposalTooYoung",
+        "execute succeeded despite proposal being too young"
+      );
+
+      await autocrat.methods.executeProposal()
+        .accounts({
+          proposal,
+        })
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+    });
+  });
 });
 
 async function initializeProposal(
