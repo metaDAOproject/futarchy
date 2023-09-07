@@ -438,6 +438,8 @@ async function initializeProposal(
     proposalKeypair.publicKey
   );
 
+  assert.ok(storedProposal.passMarket.equals(passMarket));
+  assert.ok(storedProposal.failMarket.equals(failMarket));
   assert.equal(storedProposal.slotEnqueued, slot);
   assert.equal(storedProposal.didExecute, false);
   assert.equal(storedProposal.instructions.length, instructions.length);

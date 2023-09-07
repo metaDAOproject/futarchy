@@ -31,6 +31,8 @@ pub struct Proposal {
     pub did_execute: bool,
     pub instructions: Vec<ProposalInstruction>,
     pub accounts: Vec<ProposalAccount>,
+    pub pass_market: Pubkey,
+    pub fail_market: Pubkey,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -117,6 +119,9 @@ pub mod autocrat_v0 {
         );
 
         let clock = Clock::get()?;
+
+        proposal.pass_market = ctx.accounts.pass_market.key();
+        proposal.fail_market = ctx.accounts.fail_market.key();
 
         proposal.slot_enqueued = clock.slot;
         proposal.did_execute = false;
