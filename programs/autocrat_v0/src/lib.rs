@@ -5,7 +5,8 @@ use clob::state::order_book::OrderBook;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 
 // by default, the pass price needs to be 20% higher than the fail price
-pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2000;
+pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2_000;
+pub const MAX_BPS: u16 = 10_000;
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const TEN_DAYS_IN_SLOTS: u64 = 10 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
@@ -143,10 +144,21 @@ pub mod autocrat_v0 {
             AutocratError::ProposalTooYoung
         );
 
-        let pass_market_twap = pass_market.twap_oracle;
-        let fail_market_twap = fail_market.twap_oracle;
+        let pass_market_aggregator = pass_market.twap_oracle.observation_aggregator;
+        let fail_market_aggregator = fail_market.twap_oracle.observation_aggregator;
 
-        // TODO: verify that pass price TWAP is `threshold_percent` over the fail price
+        let pass_market_slots_passed = pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+        let fail_market_slots_passed = fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+
+        let pass_market_twap = (pass_market_aggregator / pass_market_slots_passed as u128) as u64;
+        let fail_market_twap = (fail_market_aggregator / fail_market_slots_passed as u128) as u64;
+
+        // TODO: change this to have the threshold involved. deal with overflow
+        require!(
+            pass_market_twap > fail_market_twap,
+            AutocratError::ProposalCannotPass
+        );
+
         // TODO: execute proposal
         Ok(())
     }
@@ -242,4 +254,6 @@ pub enum AutocratError {
     InvalidSettlementAuthority,
     #[msg("Proposal is too young to be executed or rejected")]
     ProposalTooYoung,
+    #[msg("The market dictates that this proposal cannot pass")]
+    ProposalCannotPass,
 }

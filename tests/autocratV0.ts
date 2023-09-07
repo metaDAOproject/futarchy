@@ -15,6 +15,8 @@ import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
 import { Clob } from "../target/types/clob";
 
+/* import { generateMarketMaker } from "./clob"; */
+
 import * as AutocratIDL from "../target/idl/autocrat_v0.json";
 import * as ConditionalVaultIDL from "../target/idl/conditional_vault.json";
 import * as ClobIDL from "../target/idl/clob.json";
@@ -25,6 +27,7 @@ import {
   createAssociatedTokenAccount,
   mintTo,
   getAccount,
+  mintToOverride
 } from "./bankrunUtils";
 
 export type AutocratProgram = Program<AutocratV0>;
@@ -44,6 +47,8 @@ const CLOB_PROGRAM_ID = new PublicKey(
   "Ap4Y89Jo1Xx7jtimjoWMGCPAKEgrarasU9iQ6Dc6Pxor"
 );
 
+const WSOL = new PublicKey("So11111111111111111111111111111111111111112");
+
 describe("autocrat_v0", async function () {
   let provider,
     connection,
@@ -55,6 +60,7 @@ describe("autocrat_v0", async function () {
     mint,
     vaultProgram,
     clobProgram,
+    clobAdmin,
     clobGlobalState;
 
   before(async function () {
@@ -83,10 +89,10 @@ describe("autocrat_v0", async function () {
       [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
       clobProgram.programId
     );
-    const admin = anchor.web3.Keypair.generate();
+    clobAdmin = anchor.web3.Keypair.generate();
 
     await clobProgram.methods
-      .initializeGlobalState(admin.publicKey)
+      .initializeGlobalState(clobAdmin.publicKey)
       .accounts({
         globalState: clobGlobalState,
         payer: payer.publicKey,
@@ -236,7 +242,8 @@ describe("autocrat_v0", async function () {
         "execute succeeded despite proposal being too young"
       );
 
-      await autocrat.methods.executeProposal()
+      await autocrat.methods
+        .executeProposal()
         .accounts({
           proposal,
           passMarket,
@@ -245,8 +252,136 @@ describe("autocrat_v0", async function () {
         .rpc()
         .then(callbacks[0], callbacks[1]);
     });
+
+    it("executes proposals", async function () {
+      const accounts = [
+        {
+          pubkey: dao,
+          isSigner: true,
+          isWritable: true,
+        },
+      ];
+      const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
+        passThresholdBps: 1000,
+      });
+      const instructions = [
+        {
+          programId: autocrat.programId,
+          accounts: Buffer.from([0]),
+          data: data,
+        },
+      ];
+
+      const proposal = await initializeProposal(
+        autocrat,
+        instructions,
+        accounts,
+        vaultProgram,
+        dao,
+        clobProgram
+      );
+
+      const storedProposal = await autocrat.account.proposal.fetch(proposal);
+      const { passMarket } = storedProposal;
+      const { failMarket } = storedProposal;
+
+      const [mm0] = await generateMarketMaker(
+        0,
+        clobProgram,
+        banksClient,
+        payer,
+        clobGlobalState,
+        passMarket,
+        clobAdmin
+      );
+
+      const [mm1] = await generateMarketMaker(
+        1,
+        clobProgram,
+        banksClient,
+        payer,
+        clobGlobalState,
+        passMarket,
+        clobAdmin
+      );
+
+    });
   });
 });
+
+async function generateMarketMaker(
+  index: number,
+  program: ClobProgram,
+  banksClient: BanksClient,
+  payer: anchor.web3.Keypair,
+  globalState: anchor.web3.PublicKey,
+  orderBook: anchor.web3.PublicKey,
+  admin: anchor.web3.Keypair
+): [Keypair] {
+  const context = program.provider.context;
+
+  const mm = anchor.web3.Keypair.generate();
+
+  const storedOrderBook = await program.account.orderBook.fetch(orderBook);
+
+  /* console.log(storedOrderBook); */
+
+  const mmBase = await createAccount(
+    banksClient,
+    payer,
+    storedOrderBook.base,
+    mm.publicKey
+  );
+
+  const mmQuote = await createAccount(
+    banksClient,
+    payer,
+    storedOrderBook.quote,
+    mm.publicKey
+  );
+
+  await mintToOverride(
+    context,
+    mmBase,
+    1_000_000_000n
+  );
+
+  await mintToOverride(
+    context,
+    mmQuote,
+    1_000_000_000n
+  );
+
+  await program.methods
+    .addMarketMaker(mm.publicKey, index)
+    .accounts({
+      orderBook,
+      payer: payer.publicKey,
+      globalState,
+      admin: admin.publicKey,
+    })
+    .rpc();
+
+  await program.methods
+    .topUpBalance(
+      index,
+      new anchor.BN(1_000_000_000),
+      new anchor.BN(1_000_000_000)
+    )
+    .accounts({
+      orderBook,
+      authority: mm.publicKey,
+      baseFrom: mmBase,
+      quoteFrom: mmQuote,
+      baseVault: storedOrderBook.baseVault,
+      quoteVault: storedOrderBook.quoteVault,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+    })
+    .signers([mm])
+    .rpc();
+
+  return [mm];
+}
 
 async function initializeProposal(
   autocrat: AutocratProgram,
@@ -262,14 +397,15 @@ async function initializeProposal(
 
   const currentClock = await context.banksClient.getClock();
   const slot = currentClock.slot + 1n;
-  context.setClock(new Clock(
-    slot,
-    currentClock.epochStartTimestamp,
-    currentClock.epoch,
-    currentClock.leaderScheduleEpoch,
-    currentClock.unixTimestamp,
-  ));
-
+  context.setClock(
+    new Clock(
+      slot,
+      currentClock.epochStartTimestamp,
+      currentClock.epoch,
+      currentClock.leaderScheduleEpoch,
+      currentClock.unixTimestamp
+    )
+  );
 
   const [quotePassVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
     [
@@ -317,18 +453,16 @@ async function initializeProposal(
     storedDAO.token
   );
 
-  const wsol = new PublicKey("So11111111111111111111111111111111111111112");
-
   const basePassVault = await initializeVault(
     vaultProgram,
     basePassVaultSettlementAuthority,
-    wsol
+    WSOL
   );
 
   const baseFailVault = await initializeVault(
     vaultProgram,
     baseFailVaultSettlementAuthority,
-    wsol
+    WSOL
   );
 
   const passBaseMint = (

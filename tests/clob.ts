@@ -502,7 +502,7 @@ describe("clob", () => {
 const BASE_AMOUNT = 1_000_000_000;
 const QUOTE_AMOUNT = 1_000_000_000;
 
-async function generateMarketMaker(
+export async function generateMarketMaker(
   index: number,
   program: Program<Clob>,
   connection: anchor.Connection,

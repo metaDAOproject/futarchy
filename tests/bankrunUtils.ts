@@ -2,7 +2,7 @@ import * as anchor from "@project-serum/anchor";
 const { Signer, PublicKey, Transaction, Commitment, ConfirmOptions } =
   anchor.web3;
 import * as token from "@solana/spl-token";
-import { BanksClient, BanksTransactionMeta } from "solana-bankrun";
+import { BanksClient, BanksTransactionMeta, ProgramTestContext } from "solana-bankrun";
 
 export async function createMint(
   banksClient: BanksClient,
@@ -134,6 +134,44 @@ export async function getMint(
 ): Promise<Mint> {
   const info = await banksClient.getAccountInfo(address, commitment);
   return token.unpackMint(address, info, programId);
+}
+
+// `mintTo` without the mintAuthority signer
+// uses bankrun's special `setAccount` function
+export async function mintToOverride(
+  context: ProgramTestContext,
+  destination: PublicKey,
+  amount: bigint,
+) {
+  const banksClient = context.banksClient;
+
+  const existingAccount = await getAccount(banksClient, destination);
+  const { mint, owner } = existingAccount;
+
+  const accData = Buffer.alloc(token.ACCOUNT_SIZE);
+  token.AccountLayout.encode(
+    {
+      mint,
+      owner,
+      amount,
+      delegateOption: 0,
+      delegate: PublicKey.default,
+      delegatedAmount: 0n,
+      state: 1,
+      isNativeOption: 0,
+      isNative: 0n,
+      closeAuthorityOption: 0,
+      closeAuthority: PublicKey.default,
+    },
+    accData
+  );
+
+  await context.setAccount(destination, {
+    data: accData,
+    executable: false,
+    lamports: 1_000_000_000n,
+    owner: token.TOKEN_PROGRAM_ID,
+  });
 }
 
 export async function mintTo(
