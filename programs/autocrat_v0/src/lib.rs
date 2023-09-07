@@ -1,10 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token};
+use anchor_spl::token::Mint;
 // use conditional_vault::program::ConditionalVault;
 use clob::state::order_book::OrderBook;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
-
-use std::str::FromStr;
 
 // by default, the pass price needs to be 20% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2000;
@@ -123,7 +121,18 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
+    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+        // TODO: verify that 10 days worth of slot time has passed
+        // TODO: verify that pass price TWAP is `threshold_percent` over the fail price
+        // TODO: execute proposal
+        Ok(())
+    }
+
     pub fn set_pass_threshold_bps(ctx: Context<Auth>, pass_threshold_bps: u16) -> Result<()> {
+        let dao = &mut ctx.accounts.dao;
+
+        dao.pass_threshold_bps = pass_threshold_bps;
+
         Ok(())
     }
 }
@@ -171,6 +180,11 @@ pub struct InitializeProposal<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ExecuteProposal<'info> {
+    pub proposal: Account<'info, Proposal>,
 }
 
 #[derive(Accounts)]
