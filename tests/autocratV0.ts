@@ -28,7 +28,7 @@ import {
   mintTo,
   getAccount,
   mintToOverride
-} from "./bankrunUtils";
+} from "spl-token-bankrun";
 
 export type AutocratProgram = Program<AutocratV0>;
 export type ConditionalVaultProgram = Program<ConditionalVault>;
@@ -304,6 +304,21 @@ describe("autocrat_v0", async function () {
         passMarket,
         clobAdmin
       );
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 100), // price
+          13, // ref id
+          1 // mm index
+        )
+        .accounts({
+          authority: mm1.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([mm1])
+        .rpc().then(() => {}, (err) => console.log(err));
 
     });
   });
