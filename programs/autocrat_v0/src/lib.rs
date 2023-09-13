@@ -1,4 +1,6 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program;
+use solana_program::instruction::Instruction;
 use anchor_spl::token::Mint;
 // use conditional_vault::program::ConditionalVault;
 use clob::state::order_book::OrderBook;
@@ -163,6 +165,14 @@ pub mod autocrat_v0 {
             AutocratError::ProposalCannotPass
         );
 
+        let mut ix: Instruction = (*ctx.accounts.transaction).deref().into();
+
+        let dao_key = ctx.accounts.dao.key();
+        let seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.pda_bump]];
+        let signer = &[&seeds[..]];
+        let accounts = ctx.remaining_accounts;
+        solana_program::program::invoke_signed(&ix, accounts, signer)?;
+
         // TODO: execute proposal
         Ok(())
     }
@@ -227,6 +237,7 @@ pub struct ExecuteProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
+    pub dao: Account<'info, DAO>,
 }
 
 #[derive(Accounts)]

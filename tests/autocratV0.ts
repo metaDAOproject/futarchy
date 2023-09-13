@@ -248,6 +248,7 @@ describe("autocrat_v0", async function () {
           proposal,
           passMarket,
           failMarket,
+          dao,
         })
         .rpc()
         .then(callbacks[0], callbacks[1]);
@@ -444,6 +445,7 @@ describe("autocrat_v0", async function () {
           proposal,
           passMarket,
           failMarket,
+          dao,
         })
         .rpc();
     });
@@ -645,6 +647,7 @@ describe("autocrat_v0", async function () {
           proposal,
           passMarket,
           failMarket,
+          dao,
         })
         .rpc()
         .then(callbacks[0], callbacks[1]);
