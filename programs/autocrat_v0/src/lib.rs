@@ -186,7 +186,7 @@ pub mod autocrat_v0 {
             let seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.pda_bump]];
             let signer = &[&seeds[..]];
 
-            solana_program::program::invoke_signed(&solana_instruction, &account_infos, signer)?;
+            solana_program::program::invoke(&solana_instruction, &account_infos)?;
         }
 
         // TODO: execute proposal
@@ -253,13 +253,13 @@ pub struct ExecuteProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
+    //#[account(mut)]
     pub dao: Account<'info, DAO>,
 }
 
 #[derive(Accounts)]
 pub struct Auth<'info> {
     #[account(
-        // signer @ ErrorCode::UnauthorizedFunctionCall,
         mut
     )]
     pub dao: Account<'info, DAO>,

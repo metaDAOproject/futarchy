@@ -258,7 +258,7 @@ describe("autocrat_v0", async function () {
       const accounts = [
         {
           pubkey: dao,
-          isSigner: true,
+          isSigner: false,
           isWritable: true,
         },
       ];
@@ -447,6 +447,15 @@ describe("autocrat_v0", async function () {
           failMarket,
           dao,
         })
+        .remainingAccounts(autocrat.instruction.setPassThresholdBps
+                          .accounts({
+                            dao,
+                          })
+                          .concat({
+                            pubkey: autocrat.programId,
+                            isWritable: false,
+                            isSigner: false,
+                          }))
         .rpc();
     });
 
