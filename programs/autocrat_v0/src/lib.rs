@@ -24,6 +24,7 @@ pub struct DAO {
     // the percentage, in basis points, the pass price needs to be above the
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
+    pub pda_bump: u8,
 }
 
 #[account]
@@ -61,6 +62,7 @@ pub mod autocrat_v0 {
 
         dao.token = ctx.accounts.token.key();
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
+        dao.pda_bump = *ctx.bumps.get("dao").unwrap();
 
         Ok(())
     }
@@ -179,7 +181,7 @@ pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + 32 + 2,
+        space = 8 + 32 + 2 + 1,
         seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], // abbreviation of the last two sentences of the Declaration of Independence of Cyberspace
         bump
     )]
