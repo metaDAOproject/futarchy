@@ -5,6 +5,7 @@ use anchor_spl::token::Mint;
 // use conditional_vault::program::ConditionalVault;
 use clob::state::order_book::OrderBook;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
+use std::borrow::Borrow;
 
 // by default, the pass price needs to be 20% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2_000;
@@ -165,13 +166,28 @@ pub mod autocrat_v0 {
             AutocratError::ProposalCannotPass
         );
 
-        let mut ix: Instruction = (*ctx.accounts.transaction).deref().into();
+        for instruction in &proposal.instructions {
+            // Collect accounts relevant to this instruction
+            let mut account_metas = Vec::new();
+            let mut account_infos = Vec::new();
 
-        let dao_key = ctx.accounts.dao.key();
-        let seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.pda_bump]];
-        let signer = &[&seeds[..]];
-        let accounts = ctx.remaining_accounts;
-        solana_program::program::invoke_signed(&ix, accounts, signer)?;
+            for i in instruction.accounts.iter() {
+                account_metas.push(proposal.accounts[*i as usize].borrow().into());
+                account_infos.push(ctx.remaining_accounts[*i as usize].clone());
+            }
+
+            let solana_instruction = Instruction {
+                program_id: instruction.program_id,
+                accounts: account_metas,
+                data: instruction.data.clone(),
+            };
+
+            let dao_key = ctx.accounts.dao.key();
+            let seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.pda_bump]];
+            let signer = &[&seeds[..]];
+
+            solana_program::program::invoke_signed(&solana_instruction, &account_infos, signer)?;
+        }
 
         // TODO: execute proposal
         Ok(())
