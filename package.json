@@ -6,8 +6,9 @@
     "dependencies": {
         "@project-serum/anchor": "^0.26.0",
         "@solana/spl-token": "^0.3.0",
-        "anchor-bankrun": "^0.1.0",
-        "solana-bankrun": "^0.1.1"
+        "anchor-bankrun": "^0.2.0",
+        "solana-bankrun": "^0.2.0",
+	"spl-token-bankrun": "^0.2.1"
     },
     "devDependencies": {
         "@types/bn.js": "^5.1.0",

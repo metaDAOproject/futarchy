@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import * as token from "@solana/spl-token";
-import { BankrunProvider } from "../../anchor-bankrun";
+import { BankrunProvider } from "anchor-bankrun";
 
 const { PublicKey, Signer, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
