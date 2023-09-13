@@ -70,6 +70,8 @@ pub mod autocrat_v0 {
         instructions: Vec<ProposalInstruction>,
         accts: Vec<ProposalAccount>,
     ) -> Result<()> {
+        // TODO: add some staking mechanism as an anti-spam mechanism, you put in like 1000
+        // USDC or something
         let pass_market = ctx.accounts.pass_market.load()?;
         let fail_market = ctx.accounts.fail_market.load()?;
 

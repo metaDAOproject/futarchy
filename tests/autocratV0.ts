@@ -253,7 +253,7 @@ describe("autocrat_v0", async function () {
         .then(callbacks[0], callbacks[1]);
     });
 
-    it("executes proposals", async function () {
+    it("executes proposals when pass price TWAP > fail price TWAP", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -285,7 +285,7 @@ describe("autocrat_v0", async function () {
       const { passMarket } = storedProposal;
       const { failMarket } = storedProposal;
 
-      const [mm0] = await generateMarketMaker(
+      const [passMM] = await generateMarketMaker(
         0,
         clobProgram,
         banksClient,
@@ -295,14 +295,87 @@ describe("autocrat_v0", async function () {
         clobAdmin
       );
 
-      const [mm1] = await generateMarketMaker(
-        1,
+      const [failMM] = await generateMarketMaker(
+        0,
         clobProgram,
         banksClient,
         payer,
         clobGlobalState,
-        passMarket,
+        failMarket,
         clobAdmin
+      );
+
+      // pass market should be higher
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 100), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 300), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 500), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 700), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      const currentClock = await context.banksClient.getClock();
+      const newSlot = currentClock.slot + 10_000_000n;
+      context.setClock(
+        new Clock(
+          newSlot,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
       );
 
       await clobProgram.methods
@@ -311,16 +384,272 @@ describe("autocrat_v0", async function () {
           new anchor.BN(101), // amount
           new anchor.BN(2e9 - 100), // price
           13, // ref id
-          1 // mm index
+          0 // mm index
         )
         .accounts({
-          authority: mm1.publicKey,
+          authority: passMM.publicKey,
           orderBook: passMarket,
         })
-        .signers([mm1])
+        .signers([passMM])
         .rpc().then(() => {}, (err) => console.log(err));
 
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 300), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 500), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 700), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await autocrat.methods
+        .executeProposal()
+        .accounts({
+          proposal,
+          passMarket,
+          failMarket,
+        })
+        .rpc();
     });
+
+    it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
+      const accounts = [
+        {
+          pubkey: dao,
+          isSigner: true,
+          isWritable: true,
+        },
+      ];
+      const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
+        passThresholdBps: 1000,
+      });
+      const instructions = [
+        {
+          programId: autocrat.programId,
+          accounts: Buffer.from([0]),
+          data: data,
+        },
+      ];
+
+      const proposal = await initializeProposal(
+        autocrat,
+        instructions,
+        accounts,
+        vaultProgram,
+        dao,
+        clobProgram
+      );
+
+      const storedProposal = await autocrat.account.proposal.fetch(proposal);
+      const { passMarket } = storedProposal;
+      const { failMarket } = storedProposal;
+
+      const [passMM] = await generateMarketMaker(
+        0,
+        clobProgram,
+        banksClient,
+        payer,
+        clobGlobalState,
+        passMarket,
+        clobAdmin
+      );
+
+      const [failMM] = await generateMarketMaker(
+        0,
+        clobProgram,
+        banksClient,
+        payer,
+        clobGlobalState,
+        failMarket,
+        clobAdmin
+      );
+
+      // pass market should be higher
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 100), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 300), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 + 500), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 + 700), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      const currentClock = await context.banksClient.getClock();
+      const newSlot = currentClock.slot + 10_000_000n;
+      context.setClock(
+        new Clock(
+          newSlot,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 100), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 - 300), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 + 500), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { sell: {} },
+          new anchor.BN(101), // amount
+          new anchor.BN(2e9 + 700), // price
+          14, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: failMM.publicKey,
+          orderBook: failMarket,
+        })
+        .signers([failMM])
+        .rpc().then(() => {}, (err) => console.log(err));
+
+      const callbacks = expectError(
+        autocrat,
+        "ProposalCannotPass",
+        "execute succeeded despite the fail price TWAP being higher than the pass price TWAP"
+      );
+
+      await autocrat.methods
+        .executeProposal()
+        .accounts({
+          proposal,
+          passMarket,
+          failMarket,
+        })
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+    });
+ 
   });
 });
 
