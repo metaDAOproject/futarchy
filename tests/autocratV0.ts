@@ -209,7 +209,7 @@ describe("autocrat_v0", async function () {
       const accounts = [
         {
           pubkey: dao,
-          isSigner: false,
+          isSigner: true,
           isWritable: true,
         },
       ];
@@ -437,6 +437,11 @@ describe("autocrat_v0", async function () {
               isWritable: false,
               isSigner: false,
             })
+            .map((meta) =>
+                 meta.pubkey.equals(dao)
+                  ? { ...meta, isSigner: false }
+                  : meta
+                )
         )
         .rpc();
 

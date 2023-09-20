@@ -165,31 +165,14 @@ pub mod autocrat_v0 {
 
         let svm_instruction: Instruction = proposal.instruction.borrow().into();
 
-        solana_program::program::invoke(&svm_instruction, ctx.remaining_accounts)?;
+        let seeds = &[
+            b"WWCACOTMICMIBMHAFTTWYGHMB".as_ref(),
+            &[ctx.accounts.dao.pda_bump],
+        ];
+        let signer = &[&seeds[..]];
 
-        //for instruction in &proposal.instructions {
-        //    // Collect accounts relevant to this instruction
-        //    let mut account_metas = Vec::new();
-        //    let mut account_infos = Vec::new();
+        solana_program::program::invoke_signed(&svm_instruction, ctx.remaining_accounts, signer)?;
 
-        //    for (i, acc in instruction.accounts.iter().enumerate() {
-        //        account_metas.push(proposal.accounts[*i as usize].borrow().into());
-        //        account_infos.push(ctx.remaining_accounts[*i as usize].clone());
-        //    }
-
-        //    let solana_instruction = Instruction {
-        //        program_id: instruction.program_id,
-        //        accounts: account_metas,
-        //        data: instruction.data.clone(),
-        //    };
-
-        //    let dao_key = ctx.accounts.dao.key();
-        //    let seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.pda_bump]];
-        //    let signer = &[&seeds[..]];
-
-        //}
-
-        // TODO: execute proposal
         Ok(())
     }
 
@@ -259,7 +242,7 @@ pub struct ExecuteProposal<'info> {
 
 #[derive(Accounts)]
 pub struct Auth<'info> {
-    #[account(mut)]
+    #[account(mut, signer)]
     pub dao: Account<'info, DAO>,
 }
 
