@@ -27,7 +27,7 @@ import {
   createAssociatedTokenAccount,
   mintTo,
   getAccount,
-  mintToOverride
+  mintToOverride,
 } from "spl-token-bankrun";
 
 export type AutocratProgram = Program<AutocratV0>;
@@ -130,7 +130,7 @@ describe("autocrat_v0", async function () {
   });
 
   describe("#initialize_proposal", async function () {
-    it("works for single-ix proposals", async function () {
+    it("initializes proposals", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -141,61 +141,15 @@ describe("autocrat_v0", async function () {
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 1000,
       });
-      const instructions = [
-        {
-          programId: autocrat.programId,
-          accounts: Buffer.from([0]),
-          data: data,
-        },
-      ];
+      const instruction = {
+        programId: autocrat.programId,
+        accounts,
+        data,
+      };
 
       await initializeProposal(
         autocrat,
-        instructions,
-        accounts,
-        vaultProgram,
-        dao,
-        clobProgram
-      );
-    });
-
-    it("works for multi-ix proposals", async function () {
-      const accounts = [
-        {
-          pubkey: dao,
-          isSigner: true,
-          isWritable: true,
-        },
-      ];
-      const data0 = autocrat.coder.instruction.encode(
-        "set_pass_threshold_bps",
-        {
-          passThresholdBps: 1000,
-        }
-      );
-      const data1 = autocrat.coder.instruction.encode(
-        "set_pass_threshold_bps",
-        {
-          passThresholdBps: 500,
-        }
-      );
-      const instructions = [
-        {
-          programId: autocrat.programId,
-          accounts: Buffer.from([0]),
-          data: data0,
-        },
-        {
-          programId: autocrat.programId,
-          accounts: Buffer.from([0]),
-          data: data1,
-        },
-      ];
-
-      await initializeProposal(
-        autocrat,
-        instructions,
-        accounts,
+        instruction,
         vaultProgram,
         dao,
         clobProgram
@@ -215,18 +169,15 @@ describe("autocrat_v0", async function () {
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 1000,
       });
-      const instructions = [
-        {
-          programId: autocrat.programId,
-          accounts: Buffer.from([0]),
-          data: data,
-        },
-      ];
+      const instruction = {
+        programId: autocrat.programId,
+        accounts,
+        data,
+      };
 
       const proposal = await initializeProposal(
         autocrat,
-        instructions,
-        accounts,
+        instruction,
         vaultProgram,
         dao,
         clobProgram
@@ -265,18 +216,15 @@ describe("autocrat_v0", async function () {
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 1000,
       });
-      const instructions = [
-        {
-          programId: autocrat.programId,
-          accounts: Buffer.from([0]),
-          data: data,
-        },
-      ];
+      const instruction = {
+        programId: autocrat.programId,
+        accounts,
+        data,
+      };
 
       const proposal = await initializeProposal(
         autocrat,
-        instructions,
-        accounts,
+        instruction,
         vaultProgram,
         dao,
         clobProgram
@@ -320,7 +268,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -335,7 +287,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -350,7 +306,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -365,7 +325,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       const currentClock = await context.banksClient.getClock();
       const newSlot = currentClock.slot + 10_000_000n;
@@ -392,7 +356,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -407,7 +375,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -422,7 +394,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -437,7 +413,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await autocrat.methods
         .executeProposal()
@@ -447,16 +427,21 @@ describe("autocrat_v0", async function () {
           failMarket,
           dao,
         })
-        .remainingAccounts(autocrat.instruction.setPassThresholdBps
-                          .accounts({
-                            dao,
-                          })
-                          .concat({
-                            pubkey: autocrat.programId,
-                            isWritable: false,
-                            isSigner: false,
-                          }))
+        .remainingAccounts(
+          autocrat.instruction.setPassThresholdBps
+            .accounts({
+              dao,
+            })
+            .concat({
+              pubkey: autocrat.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+        )
         .rpc();
+
+      const storedDao = await autocrat.account.dao.fetch(dao);
+      assert.equal(storedDao.passThresholdBps, 1000);
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
@@ -470,18 +455,15 @@ describe("autocrat_v0", async function () {
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 1000,
       });
-      const instructions = [
-        {
-          programId: autocrat.programId,
-          accounts: Buffer.from([0]),
-          data: data,
-        },
-      ];
+      const instruction = {
+        programId: autocrat.programId,
+        accounts,
+        data,
+      };
 
       const proposal = await initializeProposal(
         autocrat,
-        instructions,
-        accounts,
+        instruction,
         vaultProgram,
         dao,
         clobProgram
@@ -525,7 +507,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -540,7 +526,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -555,7 +545,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -570,7 +564,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       const currentClock = await context.banksClient.getClock();
       const newSlot = currentClock.slot + 10_000_000n;
@@ -597,7 +595,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -612,7 +614,11 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -627,7 +633,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -642,7 +652,11 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc().then(() => {}, (err) => console.log(err));
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
 
       const callbacks = expectError(
         autocrat,
@@ -661,7 +675,6 @@ describe("autocrat_v0", async function () {
         .rpc()
         .then(callbacks[0], callbacks[1]);
     });
- 
   });
 });
 
@@ -696,17 +709,9 @@ async function generateMarketMaker(
     mm.publicKey
   );
 
-  await mintToOverride(
-    context,
-    mmBase,
-    1_000_000_000n
-  );
+  await mintToOverride(context, mmBase, 1_000_000_000n);
 
-  await mintToOverride(
-    context,
-    mmQuote,
-    1_000_000_000n
-  );
+  await mintToOverride(context, mmQuote, 1_000_000_000n);
 
   await program.methods
     .addMarketMaker(mm.publicKey, index)
@@ -741,8 +746,7 @@ async function generateMarketMaker(
 
 async function initializeProposal(
   autocrat: AutocratProgram,
-  instructions: [],
-  accounts: [],
+  ix: {},
   vaultProgram: ConditionalVaultProgram,
   dao: PublicKey,
   clobProgram: ClobProgram
@@ -903,7 +907,7 @@ async function initializeProposal(
     .rpc();
 
   await autocrat.methods
-    .initializeProposal(instructions, accounts)
+    .initializeProposal(ix)
     .preInstructions([
       await autocrat.account.proposal.createInstruction(proposalKeypair, 1000),
     ])
@@ -938,16 +942,11 @@ async function initializeProposal(
   assert.ok(storedProposal.failMarket.equals(failMarket));
   assert.equal(storedProposal.slotEnqueued, slot);
   assert.equal(storedProposal.didExecute, false);
-  assert.equal(storedProposal.instructions.length, instructions.length);
 
-  for (let i = 0; i < instructions.length; i++) {
-    const ix = instructions[i];
-    const storedIx = storedProposal.instructions[i];
-
-    assert.ok(storedIx.programId.equals(ix.programId));
-    assert.deepEqual(storedIx.accounts, ix.accounts);
-    assert.deepEqual(storedIx.data, ix.data);
-  }
+  const storedIx = storedProposal.instruction;
+  assert.ok(storedIx.programId.equals(ix.programId));
+  assert.deepEqual(storedIx.accounts, ix.accounts);
+  assert.deepEqual(storedIx.data, ix.data);
 
   return proposalKeypair.publicKey;
 }

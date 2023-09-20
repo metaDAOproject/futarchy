@@ -37,7 +37,10 @@ export const expectError = (
     () => assert.fail(message),
     (e) => {
       /* console.log(e); */
-      assert(e.error.errorCode != undefined, "problem retrieving program error code");
+      assert(
+        e.error.errorCode != undefined,
+        "problem retrieving program error code"
+      );
       //for (let idlError of program.idl.errors) {
       //  if (idlError.code == e.code) {
       //    assert.equal(idlError.name, expectedError);

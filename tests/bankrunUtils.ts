@@ -2,7 +2,11 @@ import * as anchor from "@project-serum/anchor";
 const { Signer, PublicKey, Transaction, Commitment, ConfirmOptions } =
   anchor.web3;
 import * as token from "@solana/spl-token";
-import { BanksClient, BanksTransactionMeta, ProgramTestContext } from "solana-bankrun";
+import {
+  BanksClient,
+  BanksTransactionMeta,
+  ProgramTestContext,
+} from "solana-bankrun";
 
 export async function createMint(
   banksClient: BanksClient,
@@ -141,7 +145,7 @@ export async function getMint(
 export async function mintToOverride(
   context: ProgramTestContext,
   destination: PublicKey,
-  amount: bigint,
+  amount: bigint
 ) {
   const banksClient = context.banksClient;
 

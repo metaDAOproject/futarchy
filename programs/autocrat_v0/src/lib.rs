@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
-use solana_program::instruction::Instruction;
 use anchor_spl::token::Mint;
+use solana_program::instruction::Instruction;
 // use conditional_vault::program::ConditionalVault;
 use clob::state::order_book::OrderBook;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
@@ -34,8 +34,7 @@ pub struct DAO {
 pub struct Proposal {
     pub slot_enqueued: u64,
     pub did_execute: bool,
-    pub instructions: Vec<ProposalInstruction>,
-    pub accounts: Vec<ProposalAccount>,
+    pub instruction: ProposalInstruction,
     pub pass_market: Pubkey,
     pub fail_market: Pubkey,
 }
@@ -43,9 +42,7 @@ pub struct Proposal {
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct ProposalInstruction {
     pub program_id: Pubkey,
-    // Accounts to pass to the target program, stored as
-    // indexes into the `proposal.accounts` vector.
-    pub accounts: Vec<u8>,
+    pub accounts: Vec<ProposalAccount>,
     pub data: Vec<u8>,
 }
 
@@ -72,8 +69,7 @@ pub mod autocrat_v0 {
 
     pub fn initialize_proposal(
         ctx: Context<InitializeProposal>,
-        instructions: Vec<ProposalInstruction>,
-        accts: Vec<ProposalAccount>,
+        instruction: ProposalInstruction,
     ) -> Result<()> {
         // TODO: add some staking mechanism as an anti-spam mechanism, you put in like 1000
         // USDC or something
@@ -133,8 +129,7 @@ pub mod autocrat_v0 {
 
         proposal.slot_enqueued = clock.slot;
         proposal.did_execute = false;
-        proposal.instructions = instructions;
-        proposal.accounts = accts;
+        proposal.instruction = instruction;
 
         Ok(())
     }
@@ -154,8 +149,10 @@ pub mod autocrat_v0 {
         let pass_market_aggregator = pass_market.twap_oracle.observation_aggregator;
         let fail_market_aggregator = fail_market.twap_oracle.observation_aggregator;
 
-        let pass_market_slots_passed = pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
-        let fail_market_slots_passed = fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+        let pass_market_slots_passed =
+            pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+        let fail_market_slots_passed =
+            fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
 
         let pass_market_twap = (pass_market_aggregator / pass_market_slots_passed as u128) as u64;
         let fail_market_twap = (fail_market_aggregator / fail_market_slots_passed as u128) as u64;
@@ -166,28 +163,31 @@ pub mod autocrat_v0 {
             AutocratError::ProposalCannotPass
         );
 
-        for instruction in &proposal.instructions {
-            // Collect accounts relevant to this instruction
-            let mut account_metas = Vec::new();
-            let mut account_infos = Vec::new();
+        let svm_instruction: Instruction = proposal.instruction.borrow().into();
 
-            for i in instruction.accounts.iter() {
-                account_metas.push(proposal.accounts[*i as usize].borrow().into());
-                account_infos.push(ctx.remaining_accounts[*i as usize].clone());
-            }
+        solana_program::program::invoke(&svm_instruction, ctx.remaining_accounts)?;
 
-            let solana_instruction = Instruction {
-                program_id: instruction.program_id,
-                accounts: account_metas,
-                data: instruction.data.clone(),
-            };
+        //for instruction in &proposal.instructions {
+        //    // Collect accounts relevant to this instruction
+        //    let mut account_metas = Vec::new();
+        //    let mut account_infos = Vec::new();
 
-            let dao_key = ctx.accounts.dao.key();
-            let seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.pda_bump]];
-            let signer = &[&seeds[..]];
+        //    for (i, acc in instruction.accounts.iter().enumerate() {
+        //        account_metas.push(proposal.accounts[*i as usize].borrow().into());
+        //        account_infos.push(ctx.remaining_accounts[*i as usize].clone());
+        //    }
 
-            solana_program::program::invoke(&solana_instruction, &account_infos)?;
-        }
+        //    let solana_instruction = Instruction {
+        //        program_id: instruction.program_id,
+        //        accounts: account_metas,
+        //        data: instruction.data.clone(),
+        //    };
+
+        //    let dao_key = ctx.accounts.dao.key();
+        //    let seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.pda_bump]];
+        //    let signer = &[&seeds[..]];
+
+        //}
 
         // TODO: execute proposal
         Ok(())
@@ -259,10 +259,18 @@ pub struct ExecuteProposal<'info> {
 
 #[derive(Accounts)]
 pub struct Auth<'info> {
-    #[account(
-        mut
-    )]
+    #[account(mut)]
     pub dao: Account<'info, DAO>,
+}
+
+impl From<&ProposalInstruction> for Instruction {
+    fn from(ix: &ProposalInstruction) -> Self {
+        Self {
+            program_id: ix.program_id,
+            data: ix.data.clone(),
+            accounts: ix.accounts.iter().map(Into::into).collect(),
+        }
+    }
 }
 
 impl From<&ProposalAccount> for AccountMeta {
