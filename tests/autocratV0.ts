@@ -438,10 +438,8 @@ describe("autocrat_v0", async function () {
               isSigner: false,
             })
             .map((meta) =>
-                 meta.pubkey.equals(dao)
-                  ? { ...meta, isSigner: false }
-                  : meta
-                )
+              meta.pubkey.equals(dao) ? { ...meta, isSigner: false } : meta
+            )
         )
         .rpc();
 
@@ -911,10 +909,12 @@ async function initializeProposal(
     })
     .rpc();
 
+  const dummyURL = "https://www.eff.org/cyberspace-independence";
+
   await autocrat.methods
-    .initializeProposal(ix)
+    .initializeProposal(dummyURL, ix)
     .preInstructions([
-      await autocrat.account.proposal.createInstruction(proposalKeypair, 1000),
+      await autocrat.account.proposal.createInstruction(proposalKeypair, 1500),
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
@@ -923,10 +923,6 @@ async function initializeProposal(
       quoteFailVault,
       basePassVault,
       baseFailVault,
-      quotePassVaultSettlementAuthority,
-      quoteFailVaultSettlementAuthority,
-      basePassVaultSettlementAuthority,
-      baseFailVaultSettlementAuthority,
       passMarket,
       failMarket,
       initializer: payer.publicKey,
@@ -943,6 +939,8 @@ async function initializeProposal(
     proposalKeypair.publicKey
   );
 
+  assert.ok(storedProposal.proposer.equals(payer.publicKey));
+  assert.equal(storedProposal.descriptionUrl, dummyURL);
   assert.ok(storedProposal.passMarket.equals(passMarket));
   assert.ok(storedProposal.failMarket.equals(failMarket));
   assert.equal(storedProposal.slotEnqueued, slot);

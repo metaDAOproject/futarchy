@@ -1,10 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
-use solana_program::instruction::Instruction;
-// use conditional_vault::program::ConditionalVault;
 use clob::state::order_book::OrderBook;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
+use solana_program::instruction::Instruction;
 use std::borrow::Borrow;
 
 // by default, the pass price needs to be 20% higher than the fail price
@@ -32,6 +31,8 @@ pub struct DAO {
 
 #[account]
 pub struct Proposal {
+    pub proposer: Pubkey,
+    pub description_url: String,
     pub slot_enqueued: u64,
     pub did_execute: bool,
     pub instruction: ProposalInstruction,
@@ -69,6 +70,7 @@ pub mod autocrat_v0 {
 
     pub fn initialize_proposal(
         ctx: Context<InitializeProposal>,
+        description_url: String,
         instruction: ProposalInstruction,
     ) -> Result<()> {
         // TODO: add some staking mechanism as an anti-spam mechanism, you put in like 1000
@@ -127,6 +129,8 @@ pub mod autocrat_v0 {
         proposal.pass_market = ctx.accounts.pass_market.key();
         proposal.fail_market = ctx.accounts.fail_market.key();
 
+        proposal.proposer = ctx.accounts.proposer.key();
+        proposal.description_url = description_url;
         proposal.slot_enqueued = clock.slot;
         proposal.did_execute = false;
         proposal.instruction = instruction;
@@ -165,6 +169,9 @@ pub mod autocrat_v0 {
 
         let svm_instruction: Instruction = proposal.instruction.borrow().into();
 
+        // We will create a civilization of the Mind in Cyberspace. May it be
+        // more humane and fair than the world your governments have made before.
+        //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
         let seeds = &[
             b"WWCACOTMICMIBMHAFTTWYGHMB".as_ref(),
             &[ctx.accounts.dao.pda_bump],
@@ -191,7 +198,7 @@ pub struct InitializeDAO<'info> {
         init,
         payer = payer,
         space = 8 + 32 + 2 + 1,
-        seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], // abbreviation of the last two sentences of the Declaration of Independence of Cyberspace
+        seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], 
         bump
     )]
     pub dao: Account<'info, DAO>,
@@ -204,8 +211,8 @@ pub struct InitializeDAO<'info> {
 
 #[derive(Accounts)]
 pub struct InitializeProposal<'info> {
-    #[account(zero)]
-    pub proposal: Account<'info, Proposal>,
+    #[account(zero, signer)]
+    pub proposal: Box<Account<'info, Proposal>>,
     pub dao: Account<'info, DAO>,
     #[account(
         constraint = quote_pass_vault.underlying_token_mint == dao.token,
@@ -226,7 +233,7 @@ pub struct InitializeProposal<'info> {
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub proposer: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
