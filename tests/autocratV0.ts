@@ -944,7 +944,7 @@ async function initializeProposal(
   assert.ok(storedProposal.passMarket.equals(passMarket));
   assert.ok(storedProposal.failMarket.equals(failMarket));
   assert.equal(storedProposal.slotEnqueued, slot);
-  assert.equal(storedProposal.didExecute, false);
+  assert.deepEqual(storedProposal.state, {pending: {}});
 
   const storedIx = storedProposal.instruction;
   assert.ok(storedIx.programId.equals(ix.programId));

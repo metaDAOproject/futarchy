@@ -29,12 +29,19 @@ pub struct DAO {
     pub pda_bump: u8,
 }
 
+#[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub enum ProposalState {
+    Pending,
+    Passed,
+    Failed,
+}
+
 #[account]
 pub struct Proposal {
     pub proposer: Pubkey,
     pub description_url: String,
     pub slot_enqueued: u64,
-    pub did_execute: bool,
+    pub state: ProposalState,
     pub instruction: ProposalInstruction,
     pub pass_market: Pubkey,
     pub fail_market: Pubkey,
@@ -132,7 +139,7 @@ pub mod autocrat_v0 {
         proposal.proposer = ctx.accounts.proposer.key();
         proposal.description_url = description_url;
         proposal.slot_enqueued = clock.slot;
-        proposal.did_execute = false;
+        proposal.state = ProposalState::Pending;
         proposal.instruction = instruction;
 
         Ok(())
@@ -142,12 +149,17 @@ pub mod autocrat_v0 {
         let pass_market = ctx.accounts.pass_market.load()?;
         let fail_market = ctx.accounts.fail_market.load()?;
 
-        let proposal = &ctx.accounts.proposal;
+        let proposal = &mut ctx.accounts.proposal;
         let clock = Clock::get()?;
 
         require!(
             clock.slot >= proposal.slot_enqueued + TEN_DAYS_IN_SLOTS,
             AutocratError::ProposalTooYoung
+        );
+
+        require!(
+            proposal.state == ProposalState::Pending,
+            AutocratError::ProposalAlreadyFinalized
         );
 
         let pass_market_aggregator = pass_market.twap_oracle.observation_aggregator;
@@ -161,11 +173,14 @@ pub mod autocrat_v0 {
         let pass_market_twap = (pass_market_aggregator / pass_market_slots_passed as u128) as u64;
         let fail_market_twap = (fail_market_aggregator / fail_market_slots_passed as u128) as u64;
 
+
         // TODO: change this to have the threshold involved. deal with overflow
         require!(
             pass_market_twap > fail_market_twap,
             AutocratError::ProposalCannotPass
         );
+
+        proposal.state = ProposalState::Passed;
 
         let svm_instruction: Instruction = proposal.instruction.borrow().into();
 
@@ -239,11 +254,10 @@ pub struct InitializeProposal<'info> {
 
 #[derive(Accounts)]
 pub struct ExecuteProposal<'info> {
-    #[account(has_one = pass_market, has_one = fail_market)]
+    #[account(mut, has_one = pass_market, has_one = fail_market)]
     pub proposal: Account<'info, Proposal>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
-    //#[account(mut)]
     pub dao: Account<'info, DAO>,
 }
 
@@ -285,4 +299,6 @@ pub enum AutocratError {
     ProposalTooYoung,
     #[msg("The market dictates that this proposal cannot pass")]
     ProposalCannotPass,
+    #[msg("This proposal has already been finalized")]
+    ProposalAlreadyFinalized,
 }
