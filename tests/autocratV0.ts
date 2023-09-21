@@ -157,8 +157,8 @@ describe("autocrat_v0", async function () {
     });
   });
 
-  describe("#execute_proposal", async function () {
-    it("doesn't execute proposals that are too young", async function () {
+  describe("#finalize_proposal", async function () {
+    it("doesn't finalize proposals that are too young", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -190,11 +190,11 @@ describe("autocrat_v0", async function () {
       const callbacks = expectError(
         autocrat,
         "ProposalTooYoung",
-        "execute succeeded despite proposal being too young"
+        "finalize succeeded despite proposal being too young"
       );
 
       await autocrat.methods
-        .executeProposal()
+        .finalizeProposal()
         .accounts({
           proposal,
           passMarket,
@@ -205,7 +205,7 @@ describe("autocrat_v0", async function () {
         .then(callbacks[0], callbacks[1]);
     });
 
-    it("executes proposals when pass price TWAP > fail price TWAP", async function () {
+    it("finalizes proposals when pass price TWAP > fail price TWAP", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -230,7 +230,7 @@ describe("autocrat_v0", async function () {
         clobProgram
       );
 
-      const storedProposal = await autocrat.account.proposal.fetch(proposal);
+      let storedProposal = await autocrat.account.proposal.fetch(proposal);
       const { passMarket } = storedProposal;
       const { failMarket } = storedProposal;
 
@@ -420,7 +420,7 @@ describe("autocrat_v0", async function () {
         );
 
       await autocrat.methods
-        .executeProposal()
+        .finalizeProposal()
         .accounts({
           proposal,
           passMarket,
@@ -443,6 +443,9 @@ describe("autocrat_v0", async function () {
         )
         .rpc();
 
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+      assert.exists(storedProposal.state.passed);
+
       const storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, 1000);
     });
@@ -456,7 +459,7 @@ describe("autocrat_v0", async function () {
         },
       ];
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
-        passThresholdBps: 1000,
+        passThresholdBps: 750,
       });
       const instruction = {
         programId: autocrat.programId,
@@ -472,7 +475,7 @@ describe("autocrat_v0", async function () {
         clobProgram
       );
 
-      const storedProposal = await autocrat.account.proposal.fetch(proposal);
+      let storedProposal = await autocrat.account.proposal.fetch(proposal);
       const { passMarket } = storedProposal;
       const { failMarket } = storedProposal;
 
@@ -661,22 +664,24 @@ describe("autocrat_v0", async function () {
           (err) => console.log(err)
         );
 
-      const callbacks = expectError(
-        autocrat,
-        "ProposalCannotPass",
-        "execute succeeded despite the fail price TWAP being higher than the pass price TWAP"
-      );
+      let storedDao = await autocrat.account.dao.fetch(dao);
+      const passThresholdBpsBefore = storedDao.passThresholdBps;
 
       await autocrat.methods
-        .executeProposal()
+        .finalizeProposal()
         .accounts({
           proposal,
           passMarket,
           failMarket,
           dao,
         })
-        .rpc()
-        .then(callbacks[0], callbacks[1]);
+        .rpc();
+
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+      assert.exists(storedProposal.state.failed);
+
+      storedDao = await autocrat.account.dao.fetch(dao);
+      assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
     });
   });
 });

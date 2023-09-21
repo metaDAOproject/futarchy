@@ -145,7 +145,7 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+    pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
         let pass_market = ctx.accounts.pass_market.load()?;
         let fail_market = ctx.accounts.fail_market.load()?;
 
@@ -173,27 +173,25 @@ pub mod autocrat_v0 {
         let pass_market_twap = (pass_market_aggregator / pass_market_slots_passed as u128) as u64;
         let fail_market_twap = (fail_market_aggregator / fail_market_slots_passed as u128) as u64;
 
-
         // TODO: change this to have the threshold involved. deal with overflow
-        require!(
-            pass_market_twap > fail_market_twap,
-            AutocratError::ProposalCannotPass
-        );
+        if pass_market_twap > fail_market_twap {
+            proposal.state = ProposalState::Passed;
 
-        proposal.state = ProposalState::Passed;
+            let svm_instruction: Instruction = proposal.instruction.borrow().into();
 
-        let svm_instruction: Instruction = proposal.instruction.borrow().into();
+            // We will create a civilization of the Mind in Cyberspace. May it be
+            // more humane and fair than the world your governments have made before.
+            //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
+            let seeds = &[
+                b"WWCACOTMICMIBMHAFTTWYGHMB".as_ref(),
+                &[ctx.accounts.dao.pda_bump],
+            ];
+            let signer = &[&seeds[..]];
 
-        // We will create a civilization of the Mind in Cyberspace. May it be
-        // more humane and fair than the world your governments have made before.
-        //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
-        let seeds = &[
-            b"WWCACOTMICMIBMHAFTTWYGHMB".as_ref(),
-            &[ctx.accounts.dao.pda_bump],
-        ];
-        let signer = &[&seeds[..]];
-
-        solana_program::program::invoke_signed(&svm_instruction, ctx.remaining_accounts, signer)?;
+            solana_program::program::invoke_signed(&svm_instruction, ctx.remaining_accounts, signer)?;
+        } else {
+            proposal.state = ProposalState::Failed;
+        }
 
         Ok(())
     }
@@ -253,7 +251,7 @@ pub struct InitializeProposal<'info> {
 }
 
 #[derive(Accounts)]
-pub struct ExecuteProposal<'info> {
+pub struct FinalizeProposal<'info> {
     #[account(mut, has_one = pass_market, has_one = fail_market)]
     pub proposal: Account<'info, Proposal>,
     pub pass_market: AccountLoader<'info, OrderBook>,
