@@ -32,6 +32,23 @@ describe("clob", () => {
       })
       .rpc();
 
+    await program.methods
+      .updateGlobalState(null, 11, new anchor.BN(2_000_000_000), 300, 150)
+      .accounts({
+        globalState,
+        admin: admin.publicKey
+      })
+      .signers([admin])
+      .rpc();
+
+    const storedGlobalState = await program.account.globalState.fetch(globalState);
+
+    assert.ok(storedGlobalState.admin.equals(admin.publicKey));
+    assert.equal(storedGlobalState.takerFeeInBps, 11);
+    assert.ok(storedGlobalState.marketMakerBurnInLamports.eq(new anchor.BN(2_000_000_000)));
+    assert.equal(storedGlobalState.defaultMaxObservationChangePerUpdateBps, 300);
+    assert.equal(storedGlobalState.defaultMaxObservationChangePerSlotBps, 150);
+
     const mintAuthority = anchor.web3.Keypair.generate();
     const quote = await token.createMint(
       provider.connection,
@@ -73,6 +90,7 @@ describe("clob", () => {
       .initializeOrderBook()
       .accounts({
         orderBook,
+        globalState,
         payer: payer.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
         base,

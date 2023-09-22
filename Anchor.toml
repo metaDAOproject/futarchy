@@ -23,6 +23,3 @@ test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/clob.ts"
 startup_wait = 5000
 shutdown_wait = 2000
 
-[[test.genesis]]
-address = "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD"
-program = "./dependencies/clob.so"

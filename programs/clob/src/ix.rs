@@ -44,6 +44,7 @@ pub struct InitializeOrderBook<'info> {
         space = 8 + size_of::<OrderBook>()
     )]
     pub order_book: AccountLoader<'info, OrderBook>,
+    pub global_state: Account<'info, GlobalState>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub token_program: Program<'info, Token>,

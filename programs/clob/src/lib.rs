@@ -36,6 +36,8 @@ pub mod clob {
         global_state.admin = admin;
         global_state.taker_fee_in_bps = 10;
         global_state.market_maker_burn_in_lamports = 1_000_000_000;
+        global_state.default_max_observation_change_per_update_bps = 250;
+        global_state.default_max_observation_change_per_slot_bps = 100;
 
         Ok(())
     }
@@ -45,6 +47,8 @@ pub mod clob {
         new_admin: Option<Pubkey>,
         new_taker_fee_in_bps: Option<u16>,
         new_market_maker_burn_in_lamports: Option<u64>,
+        new_default_max_observation_change_per_update_bps: Option<u16>,
+        new_default_max_observation_change_per_slot_bps: Option<u16>,
     ) -> Result<()> {
         let global_state = &mut ctx.accounts.global_state;
 
@@ -60,6 +64,12 @@ pub mod clob {
         }
         if let Some(new_market_maker_burn_in_lamports) = new_market_maker_burn_in_lamports {
             global_state.market_maker_burn_in_lamports = new_market_maker_burn_in_lamports;
+        }
+        if let Some(new_default_max_observation_change_per_update_bps) = new_default_max_observation_change_per_update_bps {
+            global_state.default_max_observation_change_per_update_bps = new_default_max_observation_change_per_update_bps;
+        }
+        if let Some(new_default_max_observation_change_per_slot_bps) = new_default_max_observation_change_per_slot_bps {
+            global_state.default_max_observation_change_per_slot_bps = new_default_max_observation_change_per_slot_bps;
         }
 
         Ok(())
@@ -84,9 +94,11 @@ pub mod clob {
         order_book.sells.best_order_idx = NULL;
         order_book.sells.worst_order_idx = NULL;
 
-        // TODO: make this configurable via global state
-        order_book.twap_oracle.max_observation_change_per_update_bps = 250;
-        order_book.twap_oracle.max_observation_change_per_slot_bps = 100;
+        let global_state = &ctx.accounts.global_state;
+        order_book.twap_oracle.max_observation_change_per_update_bps =
+            global_state.default_max_observation_change_per_update_bps;
+        order_book.twap_oracle.max_observation_change_per_slot_bps =
+            global_state.default_max_observation_change_per_slot_bps;
 
         order_book.min_base_limit_amount = 1;
         order_book.min_quote_limit_amount = 1;

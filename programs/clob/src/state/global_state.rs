@@ -15,4 +15,7 @@ pub struct GlobalState {
     /// from taking all the market maker slots. Also, have I mentioned that profits
     /// are virtuous?
     pub market_maker_burn_in_lamports: u64,
+    // the defaults that new markets get initialized with
+    pub default_max_observation_change_per_update_bps: u16,
+    pub default_max_observation_change_per_slot_bps: u16,
 }
