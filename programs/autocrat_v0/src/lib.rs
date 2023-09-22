@@ -8,6 +8,8 @@ use std::borrow::Borrow;
 
 // by default, the pass price needs to be 20% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2_000;
+pub const DEFAULT_PROPOSAL_LAMPORT_LOCKUP: u64 = 20 * solana_program::native_token::LAMPORTS_PER_SOL;
+
 pub const MAX_BPS: u16 = 10_000;
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const TEN_DAYS_IN_SLOTS: u64 = 10 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
@@ -26,7 +28,11 @@ pub struct DAO {
     // the percentage, in basis points, the pass price needs to be above the
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
-    pub pda_bump: u8,
+    // an anti-spam mechanism for proposals; proposer gets back their original lamports
+    // whether or not the proposal passes
+    pub proposal_lamport_lockup: u64,
+    // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
+    pub treasury_pda_bump: u8,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -70,7 +76,13 @@ pub mod autocrat_v0 {
 
         dao.token = ctx.accounts.token.key();
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
-        dao.pda_bump = *ctx.bumps.get("dao").unwrap();
+        dao.proposal_lamport_lockup = DEFAULT_PROPOSAL_LAMPORT_LOCKUP;
+
+        let (_, treasury_bump) = Pubkey::find_program_address(
+            &[dao.key().as_ref()],
+            ctx.program_id
+        );
+        dao.treasury_pda_bump = treasury_bump;
 
         Ok(())
     }
@@ -80,8 +92,20 @@ pub mod autocrat_v0 {
         description_url: String,
         instruction: ProposalInstruction,
     ) -> Result<()> {
-        // TODO: add some staking mechanism as an anti-spam mechanism, you put in like 1000
-        // USDC or something
+        let lockup_ix = solana_program::system_instruction::transfer(
+            &ctx.accounts.proposer.key(),
+            &ctx.accounts.dao.key(),
+            ctx.accounts.dao.proposal_lamport_lockup
+        );
+
+        solana_program::program::invoke(
+            &lockup_ix,
+            &[
+                ctx.accounts.proposer.to_account_info(),
+                ctx.accounts.dao.to_account_info(),
+            ]
+        )?;
+
         let pass_market = ctx.accounts.pass_market.load()?;
         let fail_market = ctx.accounts.fail_market.load()?;
 
@@ -177,14 +201,16 @@ pub mod autocrat_v0 {
         if pass_market_twap > fail_market_twap {
             proposal.state = ProposalState::Passed;
 
-            let svm_instruction: Instruction = proposal.instruction.borrow().into();
-
-            // We will create a civilization of the Mind in Cyberspace. May it be
-            // more humane and fair than the world your governments have made before.
-            //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
+            let mut svm_instruction: Instruction = proposal.instruction.borrow().into();
+            for acc in svm_instruction.accounts.iter_mut() {
+                if &acc.pubkey == ctx.accounts.dao_treasury.key {
+                    acc.is_signer = true;
+                }
+            }
+            let dao_key = ctx.accounts.dao.key();
             let seeds = &[
-                b"WWCACOTMICMIBMHAFTTWYGHMB".as_ref(),
-                &[ctx.accounts.dao.pda_bump],
+                dao_key.as_ref(),
+                &[ctx.accounts.dao.treasury_pda_bump],
             ];
             let signer = &[&seeds[..]];
 
@@ -192,6 +218,21 @@ pub mod autocrat_v0 {
         } else {
             proposal.state = ProposalState::Failed;
         }
+
+        //let release_ix = solana_program::system_instruction::transfer(
+        //    &ctx.accounts.dao.key(),
+        //    &ctx.accounts.proposer.key(),
+        //    ctx.accounts.dao.proposal_lamport_lockup
+        //);
+
+        //solana_program::program::invoke_signed(
+        //    &release_ix,
+        //    &[
+        //        ctx.accounts.dao.to_account_info(),
+        //        ctx.accounts.proposer.to_account_info(),
+        //    ],
+        //    signer
+        //)?;
 
         Ok(())
     }
@@ -210,7 +251,10 @@ pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + 32 + 2 + 1,
+        space = 8 + 32 + 2 + 8 + 1,
+        // We will create a civilization of the Mind in Cyberspace. May it be
+        // more humane and fair than the world your governments have made before.
+        //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
         seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], 
         bump
     )]
@@ -226,6 +270,7 @@ pub struct InitializeDAO<'info> {
 pub struct InitializeProposal<'info> {
     #[account(zero, signer)]
     pub proposal: Box<Account<'info, Proposal>>,
+    #[account(mut)]
     pub dao: Account<'info, DAO>,
     #[account(
         constraint = quote_pass_vault.underlying_token_mint == dao.token,
@@ -252,17 +297,27 @@ pub struct InitializeProposal<'info> {
 
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
-    #[account(mut, has_one = pass_market, has_one = fail_market)]
+    #[account(mut, has_one = pass_market, has_one = fail_market, has_one = proposer)]
     pub proposal: Account<'info, Proposal>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
     pub dao: Account<'info, DAO>,
+    /// CHECK: never read
+    #[account(
+        seeds = [dao.key().as_ref()],
+        bump = dao.treasury_pda_bump
+    )]
+    pub dao_treasury: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub proposer: Signer<'info>,
 }
 
 #[derive(Accounts)]
 pub struct Auth<'info> {
-    #[account(mut, signer)]
+    #[account(mut)]
     pub dao: Account<'info, DAO>,
+    /// CHECK: never read
+    pub dao_treasury: Signer<'info>,
 }
 
 impl From<&ProposalInstruction> for Instruction {

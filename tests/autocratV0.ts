@@ -57,6 +57,7 @@ describe("autocrat_v0", async function () {
     context,
     banksClient,
     dao,
+    daoTreasury,
     mint,
     vaultProgram,
     clobProgram,
@@ -107,6 +108,10 @@ describe("autocrat_v0", async function () {
         [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
         autocrat.programId
       );
+      [daoTreasury] = PublicKey.findProgramAddressSync(
+        [dao.toBuffer()],
+        autocrat.programId
+      );
 
       mint = await createMint(banksClient, payer, dao, dao, 9);
 
@@ -126,6 +131,8 @@ describe("autocrat_v0", async function () {
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.token.equals(mint));
+      assert.equal(daoAcc.passThresholdBps, 2000);
+      assert.ok(daoAcc.proposalLamportLockup.eq(new BN(1_000_000_000).muln(20)));
     });
   });
 
@@ -175,6 +182,8 @@ describe("autocrat_v0", async function () {
         data,
       };
 
+      let proposerBalanceBefore = await banksClient.getBalance(payer.publicKey);
+
       const proposal = await initializeProposal(
         autocrat,
         instruction,
@@ -182,6 +191,9 @@ describe("autocrat_v0", async function () {
         dao,
         clobProgram
       );
+
+
+      assert(await banksClient.getBalance(payer.publicKey) < proposerBalanceBefore - (1_000_000_000n * 20n));
 
       const storedProposal = await autocrat.account.proposal.fetch(proposal);
       const { passMarket } = storedProposal;
@@ -200,6 +212,7 @@ describe("autocrat_v0", async function () {
           passMarket,
           failMarket,
           dao,
+          daoTreasury,
         })
         .rpc()
         .then(callbacks[0], callbacks[1]);
@@ -209,9 +222,14 @@ describe("autocrat_v0", async function () {
       const accounts = [
         {
           pubkey: dao,
-          isSigner: true,
+          isSigner: false,
           isWritable: true,
         },
+        {
+          pubkey: daoTreasury,
+          isSigner: true,
+          isWritable: false,
+        }
       ];
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 1000,
@@ -419,18 +437,20 @@ describe("autocrat_v0", async function () {
           (err) => console.log(err)
         );
 
-      await autocrat.methods
+      let ix = await autocrat.methods
         .finalizeProposal()
         .accounts({
           proposal,
           passMarket,
           failMarket,
           dao,
+          daoTreasury,
         })
         .remainingAccounts(
           autocrat.instruction.setPassThresholdBps
             .accounts({
               dao,
+              daoTreasury,
             })
             .concat({
               pubkey: autocrat.programId,
@@ -438,7 +458,7 @@ describe("autocrat_v0", async function () {
               isSigner: false,
             })
             .map((meta) =>
-              meta.pubkey.equals(dao) ? { ...meta, isSigner: false } : meta
+              meta.pubkey.equals(daoTreasury) ? { ...meta, isSigner: false } : meta
             )
         )
         .rpc();
@@ -454,10 +474,16 @@ describe("autocrat_v0", async function () {
       const accounts = [
         {
           pubkey: dao,
-          isSigner: true,
+          isSigner: false,
           isWritable: true,
         },
+        {
+          pubkey: daoTreasury,
+          isSigner: true,
+          isWritable: false,
+        }
       ];
+
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 750,
       });
@@ -674,6 +700,7 @@ describe("autocrat_v0", async function () {
           passMarket,
           failMarket,
           dao,
+          daoTreasury,
         })
         .rpc();
 
