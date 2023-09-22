@@ -206,16 +206,25 @@ pub mod autocrat_v0 {
         let fail_market_slots_passed =
             fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
 
+        require!(
+            pass_market_slots_passed >= TEN_DAYS_IN_SLOTS,
+            AutocratError::MarketsTooYoung
+        );
+        require!(
+            fail_market_slots_passed >= TEN_DAYS_IN_SLOTS,
+            AutocratError::MarketsTooYoung
+        );
+
         let pass_market_twap = pass_market_aggregator / pass_market_slots_passed as u128;
         let fail_market_twap = fail_market_aggregator / fail_market_slots_passed as u128;
-
 
         assert!(pass_market_twap != 0);
         assert!(fail_market_twap != 0);
 
-        let threshold = (fail_market_twap * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128) / MAX_BPS as u128;
+        let threshold = (fail_market_twap
+            * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
+            / MAX_BPS as u128;
 
-        // TODO: change this to have the threshold involved. deal with overflow
         if pass_market_twap > threshold {
             proposal.state = ProposalState::Passed;
 
@@ -238,7 +247,7 @@ pub mod autocrat_v0 {
         let release_ix = solana_program::system_instruction::transfer(
             &ctx.accounts.dao_treasury.key(),
             &ctx.accounts.proposer.key(),
-            proposal.lamport_lockup
+            proposal.lamport_lockup,
         );
 
         solana_program::program::invoke_signed(
@@ -374,6 +383,8 @@ pub enum AutocratError {
     InvalidSettlementAuthority,
     #[msg("Proposal is too young to be executed or rejected")]
     ProposalTooYoung,
+    #[msg("Markets too young for proposal to be finalized")]
+    MarketsTooYoung,
     #[msg("The market dictates that this proposal cannot pass")]
     ProposalCannotPass,
     #[msg("This proposal has already been finalized")]
