@@ -42,6 +42,15 @@ pub struct InvariantStorage {
 }
 
 impl OrderBook {
+    pub fn assert_balance_invariant(
+        vault_token_balance: u64,
+        liabilities: u64,
+        liquidity: u64,
+        fees_sweepable: u64,
+    ) {
+        assert!(vault_token_balance >= liabilities + liquidity + fees_sweepable);
+    }
+
     pub fn get_mm(&mut self, index: usize) -> (&mut MarketMaker, &mut InvariantStorage) {
         (&mut self.market_makers[index], &mut self.inv)
     }

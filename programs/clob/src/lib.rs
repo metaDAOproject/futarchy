@@ -255,6 +255,22 @@ pub mod clob {
 
         market_maker.credit_quote(quote_amount, inv);
 
+        ctx.accounts.base_vault.reload()?;
+        ctx.accounts.quote_vault.reload()?;
+
+        OrderBook::assert_balance_invariant(
+            ctx.accounts.base_vault.amount,
+            order_book.inv.base_liabilities,
+            order_book.inv.base_liquidity,
+            order_book.inv.base_fees_sweepable,
+        );
+        OrderBook::assert_balance_invariant(
+            ctx.accounts.quote_vault.amount,
+            order_book.inv.quote_liabilities,
+            order_book.inv.quote_liquidity,
+            order_book.inv.quote_fees_sweepable,
+        );
+
         Ok(())
     }
 
@@ -287,6 +303,19 @@ pub mod clob {
 
         let seeds = &[b"order_book", base.as_ref(), quote.as_ref(), &[pda_bump]];
 
+        let InvariantStorage {
+            base_liabilities,
+            base_liquidity,
+            base_fees_sweepable,
+            ..
+        } = order_book.inv;
+        let InvariantStorage {
+            quote_liabilities,
+            quote_liquidity,
+            quote_fees_sweepable,
+            ..
+        } = order_book.inv;
+
         drop(order_book);
 
         token_transfer_signed(
@@ -305,7 +334,25 @@ pub mod clob {
             &ctx.accounts.quote_to,
             &ctx.accounts.order_book,
             seeds,
-        )
+        )?;
+
+        ctx.accounts.base_vault.reload()?;
+        ctx.accounts.quote_vault.reload()?;
+
+        OrderBook::assert_balance_invariant(
+            ctx.accounts.base_vault.amount,
+            base_liabilities,
+            base_liquidity,
+            base_fees_sweepable,
+        );
+        OrderBook::assert_balance_invariant(
+            ctx.accounts.quote_vault.amount,
+            quote_liabilities,
+            quote_liquidity,
+            quote_fees_sweepable,
+        );
+
+        Ok(())
     }
 
     pub fn submit_limit_order(
@@ -532,19 +579,22 @@ pub mod clob {
         ctx.accounts.base_vault.reload()?;
         ctx.accounts.quote_vault.reload()?;
 
-        // set these up for invariant checks
         let post_user_base_balance = ctx.accounts.user_base_account.amount;
         let post_user_quote_balance = ctx.accounts.user_quote_account.amount;
         let post_vault_base_balance = ctx.accounts.base_vault.amount;
         let post_vault_quote_balance = ctx.accounts.quote_vault.amount;
 
-        assert!(
-            post_base_liabilities + post_base_liquidity + post_base_fees_sweepable
-                <= post_vault_base_balance
+        OrderBook::assert_balance_invariant(
+            post_vault_base_balance,
+            post_base_liabilities,
+            post_base_liquidity,
+            post_base_fees_sweepable,
         );
-        assert!(
-            post_quote_liabilities + post_quote_liquidity + post_quote_fees_sweepable
-                <= post_vault_quote_balance
+        OrderBook::assert_balance_invariant(
+            post_vault_quote_balance,
+            post_quote_liabilities,
+            post_quote_liquidity,
+            post_quote_fees_sweepable,
         );
 
         match side {
