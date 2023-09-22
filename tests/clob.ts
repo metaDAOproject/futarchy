@@ -314,6 +314,16 @@ describe("clob", () => {
         orderBook,
       })
       .view();
+      
+    let mm1BalsAfterTake = await program.methods
+      .getMarketMakerBalances(mm1.publicKey)
+      .accounts({
+        orderBook,
+      })
+      .view();
+
+    console.log(mm0BalsAfterTake);
+    console.log(mm1BalsAfterTake);
 
     let mm1BaseTokenBalanceAfter = (await token.getAccount(connection, mm1Base))
       .amount;
@@ -346,7 +356,7 @@ describe("clob", () => {
     );
 
     let ob = await program.account.orderBook.fetch(orderBook);
-    assert(ob.quoteFeesSweepable.eq(new anchor.BN(1)));
+    assert(ob.inv.quoteFeesSweepable.eq(new anchor.BN(1)));
 
     buys = await program.methods
       .getBestOrders({ buy: {} })

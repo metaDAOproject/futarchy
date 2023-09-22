@@ -20,33 +20,60 @@ pub struct OrderBook {
     // to prevent spam.
     pub min_base_limit_amount: u64,
     pub min_quote_limit_amount: u64,
-    pub base_fees_sweepable: u64,
-    pub quote_fees_sweepable: u64,
     pub pda_bump: u8,
     pub _padding: [u8; 7],
+    pub inv: InvariantStorage,
+}
+
+// some invariants that should always hold:
+// liabilities + fees sweepable <= vault balance
+// inflows = outflows + fees sweepable + liabilities
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[zero_copy]
+pub struct InvariantStorage {
+    pub base_fees_sweepable: u64,
+    pub quote_fees_sweepable: u64,
+    // liabilities = Σmm.balance
+    pub base_liabilities: u64,
+    pub quote_liabilities: u64,
+    // liquidity = Σorder.amount_in
+    pub base_liquidity: u64,
+    pub quote_liquidity: u64,
 }
 
 impl OrderBook {
+    pub fn get_mm(&mut self, index: usize) -> (&mut MarketMaker, &mut InvariantStorage) {
+        (&mut self.market_makers[index], &mut self.inv)
+    }
+
     pub fn opposing_order_list(
         &mut self,
         side: Side,
-    ) -> (&mut OrderList, &mut [MarketMaker; NUM_MARKET_MAKERS]) {
+    ) -> (
+        &mut OrderList,
+        &mut [MarketMaker; NUM_MARKET_MAKERS],
+        &mut InvariantStorage,
+    ) {
         let list = match side {
             Side::Buy => &mut self.sells,
             Side::Sell => &mut self.buys,
         };
-        (list, &mut self.market_makers)
+        (list, &mut self.market_makers, &mut self.inv)
     }
 
     pub fn order_list(
         &mut self,
         side: Side,
-    ) -> (&mut OrderList, &mut [MarketMaker; NUM_MARKET_MAKERS]) {
+    ) -> (
+        &mut OrderList,
+        &mut [MarketMaker; NUM_MARKET_MAKERS],
+        &mut InvariantStorage,
+    ) {
         let list = match side {
             Side::Buy => &mut self.buys,
             Side::Sell => &mut self.sells,
         };
-        (list, &mut self.market_makers)
+        (list, &mut self.market_makers, &mut self.inv)
     }
 
     pub fn update_twap_oracle(&mut self) -> Result<()> {
@@ -199,6 +226,7 @@ impl OrderList {
         ref_id: u32,
         market_maker_index: u8,
         makers: &mut [MarketMaker; NUM_MARKET_MAKERS],
+        inv: &mut InvariantStorage,
     ) -> Option<u8> {
         let mut order = Order {
             amount_in: amount,
@@ -219,7 +247,7 @@ impl OrderList {
                     // If no space remains, remove the worst-priced order from
                     // the order book, and store the current order in its chunk.
                     let i = self.worst_order_idx;
-                    self.delete_order(i, makers);
+                    self.delete_order(i, makers, inv);
 
                     i as usize
                 });
@@ -238,7 +266,7 @@ impl OrderList {
                     NULL
                 };
 
-                self.place_order(order, order_idx as u8, makers);
+                self.place_order(order, order_idx as u8, makers, inv);
 
                 return Some(order_idx as u8);
             }
@@ -255,7 +283,7 @@ impl OrderList {
             };
             order.next_idx = NULL;
 
-            self.place_order(order, free_chunk as u8, makers);
+            self.place_order(order, free_chunk as u8, makers, inv);
 
             free_chunk as u8
         })
@@ -277,7 +305,13 @@ impl OrderList {
     //    }
     //}
 
-    fn place_order(&mut self, order: Order, i: u8, makers: &mut [MarketMaker; NUM_MARKET_MAKERS]) {
+    fn place_order(
+        &mut self,
+        order: Order,
+        i: u8,
+        makers: &mut [MarketMaker; NUM_MARKET_MAKERS],
+        inv: &mut InvariantStorage,
+    ) {
         // this order shouldn't clobber any existing order
         assert!(self.orders[i as usize].amount_in == 0);
 
@@ -293,36 +327,59 @@ impl OrderList {
             self.orders[order.next_idx as usize].prev_idx = i;
         }
 
+        self.add_liquidity(order.amount_in, inv);
         self.debit_tokens(
             order.amount_in,
             &mut makers[order.market_maker_index as usize],
+            inv,
         );
 
         self.orders[i as usize] = order;
         self.free_bitmap.mark_reserved(i);
     }
 
-    fn debit_tokens(&mut self, amount: u64, maker: &mut MarketMaker) {
+    fn debit_tokens(&mut self, amount: u64, maker: &mut MarketMaker, inv: &mut InvariantStorage) {
         match self.side.into() {
             // overflow protection is compiled in with overflow-checks = true in the root Cargo.toml
-            Side::Buy => maker.quote_balance -= amount,
-            Side::Sell => maker.base_balance -= amount,
+            Side::Buy => maker.debit_quote(amount, inv),
+            Side::Sell => maker.debit_base(amount, inv),
         };
     }
 
-    fn credit_tokens(&mut self, amount: u64, maker: &mut MarketMaker) {
+    fn credit_tokens(&mut self, amount: u64, maker: &mut MarketMaker, inv: &mut InvariantStorage) {
         match self.side.into() {
-            Side::Buy => maker.quote_balance += amount,
-            Side::Sell => maker.base_balance += amount,
+            Side::Buy => maker.credit_quote(amount, inv),
+            Side::Sell => maker.credit_base(amount, inv),
         };
+    }
+
+    pub fn sub_liquidity(&self, amount: u64, inv: &mut InvariantStorage) {
+        match self.side.into() {
+            Side::Buy => inv.quote_liquidity -= amount,
+            Side::Sell => inv.base_liquidity -= amount,
+        }
+    }
+
+    pub fn add_liquidity(&self, amount: u64, inv: &mut InvariantStorage) {
+        match self.side.into() {
+            Side::Buy => inv.quote_liquidity += amount,
+            Side::Sell => inv.base_liquidity += amount,
+        }
     }
 
     /// Deletes an order from the order book and returns the contents of that order.
     ///
     /// It is the client's responsibility to credit any tokens to the relevant
     /// maker.
-    pub fn delete_order(&mut self, i: u8, makers: &mut [MarketMaker; NUM_MARKET_MAKERS]) -> Order {
+    pub fn delete_order(
+        &mut self,
+        i: u8,
+        makers: &mut [MarketMaker; NUM_MARKET_MAKERS],
+        inv: &mut InvariantStorage,
+    ) -> Order {
         let order = self.orders[i as usize];
+
+        self.sub_liquidity(order.amount_in, inv);
 
         if i == self.best_order_idx {
             self.best_order_idx = order.next_idx;
@@ -339,6 +396,7 @@ impl OrderList {
         self.credit_tokens(
             order.amount_in,
             &mut makers[order.market_maker_index as usize],
+            inv,
         );
 
         self.orders[i as usize] = Order::default();
@@ -387,4 +445,26 @@ pub struct MarketMaker {
     pub base_balance: u64,
     pub quote_balance: u64,
     pub authority: Pubkey,
+}
+
+impl MarketMaker {
+    pub fn credit_base(&mut self, amount: u64, inv: &mut InvariantStorage) {
+        self.base_balance += amount;
+        inv.base_liabilities += amount;
+    }
+
+    pub fn credit_quote(&mut self, amount: u64, inv: &mut InvariantStorage) {
+        self.quote_balance += amount;
+        inv.quote_liabilities += amount;
+    }
+
+    pub fn debit_base(&mut self, amount: u64, inv: &mut InvariantStorage) {
+        self.base_balance -= amount;
+        inv.base_liabilities -= amount;
+    }
+
+    pub fn debit_quote(&mut self, amount: u64, inv: &mut InvariantStorage) {
+        self.quote_balance -= amount;
+        inv.quote_liabilities -= amount;
+    }
 }

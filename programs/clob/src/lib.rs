@@ -109,8 +109,10 @@ pub mod clob {
         order_book.min_base_limit_amount = 1;
         order_book.min_quote_limit_amount = 1;
 
-        order_book.base_fees_sweepable = 0;
-        order_book.quote_fees_sweepable = 0;
+        order_book.inv.base_fees_sweepable = 0;
+        order_book.inv.quote_fees_sweepable = 0;
+        order_book.inv.base_liabilities = 0;
+        order_book.inv.quote_liabilities = 0;
 
         order_book.pda_bump = *ctx.bumps.get("order_book").unwrap();
 
@@ -158,11 +160,11 @@ pub mod clob {
     pub fn sweep_fees(ctx: Context<SweepFees>) -> Result<()> {
         let mut order_book = ctx.accounts.order_book.load_mut()?;
 
-        let base_amount = order_book.base_fees_sweepable;
-        let quote_amount = order_book.quote_fees_sweepable;
+        let base_amount = order_book.inv.base_fees_sweepable;
+        let quote_amount = order_book.inv.quote_fees_sweepable;
 
-        order_book.base_fees_sweepable = 0;
-        order_book.quote_fees_sweepable = 0;
+        order_book.inv.base_fees_sweepable = 0;
+        order_book.inv.quote_fees_sweepable = 0;
 
         // Copy these onto the stack before we drop `order_book`
         let base = order_book.base;
@@ -231,7 +233,7 @@ pub mod clob {
     ) -> Result<()> {
         let mut order_book = ctx.accounts.order_book.load_mut()?;
 
-        let market_maker = &mut order_book.market_makers[market_maker_index as usize];
+        let (market_maker, inv) = order_book.get_mm(market_maker_index as usize);
 
         token_transfer(
             base_amount,
@@ -241,7 +243,7 @@ pub mod clob {
             &ctx.accounts.authority,
         )?;
 
-        market_maker.base_balance += base_amount;
+        market_maker.credit_base(base_amount, inv);
 
         token_transfer(
             quote_amount,
@@ -251,7 +253,7 @@ pub mod clob {
             &ctx.accounts.authority,
         )?;
 
-        market_maker.quote_balance += quote_amount;
+        market_maker.credit_quote(quote_amount, inv);
 
         Ok(())
     }
@@ -264,7 +266,10 @@ pub mod clob {
     ) -> Result<()> {
         let mut order_book = ctx.accounts.order_book.load_mut()?;
 
-        let market_maker = &mut order_book.market_makers[market_maker_index as usize];
+        order_book.inv.base_liabilities -= base_amount;
+        order_book.inv.quote_liabilities -= quote_amount;
+
+        let (market_maker, inv) = order_book.get_mm(market_maker_index as usize);
 
         require!(
             market_maker.authority == ctx.accounts.authority.key(),
@@ -272,15 +277,8 @@ pub mod clob {
         );
 
         // These debits cannot be inside the `if` blocks because we drop `order_book`
-        market_maker.base_balance = market_maker
-            .base_balance
-            .checked_sub(base_amount)
-            .ok_or(CLOBError::InsufficientBalance)?;
-
-        market_maker.quote_balance = market_maker
-            .quote_balance
-            .checked_sub(quote_amount)
-            .ok_or(CLOBError::InsufficientBalance)?;
+        market_maker.debit_base(base_amount, inv);
+        market_maker.debit_quote(quote_amount, inv);
 
         // Copy these onto the stack before we drop `order_book`
         let base = order_book.base;
@@ -335,10 +333,10 @@ pub mod clob {
         };
         require!(amount_in >= min_amount, CLOBError::MinLimitAmountNotMet);
 
-        let (order_list, makers) = order_book.order_list(side);
+        let (order_list, makers, inv) = order_book.order_list(side);
 
         let order_idx =
-            order_list.insert_order(amount_in, price, ref_id, market_maker_index, makers);
+            order_list.insert_order(amount_in, price, ref_id, market_maker_index, makers, inv);
 
         order_idx.ok_or_else(|| error!(CLOBError::InferiorPrice))
     }
@@ -360,7 +358,7 @@ pub mod clob {
             CLOBError::UnauthorizedMarketMaker
         );
 
-        let (order_list, makers) = order_book.order_list(side);
+        let (order_list, makers, inv) = order_book.order_list(side);
 
         let order = order_list.orders[order_index as usize];
 
@@ -369,7 +367,7 @@ pub mod clob {
             CLOBError::UnauthorizedMarketMaker
         );
 
-        order_list.delete_order(order_index, makers);
+        order_list.delete_order(order_index, makers, inv);
 
         Ok(())
     }
@@ -400,7 +398,7 @@ pub mod clob {
 
         let (receiving_vault, sending_vault, user_from, user_to) = match side {
             Side::Buy => {
-                order_book.quote_fees_sweepable += amount_in - amount_in_after_fees as u64;
+                order_book.inv.quote_fees_sweepable += amount_in - amount_in_after_fees as u64;
                 (
                     &ctx.accounts.quote_vault,
                     &ctx.accounts.base_vault,
@@ -409,7 +407,7 @@ pub mod clob {
                 )
             }
             Side::Sell => {
-                order_book.base_fees_sweepable += amount_in - amount_in_after_fees as u64;
+                order_book.inv.base_fees_sweepable += amount_in - amount_in_after_fees as u64;
                 (
                     &ctx.accounts.base_vault,
                     &ctx.accounts.quote_vault,
@@ -434,7 +432,7 @@ pub mod clob {
 
         // If the user is buying, the maker is selling. If the maker is
         // selling, the user is buying.
-        let (order_list, makers) = order_book.opposing_order_list(side);
+        let (order_list, makers, inv) = order_book.opposing_order_list(side);
 
         for (book_order, book_order_idx) in order_list.iter() {
             let order_amount_available = book_order.amount_in as u128; // u128s prevent overflow
@@ -464,16 +462,17 @@ pub mod clob {
                 } as u64;
                 amount_out += user_to_receive;
 
+                order_list.sub_liquidity(user_to_receive, inv);
                 order_list.orders[book_order_idx as usize].amount_in -= user_to_receive;
 
                 match side {
                     Side::Buy => {
-                        makers[book_order.market_maker_index as usize].quote_balance +=
-                            amount_in_after_fees as u64
+                        makers[book_order.market_maker_index as usize]
+                            .credit_quote(amount_in_after_fees as u64, inv);
                     }
                     Side::Sell => {
-                        makers[book_order.market_maker_index as usize].base_balance +=
-                            amount_in_after_fees as u64
+                        makers[book_order.market_maker_index as usize]
+                            .credit_base(amount_in_after_fees as u64, inv);
                     }
                 };
 
@@ -484,12 +483,12 @@ pub mod clob {
 
                 match side {
                     Side::Buy => {
-                        makers[book_order.market_maker_index as usize].quote_balance +=
-                            amount_order_can_absorb as u64
+                        makers[book_order.market_maker_index as usize]
+                            .credit_quote(amount_order_can_absorb as u64, inv);
                     }
                     Side::Sell => {
-                        makers[book_order.market_maker_index as usize].base_balance +=
-                            amount_order_can_absorb as u64
+                        makers[book_order.market_maker_index as usize]
+                            .credit_base(amount_order_can_absorb as u64, inv);
                     }
                 };
 
@@ -498,7 +497,7 @@ pub mod clob {
         }
 
         for order_idx in filled_orders {
-            order_list.delete_order(order_idx, makers);
+            order_list.delete_order(order_idx, makers, inv);
         }
 
         require!(amount_out >= min_out, CLOBError::TakeNotFilled);
@@ -508,6 +507,14 @@ pub mod clob {
         let pda_bump = order_book.pda_bump;
 
         let seeds = &[b"order_book", base.as_ref(), quote.as_ref(), &[pda_bump]];
+
+        let post_base_liabilities = order_book.inv.base_liabilities;
+        let post_base_fees_sweepable = order_book.inv.base_fees_sweepable;
+        let post_base_liquidity = order_book.inv.base_liquidity;
+
+        let post_quote_liabilities = order_book.inv.quote_liabilities;
+        let post_quote_fees_sweepable = order_book.inv.quote_fees_sweepable;
+        let post_quote_liquidity = order_book.inv.quote_liquidity;
 
         drop(order_book);
 
@@ -530,6 +537,15 @@ pub mod clob {
         let post_user_quote_balance = ctx.accounts.user_quote_account.amount;
         let post_vault_base_balance = ctx.accounts.base_vault.amount;
         let post_vault_quote_balance = ctx.accounts.quote_vault.amount;
+
+        assert!(
+            post_base_liabilities + post_base_liquidity + post_base_fees_sweepable
+                <= post_vault_base_balance
+        );
+        assert!(
+            post_quote_liabilities + post_quote_liquidity + post_quote_fees_sweepable
+                <= post_vault_quote_balance
+        );
 
         match side {
             Side::Buy => {
