@@ -437,7 +437,9 @@ describe("autocrat_v0", async function () {
           (err) => console.log(err)
         );
 
-      let ix = await autocrat.methods
+      let proposerBalanceBefore = await banksClient.getBalance(payer.publicKey);
+
+      await autocrat.methods
         .finalizeProposal()
         .accounts({
           proposal,
@@ -468,6 +470,8 @@ describe("autocrat_v0", async function () {
 
       const storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, 1000);
+
+      assert(await banksClient.getBalance(payer.publicKey) > proposerBalanceBefore + (1_000_000_000n * 19n));
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
@@ -693,6 +697,8 @@ describe("autocrat_v0", async function () {
       let storedDao = await autocrat.account.dao.fetch(dao);
       const passThresholdBpsBefore = storedDao.passThresholdBps;
 
+      let proposerBalanceBefore = await banksClient.getBalance(payer.publicKey);
+
       await autocrat.methods
         .finalizeProposal()
         .accounts({
@@ -702,6 +708,21 @@ describe("autocrat_v0", async function () {
           dao,
           daoTreasury,
         })
+        .remainingAccounts(
+          autocrat.instruction.setPassThresholdBps
+            .accounts({
+              dao,
+              daoTreasury,
+            })
+            .concat({
+              pubkey: autocrat.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury) ? { ...meta, isSigner: false } : meta
+            )
+        )
         .rpc();
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
@@ -709,6 +730,8 @@ describe("autocrat_v0", async function () {
 
       storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
+
+      assert(await banksClient.getBalance(payer.publicKey) > proposerBalanceBefore + (1_000_000_000n * 19n));
     });
   });
 });
@@ -941,6 +964,11 @@ async function initializeProposal(
     })
     .rpc();
 
+  const [daoTreasury] = PublicKey.findProgramAddressSync(
+    [dao.toBuffer()],
+    autocrat.programId
+  );
+
   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
   await autocrat.methods
@@ -951,6 +979,7 @@ async function initializeProposal(
     .accounts({
       proposal: proposalKeypair.publicKey,
       dao,
+      daoTreasury,
       quotePassVault,
       quoteFailVault,
       basePassVault,

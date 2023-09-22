@@ -94,7 +94,7 @@ pub mod autocrat_v0 {
     ) -> Result<()> {
         let lockup_ix = solana_program::system_instruction::transfer(
             &ctx.accounts.proposer.key(),
-            &ctx.accounts.dao.key(),
+            &ctx.accounts.dao_treasury.key(),
             ctx.accounts.dao.proposal_lamport_lockup
         );
 
@@ -102,7 +102,7 @@ pub mod autocrat_v0 {
             &lockup_ix,
             &[
                 ctx.accounts.proposer.to_account_info(),
-                ctx.accounts.dao.to_account_info(),
+                ctx.accounts.dao_treasury.to_account_info(),
             ]
         )?;
 
@@ -197,6 +197,13 @@ pub mod autocrat_v0 {
         let pass_market_twap = (pass_market_aggregator / pass_market_slots_passed as u128) as u64;
         let fail_market_twap = (fail_market_aggregator / fail_market_slots_passed as u128) as u64;
 
+        let dao_key = ctx.accounts.dao.key();
+        let treasury_seeds = &[
+            dao_key.as_ref(),
+            &[ctx.accounts.dao.treasury_pda_bump],
+        ];
+        let signer = &[&treasury_seeds[..]];
+
         // TODO: change this to have the threshold involved. deal with overflow
         if pass_market_twap > fail_market_twap {
             proposal.state = ProposalState::Passed;
@@ -207,32 +214,26 @@ pub mod autocrat_v0 {
                     acc.is_signer = true;
                 }
             }
-            let dao_key = ctx.accounts.dao.key();
-            let seeds = &[
-                dao_key.as_ref(),
-                &[ctx.accounts.dao.treasury_pda_bump],
-            ];
-            let signer = &[&seeds[..]];
 
             solana_program::program::invoke_signed(&svm_instruction, ctx.remaining_accounts, signer)?;
         } else {
             proposal.state = ProposalState::Failed;
         }
 
-        //let release_ix = solana_program::system_instruction::transfer(
-        //    &ctx.accounts.dao.key(),
-        //    &ctx.accounts.proposer.key(),
-        //    ctx.accounts.dao.proposal_lamport_lockup
-        //);
+        let release_ix = solana_program::system_instruction::transfer(
+            &ctx.accounts.dao_treasury.key(),
+            &ctx.accounts.proposer.key(),
+            ctx.accounts.dao.proposal_lamport_lockup
+        );
 
-        //solana_program::program::invoke_signed(
-        //    &release_ix,
-        //    &[
-        //        ctx.accounts.dao.to_account_info(),
-        //        ctx.accounts.proposer.to_account_info(),
-        //    ],
-        //    signer
-        //)?;
+        solana_program::program::invoke_signed(
+            &release_ix,
+            &[
+                ctx.accounts.dao_treasury.to_account_info(),
+                ctx.accounts.proposer.to_account_info(),
+            ],
+            signer
+        )?;
 
         Ok(())
     }
@@ -270,8 +271,14 @@ pub struct InitializeDAO<'info> {
 pub struct InitializeProposal<'info> {
     #[account(zero, signer)]
     pub proposal: Box<Account<'info, Proposal>>,
-    #[account(mut)]
     pub dao: Account<'info, DAO>,
+    /// CHECK: never read
+    #[account(
+        seeds = [dao.key().as_ref()],
+        bump = dao.treasury_pda_bump,
+        mut
+    )]
+    pub dao_treasury: UncheckedAccount<'info>,
     #[account(
         constraint = quote_pass_vault.underlying_token_mint == dao.token,
     )]
@@ -305,11 +312,13 @@ pub struct FinalizeProposal<'info> {
     /// CHECK: never read
     #[account(
         seeds = [dao.key().as_ref()],
-        bump = dao.treasury_pda_bump
+        bump = dao.treasury_pda_bump,
+        mut
     )]
     pub dao_treasury: UncheckedAccount<'info>,
     #[account(mut)]
     pub proposer: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
