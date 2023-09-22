@@ -131,7 +131,7 @@ describe("autocrat_v0", async function () {
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.token.equals(mint));
-      assert.equal(daoAcc.passThresholdBps, 2000);
+      assert.equal(daoAcc.passThresholdBps, 500);
       assert.ok(
         daoAcc.proposalLamportLockup.eq(new BN(1_000_000_000).muln(20))
       );
@@ -222,7 +222,7 @@ describe("autocrat_v0", async function () {
         .then(callbacks[0], callbacks[1]);
     });
 
-    it("finalizes proposals when pass price TWAP > fail price TWAP", async function () {
+    it("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -281,7 +281,7 @@ describe("autocrat_v0", async function () {
         .submitLimitOrder(
           { buy: {} },
           new anchor.BN(101), // amount
-          new anchor.BN(2e9 - 100), // price
+          new anchor.BN(2.1e9 - 100), // price
           13, // ref id
           0 // mm index
         )
@@ -300,7 +300,7 @@ describe("autocrat_v0", async function () {
         .submitLimitOrder(
           { sell: {} },
           new anchor.BN(101), // amount
-          new anchor.BN(2e9 - 300), // price
+          new anchor.BN(2.1e9 - 300), // price
           14, // ref id
           0 // mm index
         )

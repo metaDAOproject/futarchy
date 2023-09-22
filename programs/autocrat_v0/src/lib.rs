@@ -6,8 +6,8 @@ use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use solana_program::instruction::Instruction;
 use std::borrow::Borrow;
 
-// by default, the pass price needs to be 20% higher than the fail price
-pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2_000;
+// by default, the pass price needs to be 5% higher than the fail price
+pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
 pub const DEFAULT_PROPOSAL_LAMPORT_LOCKUP: u64 =
     20 * solana_program::native_token::LAMPORTS_PER_SOL;
 
@@ -191,23 +191,32 @@ pub mod autocrat_v0 {
             AutocratError::ProposalAlreadyFinalized
         );
 
+        let dao_key = ctx.accounts.dao.key();
+        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
+        let signer = &[&treasury_seeds[..]];
+
         let pass_market_aggregator = pass_market.twap_oracle.observation_aggregator;
         let fail_market_aggregator = fail_market.twap_oracle.observation_aggregator;
+
+        assert!(pass_market_aggregator != 0);
+        assert!(fail_market_aggregator != 0);
 
         let pass_market_slots_passed =
             pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
         let fail_market_slots_passed =
             fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
 
-        let pass_market_twap = (pass_market_aggregator / pass_market_slots_passed as u128) as u64;
-        let fail_market_twap = (fail_market_aggregator / fail_market_slots_passed as u128) as u64;
+        let pass_market_twap = pass_market_aggregator / pass_market_slots_passed as u128;
+        let fail_market_twap = fail_market_aggregator / fail_market_slots_passed as u128;
 
-        let dao_key = ctx.accounts.dao.key();
-        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
-        let signer = &[&treasury_seeds[..]];
+
+        assert!(pass_market_twap != 0);
+        assert!(fail_market_twap != 0);
+
+        let threshold = (fail_market_twap * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128) / MAX_BPS as u128;
 
         // TODO: change this to have the threshold involved. deal with overflow
-        if pass_market_twap > fail_market_twap {
+        if pass_market_twap > threshold {
             proposal.state = ProposalState::Passed;
 
             let mut svm_instruction: Instruction = proposal.instruction.borrow().into();
