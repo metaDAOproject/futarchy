@@ -65,11 +65,17 @@ pub mod clob {
         if let Some(new_market_maker_burn_in_lamports) = new_market_maker_burn_in_lamports {
             global_state.market_maker_burn_in_lamports = new_market_maker_burn_in_lamports;
         }
-        if let Some(new_default_max_observation_change_per_update_bps) = new_default_max_observation_change_per_update_bps {
-            global_state.default_max_observation_change_per_update_bps = new_default_max_observation_change_per_update_bps;
+        if let Some(new_default_max_observation_change_per_update_bps) =
+            new_default_max_observation_change_per_update_bps
+        {
+            global_state.default_max_observation_change_per_update_bps =
+                new_default_max_observation_change_per_update_bps;
         }
-        if let Some(new_default_max_observation_change_per_slot_bps) = new_default_max_observation_change_per_slot_bps {
-            global_state.default_max_observation_change_per_slot_bps = new_default_max_observation_change_per_slot_bps;
+        if let Some(new_default_max_observation_change_per_slot_bps) =
+            new_default_max_observation_change_per_slot_bps
+        {
+            global_state.default_max_observation_change_per_slot_bps =
+                new_default_max_observation_change_per_slot_bps;
         }
 
         Ok(())
@@ -376,6 +382,12 @@ pub mod clob {
     ) -> Result<()> {
         assert!(amount_in > 0);
 
+        // set these up for invariant checks
+        let pre_user_base_balance = ctx.accounts.user_base_account.amount;
+        let pre_user_quote_balance = ctx.accounts.user_quote_account.amount;
+        let pre_vault_base_balance = ctx.accounts.base_vault.amount;
+        let pre_vault_quote_balance = ctx.accounts.quote_vault.amount;
+
         let global_state = &ctx.accounts.global_state;
 
         let mut amount_in_after_fees = ((amount_in as u128)
@@ -506,7 +518,35 @@ pub mod clob {
             user_to,
             &ctx.accounts.order_book,
             seeds,
-        )
+        )?;
+
+        ctx.accounts.user_base_account.reload()?;
+        ctx.accounts.user_quote_account.reload()?;
+        ctx.accounts.base_vault.reload()?;
+        ctx.accounts.quote_vault.reload()?;
+
+        // set these up for invariant checks
+        let post_user_base_balance = ctx.accounts.user_base_account.amount;
+        let post_user_quote_balance = ctx.accounts.user_quote_account.amount;
+        let post_vault_base_balance = ctx.accounts.base_vault.amount;
+        let post_vault_quote_balance = ctx.accounts.quote_vault.amount;
+
+        match side {
+            Side::Buy => {
+                assert!(post_user_base_balance == pre_user_base_balance + amount_out);
+                assert!(post_user_quote_balance == pre_user_quote_balance - amount_in);
+                assert!(post_vault_base_balance == pre_vault_base_balance - amount_out);
+                assert!(post_vault_quote_balance == pre_vault_quote_balance + amount_in);
+            }
+            Side::Sell => {
+                assert!(post_user_base_balance == pre_user_base_balance - amount_in);
+                assert!(post_user_quote_balance == pre_user_quote_balance + amount_out);
+                assert!(post_vault_base_balance == pre_vault_base_balance + amount_in);
+                assert!(post_vault_quote_balance == pre_vault_quote_balance - amount_out);
+            }
+        }
+
+        Ok(())
     }
 
     /**** GETTERS ****/

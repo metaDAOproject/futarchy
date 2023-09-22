@@ -155,7 +155,7 @@ pub struct UpdateLimitOrder<'info> {
 
 #[derive(Accounts)]
 pub struct SubmitTakeOrder<'info> {
-    #[account(mut)]
+    #[account(mut, has_one = base_vault, has_one = quote_vault)]
     pub order_book: AccountLoader<'info, OrderBook>,
     #[account(mut)]
     pub user_base_account: Account<'info, TokenAccount>,
