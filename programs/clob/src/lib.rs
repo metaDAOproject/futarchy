@@ -390,6 +390,17 @@ pub mod clob {
     ) -> Result<u8> {
         let mut order_book = ctx.accounts.order_book.load_mut()?;
 
+        let (pre_liabilities, pre_liquidity) = match side {
+            Side::Buy => (
+                order_book.inv.quote_liabilities,
+                order_book.inv.quote_liquidity,
+            ),
+            Side::Sell => (
+                order_book.inv.base_liabilities,
+                order_book.inv.base_liquidity,
+            ),
+        };
+
         order_book.update_twap_oracle()?;
 
         let market_maker = order_book.market_makers[market_maker_index as usize];
@@ -410,7 +421,23 @@ pub mod clob {
         let order_idx =
             order_list.insert_order(amount_in, price, ref_id, market_maker_index, makers, inv);
 
-        order_idx.ok_or_else(|| error!(CLOBError::InferiorPrice))
+        let order_id = order_idx.ok_or_else(|| error!(CLOBError::InferiorPrice))?;
+
+        let (post_liabilities, post_liquidity) = match side {
+            Side::Buy => (
+                order_book.inv.quote_liabilities,
+                order_book.inv.quote_liquidity,
+            ),
+            Side::Sell => (
+                order_book.inv.base_liabilities,
+                order_book.inv.base_liquidity,
+            ),
+        };
+
+        assert!(post_liabilities == pre_liabilities - amount_in);
+        assert!(post_liquidity == pre_liquidity + amount_in);
+
+        Ok(order_id)
     }
 
     pub fn cancel_limit_order(
@@ -420,6 +447,17 @@ pub mod clob {
         market_maker_index: u8,
     ) -> Result<()> {
         let mut order_book = ctx.accounts.order_book.load_mut()?;
+
+        let (pre_liabilities, pre_liquidity) = match side {
+            Side::Buy => (
+                order_book.inv.quote_liabilities,
+                order_book.inv.quote_liquidity,
+            ),
+            Side::Sell => (
+                order_book.inv.base_liabilities,
+                order_book.inv.base_liquidity,
+            ),
+        };
 
         order_book.update_twap_oracle()?;
 
@@ -440,6 +478,20 @@ pub mod clob {
         );
 
         order_list.delete_order(order_index, makers, inv);
+
+        let (post_liabilities, post_liquidity) = match side {
+            Side::Buy => (
+                order_book.inv.quote_liabilities,
+                order_book.inv.quote_liquidity,
+            ),
+            Side::Sell => (
+                order_book.inv.base_liabilities,
+                order_book.inv.base_liquidity,
+            ),
+        };
+
+        assert!(post_liabilities == pre_liabilities + order.amount_in);
+        assert!(post_liquidity == pre_liquidity - order.amount_in);
 
         Ok(())
     }

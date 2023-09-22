@@ -36,17 +36,26 @@ describe("clob", () => {
       .updateGlobalState(null, 11, new anchor.BN(2_000_000_000), 300, 150)
       .accounts({
         globalState,
-        admin: admin.publicKey
+        admin: admin.publicKey,
       })
       .signers([admin])
       .rpc();
 
-    const storedGlobalState = await program.account.globalState.fetch(globalState);
+    const storedGlobalState = await program.account.globalState.fetch(
+      globalState
+    );
 
     assert.ok(storedGlobalState.admin.equals(admin.publicKey));
     assert.equal(storedGlobalState.takerFeeInBps, 11);
-    assert.ok(storedGlobalState.marketMakerBurnInLamports.eq(new anchor.BN(2_000_000_000)));
-    assert.equal(storedGlobalState.defaultMaxObservationChangePerUpdateBps, 300);
+    assert.ok(
+      storedGlobalState.marketMakerBurnInLamports.eq(
+        new anchor.BN(2_000_000_000)
+      )
+    );
+    assert.equal(
+      storedGlobalState.defaultMaxObservationChangePerUpdateBps,
+      300
+    );
     assert.equal(storedGlobalState.defaultMaxObservationChangePerSlotBps, 150);
 
     const mintAuthority = anchor.web3.Keypair.generate();
@@ -308,22 +317,22 @@ describe("clob", () => {
       .signers([mm1])
       .rpc();
 
-    let mm0BalsAfterTake = await program.methods
-      .getMarketMakerBalances(mm0.publicKey)
-      .accounts({
-        orderBook,
-      })
-      .view();
-      
-    let mm1BalsAfterTake = await program.methods
-      .getMarketMakerBalances(mm1.publicKey)
-      .accounts({
-        orderBook,
-      })
-      .view();
+    //let mm0BalsAfterTake = await program.methods
+    //  .getMarketMakerBalances(mm0.publicKey)
+    //  .accounts({
+    //    orderBook,
+    //  })
+    //  .view();
+    //
+    //let mm1BalsAfterTake = await program.methods
+    //  .getMarketMakerBalances(mm1.publicKey)
+    //  .accounts({
+    //    orderBook,
+    //  })
+    //  .view();
 
-    console.log(mm0BalsAfterTake);
-    console.log(mm1BalsAfterTake);
+    //console.log(mm0BalsAfterTake);
+    //console.log(mm1BalsAfterTake);
 
     let mm1BaseTokenBalanceAfter = (await token.getAccount(connection, mm1Base))
       .amount;
@@ -466,11 +475,7 @@ describe("clob", () => {
     assert.equal(1, Number(quoteFeesSwept));
 
     await program.methods
-      .withdrawBalance(
-        0,
-        new anchor.BN(10),
-        new anchor.BN(10)
-      )
+      .withdrawBalance(0, new anchor.BN(10), new anchor.BN(10))
       .accounts({
         orderBook,
         authority: mm0.publicKey,
