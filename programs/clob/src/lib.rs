@@ -174,8 +174,6 @@ pub mod clob {
         )
     }
 
-    // TODO: make it so that after one market maker has been added, we have to
-    // wait a configurable cooldown before we can add another
     pub fn add_market_maker(
         ctx: Context<AddMarketMaker>,
         market_maker: Pubkey,
@@ -364,9 +362,6 @@ pub mod clob {
         amount_in: u64,
         min_out: u64,
     ) -> Result<()> {
-        // TODO: add cluster restart logic, preventing take orders within x
-        // slots of restart
-
         assert!(amount_in > 0);
 
         let global_state = &ctx.accounts.global_state;
