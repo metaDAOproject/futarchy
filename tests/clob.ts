@@ -466,6 +466,24 @@ describe("clob", () => {
     assert.equal(1, Number(quoteFeesSwept));
 
     await program.methods
+      .withdrawBalance(
+        0,
+        new anchor.BN(10),
+        new anchor.BN(10)
+      )
+      .accounts({
+        orderBook,
+        authority: mm0.publicKey,
+        baseTo: mm0Base,
+        quoteTo: mm0Quote,
+        baseVault,
+        quoteVault,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+      })
+      .signers([mm0])
+      .rpc();
+
+    await program.methods
       .submitLimitOrder(
         { buy: {} },
         new anchor.BN(101), // amount

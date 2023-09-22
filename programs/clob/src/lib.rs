@@ -235,6 +235,12 @@ pub mod clob {
 
         let (market_maker, inv) = order_book.get_mm(market_maker_index as usize);
 
+        let pre_base_liabilities = inv.base_liabilities;
+        let pre_base_vault_balance = ctx.accounts.base_vault.amount;
+
+        let pre_quote_liabilities = inv.quote_liabilities;
+        let pre_quote_vault_balance = ctx.accounts.quote_vault.amount;
+
         token_transfer(
             base_amount,
             &ctx.accounts.token_program,
@@ -258,15 +264,27 @@ pub mod clob {
         ctx.accounts.base_vault.reload()?;
         ctx.accounts.quote_vault.reload()?;
 
+        let post_base_liabilities = inv.base_liabilities;
+        let post_base_vault_balance = ctx.accounts.base_vault.amount;
+
+        let post_quote_liabilities = inv.quote_liabilities;
+        let post_quote_vault_balance = ctx.accounts.quote_vault.amount;
+
+        assert!(post_base_liabilities == pre_base_liabilities + base_amount);
+        assert!(post_base_vault_balance == pre_base_vault_balance + base_amount);
+
+        assert!(post_quote_liabilities == pre_quote_liabilities + quote_amount);
+        assert!(post_quote_vault_balance == pre_quote_vault_balance + quote_amount);
+
         OrderBook::assert_balance_invariant(
-            ctx.accounts.base_vault.amount,
-            order_book.inv.base_liabilities,
+            post_base_vault_balance,
+            post_quote_liabilities,
             order_book.inv.base_liquidity,
             order_book.inv.base_fees_sweepable,
         );
         OrderBook::assert_balance_invariant(
-            ctx.accounts.quote_vault.amount,
-            order_book.inv.quote_liabilities,
+            post_quote_vault_balance,
+            post_quote_liabilities,
             order_book.inv.quote_liquidity,
             order_book.inv.quote_fees_sweepable,
         );
@@ -282,10 +300,13 @@ pub mod clob {
     ) -> Result<()> {
         let mut order_book = ctx.accounts.order_book.load_mut()?;
 
-        order_book.inv.base_liabilities -= base_amount;
-        order_book.inv.quote_liabilities -= quote_amount;
-
         let (market_maker, inv) = order_book.get_mm(market_maker_index as usize);
+
+        let pre_base_liabilities = inv.base_liabilities;
+        let pre_base_vault_balance = ctx.accounts.base_vault.amount;
+
+        let pre_quote_liabilities = inv.quote_liabilities;
+        let pre_quote_vault_balance = ctx.accounts.quote_vault.amount;
 
         require!(
             market_maker.authority == ctx.accounts.authority.key(),
@@ -296,25 +317,20 @@ pub mod clob {
         market_maker.debit_base(base_amount, inv);
         market_maker.debit_quote(quote_amount, inv);
 
+        let post_base_liabilities = inv.base_liabilities;
+        let post_base_liquidity = inv.base_liquidity;
+        let post_base_fees_sweepable = inv.base_fees_sweepable;
+
+        let post_quote_liabilities = inv.quote_liabilities;
+        let post_quote_liquidity = inv.quote_liquidity;
+        let post_quote_fees_sweepable = inv.quote_fees_sweepable;
+
         // Copy these onto the stack before we drop `order_book`
         let base = order_book.base;
         let quote = order_book.quote;
         let pda_bump = order_book.pda_bump;
 
         let seeds = &[b"order_book", base.as_ref(), quote.as_ref(), &[pda_bump]];
-
-        let InvariantStorage {
-            base_liabilities,
-            base_liquidity,
-            base_fees_sweepable,
-            ..
-        } = order_book.inv;
-        let InvariantStorage {
-            quote_liabilities,
-            quote_liquidity,
-            quote_fees_sweepable,
-            ..
-        } = order_book.inv;
 
         drop(order_book);
 
@@ -339,17 +355,26 @@ pub mod clob {
         ctx.accounts.base_vault.reload()?;
         ctx.accounts.quote_vault.reload()?;
 
+        let post_base_vault_balance = ctx.accounts.base_vault.amount;
+        let post_quote_vault_balance = ctx.accounts.quote_vault.amount;
+
+        assert!(post_base_liabilities == pre_base_liabilities - base_amount);
+        assert!(post_base_vault_balance == pre_base_vault_balance - base_amount);
+
+        assert!(post_quote_liabilities == pre_quote_liabilities - quote_amount);
+        assert!(post_quote_vault_balance == pre_quote_vault_balance - quote_amount);
+
         OrderBook::assert_balance_invariant(
             ctx.accounts.base_vault.amount,
-            base_liabilities,
-            base_liquidity,
-            base_fees_sweepable,
+            post_base_liabilities,
+            post_base_liquidity,
+            post_base_fees_sweepable,
         );
         OrderBook::assert_balance_invariant(
             ctx.accounts.quote_vault.amount,
-            quote_liabilities,
-            quote_liquidity,
-            quote_fees_sweepable,
+            post_quote_liabilities,
+            post_quote_liquidity,
+            post_quote_fees_sweepable,
         );
 
         Ok(())
