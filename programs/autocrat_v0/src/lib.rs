@@ -47,6 +47,9 @@ pub enum ProposalState {
 pub struct Proposal {
     pub proposer: Pubkey,
     pub description_url: String,
+    // stored here in case it changes on the DAO between proposal init and
+    // finalize
+    pub lamport_lockup: u64,
     pub slot_enqueued: u64,
     pub state: ProposalState,
     pub instruction: ProposalInstruction,
@@ -91,20 +94,6 @@ pub mod autocrat_v0 {
         description_url: String,
         instruction: ProposalInstruction,
     ) -> Result<()> {
-        let lockup_ix = solana_program::system_instruction::transfer(
-            &ctx.accounts.proposer.key(),
-            &ctx.accounts.dao_treasury.key(),
-            ctx.accounts.dao.proposal_lamport_lockup,
-        );
-
-        solana_program::program::invoke(
-            &lockup_ix,
-            &[
-                ctx.accounts.proposer.to_account_info(),
-                ctx.accounts.dao_treasury.to_account_info(),
-            ],
-        )?;
-
         let pass_market = ctx.accounts.pass_market.load()?;
         let fail_market = ctx.accounts.fail_market.load()?;
 
@@ -154,6 +143,22 @@ pub mod autocrat_v0 {
             AutocratError::InvalidSettlementAuthority
         );
 
+        let lamport_lockup = ctx.accounts.dao.proposal_lamport_lockup;
+
+        let lockup_ix = solana_program::system_instruction::transfer(
+            &ctx.accounts.proposer.key(),
+            &ctx.accounts.dao_treasury.key(),
+            lamport_lockup,
+        );
+
+        solana_program::program::invoke(
+            &lockup_ix,
+            &[
+                ctx.accounts.proposer.to_account_info(),
+                ctx.accounts.dao_treasury.to_account_info(),
+            ],
+        )?;
+
         let clock = Clock::get()?;
 
         proposal.pass_market = ctx.accounts.pass_market.key();
@@ -164,6 +169,7 @@ pub mod autocrat_v0 {
         proposal.slot_enqueued = clock.slot;
         proposal.state = ProposalState::Pending;
         proposal.instruction = instruction;
+        proposal.lamport_lockup = lamport_lockup;
 
         Ok(())
     }
@@ -223,7 +229,7 @@ pub mod autocrat_v0 {
         let release_ix = solana_program::system_instruction::transfer(
             &ctx.accounts.dao_treasury.key(),
             &ctx.accounts.proposer.key(),
-            ctx.accounts.dao.proposal_lamport_lockup,
+            proposal.lamport_lockup
         );
 
         solana_program::program::invoke_signed(
