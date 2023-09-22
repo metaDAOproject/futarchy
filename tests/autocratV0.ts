@@ -132,7 +132,9 @@ describe("autocrat_v0", async function () {
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.token.equals(mint));
       assert.equal(daoAcc.passThresholdBps, 2000);
-      assert.ok(daoAcc.proposalLamportLockup.eq(new BN(1_000_000_000).muln(20)));
+      assert.ok(
+        daoAcc.proposalLamportLockup.eq(new BN(1_000_000_000).muln(20))
+      );
     });
   });
 
@@ -192,8 +194,10 @@ describe("autocrat_v0", async function () {
         clobProgram
       );
 
-
-      assert(await banksClient.getBalance(payer.publicKey) < proposerBalanceBefore - (1_000_000_000n * 20n));
+      assert(
+        (await banksClient.getBalance(payer.publicKey)) <
+          proposerBalanceBefore - 1_000_000_000n * 20n
+      );
 
       const storedProposal = await autocrat.account.proposal.fetch(proposal);
       const { passMarket } = storedProposal;
@@ -229,7 +233,7 @@ describe("autocrat_v0", async function () {
           pubkey: daoTreasury,
           isSigner: true,
           isWritable: false,
-        }
+        },
       ];
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
         passThresholdBps: 1000,
@@ -460,7 +464,9 @@ describe("autocrat_v0", async function () {
               isSigner: false,
             })
             .map((meta) =>
-              meta.pubkey.equals(daoTreasury) ? { ...meta, isSigner: false } : meta
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
             )
         )
         .rpc();
@@ -471,7 +477,10 @@ describe("autocrat_v0", async function () {
       const storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, 1000);
 
-      assert(await banksClient.getBalance(payer.publicKey) > proposerBalanceBefore + (1_000_000_000n * 19n));
+      assert(
+        (await banksClient.getBalance(payer.publicKey)) >
+          proposerBalanceBefore + 1_000_000_000n * 19n
+      );
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
@@ -485,7 +494,7 @@ describe("autocrat_v0", async function () {
           pubkey: daoTreasury,
           isSigner: true,
           isWritable: false,
-        }
+        },
       ];
 
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
@@ -720,7 +729,9 @@ describe("autocrat_v0", async function () {
               isSigner: false,
             })
             .map((meta) =>
-              meta.pubkey.equals(daoTreasury) ? { ...meta, isSigner: false } : meta
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
             )
         )
         .rpc();
@@ -731,7 +742,10 @@ describe("autocrat_v0", async function () {
       storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
 
-      assert(await banksClient.getBalance(payer.publicKey) > proposerBalanceBefore + (1_000_000_000n * 19n));
+      assert(
+        (await banksClient.getBalance(payer.publicKey)) >
+          proposerBalanceBefore + 1_000_000_000n * 19n
+      );
     });
   });
 });
@@ -1005,7 +1019,7 @@ async function initializeProposal(
   assert.ok(storedProposal.passMarket.equals(passMarket));
   assert.ok(storedProposal.failMarket.equals(failMarket));
   assert.equal(storedProposal.slotEnqueued, slot);
-  assert.deepEqual(storedProposal.state, {pending: {}});
+  assert.deepEqual(storedProposal.state, { pending: {} });
 
   const storedIx = storedProposal.instruction;
   assert.ok(storedIx.programId.equals(ix.programId));

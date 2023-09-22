@@ -8,7 +8,8 @@ use std::borrow::Borrow;
 
 // by default, the pass price needs to be 20% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 2_000;
-pub const DEFAULT_PROPOSAL_LAMPORT_LOCKUP: u64 = 20 * solana_program::native_token::LAMPORTS_PER_SOL;
+pub const DEFAULT_PROPOSAL_LAMPORT_LOCKUP: u64 =
+    20 * solana_program::native_token::LAMPORTS_PER_SOL;
 
 pub const MAX_BPS: u16 = 10_000;
 pub const SLOTS_PER_10_SECS: u64 = 25;
@@ -78,10 +79,8 @@ pub mod autocrat_v0 {
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.proposal_lamport_lockup = DEFAULT_PROPOSAL_LAMPORT_LOCKUP;
 
-        let (_, treasury_bump) = Pubkey::find_program_address(
-            &[dao.key().as_ref()],
-            ctx.program_id
-        );
+        let (_, treasury_bump) =
+            Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
         dao.treasury_pda_bump = treasury_bump;
 
         Ok(())
@@ -95,7 +94,7 @@ pub mod autocrat_v0 {
         let lockup_ix = solana_program::system_instruction::transfer(
             &ctx.accounts.proposer.key(),
             &ctx.accounts.dao_treasury.key(),
-            ctx.accounts.dao.proposal_lamport_lockup
+            ctx.accounts.dao.proposal_lamport_lockup,
         );
 
         solana_program::program::invoke(
@@ -103,7 +102,7 @@ pub mod autocrat_v0 {
             &[
                 ctx.accounts.proposer.to_account_info(),
                 ctx.accounts.dao_treasury.to_account_info(),
-            ]
+            ],
         )?;
 
         let pass_market = ctx.accounts.pass_market.load()?;
@@ -198,10 +197,7 @@ pub mod autocrat_v0 {
         let fail_market_twap = (fail_market_aggregator / fail_market_slots_passed as u128) as u64;
 
         let dao_key = ctx.accounts.dao.key();
-        let treasury_seeds = &[
-            dao_key.as_ref(),
-            &[ctx.accounts.dao.treasury_pda_bump],
-        ];
+        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
         let signer = &[&treasury_seeds[..]];
 
         // TODO: change this to have the threshold involved. deal with overflow
@@ -215,7 +211,11 @@ pub mod autocrat_v0 {
                 }
             }
 
-            solana_program::program::invoke_signed(&svm_instruction, ctx.remaining_accounts, signer)?;
+            solana_program::program::invoke_signed(
+                &svm_instruction,
+                ctx.remaining_accounts,
+                signer,
+            )?;
         } else {
             proposal.state = ProposalState::Failed;
         }
@@ -223,7 +223,7 @@ pub mod autocrat_v0 {
         let release_ix = solana_program::system_instruction::transfer(
             &ctx.accounts.dao_treasury.key(),
             &ctx.accounts.proposer.key(),
-            ctx.accounts.dao.proposal_lamport_lockup
+            ctx.accounts.dao.proposal_lamport_lockup,
         );
 
         solana_program::program::invoke_signed(
@@ -232,7 +232,7 @@ pub mod autocrat_v0 {
                 ctx.accounts.dao_treasury.to_account_info(),
                 ctx.accounts.proposer.to_account_info(),
             ],
-            signer
+            signer,
         )?;
 
         Ok(())
