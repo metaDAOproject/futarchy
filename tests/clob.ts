@@ -317,19 +317,19 @@ describe("clob", () => {
       .signers([mm1])
       .rpc();
 
-    //let mm0BalsAfterTake = await program.methods
-    //  .getMarketMakerBalances(mm0.publicKey)
-    //  .accounts({
-    //    orderBook,
-    //  })
-    //  .view();
-    //
-    //let mm1BalsAfterTake = await program.methods
-    //  .getMarketMakerBalances(mm1.publicKey)
-    //  .accounts({
-    //    orderBook,
-    //  })
-    //  .view();
+    let mm0BalsAfterTake = await program.methods
+      .getMarketMakerBalances(mm0.publicKey)
+      .accounts({
+        orderBook,
+      })
+      .view();
+    
+    let mm1BalsAfterTake = await program.methods
+      .getMarketMakerBalances(mm1.publicKey)
+      .accounts({
+        orderBook,
+      })
+      .view();
 
     //console.log(mm0BalsAfterTake);
     //console.log(mm1BalsAfterTake);
