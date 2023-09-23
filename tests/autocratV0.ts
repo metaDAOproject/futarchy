@@ -952,10 +952,16 @@ async function initializeProposal(
     true
   );
 
+  const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
+    [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+    clobProgram.programId
+  );
+
   await clobProgram.methods
     .initializeOrderBook()
     .accounts({
       orderBook: passMarket,
+      globalState,
       payer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
       base: passBaseMint,
@@ -969,6 +975,7 @@ async function initializeProposal(
     .initializeOrderBook()
     .accounts({
       orderBook: failMarket,
+      globalState,
       payer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
       base: failBaseMint,
