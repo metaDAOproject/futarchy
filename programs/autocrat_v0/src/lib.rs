@@ -8,8 +8,10 @@ use std::borrow::Borrow;
 
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
-pub const DEFAULT_PROPOSAL_LAMPORT_LOCKUP: u64 =
-    20 * solana_program::native_token::LAMPORTS_PER_SOL;
+
+// start at 50 SOL ($1000 at current prices), decay by 10 SOL per day
+pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 50 * solana_program::native_token::LAMPORTS_PER_SOL;
+pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 10_000;
 
 pub const MAX_BPS: u16 = 10_000;
 pub const SLOTS_PER_10_SECS: u64 = 25;
@@ -30,9 +32,13 @@ pub struct DAO {
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
     pub proposal_count: u32,
-    // an anti-spam mechanism for proposals; proposer gets back their original lamports
-    // whether or not the proposal passes
-    pub proposal_lamport_lockup: u64,
+    // for anti-spam, proposers need to burn some SOL. the amount that they need
+    // to burn is inversely proportional to the amount of time that has passed
+    // since the last proposal.
+    // burn_amount = base_lamport_burn - (lamport_burn_decay_per_slot * slots_passed)
+    pub last_proposal_slot: u64,
+    pub base_burn_lamports: u64,
+    pub burn_decay_per_slot_lamports: u64,
     // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
     pub treasury_pda_bump: u8,
 }
@@ -49,9 +55,6 @@ pub struct Proposal {
     pub number: u32,
     pub proposer: Pubkey,
     pub description_url: String,
-    // stored here in case it changes on the DAO between proposal init and
-    // finalize
-    pub lamport_lockup: u64,
     pub slot_enqueued: u64,
     pub state: ProposalState,
     pub instruction: ProposalInstruction,
@@ -82,7 +85,8 @@ pub mod autocrat_v0 {
 
         dao.token = ctx.accounts.token.key();
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
-        dao.proposal_lamport_lockup = DEFAULT_PROPOSAL_LAMPORT_LOCKUP;
+        dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
+        dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
 
         let (_, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -145,12 +149,19 @@ pub mod autocrat_v0 {
             AutocratError::InvalidSettlementAuthority
         );
 
-        let lamport_lockup = ctx.accounts.dao.proposal_lamport_lockup;
+        let clock = Clock::get()?;
+        let dao = &ctx.accounts.dao;
+
+        let slots_passed = clock.slot - dao.last_proposal_slot;
+        let burn_amount = dao.base_burn_lamports.saturating_sub(
+            dao.burn_decay_per_slot_lamports
+                .saturating_mul(slots_passed),
+        );
 
         let lockup_ix = solana_program::system_instruction::transfer(
             &ctx.accounts.proposer.key(),
             &ctx.accounts.dao_treasury.key(),
-            lamport_lockup,
+            burn_amount,
         );
 
         solana_program::program::invoke(
@@ -160,8 +171,6 @@ pub mod autocrat_v0 {
                 ctx.accounts.dao_treasury.to_account_info(),
             ],
         )?;
-
-        let clock = Clock::get()?;
 
         let dao = &mut ctx.accounts.dao;
         proposal.number = dao.proposal_count;
@@ -175,7 +184,6 @@ pub mod autocrat_v0 {
         proposal.slot_enqueued = clock.slot;
         proposal.state = ProposalState::Pending;
         proposal.instruction = instruction;
-        proposal.lamport_lockup = lamport_lockup;
 
         Ok(())
     }
@@ -249,21 +257,6 @@ pub mod autocrat_v0 {
         } else {
             proposal.state = ProposalState::Failed;
         }
-
-        let release_ix = solana_program::system_instruction::transfer(
-            &ctx.accounts.dao_treasury.key(),
-            &ctx.accounts.proposer.key(),
-            proposal.lamport_lockup,
-        );
-
-        solana_program::program::invoke_signed(
-            &release_ix,
-            &[
-                ctx.accounts.dao_treasury.to_account_info(),
-                ctx.accounts.proposer.to_account_info(),
-            ],
-            signer,
-        )?;
 
         Ok(())
     }
