@@ -131,6 +131,7 @@ describe("autocrat_v0", async function () {
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.token.equals(mint));
+      assert.equal(daoAcc.proposalCount, 0);
       assert.equal(daoAcc.passThresholdBps, 500);
       assert.ok(
         daoAcc.proposalLamportLockup.eq(new BN(1_000_000_000).muln(20))
@@ -990,6 +991,8 @@ async function initializeProposal(
     autocrat.programId
   );
 
+  const daoBefore = await autocrat.account.dao.fetch(dao);
+
   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
   await autocrat.methods
@@ -1021,6 +1024,11 @@ async function initializeProposal(
     proposalKeypair.publicKey
   );
 
+  const daoAfter = await autocrat.account.dao.fetch(dao);
+
+  assert.equal(daoAfter.proposalCount, daoBefore.proposalCount + 1);
+
+  assert.equal(storedProposal.number, daoBefore.proposalCount);
   assert.ok(storedProposal.proposer.equals(payer.publicKey));
   assert.equal(storedProposal.descriptionUrl, dummyURL);
   assert.ok(storedProposal.passMarket.equals(passMarket));

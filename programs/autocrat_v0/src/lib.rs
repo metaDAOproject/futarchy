@@ -29,6 +29,7 @@ pub struct DAO {
     // the percentage, in basis points, the pass price needs to be above the
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
+    pub proposal_count: u32,
     // an anti-spam mechanism for proposals; proposer gets back their original lamports
     // whether or not the proposal passes
     pub proposal_lamport_lockup: u64,
@@ -45,6 +46,7 @@ pub enum ProposalState {
 
 #[account]
 pub struct Proposal {
+    pub number: u32,
     pub proposer: Pubkey,
     pub description_url: String,
     // stored here in case it changes on the DAO between proposal init and
@@ -161,6 +163,10 @@ pub mod autocrat_v0 {
 
         let clock = Clock::get()?;
 
+        let dao = &mut ctx.accounts.dao;
+        proposal.number = dao.proposal_count;
+        dao.proposal_count += 1;
+
         proposal.pass_market = ctx.accounts.pass_market.key();
         proposal.fail_market = ctx.accounts.fail_market.key();
 
@@ -276,7 +282,7 @@ pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + 32 + 2 + 8 + 1,
+        space = 8 + std::mem::size_of::<DAO>(),
         // We will create a civilization of the Mind in Cyberspace. May it be
         // more humane and fair than the world your governments have made before.
         //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
@@ -295,6 +301,7 @@ pub struct InitializeDAO<'info> {
 pub struct InitializeProposal<'info> {
     #[account(zero, signer)]
     pub proposal: Box<Account<'info, Proposal>>,
+    #[account(mut)]
     pub dao: Account<'info, DAO>,
     /// CHECK: never read
     #[account(
