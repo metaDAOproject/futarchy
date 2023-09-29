@@ -268,6 +268,22 @@ pub mod autocrat_v0 {
 
         Ok(())
     }
+
+    pub fn set_last_proposal_slot(ctx: Context<Auth>, last_proposal_slot: u64) -> Result<()> {
+        let dao = &mut ctx.accounts.dao;
+
+        dao.last_proposal_slot = last_proposal_slot;
+
+        Ok(())
+    }
+
+    pub fn set_base_burn_lamports(ctx: Context<Auth>, base_burn_lamports: u64) -> Result<()> {
+        let dao = &mut ctx.accounts.dao;
+
+        dao.base_burn_lamports = base_burn_lamports;
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
