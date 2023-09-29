@@ -9,9 +9,9 @@ use std::borrow::Borrow;
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
 
-// start at 50 SOL ($1000 at current prices), decay by 10 SOL per day
+// start at 50 SOL ($1000 at current prices), decay by ~10 SOL per day
 pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 50 * solana_program::native_token::LAMPORTS_PER_SOL;
-pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 10_000;
+pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 46_300;
 
 pub const MAX_BPS: u16 = 10_000;
 pub const SLOTS_PER_10_SECS: u64 = 25;
@@ -150,13 +150,14 @@ pub mod autocrat_v0 {
         );
 
         let clock = Clock::get()?;
-        let dao = &ctx.accounts.dao;
+        let dao = &mut ctx.accounts.dao;
 
         let slots_passed = clock.slot - dao.last_proposal_slot;
         let burn_amount = dao.base_burn_lamports.saturating_sub(
             dao.burn_decay_per_slot_lamports
                 .saturating_mul(slots_passed),
         );
+        dao.last_proposal_slot = clock.slot;
 
         let lockup_ix = solana_program::system_instruction::transfer(
             &ctx.accounts.proposer.key(),
@@ -172,7 +173,6 @@ pub mod autocrat_v0 {
             ],
         )?;
 
-        let dao = &mut ctx.accounts.dao;
         proposal.number = dao.proposal_count;
         dao.proposal_count += 1;
 
@@ -340,9 +340,7 @@ pub struct FinalizeProposal<'info> {
         mut
     )]
     pub dao_treasury: UncheckedAccount<'info>,
-    #[account(mut)]
     pub proposer: Signer<'info>,
-    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]

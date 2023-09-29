@@ -137,7 +137,7 @@ describe("autocrat_v0", async function () {
         daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50))
       );
       assert.ok(
-        daoAcc.burnDecayPerSlotLamports.eq(new BN(10_000))
+        daoAcc.burnDecayPerSlotLamports.eq(new BN(46_300))
       );
     });
   });
@@ -160,12 +160,39 @@ describe("autocrat_v0", async function () {
         data,
       };
 
+      let currentClock = await context.banksClient.getClock();
+      let newSlot = currentClock.slot + 432_000n; // 2 days
+      context.setClock(
+        new Clock(
+          newSlot,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
+
+      let balanceBefore = await banksClient.getBalance(payer.publicKey);
+
       await initializeProposal(
         autocrat,
         instruction,
         vaultProgram,
         dao,
         clobProgram
+      );
+
+      let balanceAfter = await banksClient.getBalance(payer.publicKey);
+
+      // two days, so proposer should burn 30 SOL
+      assert(
+        balanceAfter <
+          balanceBefore - (1_000_000_000n * 30n)
+      );
+
+      assert(
+        balanceAfter >
+          balanceBefore - (1_000_000_000n * 31n)
       );
     });
   });
@@ -200,7 +227,12 @@ describe("autocrat_v0", async function () {
 
       assert(
         (await banksClient.getBalance(payer.publicKey)) <
-          proposerBalanceBefore - 1_000_000_000n * 20n
+          proposerBalanceBefore - 1_000_000_000n * 50n
+      );
+
+      assert(
+        (await banksClient.getBalance(payer.publicKey)) >
+          proposerBalanceBefore - 1_000_000_000n * 51n
       );
 
       const storedProposal = await autocrat.account.proposal.fetch(proposal);
