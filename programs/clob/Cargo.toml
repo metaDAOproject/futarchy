@@ -18,4 +18,5 @@ default = []
 [dependencies]
 anchor-lang = "0.28.0"
 anchor-spl = "0.28.0"
+solana-security-txt = "1.1.1"
 bytemuck = { version = "^1.7.2", features = ["derive", "min_const_generics"] }

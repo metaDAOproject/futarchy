@@ -528,6 +528,7 @@ dependencies = [
  "anchor-spl 0.28.0",
  "clob",
  "conditional_vault",
+ "solana-security-txt",
 ]
 
 [[package]]
@@ -772,6 +773,7 @@ dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
  "bytemuck",
+ "solana-security-txt",
 ]
 
 [[package]]

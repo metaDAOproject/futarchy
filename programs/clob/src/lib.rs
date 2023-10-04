@@ -2,6 +2,25 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use solana_program::clock::Clock;
 use std::mem::size_of;
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    name: "CLOB",
+    project_url: "https://themetadao.org",
+    contacts: "email:metaproph3t@protonmail.com",
+    policy: "
+We may or may not pay a bug bounty.
+",
+    source_code: "https://github.com/metaDAOproject/meta-dao",
+    source_release: "v0",
+    auditors: "None",
+    acknowledgements: "
+\"See, the world is full of things more powerful than us. But if you know how to catch a ride, you can go places\"
+- Neal Stephenson, Snow Crash
+"
+}
 
 declare_id!("8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA");
 
