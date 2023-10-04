@@ -3,7 +3,7 @@ use anchor_lang::solana_program;
 use solana_program::clock::Clock;
 use std::mem::size_of;
 
-declare_id!("Ap4Y89Jo1Xx7jtimjoWMGCPAKEgrarasU9iQ6Dc6Pxor");
+declare_id!("8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA");
 
 pub mod error;
 pub mod ix;

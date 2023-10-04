@@ -36,15 +36,15 @@ export type ClobProgram = Program<Clob>;
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "5QBbGKFSoL1hS4s5dsCBdNRVnJcMuHXFwhooKk2ar25S"
+  "Ctt7cFZM6K7phtRo5NvjycpQju7X6QTSuqNen2ebXiuc"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip"
+  "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
 );
 
 const CLOB_PROGRAM_ID = new PublicKey(
-  "Ap4Y89Jo1Xx7jtimjoWMGCPAKEgrarasU9iQ6Dc6Pxor"
+  "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 );
 
 const WSOL = new PublicKey("So11111111111111111111111111111111111111112");

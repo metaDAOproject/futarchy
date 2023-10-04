@@ -23,7 +23,7 @@ We may or may not pay a bug bounty.
 "
 }
 
-declare_id!("4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip");
+declare_id!("4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH");
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum VaultStatus {

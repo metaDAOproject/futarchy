@@ -27,9 +27,6 @@ export enum VaultStatus {
   Finalized,
   Reverted,
 }
-const CONDITIONAL_VAULT_PROGRAM_ID = new anchor.web3.PublicKey(
-  "4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip"
-);
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 

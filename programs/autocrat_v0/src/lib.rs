@@ -23,7 +23,7 @@ mod wsol {
     declare_id!("So11111111111111111111111111111111111111112");
 }
 
-declare_id!("5QBbGKFSoL1hS4s5dsCBdNRVnJcMuHXFwhooKk2ar25S");
+declare_id!("Ctt7cFZM6K7phtRo5NvjycpQju7X6QTSuqNen2ebXiuc");
 
 #[account]
 pub struct DAO {
