@@ -3,6 +3,25 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    name: "Conditional Vault",
+    project_url: "https://themetadao.org",
+    contacts: "email:metaproph3t@protonmail.com",
+    policy: "
+We may or may not pay a bug bounty.
+",
+    source_code: "https://github.com/metaDAOproject/meta-dao",
+    source_release: "v0",
+    auditors: "None",
+    acknowledgements: "
+\"See, the world is full of things more powerful than us. But if you know how to catch a ride, you can go places\"
+- Neal Stephenson, Snow Crash
+"
+}
 
 declare_id!("4SrgFQyrvEYB3GupUaEjoULXCmzHCcAcTffHbpppycip");
 
