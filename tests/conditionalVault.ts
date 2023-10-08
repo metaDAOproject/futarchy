@@ -912,7 +912,7 @@ async function generateRandomVault(
   return [vault, underlyingMintAuthority, settlementAuthority];
 }
 
-async function mintConditionalTokens(
+export async function mintConditionalTokens(
   program: VaultProgram,
   amount: number,
   user: Signer,
@@ -994,7 +994,7 @@ async function mintConditionalTokens(
   );
 }
 
-async function redeemConditionalTokens(
+export async function redeemConditionalTokens(
   vaultProgram: VaultProgram,
   user: Signer,
   userConditionalTokenAccount: PublicKey,
@@ -1058,7 +1058,7 @@ async function redeemConditionalTokens(
   assert.equal(userConditionalTokenAccountAfter.amount, BigInt(0));
 }
 
-async function redeemDepositSlip(
+export async function redeemDepositSlip(
   vaultProgram: VaultProgram,
   user: Signer,
   depositSlip: PublicKey,

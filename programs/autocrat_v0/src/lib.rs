@@ -79,6 +79,10 @@ pub struct Proposal {
     pub instruction: ProposalInstruction,
     pub pass_market: Pubkey,
     pub fail_market: Pubkey,
+    pub base_pass_vault: Pubkey,
+    pub quote_pass_vault: Pubkey,
+    pub base_fail_vault: Pubkey,
+    pub quote_fail_vault: Pubkey,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -150,6 +154,11 @@ pub mod autocrat_v0 {
             Pubkey::find_program_address(&[proposal.key().as_ref(), b"quote_fail"], &self::ID);
         let (base_fail_settlement_authority, _) =
             Pubkey::find_program_address(&[proposal.key().as_ref(), b"base_fail"], &self::ID);
+
+        proposal.quote_pass_vault = ctx.accounts.quote_pass_vault.key();
+        proposal.base_pass_vault = ctx.accounts.base_pass_vault.key();
+        proposal.quote_fail_vault = ctx.accounts.quote_fail_vault.key();
+        proposal.base_fail_vault = ctx.accounts.base_fail_vault.key();
 
         require!(
             ctx.accounts.quote_pass_vault.settlement_authority == quote_pass_settlement_authority,

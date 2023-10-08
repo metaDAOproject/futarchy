@@ -1,6 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
+import { mintConditionalTokens, redeemConditionalTokens, redeemDepositSlip } from "./conditionalVault";
 
 const { PublicKey, Signer, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
@@ -293,6 +294,10 @@ describe("autocrat_v0", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
       const { passMarket } = storedProposal;
       const { failMarket } = storedProposal;
+
+      const basePassVault = storedProposal.basePassVault;
+
+      console.log(basePassVault);
 
       const [passMM] = await generateMarketMaker(
         0,
