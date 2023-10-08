@@ -10,6 +10,9 @@ bankrun:
 bankrun-vault:
     (find programs && find tests) | entr -csr 'anchor build -p conditional_vault && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts'
 
+bankrun-vault-logs:
+    (find programs && find tests) | entr -csr 'anchor build -p conditional_vault && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts'
+
 bankrun-with-logs:
     (find programs && find tests) | entr -csr 'anchor build -p autocrat_v0 && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts'
 

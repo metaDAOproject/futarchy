@@ -41,6 +41,9 @@ pub struct ConditionalVault {
     pub settlement_authority: Pubkey,
     /// The mint of the tokens that are deposited into the vault.
     pub underlying_token_mint: Pubkey,
+    /// A nonce to allow a single account to be the settlement authority of multiple
+    /// vaults with the same underlying token mints.
+    pub nonce: u64,
     /// The vault's storage account for deposited funds.
     pub underlying_token_account: Pubkey,
     pub conditional_token_mint: Pubkey,
@@ -61,6 +64,7 @@ macro_rules! generate_vault_seeds {
             b"conditional_vault",
             $vault.settlement_authority.as_ref(),
             $vault.underlying_token_mint.as_ref(),
+            &$vault.nonce.to_le_bytes(),
             &[$vault.pda_bump],
         ]
     }};
@@ -73,12 +77,14 @@ pub mod conditional_vault {
     pub fn initialize_conditional_vault(
         ctx: Context<InitializeConditionalVault>,
         settlement_authority: Pubkey,
+        nonce: u64
     ) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
 
         vault.status = VaultStatus::Active;
         vault.settlement_authority = settlement_authority;
         vault.underlying_token_mint = ctx.accounts.underlying_token_mint.key();
+        vault.nonce = nonce;
         vault.underlying_token_account = ctx.accounts.vault_underlying_token_account.key();
         vault.conditional_token_mint = ctx.accounts.conditional_token_mint.key();
         vault.pda_bump = *ctx.bumps.get("vault").unwrap();
@@ -252,16 +258,17 @@ pub mod conditional_vault {
 }
 
 #[derive(Accounts)]
-#[instruction(settlement_authority: Pubkey)]
+#[instruction(settlement_authority: Pubkey, nonce: u64)]
 pub struct InitializeConditionalVault<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + std::mem::size_of::<VaultStatus>() + (4 * 32) + 1,
+        space = 8 + std::mem::size_of::<ConditionalVault>(),
         seeds = [
             b"conditional_vault", 
             settlement_authority.key().as_ref(),
-            underlying_token_mint.key().as_ref()
+            underlying_token_mint.key().as_ref(),
+            &nonce.to_le_bytes()
         ],
         bump
     )]

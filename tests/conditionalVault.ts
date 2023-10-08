@@ -15,17 +15,29 @@ import { ConditionalVault } from "../target/types/conditional_vault";
 
 import * as ConditionalVaultIDL from "../target/idl/conditional_vault.json";
 
+//import {
+//  createMint,
+//  createAccount,
+//  createAssociatedTokenAccount,
+//  mintTo,
+//  getAccount,
+//} from "./bankrunUtils";
 import {
   createMint,
   createAccount,
   createAssociatedTokenAccount,
   mintTo,
   getAccount,
-} from "./bankrunUtils";
+  mintToOverride,
+} from "spl-token-bankrun";
 
 export type VaultProgram = anchor.Program<ConditionalVault>;
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
+
+const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
+  "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
+);
 
 export enum VaultStatus {
   Active,
@@ -44,6 +56,7 @@ describe("conditional_vault", async function () {
     banksClient,
     underlyingMintAuthority,
     settlementAuthority,
+    nonce,
     alice,
     underlyingTokenMint,
     vault,
@@ -76,11 +89,14 @@ describe("conditional_vault", async function () {
       8
     );
 
+    nonce = new anchor.BN(10);
+
     [vault] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         anchor.utils.bytes.utf8.encode("conditional_vault"),
         settlementAuthority.publicKey.toBuffer(),
         underlyingTokenMint.toBuffer(),
+        nonce.toBuffer("le", 8)
       ],
       vaultProgram.programId
     );
@@ -97,7 +113,7 @@ describe("conditional_vault", async function () {
       let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
 
       await vaultProgram.methods
-        .initializeConditionalVault(settlementAuthority.publicKey)
+        .initializeConditionalVault(settlementAuthority.publicKey, nonce)
         .accounts({
           vault,
           underlyingTokenMint,
@@ -110,6 +126,14 @@ describe("conditional_vault", async function () {
         })
         .signers([conditionalTokenMintKeypair])
         .rpc();
+
+      const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
+      assert.exists(storedVault.status.active);
+      assert.ok(storedVault.settlementAuthority.equals(settlementAuthority.publicKey));
+      assert.ok(storedVault.underlyingTokenMint.equals(underlyingTokenMint));
+      assert.ok(storedVault.nonce.eq(nonce));
+      assert.ok(storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount));
+      assert.ok(storedVault.conditionalTokenMint.equals(conditionalTokenMintKeypair.publicKey));
 
       conditionalTokenMint = conditionalTokenMintKeypair.publicKey;
     });
@@ -888,11 +912,14 @@ async function generateRandomVault(
     8
   );
 
+  const nonce = new BN(1003239);
+
   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("conditional_vault"),
       settlementAuthority.publicKey.toBuffer(),
       underlyingTokenMint.toBuffer(),
+      nonce.toBuffer('le', 8)
     ],
     vaultProgram.programId
   );
@@ -905,7 +932,7 @@ async function generateRandomVault(
   let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
 
   let result = await vaultProgram.methods
-    .initializeConditionalVault(settlementAuthority.publicKey)
+    .initializeConditionalVault(settlementAuthority.publicKey, nonce)
     .accounts({
       vault,
       underlyingTokenMint,
