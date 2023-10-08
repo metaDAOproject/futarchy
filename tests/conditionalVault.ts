@@ -2,6 +2,9 @@ import * as anchor from "@project-serum/anchor";
 import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 
+const { PublicKey, Signer, Keypair, SystemProgram } = anchor.web3;
+const { BN, Program } = anchor;
+
 import { expect, assert } from "chai";
 
 import { startAnchor } from "solana-bankrun";
@@ -9,6 +12,8 @@ import { startAnchor } from "solana-bankrun";
 import { expectError } from "./utils";
 
 import { ConditionalVault } from "../target/types/conditional_vault";
+
+import * as ConditionalVaultIDL from "../target/idl/conditional_vault.json";
 
 import {
   createMint,
@@ -52,7 +57,12 @@ describe("conditional_vault", async function () {
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
 
-    vaultProgram = anchor.workspace.ConditionalVault as VaultProgram;
+    vaultProgram = new Program<ConditionalVaultProgram>(
+      ConditionalVaultIDL,
+      CONDITIONAL_VAULT_PROGRAM_ID,
+      provider
+    );
+    //vaultProgram = anchor.workspace.ConditionalVault as VaultProgram;
     payer = vaultProgram.provider.wallet.payer;
     alice = anchor.web3.Keypair.generate();
     settlementAuthority = anchor.web3.Keypair.generate();
