@@ -200,6 +200,8 @@ describe("autocrat_v0", async function () {
 
   describe("#finalize_proposal", async function () {
     let proposal,
+      passMarket,
+      failMarket,
       passMM,
       failMM;
 
@@ -233,7 +235,7 @@ describe("autocrat_v0", async function () {
         clobProgram
       );
 
-      const { passMarket, failMarket } = await autocrat.account.proposal.fetch(proposal);
+      ({ passMarket, failMarket } = await autocrat.account.proposal.fetch(proposal));
 
       [passMM] = await generateMarketMaker(
         0,
@@ -257,8 +259,6 @@ describe("autocrat_v0", async function () {
     });
 
     it("doesn't finalize proposals that are too young", async function () {
-      const { passMarket, failMarket } = await autocrat.account.proposal.fetch(proposal);
-
       const callbacks = expectError(
         autocrat,
         "ProposalTooYoung",
@@ -280,7 +280,6 @@ describe("autocrat_v0", async function () {
 
     it("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
-      const { passMarket, failMarket } = storedProposal;
 
       const basePassVault = storedProposal.basePassVault;
       const quotePassVault = storedProposal.quotePassVault;
@@ -513,8 +512,6 @@ describe("autocrat_v0", async function () {
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
-      const { passMarket } = storedProposal;
-      const { failMarket } = storedProposal;
 
       // pass market should be higher
       await clobProgram.methods
