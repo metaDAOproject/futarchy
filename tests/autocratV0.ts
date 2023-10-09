@@ -199,7 +199,9 @@ describe("autocrat_v0", async function () {
   });
 
   describe("#finalize_proposal", async function () {
-    let proposal;
+    let proposal,
+      passMM,
+      failMM;
 
     beforeEach(async function () {
       const accounts = [
@@ -229,6 +231,28 @@ describe("autocrat_v0", async function () {
         vaultProgram,
         dao,
         clobProgram
+      );
+
+      const { passMarket, failMarket } = await autocrat.account.proposal.fetch(proposal);
+
+      [passMM] = await generateMarketMaker(
+        0,
+        clobProgram,
+        banksClient,
+        payer,
+        clobGlobalState,
+        passMarket,
+        clobAdmin
+      );
+
+      [failMM] = await generateMarketMaker(
+        0,
+        clobProgram,
+        banksClient,
+        payer,
+        clobGlobalState,
+        failMarket,
+        clobAdmin
       );
     });
 
@@ -277,25 +301,6 @@ describe("autocrat_v0", async function () {
       //  bobConditionalTokenAccount
       //).then(callbacks[0], callbacks[1]);
 
-      const [passMM] = await generateMarketMaker(
-        0,
-        clobProgram,
-        banksClient,
-        payer,
-        clobGlobalState,
-        passMarket,
-        clobAdmin
-      );
-
-      const [failMM] = await generateMarketMaker(
-        0,
-        clobProgram,
-        banksClient,
-        payer,
-        clobGlobalState,
-        failMarket,
-        clobAdmin
-      );
 
       // pass market should be higher
       await clobProgram.methods
@@ -510,26 +515,6 @@ describe("autocrat_v0", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
       const { passMarket } = storedProposal;
       const { failMarket } = storedProposal;
-
-      const [passMM] = await generateMarketMaker(
-        0,
-        clobProgram,
-        banksClient,
-        payer,
-        clobGlobalState,
-        passMarket,
-        clobAdmin
-      );
-
-      const [failMM] = await generateMarketMaker(
-        0,
-        clobProgram,
-        banksClient,
-        payer,
-        clobGlobalState,
-        failMarket,
-        clobAdmin
-      );
 
       // pass market should be higher
       await clobProgram.methods
