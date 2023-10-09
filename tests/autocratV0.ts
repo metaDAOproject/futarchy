@@ -1099,11 +1099,14 @@ async function initializeVault(
 ): PublicKey {
   const payer = vaultProgram.provider.wallet.payer;
 
+  const nonce = new BN(Math.floor(Math.random() * 1_000_000));
+
   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("conditional_vault"),
       settlementAuthority.toBuffer(),
       underlyingTokenMint.toBuffer(),
+      nonce.toBuffer('le', 8)
     ],
     vaultProgram.programId
   );
@@ -1116,7 +1119,7 @@ async function initializeVault(
   );
 
   await vaultProgram.methods
-    .initializeConditionalVault(settlementAuthority)
+    .initializeConditionalVault(settlementAuthority, nonce)
     .accounts({
       vault,
       underlyingTokenMint,
