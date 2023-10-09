@@ -96,7 +96,7 @@ describe("conditional_vault", async function () {
         anchor.utils.bytes.utf8.encode("conditional_vault"),
         settlementAuthority.publicKey.toBuffer(),
         underlyingTokenMint.toBuffer(),
-        nonce.toBuffer("le", 8)
+        nonce.toBuffer("le", 8),
       ],
       vaultProgram.programId
     );
@@ -127,13 +127,23 @@ describe("conditional_vault", async function () {
         .signers([conditionalTokenMintKeypair])
         .rpc();
 
-      const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
+      const storedVault = await vaultProgram.account.conditionalVault.fetch(
+        vault
+      );
       assert.exists(storedVault.status.active);
-      assert.ok(storedVault.settlementAuthority.equals(settlementAuthority.publicKey));
+      assert.ok(
+        storedVault.settlementAuthority.equals(settlementAuthority.publicKey)
+      );
       assert.ok(storedVault.underlyingTokenMint.equals(underlyingTokenMint));
       assert.ok(storedVault.nonce.eq(nonce));
-      assert.ok(storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount));
-      assert.ok(storedVault.conditionalTokenMint.equals(conditionalTokenMintKeypair.publicKey));
+      assert.ok(
+        storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount)
+      );
+      assert.ok(
+        storedVault.conditionalTokenMint.equals(
+          conditionalTokenMintKeypair.publicKey
+        )
+      );
 
       conditionalTokenMint = conditionalTokenMintKeypair.publicKey;
     });
@@ -919,7 +929,7 @@ async function generateRandomVault(
       anchor.utils.bytes.utf8.encode("conditional_vault"),
       settlementAuthority.publicKey.toBuffer(),
       underlyingTokenMint.toBuffer(),
-      nonce.toBuffer('le', 8)
+      nonce.toBuffer("le", 8),
     ],
     vaultProgram.programId
   );

@@ -77,7 +77,7 @@ pub mod conditional_vault {
     pub fn initialize_conditional_vault(
         ctx: Context<InitializeConditionalVault>,
         settlement_authority: Pubkey,
-        nonce: u64
+        nonce: u64,
     ) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
 

@@ -4,9 +4,9 @@ use anchor_spl::token::Mint;
 use clob::state::order_book::OrderBook;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use solana_program::instruction::Instruction;
-use std::borrow::Borrow;
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
+use std::borrow::Borrow;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
@@ -348,19 +348,19 @@ pub struct InitializeProposal<'info> {
     )]
     pub dao_treasury: UncheckedAccount<'info>,
     #[account(
-        constraint = quote_pass_vault.underlying_token_mint == dao.token,
+        constraint = quote_pass_vault.underlying_token_mint == WSOL,
     )]
     pub quote_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = quote_fail_vault.underlying_token_mint == dao.token,
+        constraint = quote_fail_vault.underlying_token_mint == WSOL,
     )]
     pub quote_fail_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_pass_vault.underlying_token_mint == WSOL,
+        constraint = base_pass_vault.underlying_token_mint == dao.token,
     )]
     pub base_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_fail_vault.underlying_token_mint == WSOL,
+        constraint = base_fail_vault.underlying_token_mint == dao.token,
     )]
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
     pub pass_market: AccountLoader<'info, OrderBook>,

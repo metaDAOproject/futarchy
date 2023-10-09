@@ -1,7 +1,11 @@
 import * as anchor from "@project-serum/anchor";
 import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
-import { mintConditionalTokens, redeemConditionalTokens, redeemDepositSlip } from "./conditionalVault";
+import {
+  mintConditionalTokens,
+  redeemConditionalTokens,
+  redeemDepositSlip,
+} from "./conditionalVault";
 
 const { PublicKey, Signer, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
@@ -134,12 +138,8 @@ describe("autocrat_v0", async function () {
       assert(daoAcc.token.equals(mint));
       assert.equal(daoAcc.proposalCount, 0);
       assert.equal(daoAcc.passThresholdBps, 500);
-      assert.ok(
-        daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50))
-      );
-      assert.ok(
-        daoAcc.burnDecayPerSlotLamports.eq(new BN(46_300))
-      );
+      assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50)));
+      assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(46_300)));
     });
   });
 
@@ -186,15 +186,9 @@ describe("autocrat_v0", async function () {
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
 
       // two days, so proposer should burn 30 SOL
-      assert(
-        balanceAfter <
-          balanceBefore - (1_000_000_000n * 30n)
-      );
+      assert(balanceAfter < balanceBefore - 1_000_000_000n * 30n);
 
-      assert(
-        balanceAfter >
-          balanceBefore - (1_000_000_000n * 31n)
-      );
+      assert(balanceAfter > balanceBefore - 1_000_000_000n * 31n);
     });
   });
 
@@ -202,8 +196,21 @@ describe("autocrat_v0", async function () {
     let proposal,
       passMarket,
       failMarket,
+      basePassVault,
+      quotePassVault,
+      baseFailVault,
+      quoteFailVault,
+      basePassVaultUnderlyingTokenAccount,
+      basePassConditionalTokenMint,
       passMM,
-      failMM;
+      failMM,
+      alice,
+      aliceQuotePassDepositSlip,
+      aliceUnderlyingQuoteTokenAccount,
+      aliceUnderlyingBaseTokenAccount,
+      aliceBasePassConditionalTokenAccount,
+      aliceQuotePassConditionalTokenAccount,
+      newPassThresholdBps;
 
     beforeEach(async function () {
       const accounts = [
@@ -218,8 +225,9 @@ describe("autocrat_v0", async function () {
           isWritable: false,
         },
       ];
+      newPassThresholdBps = Math.floor(Math.random() * 1000);
       const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
-        passThresholdBps: Math.floor(Math.random() * 1000),
+        passThresholdBps: newPassThresholdBps,
       });
       const instruction = {
         programId: autocrat.programId,
@@ -235,7 +243,14 @@ describe("autocrat_v0", async function () {
         clobProgram
       );
 
-      ({ passMarket, failMarket } = await autocrat.account.proposal.fetch(proposal));
+      ({
+        passMarket,
+        failMarket,
+        basePassVault,
+        quotePassVault,
+        baseFailVault,
+        quoteFailVault,
+      } = await autocrat.account.proposal.fetch(proposal));
 
       [passMM] = await generateMarketMaker(
         0,
@@ -255,6 +270,93 @@ describe("autocrat_v0", async function () {
         clobGlobalState,
         failMarket,
         clobAdmin
+      );
+
+      alice = Keypair.generate();
+
+      [aliceQuotePassDepositSlip] =
+        anchor.web3.PublicKey.findProgramAddressSync(
+          [
+            anchor.utils.bytes.utf8.encode("deposit_slip"),
+            quotePassVault.toBuffer(),
+            alice.publicKey.toBuffer(),
+          ],
+          vaultProgram.programId
+        );
+
+      await vaultProgram.methods
+        .initializeDepositSlip(alice.publicKey)
+        .accounts({
+          depositSlip: aliceQuotePassDepositSlip,
+          vault: quotePassVault,
+          payer: payer.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+
+      const storedQuotePassVault =
+        await vaultProgram.account.conditionalVault.fetch(quotePassVault);
+      const quotePassVaultUnderlyingTokenAccount =
+        storedQuotePassVault.underlyingTokenAccount;
+      const quotePassConditionalTokenMint =
+        storedQuotePassVault.conditionalTokenMint;
+
+      const storedBasePassVault =
+        await vaultProgram.account.conditionalVault.fetch(basePassVault);
+      basePassVaultUnderlyingTokenAccount =
+        storedBasePassVault.underlyingTokenAccount;
+      basePassConditionalTokenMint = storedBasePassVault.conditionalTokenMint;
+
+      aliceUnderlyingQuoteTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        WSOL,
+        alice.publicKey
+      );
+      aliceUnderlyingBaseTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        mint,
+        alice.publicKey
+      );
+
+      await mintToOverride(context, aliceUnderlyingQuoteTokenAccount, 10_000n);
+
+      aliceQuotePassConditionalTokenAccount =
+        await createAssociatedTokenAccount(
+          banksClient,
+          payer,
+          quotePassConditionalTokenMint,
+          alice.publicKey
+        );
+
+      console.log(
+        await vaultProgram.account.conditionalVault.fetch(quotePassVault)
+      );
+      console.log(
+        await vaultProgram.account.conditionalVault.fetch(basePassVault)
+      );
+      console.log(
+        (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount)).mint
+      );
+
+      await mintConditionalTokens(
+        vaultProgram,
+        10_000,
+        alice,
+        aliceQuotePassDepositSlip,
+        quotePassVault,
+        quotePassVaultUnderlyingTokenAccount,
+        aliceUnderlyingQuoteTokenAccount,
+        quotePassConditionalTokenMint,
+        aliceQuotePassConditionalTokenAccount
+      );
+
+      aliceBasePassConditionalTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        basePassConditionalTokenMint,
+        alice.publicKey
       );
     });
 
@@ -281,31 +383,11 @@ describe("autocrat_v0", async function () {
     it("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
 
-      const basePassVault = storedProposal.basePassVault;
-      const quotePassVault = storedProposal.quotePassVault;
-      const baseFailVault = storedProposal.baseFailVault;
-      const quoteFailVault = storedProposal.quoteFailVault;
-
-      const alice = Keypair.generate();
-
-      //await mintConditionalTokens(
-      //  vaultProgram,
-      //  10_000,
-      //  alice,
-      //  bobDepositSlip,
-      //  vault,
-      //  maliciousVaultUnderlyingTokenAccount,
-      //  bobUnderlyingTokenAccount,
-      //  conditionalTokenMint,
-      //  bobConditionalTokenAccount
-      //).then(callbacks[0], callbacks[1]);
-
-
       // pass market should be higher
       await clobProgram.methods
         .submitLimitOrder(
           { buy: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(100_001), // amount
           new anchor.BN(2.1e9 - 100), // price
           13, // ref id
           0 // mm index
@@ -315,16 +397,12 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
           { sell: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(100_001), // amount
           new anchor.BN(2.1e9 - 300), // price
           14, // ref id
           0 // mm index
@@ -334,16 +412,30 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
+
+      let { baseVault, quoteVault } = await clobProgram.account.orderBook.fetch(
+        passMarket
+      );
+      await clobProgram.methods
+        .submitTakeOrder({ buy: {} }, new anchor.BN(10_00), new anchor.BN(0))
+        .accounts({
+          globalState: clobGlobalState,
+          userBaseAccount: aliceBasePassConditionalTokenAccount,
+          userQuoteAccount: aliceQuotePassConditionalTokenAccount,
+          baseVault,
+          quoteVault,
+          authority: alice.publicKey,
+          orderBook: passMarket,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
+        })
+        .signers([alice])
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
           { buy: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(10_001), // amount
           new anchor.BN(2e9 - 500), // price
           13, // ref id
           0 // mm index
@@ -353,16 +445,12 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
           { sell: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(10_001), // amount
           new anchor.BN(2e9 - 700), // price
           14, // ref id
           0 // mm index
@@ -372,11 +460,7 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       const currentClock = await context.banksClient.getClock();
       const newSlot = currentClock.slot + 10_000_000n;
@@ -393,7 +477,26 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitLimitOrder(
           { buy: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(10_001), // amount
+          new anchor.BN(2e9 - 100), // price
+          13, // ref id
+          0 // mm index
+        )
+        .accounts({
+          authority: passMM.publicKey,
+          orderBook: passMarket,
+        })
+        .signers([passMM])
+        .rpc()
+        .then(
+          () => {},
+          (err) => console.log(err)
+        );
+
+      await clobProgram.methods
+        .submitLimitOrder(
+          { buy: {} },
+          new anchor.BN(10_001), // amount
           new anchor.BN(2e9 - 100), // price
           13, // ref id
           0 // mm index
@@ -412,7 +515,7 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitLimitOrder(
           { sell: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(10_001), // amount
           new anchor.BN(2e9 - 300), // price
           14, // ref id
           0 // mm index
@@ -431,7 +534,7 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitLimitOrder(
           { buy: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(10_001), // amount
           new anchor.BN(2e9 - 500), // price
           13, // ref id
           0 // mm index
@@ -450,9 +553,9 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitLimitOrder(
           { sell: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(10_001), // amount
           new anchor.BN(2e9 - 700), // price
-          14, // ref id
+          302, // ref id
           0 // mm index
         )
         .accounts({
@@ -463,10 +566,8 @@ describe("autocrat_v0", async function () {
         .rpc()
         .then(
           () => {},
-          (err) => console.log(err)
+          (err) => console.log("ERROR", err)
         );
-
-      //proposerBalanceBefore = await banksClient.getBalance(payer.publicKey);
 
       await autocrat.methods
         .finalizeProposal()
@@ -496,11 +597,11 @@ describe("autocrat_v0", async function () {
         )
         .rpc();
 
-      //storedProposal = await autocrat.account.proposal.fetch(proposal);
-      //assert.exists(storedProposal.state.passed);
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+      assert.exists(storedProposal.state.passed);
 
-      //const storedDao = await autocrat.account.dao.fetch(dao);
-      //assert.equal(storedDao.passThresholdBps, 1000);
+      const storedDao = await autocrat.account.dao.fetch(dao);
+      assert.equal(storedDao.passThresholdBps, newPassThresholdBps);
 
       //console.log(await banksClient.getBalance(payer.publicKey));
 
@@ -546,11 +647,7 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -565,11 +662,7 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -584,11 +677,7 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       const currentClock = await context.banksClient.getClock();
       const newSlot = currentClock.slot + 10_000_000n;
@@ -615,11 +704,7 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -634,11 +719,7 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -653,11 +734,7 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       await clobProgram.methods
         .submitLimitOrder(
@@ -672,11 +749,7 @@ describe("autocrat_v0", async function () {
           orderBook: failMarket,
         })
         .signers([failMM])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.log(err)
-        );
+        .rpc();
 
       let storedDao = await autocrat.account.dao.fetch(dao);
       const passThresholdBpsBefore = storedDao.passThresholdBps;
@@ -716,6 +789,16 @@ describe("autocrat_v0", async function () {
 
       storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
+
+      await redeemConditionalTokens(
+        vaultProgram,
+        alice,
+        aliceBasePassConditionalTokenAccount,
+        aliceUnderlyingBaseTokenAccount,
+        basePassVaultUnderlyingTokenAccount,
+        basePassVault,
+        basePassConditionalTokenMint
+      );
 
       //console.log(await banksClient.getAccount(payer.publicKey));
 
@@ -855,25 +938,25 @@ async function initializeProposal(
   const quotePassVault = await initializeVault(
     vaultProgram,
     quotePassVaultSettlementAuthority,
-    storedDAO.token
+    WSOL
   );
 
   const quoteFailVault = await initializeVault(
     vaultProgram,
     quoteFailVaultSettlementAuthority,
-    storedDAO.token
+    WSOL
   );
 
   const basePassVault = await initializeVault(
     vaultProgram,
     basePassVaultSettlementAuthority,
-    WSOL
+    storedDAO.token
   );
 
   const baseFailVault = await initializeVault(
     vaultProgram,
     baseFailVaultSettlementAuthority,
-    WSOL
+    storedDAO.token
   );
 
   const passBaseMint = (
@@ -1036,7 +1119,7 @@ async function initializeVault(
       anchor.utils.bytes.utf8.encode("conditional_vault"),
       settlementAuthority.toBuffer(),
       underlyingTokenMint.toBuffer(),
-      nonce.toBuffer('le', 8)
+      nonce.toBuffer("le", 8),
     ],
     vaultProgram.programId
   );
