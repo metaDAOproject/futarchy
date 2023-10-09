@@ -33,7 +33,7 @@ describe("clob", () => {
       .rpc();
 
     await program.methods
-      .updateGlobalState(null, 11, new anchor.BN(2_000_000_000), 300, 150)
+      .updateGlobalState(null, 11, new anchor.BN(2_000_000_000), 300)
       .accounts({
         globalState,
         admin: admin.publicKey,
@@ -56,7 +56,6 @@ describe("clob", () => {
       storedGlobalState.defaultMaxObservationChangePerUpdateBps,
       300
     );
-    assert.equal(storedGlobalState.defaultMaxObservationChangePerSlotBps, 150);
 
     const mintAuthority = anchor.web3.Keypair.generate();
     const quote = await token.createMint(
@@ -323,7 +322,7 @@ describe("clob", () => {
         orderBook,
       })
       .view();
-    
+
     let mm1BalsAfterTake = await program.methods
       .getMarketMakerBalances(mm1.publicKey)
       .accounts({

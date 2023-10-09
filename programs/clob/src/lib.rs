@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use solana_program::clock::Clock;
-use std::mem::size_of;
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
+use std::mem::size_of;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
@@ -56,7 +56,6 @@ pub mod clob {
         global_state.taker_fee_in_bps = 10;
         global_state.market_maker_burn_in_lamports = 1_000_000_000;
         global_state.default_max_observation_change_per_update_bps = 250;
-        global_state.default_max_observation_change_per_slot_bps = 100;
 
         Ok(())
     }
@@ -67,7 +66,6 @@ pub mod clob {
         new_taker_fee_in_bps: Option<u16>,
         new_market_maker_burn_in_lamports: Option<u64>,
         new_default_max_observation_change_per_update_bps: Option<u16>,
-        new_default_max_observation_change_per_slot_bps: Option<u16>,
     ) -> Result<()> {
         let global_state = &mut ctx.accounts.global_state;
 
@@ -89,12 +87,6 @@ pub mod clob {
         {
             global_state.default_max_observation_change_per_update_bps =
                 new_default_max_observation_change_per_update_bps;
-        }
-        if let Some(new_default_max_observation_change_per_slot_bps) =
-            new_default_max_observation_change_per_slot_bps
-        {
-            global_state.default_max_observation_change_per_slot_bps =
-                new_default_max_observation_change_per_slot_bps;
         }
 
         Ok(())
@@ -122,8 +114,6 @@ pub mod clob {
         let global_state = &ctx.accounts.global_state;
         order_book.twap_oracle.max_observation_change_per_update_bps =
             global_state.default_max_observation_change_per_update_bps;
-        order_book.twap_oracle.max_observation_change_per_slot_bps =
-            global_state.default_max_observation_change_per_slot_bps;
 
         order_book.min_base_limit_amount = 1;
         order_book.min_quote_limit_amount = 1;
@@ -141,7 +131,6 @@ pub mod clob {
     pub fn update_order_book(
         ctx: Context<UpdateOrderBook>,
         new_max_observation_change_per_update_bps: u16,
-        new_max_observation_change_per_slot_bps: u16,
         new_min_base_limit_amount: u64,
         new_min_quote_limit_amount: u64,
     ) -> Result<()> {
@@ -153,13 +142,6 @@ pub mod clob {
         );
         order_book.twap_oracle.max_observation_change_per_update_bps =
             new_max_observation_change_per_update_bps;
-
-        require!(
-            new_max_observation_change_per_slot_bps <= MAX_MAX_OBSERVATION_CHANGE_PER_SLOT_BPS,
-            CLOBError::DisallowedConfigValue
-        );
-        order_book.twap_oracle.max_observation_change_per_slot_bps =
-            new_max_observation_change_per_slot_bps;
 
         require!(
             new_min_base_limit_amount > 0,

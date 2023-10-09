@@ -6,8 +6,6 @@ pub enum CLOBError {
     IndexAlreadyTaken,
     #[msg("This signer does not have authority over this market maker index")]
     UnauthorizedMarketMaker,
-    #[msg("This market maker has insufficient balance for this limit order")]
-    InsufficientBalance,
     #[msg("This limit order's price was not good enough to land on the order book")]
     InferiorPrice,
     #[msg("This take order could not be filled at this `min_out`")]
