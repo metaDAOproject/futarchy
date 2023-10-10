@@ -32,6 +32,7 @@ pub enum VaultStatus {
     Reverted,
 }
 
+// TODO: prevent a vault from being re-used across multiple proposals
 #[account]
 pub struct ConditionalVault {
     pub status: VaultStatus,

@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
 use clob::state::order_book::OrderBook;
+use conditional_vault::cpi::accounts::SettleConditionalVault;
+use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use solana_program::instruction::Instruction;
 #[cfg(not(feature = "no-entrypoint"))]
@@ -60,6 +62,7 @@ pub struct DAO {
     pub burn_decay_per_slot_lamports: u64,
     // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
     pub treasury_pda_bump: u8,
+    pub treasury: Pubkey,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -111,9 +114,10 @@ pub mod autocrat_v0 {
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
 
-        let (_, treasury_bump) =
+        let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
         dao.treasury_pda_bump = treasury_bump;
+        dao.treasury = treasury_pubkey;
 
         Ok(())
     }
@@ -146,36 +150,10 @@ pub mod autocrat_v0 {
 
         let proposal = &mut ctx.accounts.proposal;
 
-        let (quote_pass_settlement_authority, _) =
-            Pubkey::find_program_address(&[proposal.key().as_ref(), b"quote_pass"], &self::ID);
-        let (base_pass_settlement_authority, _) =
-            Pubkey::find_program_address(&[proposal.key().as_ref(), b"base_pass"], &self::ID);
-        let (quote_fail_settlement_authority, _) =
-            Pubkey::find_program_address(&[proposal.key().as_ref(), b"quote_fail"], &self::ID);
-        let (base_fail_settlement_authority, _) =
-            Pubkey::find_program_address(&[proposal.key().as_ref(), b"base_fail"], &self::ID);
-
         proposal.quote_pass_vault = ctx.accounts.quote_pass_vault.key();
         proposal.base_pass_vault = ctx.accounts.base_pass_vault.key();
         proposal.quote_fail_vault = ctx.accounts.quote_fail_vault.key();
         proposal.base_fail_vault = ctx.accounts.base_fail_vault.key();
-
-        require!(
-            ctx.accounts.quote_pass_vault.settlement_authority == quote_pass_settlement_authority,
-            AutocratError::InvalidSettlementAuthority
-        );
-        require!(
-            ctx.accounts.base_pass_vault.settlement_authority == base_pass_settlement_authority,
-            AutocratError::InvalidSettlementAuthority
-        );
-        require!(
-            ctx.accounts.quote_fail_vault.settlement_authority == quote_fail_settlement_authority,
-            AutocratError::InvalidSettlementAuthority
-        );
-        require!(
-            ctx.accounts.base_fail_vault.settlement_authority == base_fail_settlement_authority,
-            AutocratError::InvalidSettlementAuthority
-        );
 
         let clock = Clock::get()?;
         let dao = &mut ctx.accounts.dao;
@@ -282,6 +260,35 @@ pub mod autocrat_v0 {
                 ctx.remaining_accounts,
                 signer,
             )?;
+
+            use conditional_vault::VaultStatus;
+
+            for (vault, new_state) in [
+                (
+                    ctx.accounts.base_pass_vault.to_account_info(),
+                    VaultStatus::Finalized,
+                ),
+                (
+                    ctx.accounts.quote_pass_vault.to_account_info(),
+                    VaultStatus::Finalized,
+                ),
+                (
+                    ctx.accounts.base_fail_vault.to_account_info(),
+                    VaultStatus::Reverted,
+                ),
+                (
+                    ctx.accounts.quote_fail_vault.to_account_info(),
+                    VaultStatus::Reverted,
+                ),
+            ] {
+                let vault_program = ctx.accounts.vault_program.to_account_info();
+                let cpi_accounts = SettleConditionalVault {
+                    settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
+                    vault,
+                };
+                let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
+                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_state)?;
+            }
         } else {
             proposal.state = ProposalState::Failed;
         }
@@ -349,18 +356,22 @@ pub struct InitializeProposal<'info> {
     pub dao_treasury: UncheckedAccount<'info>,
     #[account(
         constraint = quote_pass_vault.underlying_token_mint == WSOL,
+        constraint = quote_pass_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
         constraint = quote_fail_vault.underlying_token_mint == WSOL,
+        constraint = quote_fail_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_fail_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
         constraint = base_pass_vault.underlying_token_mint == dao.token,
+        constraint = base_pass_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
         constraint = base_fail_vault.underlying_token_mint == dao.token,
+        constraint = base_fail_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
     pub pass_market: AccountLoader<'info, OrderBook>,
@@ -372,11 +383,25 @@ pub struct InitializeProposal<'info> {
 
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
-    #[account(mut, has_one = pass_market, has_one = fail_market, has_one = proposer)]
+    #[account(mut, has_one = pass_market, has_one = fail_market, has_one = proposer,
+        has_one = quote_pass_vault,
+        has_one = quote_fail_vault,
+        has_one = base_pass_vault,
+        has_one = base_fail_vault,
+    )]
     pub proposal: Account<'info, Proposal>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
-    pub dao: Account<'info, DAO>,
+    pub dao: Box<Account<'info, DAO>>,
+    #[account(mut)]
+    pub quote_pass_vault: Box<Account<'info, ConditionalVaultAccount>>,
+    #[account(mut)]
+    pub quote_fail_vault: Box<Account<'info, ConditionalVaultAccount>>,
+    #[account(mut)]
+    pub base_pass_vault: Box<Account<'info, ConditionalVaultAccount>>,
+    #[account(mut)]
+    pub base_fail_vault: Box<Account<'info, ConditionalVaultAccount>>,
+    pub vault_program: Program<'info, ConditionalVaultProgram>,
     /// CHECK: never read
     #[account(
         seeds = [dao.key().as_ref()],

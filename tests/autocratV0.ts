@@ -33,6 +33,7 @@ import {
   mintTo,
   getAccount,
   mintToOverride,
+  getMint,
 } from "spl-token-bankrun";
 
 export type AutocratProgram = Program<AutocratV0>;
@@ -259,7 +260,8 @@ describe("autocrat_v0", async function () {
         payer,
         clobGlobalState,
         passMarket,
-        clobAdmin
+        clobAdmin,
+        vaultProgram
       );
 
       [failMM] = await generateMarketMaker(
@@ -269,7 +271,8 @@ describe("autocrat_v0", async function () {
         payer,
         clobGlobalState,
         failMarket,
-        clobAdmin
+        clobAdmin,
+        vaultProgram
       );
 
       alice = Keypair.generate();
@@ -290,7 +293,6 @@ describe("autocrat_v0", async function () {
           depositSlip: aliceQuotePassDepositSlip,
           vault: quotePassVault,
           payer: payer.publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
         })
         .rpc();
 
@@ -330,16 +332,6 @@ describe("autocrat_v0", async function () {
           alice.publicKey
         );
 
-      console.log(
-        await vaultProgram.account.conditionalVault.fetch(quotePassVault)
-      );
-      console.log(
-        await vaultProgram.account.conditionalVault.fetch(basePassVault)
-      );
-      console.log(
-        (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount)).mint
-      );
-
       await mintConditionalTokens(
         vaultProgram,
         10_000,
@@ -373,6 +365,11 @@ describe("autocrat_v0", async function () {
           proposal,
           passMarket,
           failMarket,
+          basePassVault,
+          quotePassVault,
+          baseFailVault,
+          quoteFailVault,
+          vaultProgram: vaultProgram.programId,
           dao,
           daoTreasury,
         })
@@ -575,6 +572,11 @@ describe("autocrat_v0", async function () {
           proposal,
           passMarket,
           failMarket,
+          basePassVault,
+          quotePassVault,
+          baseFailVault,
+          quoteFailVault,
+          vaultProgram: vaultProgram.programId,
           dao,
           daoTreasury,
         })
@@ -597,11 +599,38 @@ describe("autocrat_v0", async function () {
         )
         .rpc();
 
+      // TODO: factor these out
+      let storedBasePassVault =
+        await vaultProgram.account.conditionalVault.fetch(basePassVault);
+      assert.exists(storedBasePassVault.status.finalized);
+
+      let storedQuotePassVault =
+        await vaultProgram.account.conditionalVault.fetch(quotePassVault);
+      assert.exists(storedQuotePassVault.status.finalized);
+
+      let storedBaseFailVault =
+        await vaultProgram.account.conditionalVault.fetch(baseFailVault);
+      assert.exists(storedBaseFailVault.status.reverted);
+
+      let storedQuoteFailVault =
+        await vaultProgram.account.conditionalVault.fetch(quoteFailVault);
+      assert.exists(storedQuoteFailVault.status.reverted);
+
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
       const storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, newPassThresholdBps);
+
+      await redeemConditionalTokens(
+        vaultProgram,
+        alice,
+        aliceBasePassConditionalTokenAccount,
+        aliceUnderlyingBaseTokenAccount,
+        basePassVaultUnderlyingTokenAccount,
+        basePassVault,
+        basePassConditionalTokenMint
+      );
 
       //console.log(await banksClient.getBalance(payer.publicKey));
 
@@ -618,7 +647,7 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitLimitOrder(
           { buy: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(100_001), // amount
           new anchor.BN(2e9 - 100), // price
           13, // ref id
           0 // mm index
@@ -637,7 +666,7 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitLimitOrder(
           { sell: {} },
-          new anchor.BN(101), // amount
+          new anchor.BN(100_001), // amount
           new anchor.BN(2e9 - 300), // price
           14, // ref id
           0 // mm index
@@ -647,6 +676,24 @@ describe("autocrat_v0", async function () {
           orderBook: passMarket,
         })
         .signers([passMM])
+        .rpc();
+
+      let { baseVault, quoteVault } = await clobProgram.account.orderBook.fetch(
+        passMarket
+      );
+      await clobProgram.methods
+        .submitTakeOrder({ buy: {} }, new anchor.BN(10_00), new anchor.BN(0))
+        .accounts({
+          globalState: clobGlobalState,
+          userBaseAccount: aliceBasePassConditionalTokenAccount,
+          userQuoteAccount: aliceQuotePassConditionalTokenAccount,
+          baseVault,
+          quoteVault,
+          authority: alice.publicKey,
+          orderBook: passMarket,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
+        })
+        .signers([alice])
         .rpc();
 
       await clobProgram.methods
@@ -762,6 +809,11 @@ describe("autocrat_v0", async function () {
           proposal,
           passMarket,
           failMarket,
+          basePassVault,
+          quotePassVault,
+          baseFailVault,
+          quoteFailVault,
+          vaultProgram: vaultProgram.programId,
           dao,
           daoTreasury,
         })
@@ -790,6 +842,12 @@ describe("autocrat_v0", async function () {
       storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
 
+      const callbacks = expectError(
+        autocrat,
+        "CantRedeemConditionalTokens",
+        "alice was able to redeem her conditional tokens despite the proposal failing"
+      );
+
       await redeemConditionalTokens(
         vaultProgram,
         alice,
@@ -798,7 +856,7 @@ describe("autocrat_v0", async function () {
         basePassVaultUnderlyingTokenAccount,
         basePassVault,
         basePassConditionalTokenMint
-      );
+      ).then(callbacks[0], callbacks[1]);
 
       //console.log(await banksClient.getAccount(payer.publicKey));
 
@@ -819,7 +877,8 @@ async function generateMarketMaker(
   payer: anchor.web3.Keypair,
   globalState: anchor.web3.PublicKey,
   orderBook: anchor.web3.PublicKey,
-  admin: anchor.web3.Keypair
+  admin: anchor.web3.Keypair,
+  vaultProgram: ConditionalVaultProgram
 ): [Keypair] {
   const context = program.provider.context;
 
@@ -843,9 +902,91 @@ async function generateMarketMaker(
     mm.publicKey
   );
 
-  await mintToOverride(context, mmBase, 1_000_000_000n);
+  const baseMint = await getMint(banksClient, storedOrderBook.base);
+  const quoteMint = await getMint(banksClient, storedOrderBook.quote);
 
-  await mintToOverride(context, mmQuote, 1_000_000_000n);
+  const baseVault = baseMint.mintAuthority;
+  const quoteVault = quoteMint.mintAuthority;
+
+  const storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
+    baseVault
+  );
+  const storedQuoteVault = await vaultProgram.account.conditionalVault.fetch(
+    quoteVault
+  );
+
+  const mmBaseUnderlying = await createAccount(
+    banksClient,
+    payer,
+    storedBaseVault.underlyingTokenMint,
+    mm.publicKey
+  );
+  const mmQuoteUnderlying = await createAccount(
+    banksClient,
+    payer,
+    storedQuoteVault.underlyingTokenMint,
+    mm.publicKey
+  );
+
+  await mintToOverride(context, mmBaseUnderlying, 1_000_000_000n);
+  await mintToOverride(context, mmQuoteUnderlying, 1_000_000_000n);
+
+  let [mmBaseDepositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("deposit_slip"),
+      baseVault.toBuffer(),
+      mm.publicKey.toBuffer(),
+    ],
+    vaultProgram.programId
+  );
+  await vaultProgram.methods
+    .initializeDepositSlip(mm.publicKey)
+    .accounts({
+      depositSlip: mmBaseDepositSlip,
+      vault: baseVault,
+      payer: payer.publicKey,
+    })
+    .rpc();
+
+  let [mmQuoteDepositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("deposit_slip"),
+      quoteVault.toBuffer(),
+      mm.publicKey.toBuffer(),
+    ],
+    vaultProgram.programId
+  );
+  await vaultProgram.methods
+    .initializeDepositSlip(mm.publicKey)
+    .accounts({
+      depositSlip: mmQuoteDepositSlip,
+      vault: quoteVault,
+      payer: payer.publicKey,
+    })
+    .rpc();
+
+  await mintConditionalTokens(
+    vaultProgram,
+    1_000_000_000,
+    mm,
+    mmBaseDepositSlip,
+    baseVault,
+    storedBaseVault.underlyingTokenAccount,
+    mmBaseUnderlying,
+    storedBaseVault.conditionalTokenMint,
+    mmBase
+  );
+  await mintConditionalTokens(
+    vaultProgram,
+    1_000_000_000,
+    mm,
+    mmQuoteDepositSlip,
+    quoteVault,
+    storedQuoteVault.underlyingTokenAccount,
+    mmQuoteUnderlying,
+    storedQuoteVault.conditionalTokenMint,
+    mmQuote
+  );
 
   await program.methods
     .addMarketMaker(mm.publicKey, index)
@@ -901,61 +1042,29 @@ async function initializeProposal(
     )
   );
 
-  const [quotePassVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
-    [
-      proposalKeypair.publicKey.toBuffer(),
-      anchor.utils.bytes.utf8.encode("quote_pass"),
-    ],
-    autocrat.programId
-  );
-
-  const [quoteFailVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
-    [
-      proposalKeypair.publicKey.toBuffer(),
-      anchor.utils.bytes.utf8.encode("quote_fail"),
-    ],
-    autocrat.programId
-  );
-
-  const [basePassVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
-    [
-      proposalKeypair.publicKey.toBuffer(),
-      anchor.utils.bytes.utf8.encode("base_pass"),
-    ],
-    autocrat.programId
-  );
-
-  const [baseFailVaultSettlementAuthority] = PublicKey.findProgramAddressSync(
-    [
-      proposalKeypair.publicKey.toBuffer(),
-      anchor.utils.bytes.utf8.encode("base_fail"),
-    ],
-    autocrat.programId
-  );
-
   const storedDAO = await autocrat.account.dao.fetch(dao);
 
   const quotePassVault = await initializeVault(
     vaultProgram,
-    quotePassVaultSettlementAuthority,
+    storedDAO.treasury,
     WSOL
   );
 
   const quoteFailVault = await initializeVault(
     vaultProgram,
-    quoteFailVaultSettlementAuthority,
+    storedDAO.treasury,
     WSOL
   );
 
   const basePassVault = await initializeVault(
     vaultProgram,
-    basePassVaultSettlementAuthority,
+    storedDAO.treasury,
     storedDAO.token
   );
 
   const baseFailVault = await initializeVault(
     vaultProgram,
-    baseFailVaultSettlementAuthority,
+    storedDAO.treasury,
     storedDAO.token
   );
 
