@@ -842,6 +842,22 @@ describe("autocrat_v0", async function () {
       storedDao = await autocrat.account.dao.fetch(dao);
       assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
 
+      let storedBasePassVault =
+        await vaultProgram.account.conditionalVault.fetch(basePassVault);
+      assert.exists(storedBasePassVault.status.reverted);
+
+      let storedQuotePassVault =
+        await vaultProgram.account.conditionalVault.fetch(quotePassVault);
+      assert.exists(storedQuotePassVault.status.reverted);
+
+      let storedBaseFailVault =
+        await vaultProgram.account.conditionalVault.fetch(baseFailVault);
+      assert.exists(storedBaseFailVault.status.finalized);
+
+      let storedQuoteFailVault =
+        await vaultProgram.account.conditionalVault.fetch(quoteFailVault);
+      assert.exists(storedQuoteFailVault.status.finalized);
+
       const callbacks = expectError(
         autocrat,
         "CantRedeemConditionalTokens",

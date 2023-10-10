@@ -5,6 +5,7 @@ use clob::state::order_book::OrderBook;
 use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
+use conditional_vault::VaultStatus;
 use solana_program::instruction::Instruction;
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
@@ -261,8 +262,6 @@ pub mod autocrat_v0 {
                 signer,
             )?;
 
-            use conditional_vault::VaultStatus;
-
             for (vault, new_state) in [
                 (
                     ctx.accounts.base_pass_vault.to_account_info(),
@@ -291,6 +290,33 @@ pub mod autocrat_v0 {
             }
         } else {
             proposal.state = ProposalState::Failed;
+
+            for (vault, new_state) in [
+                (
+                    ctx.accounts.base_pass_vault.to_account_info(),
+                    VaultStatus::Reverted,
+                ),
+                (
+                    ctx.accounts.quote_pass_vault.to_account_info(),
+                    VaultStatus::Reverted,
+                ),
+                (
+                    ctx.accounts.base_fail_vault.to_account_info(),
+                    VaultStatus::Finalized,
+                ),
+                (
+                    ctx.accounts.quote_fail_vault.to_account_info(),
+                    VaultStatus::Finalized,
+                ),
+            ] {
+                let vault_program = ctx.accounts.vault_program.to_account_info();
+                let cpi_accounts = SettleConditionalVault {
+                    settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
+                    vault,
+                };
+                let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
+                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_state)?;
+            }
         }
 
         Ok(())
