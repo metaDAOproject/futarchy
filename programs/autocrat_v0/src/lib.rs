@@ -149,7 +149,31 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
 
+        let dao = &mut ctx.accounts.dao;
         let proposal = &mut ctx.accounts.proposal;
+
+        proposal.number = dao.proposal_count;
+        dao.proposal_count += 1;
+
+        // least signficant 32 bits of nonce are proposal number
+        // most significant bit of nonce is 0 for pass and 1 for fail
+        // second most significant bit of nonce is 0 for base and 1 for quote
+        require!(
+            ctx.accounts.base_pass_vault.nonce == proposal.number as u64,
+            AutocratError::InvalidVaultNonce
+        );
+        require!(
+            ctx.accounts.quote_pass_vault.nonce == (proposal.number as u64 | (1 << 63)),
+            AutocratError::InvalidVaultNonce
+        );
+        require!(
+            ctx.accounts.base_fail_vault.nonce == proposal.number as u64 | (1 << 62),
+            AutocratError::InvalidVaultNonce
+        );
+        require!(
+            ctx.accounts.quote_fail_vault.nonce == (proposal.number as u64 | (1 << 63) | (1 << 62)),
+            AutocratError::InvalidVaultNonce
+        );
 
         proposal.quote_pass_vault = ctx.accounts.quote_pass_vault.key();
         proposal.base_pass_vault = ctx.accounts.base_pass_vault.key();
@@ -157,7 +181,6 @@ pub mod autocrat_v0 {
         proposal.base_fail_vault = ctx.accounts.base_fail_vault.key();
 
         let clock = Clock::get()?;
-        let dao = &mut ctx.accounts.dao;
 
         let slots_passed = clock.slot - dao.last_proposal_slot;
         let burn_amount = dao.base_burn_lamports.saturating_sub(
@@ -179,9 +202,6 @@ pub mod autocrat_v0 {
                 ctx.accounts.dao_treasury.to_account_info(),
             ],
         )?;
-
-        proposal.number = dao.proposal_count;
-        dao.proposal_count += 1;
 
         proposal.pass_market = ctx.accounts.pass_market.key();
         proposal.fail_market = ctx.accounts.fail_market.key();
@@ -482,4 +502,6 @@ pub enum AutocratError {
     ProposalCannotPass,
     #[msg("This proposal has already been finalized")]
     ProposalAlreadyFinalized,
+    #[msg("A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits")]
+    InvalidVaultNonce,
 }

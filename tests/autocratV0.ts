@@ -1060,28 +1060,38 @@ async function initializeProposal(
 
   const storedDAO = await autocrat.account.dao.fetch(dao);
 
-  const quotePassVault = await initializeVault(
-    vaultProgram,
-    storedDAO.treasury,
-    WSOL
-  );
+  // least signficant 32 bits of nonce are proposal number
+  // most significant bit of nonce is 0 for pass and 1 for fail
+  // second most significant bit of nonce is 0 for base and 1 for quote
 
-  const quoteFailVault = await initializeVault(
-    vaultProgram,
-    storedDAO.treasury,
-    WSOL
-  );
+  let baseNonce = new BN(storedDAO.proposalCount);
 
   const basePassVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    storedDAO.token
+    storedDAO.token,
+    baseNonce
+  );
+
+  const quotePassVault = await initializeVault(
+    vaultProgram,
+    storedDAO.treasury,
+    WSOL,
+    baseNonce.or(new BN(1).shln(63))
   );
 
   const baseFailVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    storedDAO.token
+    storedDAO.token,
+    baseNonce.or(new BN(1).shln(62))
+  );
+
+  const quoteFailVault = await initializeVault(
+    vaultProgram,
+    storedDAO.treasury,
+    WSOL,
+    baseNonce.or(new BN(3).shln(62))
   );
 
   const passBaseMint = (
@@ -1233,11 +1243,10 @@ async function initializeProposal(
 async function initializeVault(
   vaultProgram: VaultProgram,
   settlementAuthority: PublicKey,
-  underlyingTokenMint: PublicKey
+  underlyingTokenMint: PublicKey,
+  nonce: BN
 ): PublicKey {
   const payer = vaultProgram.provider.wallet.payer;
-
-  const nonce = new BN(Math.floor(Math.random() * 1_000_000));
 
   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
     [
