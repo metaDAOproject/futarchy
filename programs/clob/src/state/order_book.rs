@@ -115,7 +115,7 @@ impl OrderBook {
                 // 1.001 * 100 is still 100
                 let max_observation = oracle
                     .last_observation
-                    .saturating_mul((MAX_BPS + oracle.max_observation_change_per_update_bps) as u64)
+                    .saturating_mul((MAX_BPS.saturating_add(oracle.max_observation_change_per_update_bps)) as u64)
                     .saturating_div(MAX_BPS as u64)
                     .saturating_add(1);
 
@@ -123,13 +123,13 @@ impl OrderBook {
             } else {
                 let min_observation = oracle
                     .last_observation
-                    .saturating_mul((MAX_BPS - oracle.max_observation_change_per_update_bps) as u64)
+                    .saturating_mul((MAX_BPS.saturating_sub(oracle.max_observation_change_per_update_bps)) as u64)
                     .saturating_div(MAX_BPS as u64);
 
                 std::cmp::max(spot_price, min_observation)
             };
 
-            let weighted_observation = observation * (clock.slot - oracle.last_updated_slot);
+            let weighted_observation = observation.saturating_mul(clock.slot - oracle.last_updated_slot);
 
             oracle.last_observed_slot = clock.slot;
             oracle.last_updated_slot = clock.slot;
