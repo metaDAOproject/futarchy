@@ -1,5 +1,6 @@
 use super::*;
 use std::default::Default;
+use num::integer::Average;
 
 pub const BOOK_DEPTH: usize = 128;
 pub const NUM_MARKET_MAKERS: usize = 64;
@@ -104,7 +105,7 @@ impl OrderBook {
             let (best_bid, _) = best_bid.unwrap();
             let (best_offer, _) = best_offer.unwrap();
 
-            let spot_price = (best_bid.price + best_offer.price) / 2;
+            let spot_price = best_bid.price.average_ceil(&best_offer.price);
 
             let observation = if oracle.last_updated_slot == 0 {
                 spot_price
