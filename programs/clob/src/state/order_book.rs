@@ -90,11 +90,14 @@ impl OrderBook {
 
         let oracle = &mut self.twap_oracle;
 
-        if clock.slot > oracle.last_updated_slot {
+        if clock.slot > oracle.last_observed_slot {
             let best_bid = self.buys.iter().next();
             let best_offer = self.sells.iter().next();
 
             if best_bid.is_none() || best_offer.is_none() {
+                // this prevents mid-slot orders from being included in TWAP
+                oracle.last_observed_slot = clock.slot;
+
                 return Ok(());
             }
 
@@ -127,6 +130,7 @@ impl OrderBook {
 
             let weighted_observation = observation * (clock.slot - oracle.last_updated_slot);
 
+            oracle.last_observed_slot = clock.slot;
             oracle.last_updated_slot = clock.slot;
             oracle.last_observation = observation;
             oracle.observation_aggregator += weighted_observation as u128;
@@ -140,6 +144,7 @@ impl OrderBook {
 #[zero_copy]
 pub struct TWAPOracle {
     pub last_updated_slot: u64,
+    pub last_observed_slot: u64,
     pub last_observation: u64,
     pub observation_aggregator: u128,
     /// The most, in basis points, an observation can change per update.
