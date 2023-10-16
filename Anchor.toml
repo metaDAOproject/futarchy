@@ -15,6 +15,7 @@ cluster = "Localnet"
 wallet = "/home/user/.config/solana/id.json"
 
 [scripts]
+initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
 #test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/clob.ts"
 #test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts"
