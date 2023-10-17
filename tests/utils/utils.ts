@@ -1,5 +1,5 @@
 import { expect, assert } from "chai";
-import { Program } from "@project-serum/anchor";
+import { Program } from "@coral-xyz/anchor";
 
 let constraints = {
   2000: "ConstraintMut",
