@@ -11,10 +11,14 @@ describe("clob", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const payer = provider.wallet.payer;
+  const payer = anchor.web3.Keypair.generate();
   const connection = provider.connection;
 
   const program = anchor.workspace.Clob as Program<Clob>;
+
+  before(async () => {
+    await connection.requestAirdrop(payer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL)
+  })
 
   it("Passes tests", async () => {
     const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -30,7 +34,8 @@ describe("clob", () => {
         payer: payer.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
-      .rpc();
+      .signers([payer])
+      .rpc({ skipPreflight: true });
 
     await program.methods
       .updateGlobalState(null, 11, new anchor.BN(2_000_000_000), 300)
@@ -106,6 +111,7 @@ describe("clob", () => {
         baseVault,
         quoteVault,
       })
+      .signers([payer])
       .rpc();
 
     const [mm0, mm0Base, mm0Quote] = await generateMarketMaker(
@@ -555,7 +561,7 @@ const QUOTE_AMOUNT = 1_000_000_000;
 export async function generateMarketMaker(
   index: number,
   program: Program<Clob>,
-  connection: anchor.Connection,
+  connection: anchor.web3.Connection,
   payer: anchor.web3.Keypair,
   globalState: anchor.web3.PublicKey,
   orderBook: anchor.web3.PublicKey,
@@ -565,7 +571,7 @@ export async function generateMarketMaker(
   quote: anchor.web3.PublicKey,
   mintAuthority: anchor.web3.Keypair,
   admin: anchor.web3.Keypair
-): [anchor.web3.Keypair, anchor.web3.PublicKey, anchor.web3.PublicKey] {
+): Promise<[anchor.web3.Keypair, anchor.web3.PublicKey, anchor.web3.PublicKey]> {
   const mm = anchor.web3.Keypair.generate();
 
   const mmBase = await token.createAccount(
@@ -608,6 +614,7 @@ export async function generateMarketMaker(
       globalState,
       admin: admin.publicKey,
     })
+    .signers([payer])
     .rpc();
 
   await program.methods
