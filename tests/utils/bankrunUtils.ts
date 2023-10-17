@@ -1,4 +1,4 @@
-import * as anchor from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
 const { Signer, PublicKey, Transaction, Commitment, ConfirmOptions } =
   anchor.web3;
 import * as token from "@solana/spl-token";

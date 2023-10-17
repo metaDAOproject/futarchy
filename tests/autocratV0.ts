@@ -1,18 +1,17 @@
-import * as anchor from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 import {
   mintConditionalTokens,
   redeemConditionalTokens,
-  redeemDepositSlip,
 } from "./conditionalVault";
 
-const { PublicKey, Signer, Keypair, SystemProgram } = anchor.web3;
-const { BN, Program } = anchor;
+const { PublicKey, Keypair } = anchor.web3;
 
-import { expect, assert } from "chai";
+import { assert } from "chai";
 
-import { startAnchor, Clock } from "solana-bankrun";
+import { startAnchor, Clock, BanksClient, ProgramTestContext } from "solana-bankrun";
 
 import { expectError } from "./utils/utils";
 
@@ -22,23 +21,24 @@ import { Clob } from "../target/types/clob";
 
 /* import { generateMarketMaker } from "./clob"; */
 
-import * as AutocratIDL from "../target/idl/autocrat_v0.json";
-import * as ConditionalVaultIDL from "../target/idl/conditional_vault.json";
-import * as ClobIDL from "../target/idl/clob.json";
+const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
+const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
+const ClobIDL: Clob = require("../target/idl/clob.json");
+
+export type PublicKey = anchor.web3.PublicKey;
+export type Signer = anchor.web3.Signer;
+export type Keypair = anchor.web3.Keypair;
+
+type ProposalInstruction = anchor.IdlTypes<AutocratV0>["ProposalInstruction"]
 
 import {
   createMint,
   createAccount,
   createAssociatedTokenAccount,
-  mintTo,
-  getAccount,
   mintToOverride,
   getMint,
 } from "spl-token-bankrun";
 
-export type AutocratProgram = Program<AutocratV0>;
-export type ConditionalVaultProgram = Program<ConditionalVault>;
-export type ClobProgram = Program<Clob>;
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
@@ -76,19 +76,19 @@ describe("autocrat_v0", async function () {
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
 
-    autocrat = new anchor.Program<AutocratProgram>(
+    autocrat = new anchor.Program<AutocratV0>(
       AutocratIDL,
       AUTOCRAT_PROGRAM_ID,
       provider
     );
 
-    vaultProgram = new Program<ConditionalVaultProgram>(
+    vaultProgram = new Program<ConditionalVault>(
       ConditionalVaultIDL,
       CONDITIONAL_VAULT_PROGRAM_ID,
       provider
     );
 
-    clobProgram = new Program<ClobProgram>(ClobIDL, CLOB_PROGRAM_ID, provider);
+    clobProgram = new Program<Clob>(ClobIDL, CLOB_PROGRAM_ID, provider);
 
     payer = autocrat.provider.wallet.payer;
 
@@ -181,7 +181,9 @@ describe("autocrat_v0", async function () {
         instruction,
         vaultProgram,
         dao,
-        clobProgram
+        clobProgram,
+        context,
+        payer
       );
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
@@ -241,7 +243,9 @@ describe("autocrat_v0", async function () {
         instruction,
         vaultProgram,
         dao,
-        clobProgram
+        clobProgram,
+        context,
+        payer
       );
 
       ({
@@ -261,7 +265,8 @@ describe("autocrat_v0", async function () {
         clobGlobalState,
         passMarket,
         clobAdmin,
-        vaultProgram
+        vaultProgram,
+        context
       );
 
       [failMM] = await generateMarketMaker(
@@ -272,7 +277,8 @@ describe("autocrat_v0", async function () {
         clobGlobalState,
         failMarket,
         clobAdmin,
-        vaultProgram
+        vaultProgram,
+        context
       );
 
       alice = Keypair.generate();
@@ -341,7 +347,8 @@ describe("autocrat_v0", async function () {
         quotePassVaultUnderlyingTokenAccount,
         aliceUnderlyingQuoteTokenAccount,
         quotePassConditionalTokenMint,
-        aliceQuotePassConditionalTokenAccount
+        aliceQuotePassConditionalTokenAccount,
+        banksClient
       );
 
       aliceBasePassConditionalTokenAccount = await createAssociatedTokenAccount(
@@ -629,7 +636,8 @@ describe("autocrat_v0", async function () {
         aliceUnderlyingBaseTokenAccount,
         basePassVaultUnderlyingTokenAccount,
         basePassVault,
-        basePassConditionalTokenMint
+        basePassConditionalTokenMint,
+        banksClient
       );
 
       //console.log(await banksClient.getBalance(payer.publicKey));
@@ -871,7 +879,8 @@ describe("autocrat_v0", async function () {
         aliceUnderlyingBaseTokenAccount,
         basePassVaultUnderlyingTokenAccount,
         basePassVault,
-        basePassConditionalTokenMint
+        basePassConditionalTokenMint,
+        banksClient
       ).then(callbacks[0], callbacks[1]);
 
       //console.log(await banksClient.getAccount(payer.publicKey));
@@ -888,16 +897,15 @@ describe("autocrat_v0", async function () {
 
 async function generateMarketMaker(
   index: number,
-  program: ClobProgram,
+  program: Program<Clob>,
   banksClient: BanksClient,
   payer: anchor.web3.Keypair,
   globalState: anchor.web3.PublicKey,
   orderBook: anchor.web3.PublicKey,
   admin: anchor.web3.Keypair,
-  vaultProgram: ConditionalVaultProgram
-): [Keypair] {
-  const context = program.provider.context;
-
+  vaultProgram: Program<ConditionalVault>,
+  context: ProgramTestContext
+): Promise<[Keypair]> {
   const mm = anchor.web3.Keypair.generate();
 
   const storedOrderBook = await program.account.orderBook.fetch(orderBook);
@@ -990,7 +998,8 @@ async function generateMarketMaker(
     storedBaseVault.underlyingTokenAccount,
     mmBaseUnderlying,
     storedBaseVault.conditionalTokenMint,
-    mmBase
+    mmBase,
+    banksClient
   );
   await mintConditionalTokens(
     vaultProgram,
@@ -1001,7 +1010,8 @@ async function generateMarketMaker(
     storedQuoteVault.underlyingTokenAccount,
     mmQuoteUnderlying,
     storedQuoteVault.conditionalTokenMint,
-    mmQuote
+    mmQuote,
+    banksClient
   );
 
   await program.methods
@@ -1036,14 +1046,14 @@ async function generateMarketMaker(
 }
 
 async function initializeProposal(
-  autocrat: AutocratProgram,
-  ix: {},
-  vaultProgram: ConditionalVaultProgram,
+  autocrat: Program<AutocratV0>,
+  ix: ProposalInstruction,
+  vaultProgram: Program<ConditionalVault>,
   dao: PublicKey,
-  clobProgram: ClobProgram
-): PublicKey {
-  const context = autocrat.provider.context;
-  const payer = autocrat.provider.wallet.payer;
+  clobProgram: Program<Clob>,
+  context: ProgramTestContext,
+  payer: Keypair
+): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
   const currentClock = await context.banksClient.getClock();
@@ -1070,28 +1080,32 @@ async function initializeProposal(
     vaultProgram,
     storedDAO.treasury,
     storedDAO.token,
-    baseNonce
+    baseNonce,
+    payer
   );
 
   const quotePassVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
     WSOL,
-    baseNonce.or(new BN(1).shln(63))
+    baseNonce.or(new BN(1).shln(63)),
+    payer
   );
 
   const baseFailVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
     storedDAO.token,
-    baseNonce.or(new BN(1).shln(62))
+    baseNonce.or(new BN(1).shln(62)),
+    payer
   );
 
   const quoteFailVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
     WSOL,
-    baseNonce.or(new BN(3).shln(62))
+    baseNonce.or(new BN(3).shln(62)),
+    payer
   );
 
   const passBaseMint = (
@@ -1206,7 +1220,7 @@ async function initializeProposal(
       baseFailVault,
       passMarket,
       failMarket,
-      initializer: payer.publicKey,
+      proposer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
     .signers([proposalKeypair])
@@ -1229,7 +1243,7 @@ async function initializeProposal(
   assert.equal(storedProposal.descriptionUrl, dummyURL);
   assert.ok(storedProposal.passMarket.equals(passMarket));
   assert.ok(storedProposal.failMarket.equals(failMarket));
-  assert.equal(storedProposal.slotEnqueued, slot);
+  assert.equal(storedProposal.slotEnqueued.toString(), new BN(slot.toString()).toString());
   assert.deepEqual(storedProposal.state, { pending: {} });
 
   const storedIx = storedProposal.instruction;
@@ -1241,13 +1255,12 @@ async function initializeProposal(
 }
 
 async function initializeVault(
-  vaultProgram: VaultProgram,
+  vaultProgram: Program<ConditionalVault>,
   settlementAuthority: PublicKey,
   underlyingTokenMint: PublicKey,
-  nonce: BN
-): PublicKey {
-  const payer = vaultProgram.provider.wallet.payer;
-
+  nonce: BN,
+  payer: Keypair
+): Promise<PublicKey> {
   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("conditional_vault"),
