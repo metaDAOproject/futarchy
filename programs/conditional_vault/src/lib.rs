@@ -8,19 +8,14 @@ use solana_security_txt::security_txt;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
-    name: "Conditional Vault",
+    name: "conditional_vault",
     project_url: "https://themetadao.org",
     contacts: "email:metaproph3t@protonmail.com",
-    policy: "
-We may or may not pay a bug bounty.
-",
+    policy: "The market will decide whether we pay a bug bounty.",
     source_code: "https://github.com/metaDAOproject/meta-dao",
     source_release: "v0",
     auditors: "None",
-    acknowledgements: "
-\"See, the world is full of things more powerful than us. But if you know how to catch a ride, you can go places\"
-- Neal Stephenson, Snow Crash
-"
+    acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
 declare_id!("4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH");

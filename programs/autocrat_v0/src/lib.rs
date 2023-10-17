@@ -13,20 +13,17 @@ use std::borrow::Borrow;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
-    name: "Autocrat",
+    name: "autocrat_v0",
     project_url: "https://themetadao.org",
     contacts: "email:metaproph3t@protonmail.com",
-    policy: "
-We may or may not pay a bug bounty.
-",
+    policy: "The market will decide whether we pay a bug bounty.",
     source_code: "https://github.com/metaDAOproject/meta-dao",
     source_release: "v0",
     auditors: "None",
-    acknowledgements: "
-\"See, the world is full of things more powerful than us. But if you know how to catch a ride, you can go places\"
-- Neal Stephenson, Snow Crash
-"
+    acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
+
+declare_id!("Ctt7cFZM6K7phtRo5NvjycpQju7X6QTSuqNen2ebXiuc");
 
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
@@ -44,8 +41,6 @@ mod wsol {
     use super::*;
     declare_id!("So11111111111111111111111111111111111111112");
 }
-
-declare_id!("Ctt7cFZM6K7phtRo5NvjycpQju7X6QTSuqNen2ebXiuc");
 
 #[account]
 pub struct DAO {
