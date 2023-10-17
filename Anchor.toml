@@ -16,6 +16,7 @@ wallet = "/home/user/.config/solana/id.json"
 
 [scripts]
 initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
+clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && node scripts/clob.js && rm scripts/clob.js"
 #test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/clob.ts"
 #test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts"
