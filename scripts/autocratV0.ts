@@ -3,7 +3,9 @@ import * as token from "@solana/spl-token";
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
 
-import { IDL as AutocratIDL, AutocratV0 } from "../target/types/autocrat_v0";
+import { AutocratV0 } from "../target/types/autocrat_v0";
+
+const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "Ctt7cFZM6K7phtRo5NvjycpQju7X6QTSuqNen2ebXiuc"
