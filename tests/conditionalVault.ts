@@ -9,7 +9,7 @@ import { expect, assert } from "chai";
 
 import { startAnchor } from "solana-bankrun";
 
-import { expectError } from "./utils";
+import { expectError } from "./utils/utils";
 
 import { ConditionalVault } from "../target/types/conditional_vault";
 

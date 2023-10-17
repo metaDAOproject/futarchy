@@ -14,7 +14,7 @@ import { expect, assert } from "chai";
 
 import { startAnchor, Clock } from "solana-bankrun";
 
-import { expectError } from "./utils";
+import { expectError } from "./utils/utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
