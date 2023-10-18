@@ -18,20 +18,21 @@ const clobProgram = new Program<Clob>(
   provider
 );
 
+const [globalState] = PublicKey.findProgramAddressSync(
+  [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+  clobProgram.programId
+);
+
 async function main() {
-  console.log(clobProgram);
-  console.log(provider.wallet.publicKey);
-  await initializeGlobalState(provider.wallet.publicKey);
+  console.log(await clobProgram.account.globalState.fetch(globalState));
+  //console.log(clobProgram);
+  //console.log(provider.wallet.publicKey);
+  //await initializeGlobalState(provider.wallet.publicKey);
 }
 
 async function initializeGlobalState(
   admin: any
 ) {
-  const [globalState] = PublicKey.findProgramAddressSync(
-    [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-    clobProgram.programId
-  );
-
   await clobProgram.methods
     .initializeGlobalState(admin)
     .accounts({
