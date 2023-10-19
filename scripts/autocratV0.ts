@@ -288,7 +288,9 @@ async function initializeProposal() {
 
 
 async function main() {
-  await initializeProposal();
+  let proposals = await autocratProgram.account.proposal.all();
+  console.log(proposals[0]);
+  //await initializeProposal();
 }
 
 main();
