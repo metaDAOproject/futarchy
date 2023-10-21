@@ -1,12 +1,14 @@
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-const { PublicKey, Keypair, SystemProgram } = anchor.web3;
+const { PublicKey, Keypair } = anchor.web3;
 const { BN, Program } = anchor;
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 
 import { IDL as ConditionalVaultIDL, ConditionalVault } from "../target/types/conditional_vault";
 import { IDL as ClobIDL, Clob } from "../target/types/clob";
+
+type PublicKey = anchor.web3.PublicKey
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 
@@ -21,6 +23,11 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
 const CLOB_PROGRAM_ID = new PublicKey(
   "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 );
+
+// We will create a civilization of the Mind in Cyberspace. May it be
+// more humane and fair than the world your governments have made before.
+//  - John Perry Barlow, A Declaration of the Independence of Cyberspace
+const DAO_KEY = PublicKey.decodeUnchecked(Buffer.from(anchor.utils.sha256.hash("WWCACOTMICMIBMHAFTTWYGHMB")));
 
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
@@ -46,7 +53,7 @@ const clobProgram = new Program<Clob>(
 );
 
 const [dao] = PublicKey.findProgramAddressSync(
-  [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+  [DAO_KEY.toBuffer()],
   autocratProgram.programId
 );
 
@@ -61,10 +68,10 @@ const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
 );
 
 async function createMint(
-  mintAuthority: any,
-  freezeAuthority: any,
+  mintAuthority: PublicKey,
+  freezeAuthority: PublicKey,
   decimals: number,
-): Promise<any> {
+): Promise<PublicKey> {
   return await token.createMint(
     provider.connection,
     payer,
@@ -170,7 +177,7 @@ async function initializeOrderBook(
 
 async function initializeDAO(mint: any) {
   await autocratProgram.methods
-    .initializeDao()
+    .initializeDao(DAO_KEY)
     .accounts({
       dao,
       token: mint,
@@ -288,9 +295,13 @@ async function initializeProposal() {
 
 
 async function main() {
+  let tokenMint = await createMint(provider.publicKey, provider.publicKey, 9)
   let proposals = await autocratProgram.account.proposal.all();
-  console.log(proposals[0]);
-  //await initializeProposal();
+  console.log(proposals);
+  await initializeDAO(tokenMint);
+  await initializeProposal();
+  proposals = await autocratProgram.account.proposal.all();
+  console.log(proposals);
 }
 
 main();
