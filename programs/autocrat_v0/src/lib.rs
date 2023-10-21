@@ -44,6 +44,7 @@ mod wsol {
 
 #[account]
 pub struct DAO {
+    pub id: Pubkey,
     pub token: Pubkey,
     // the percentage, in basis points, the pass price needs to be above the
     // fail price in order for the proposal to pass
@@ -70,6 +71,7 @@ pub enum ProposalState {
 
 #[account]
 pub struct Proposal {
+    pub dao: Pubkey,
     pub number: u32,
     pub proposer: Pubkey,
     pub description_url: String,
@@ -102,9 +104,10 @@ pub struct ProposalAccount {
 pub mod autocrat_v0 {
     use super::*;
 
-    pub fn initialize_dao(ctx: Context<InitializeDAO>) -> Result<()> {
+    pub fn initialize_dao(ctx: Context<InitializeDAO>, id: Pubkey) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
+        dao.id = id;
         dao.token = ctx.accounts.token.key();
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
@@ -147,6 +150,7 @@ pub mod autocrat_v0 {
         let dao = &mut ctx.accounts.dao;
         let proposal = &mut ctx.accounts.proposal;
 
+        proposal.dao = dao.key();
         proposal.number = dao.proposal_count;
         dao.proposal_count += 1;
 
@@ -363,15 +367,13 @@ pub mod autocrat_v0 {
 }
 
 #[derive(Accounts)]
+#[instruction(id: Pubkey)]
 pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = payer,
         space = 8 + std::mem::size_of::<DAO>(),
-        // We will create a civilization of the Mind in Cyberspace. May it be
-        // more humane and fair than the world your governments have made before.
-        //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
-        seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], 
+        seeds = [id.as_ref()], 
         bump
     )]
     pub dao: Account<'info, DAO>,
@@ -424,7 +426,11 @@ pub struct InitializeProposal<'info> {
 
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
-    #[account(mut, has_one = pass_market, has_one = fail_market, has_one = proposer,
+    #[account(mut,
+        has_one = dao,
+        has_one = pass_market,
+        has_one = fail_market,
+        has_one = proposer,
         has_one = quote_pass_vault,
         has_one = quote_fail_vault,
         has_one = base_pass_vault,
@@ -457,7 +463,6 @@ pub struct FinalizeProposal<'info> {
 pub struct Auth<'info> {
     #[account(mut)]
     pub dao: Account<'info, DAO>,
-    /// CHECK: never read
     pub dao_treasury: Signer<'info>,
 }
 
