@@ -55,9 +55,13 @@ const CLOB_PROGRAM_ID = new PublicKey(
 
 const WSOL = new PublicKey("So11111111111111111111111111111111111111112");
 
+// We will create a civilization of the Mind in Cyberspace. May it be
+// more humane and fair than the world your governments have made before.
+//  - John Perry Barlow, A Declaration of the Independence of Cyberspace
+const DAO_KEY = PublicKey.decodeUnchecked(Buffer.from(anchor.utils.sha256.hash("WWCACOTMICMIBMHAFTTWYGHMB")));
+
 describe("autocrat_v0", async function () {
   let provider,
-    connection,
     autocrat,
     payer,
     context,
@@ -68,7 +72,7 @@ describe("autocrat_v0", async function () {
     vaultProgram,
     clobProgram,
     clobAdmin,
-    clobGlobalState;
+    globalState;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -89,10 +93,18 @@ describe("autocrat_v0", async function () {
     );
 
     clobProgram = new Program<Clob>(ClobIDL, CLOB_PROGRAM_ID, provider);
-
+    
     payer = autocrat.provider.wallet.payer;
 
-    [clobGlobalState] = anchor.web3.PublicKey.findProgramAddressSync(
+    [dao] = PublicKey.findProgramAddressSync(
+      [DAO_KEY.toBuffer()],
+      autocrat.programId
+    );
+    [daoTreasury] = PublicKey.findProgramAddressSync(
+      [dao.toBuffer()],
+      autocrat.programId
+    );
+    [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
       [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
       clobProgram.programId
     );
@@ -101,7 +113,7 @@ describe("autocrat_v0", async function () {
     await clobProgram.methods
       .initializeGlobalState(clobAdmin.publicKey)
       .accounts({
-        globalState: clobGlobalState,
+        globalState,
         payer: payer.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -110,19 +122,10 @@ describe("autocrat_v0", async function () {
 
   describe("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
-      [dao] = PublicKey.findProgramAddressSync(
-        [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-        autocrat.programId
-      );
-      [daoTreasury] = PublicKey.findProgramAddressSync(
-        [dao.toBuffer()],
-        autocrat.programId
-      );
-
       mint = await createMint(banksClient, payer, dao, dao, 9);
 
       await autocrat.methods
-        .initializeDao()
+        .initializeDao(DAO_KEY)
         .accounts({
           dao,
           payer: payer.publicKey,
@@ -262,7 +265,7 @@ describe("autocrat_v0", async function () {
         clobProgram,
         banksClient,
         payer,
-        clobGlobalState,
+        globalState,
         passMarket,
         clobAdmin,
         vaultProgram,
@@ -274,7 +277,7 @@ describe("autocrat_v0", async function () {
         clobProgram,
         banksClient,
         payer,
-        clobGlobalState,
+        globalState,
         failMarket,
         clobAdmin,
         vaultProgram,
@@ -424,7 +427,7 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitTakeOrder({ buy: {} }, new anchor.BN(10_00), new anchor.BN(0))
         .accounts({
-          globalState: clobGlobalState,
+          globalState,
           userBaseAccount: aliceBasePassConditionalTokenAccount,
           userQuoteAccount: aliceQuotePassConditionalTokenAccount,
           baseVault,
@@ -692,7 +695,7 @@ describe("autocrat_v0", async function () {
       await clobProgram.methods
         .submitTakeOrder({ buy: {} }, new anchor.BN(10_00), new anchor.BN(0))
         .accounts({
-          globalState: clobGlobalState,
+          globalState,
           userBaseAccount: aliceBasePassConditionalTokenAccount,
           userQuoteAccount: aliceQuotePassConditionalTokenAccount,
           baseVault,
