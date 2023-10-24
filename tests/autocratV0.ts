@@ -6,12 +6,23 @@ import {
   mintConditionalTokens,
   redeemConditionalTokens,
 } from "./conditionalVault";
+import {
+  OpenBookV2Client,
+  IDL,
+  BooksideSpace,
+  EventHeapSpace,
+  PlaceOrderArgs,
+  Side,
+  OrderType,
+  SelfTradeBehavior
+} from "@openbook-dex/openbook-v2";
 
 const { PublicKey, Keypair } = anchor.web3;
 
 import { assert } from "chai";
 
 import { startAnchor, Clock, BanksClient, ProgramTestContext } from "solana-bankrun";
+
 
 import { expectError } from "./utils/utils";
 
@@ -53,6 +64,14 @@ const CLOB_PROGRAM_ID = new PublicKey(
   "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 );
 
+const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
+  "EgYfg4KUAbXP4UfTrsauxvs75QFf28b3MVEV8qFUGBRh"
+);
+
+const OPENBOOK_PROGRAM_ID = new PublicKey(
+  "opnbkNkqux64GppQhwbyEVc3axhssFhVYuwar8rDHCu"
+);
+
 const WSOL = new PublicKey("So11111111111111111111111111111111111111112");
 
 describe("autocrat_v0", async function () {
@@ -68,10 +87,15 @@ describe("autocrat_v0", async function () {
     vaultProgram,
     clobProgram,
     clobAdmin,
-    clobGlobalState;
+    clobGlobalState,
+    openbook;
 
   before(async function () {
-    context = await startAnchor("./", [], []);
+    context = await startAnchor("./", [
+      {
+        name: "openbook_v2",
+        programId: OPENBOOK_PROGRAM_ID,
+      }], []);
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
@@ -81,12 +105,19 @@ describe("autocrat_v0", async function () {
       AUTOCRAT_PROGRAM_ID,
       provider
     );
+    //const openbookProgram = new Program(
+    //  IDL,
+    //  OPENBOOK_PROGRAM_ID,
+    //  provider
+    //);
+    openbook = new OpenBookV2Client(provider);
 
     vaultProgram = new Program<ConditionalVault>(
       ConditionalVaultIDL,
       CONDITIONAL_VAULT_PROGRAM_ID,
       provider
     );
+
 
     clobProgram = new Program<Clob>(ClobIDL, CLOB_PROGRAM_ID, provider);
 
@@ -108,7 +139,7 @@ describe("autocrat_v0", async function () {
       .rpc();
   });
 
-  describe("#initialize_dao", async function () {
+  describe.only("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
       [dao] = PublicKey.findProgramAddressSync(
         [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
@@ -144,8 +175,8 @@ describe("autocrat_v0", async function () {
     });
   });
 
-  describe("#initialize_proposal", async function () {
-    it("initializes proposals", async function () {
+  describe.only("#initialize_proposal", async function () {
+    it.only("initializes proposals", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -183,13 +214,15 @@ describe("autocrat_v0", async function () {
         dao,
         clobProgram,
         context,
-        payer
+        payer,
+        openbook
       );
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
 
       // two days, so proposer should burn 30 SOL
       assert(balanceAfter < balanceBefore - 1_000_000_000n * 30n);
+      console.log(balanceAfter);
 
       assert(balanceAfter > balanceBefore - 1_000_000_000n * 31n);
     });
@@ -245,7 +278,7 @@ describe("autocrat_v0", async function () {
         dao,
         clobProgram,
         context,
-        payer
+        payer,
       );
 
       ({
@@ -1052,7 +1085,8 @@ async function initializeProposal(
   dao: PublicKey,
   clobProgram: Program<Clob>,
   context: ProgramTestContext,
-  payer: Keypair
+  payer: Keypair,
+  openbook: OpenBookV2Client
 ): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
@@ -1205,6 +1239,40 @@ async function initializeProposal(
 
   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
+    let openbookPassMarket = await openbook.createMarket(
+      payer,
+      "META/USDC",
+      passQuoteMint,
+      passBaseMint,
+      new BN(100),
+      new BN(1e9),
+      new BN(0),
+      new BN(0),
+      new BN(0),
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+
+    let openbookFailMarket = await openbook.createMarket(
+      payer,
+      "META/USDC",
+      failQuoteMint,
+      failBaseMint,
+      new BN(100),
+      new BN(1e9),
+      new BN(0),
+      new BN(0),
+      new BN(0),
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+
   await autocrat.methods
     .initializeProposal(dummyURL, ix)
     .preInstructions([
@@ -1220,6 +1288,8 @@ async function initializeProposal(
       baseFailVault,
       passMarket,
       failMarket,
+      openbookPassMarket,
+      openbookFailMarket,
       proposer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })

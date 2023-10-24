@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
+use openbook_v2::state::Market;
 use clob::state::order_book::OrderBook;
 use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
@@ -126,6 +127,9 @@ pub mod autocrat_v0 {
         let pass_market = ctx.accounts.pass_market.load()?;
         let fail_market = ctx.accounts.fail_market.load()?;
 
+        let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
+        let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
+
         require!(
             pass_market.base == ctx.accounts.base_pass_vault.conditional_token_mint,
             AutocratError::InvalidMarket
@@ -136,11 +140,29 @@ pub mod autocrat_v0 {
         );
 
         require!(
+            openbook_pass_market.base_mint == ctx.accounts.base_pass_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_pass_market.quote_mint == ctx.accounts.quote_pass_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
+
+
+        require!(
             fail_market.base == ctx.accounts.base_fail_vault.conditional_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
             fail_market.quote == ctx.accounts.quote_fail_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.base_mint == ctx.accounts.base_fail_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.quote_mint == ctx.accounts.quote_fail_vault.conditional_token_mint,
             AutocratError::InvalidMarket
         );
 
@@ -415,6 +437,8 @@ pub struct InitializeProposal<'info> {
         constraint = base_fail_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
+    pub openbook_pass_market: AccountLoader<'info, Market>,
+    pub openbook_fail_market: AccountLoader<'info, Market>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]
