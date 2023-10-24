@@ -83,7 +83,8 @@ pub mod conditional_vault {
         vault.nonce = nonce;
         vault.underlying_token_account = ctx.accounts.vault_underlying_token_account.key();
         vault.conditional_token_mint = ctx.accounts.conditional_token_mint.key();
-        vault.pda_bump = *ctx.bumps.get("vault").unwrap();
+        //vault.pda_bump = *ctx.bumps.get("vault").unwrap();
+        vault.pda_bump = ctx.bumps.vault;
 
         Ok(())
     }

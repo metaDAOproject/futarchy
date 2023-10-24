@@ -118,7 +118,8 @@ pub mod clob {
         order_book.inv.base_liabilities = 0;
         order_book.inv.quote_liabilities = 0;
 
-        order_book.pda_bump = *ctx.bumps.get("order_book").unwrap();
+        order_book.pda_bump = ctx.bumps.order_book;
+        //order_book.pda_bump = *ctx.bumps.get("order_book").unwrap();
 
         Ok(())
     }
