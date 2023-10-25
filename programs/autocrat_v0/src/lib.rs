@@ -285,8 +285,11 @@ pub mod autocrat_v0 {
     }
 
     pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
-        let pass_market = ctx.accounts.pass_market.load()?;
-        let fail_market = ctx.accounts.fail_market.load()?;
+        // let pass_market = ctx.accounts.pass_market.load()?;
+        // let fail_market = ctx.accounts.fail_market.load()?;
+
+        let openbook_twap_pass_market = &ctx.accounts.openbook_twap_pass_market;
+        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
 
         let proposal = &mut ctx.accounts.proposal;
         let clock = Clock::get()?;
@@ -305,16 +308,17 @@ pub mod autocrat_v0 {
         let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
         let signer = &[&treasury_seeds[..]];
 
-        let pass_market_aggregator = pass_market.twap_oracle.observation_aggregator;
-        let fail_market_aggregator = fail_market.twap_oracle.observation_aggregator;
+        let pass_market_aggregator = openbook_twap_pass_market.twap_oracle.observation_aggregator;
+        let fail_market_aggregator = openbook_twap_fail_market.twap_oracle.observation_aggregator;
 
         assert!(pass_market_aggregator != 0);
         assert!(fail_market_aggregator != 0);
 
         let pass_market_slots_passed =
-            pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+            openbook_twap_pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
         let fail_market_slots_passed =
-            fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+            openbook_twap_fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+
 
         require!(
             pass_market_slots_passed >= TEN_DAYS_IN_SLOTS,
@@ -511,8 +515,12 @@ pub struct FinalizeProposal<'info> {
         has_one = quote_fail_vault,
         has_one = base_pass_vault,
         has_one = base_fail_vault,
+        has_one = openbook_twap_pass_market,
+        has_one = openbook_twap_fail_market,
     )]
     pub proposal: Account<'info, Proposal>,
+    pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
+    pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
     pub dao: Box<Account<'info, DAO>>,

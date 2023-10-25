@@ -185,8 +185,8 @@ describe("autocrat_v0", async function () {
     });
   });
 
-  describe.only("#initialize_proposal", async function () {
-    it.only("initializes proposals", async function () {
+  describe("#initialize_proposal", async function () {
+    it("initializes proposals", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -239,10 +239,12 @@ describe("autocrat_v0", async function () {
     });
   });
 
-  describe("#finalize_proposal", async function () {
+  describe.only("#finalize_proposal", async function () {
     let proposal,
       passMarket,
       failMarket,
+      openbookTwapPassMarket,
+      openbookTwapFailMarket,
       basePassVault,
       quotePassVault,
       baseFailVault,
@@ -290,11 +292,15 @@ describe("autocrat_v0", async function () {
         clobProgram,
         context,
         payer,
+        openbook,
+        openbookTwap
       );
 
       ({
         passMarket,
         failMarket,
+        openbookTwapPassMarket,
+        openbookTwapFailMarket,
         basePassVault,
         quotePassVault,
         baseFailVault,
@@ -428,7 +434,7 @@ describe("autocrat_v0", async function () {
         .then(callbacks[0], callbacks[1]);
     });
 
-    it("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
+    it.only("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
 
       // pass market should be higher
@@ -623,6 +629,8 @@ describe("autocrat_v0", async function () {
           proposal,
           passMarket,
           failMarket,
+          openbookTwapPassMarket,
+          openbookTwapFailMarket,
           basePassVault,
           quotePassVault,
           baseFailVault,
