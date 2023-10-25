@@ -23,18 +23,19 @@ import { assert } from "chai";
 
 import { startAnchor, Clock, BanksClient, ProgramTestContext } from "solana-bankrun";
 
-
 import { expectError } from "./utils/utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
 import { Clob } from "../target/types/clob";
+import { OpenbookTwap, IDL as OpenbookTwapIDL } from "./fixtures/openbook_twap";
 
 /* import { generateMarketMaker } from "./clob"; */
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 const ClobIDL: Clob = require("../target/idl/clob.json");
+//const OpenBookTWAP
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
@@ -88,13 +89,17 @@ describe("autocrat_v0", async function () {
     clobProgram,
     clobAdmin,
     clobGlobalState,
-    openbook;
+    openbook,
+    openbookTwap;
 
   before(async function () {
     context = await startAnchor("./", [
       {
         name: "openbook_v2",
         programId: OPENBOOK_PROGRAM_ID,
+      }, {
+        name: "openbook_twap",
+        programId: OPENBOOK_TWAP_PROGRAM_ID,
       }], []);
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
@@ -105,12 +110,13 @@ describe("autocrat_v0", async function () {
       AUTOCRAT_PROGRAM_ID,
       provider
     );
-    //const openbookProgram = new Program(
-    //  IDL,
-    //  OPENBOOK_PROGRAM_ID,
+    openbook = new OpenBookV2Client(provider);
+    //openbookTwap = new Program<OpenbookTwap>(
+    //  OpenbookTwapIDL,
+    //  OPENBOOK_TWAP_PROGRAM_ID,
     //  provider
     //);
-    openbook = new OpenBookV2Client(provider);
+    //console.log(openbookTwap);
 
     vaultProgram = new Program<ConditionalVault>(
       ConditionalVaultIDL,
