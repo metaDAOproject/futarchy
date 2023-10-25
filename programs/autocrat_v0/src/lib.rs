@@ -493,7 +493,9 @@ pub struct InitializeProposal<'info> {
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
     pub openbook_pass_market: AccountLoader<'info, Market>,
     pub openbook_fail_market: AccountLoader<'info, Market>,
+    #[account(constraint = openbook_twap_pass_market.market == openbook_pass_market.key())]
     pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
+    #[account(constraint = openbook_twap_fail_market.market == openbook_fail_market.key())]
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
