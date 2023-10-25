@@ -1319,6 +1319,8 @@ async function initializeProposal(
   assert.equal(storedProposal.descriptionUrl, dummyURL);
   assert.ok(storedProposal.passMarket.equals(passMarket));
   assert.ok(storedProposal.failMarket.equals(failMarket));
+  assert.ok(storedProposal.openbookPassMarket.equals(openbookPassMarket));
+  assert.ok(storedProposal.openbookFailMarket.equals(openbookFailMarket));
   assert.equal(storedProposal.slotEnqueued.toString(), new BN(slot.toString()).toString());
   assert.deepEqual(storedProposal.state, { pending: {} });
 
