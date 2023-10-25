@@ -73,8 +73,6 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
-const WSOL = new PublicKey("So11111111111111111111111111111111111111112");
-
 describe("autocrat_v0", async function () {
   let provider,
     connection,
@@ -84,7 +82,8 @@ describe("autocrat_v0", async function () {
     banksClient,
     dao,
     daoTreasury,
-    mint,
+    META,
+    USDC,
     vaultProgram,
     clobProgram,
     clobAdmin,
@@ -144,6 +143,8 @@ describe("autocrat_v0", async function () {
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();
+
+    USDC = await createMint(banksClient, payer, payer.publicKey, payer.publicKey, 6);
   });
 
   describe.only("#initialize_dao", async function () {
@@ -157,7 +158,7 @@ describe("autocrat_v0", async function () {
         autocrat.programId
       );
 
-      mint = await createMint(banksClient, payer, dao, dao, 9);
+      META = await createMint(banksClient, payer, dao, dao, 9);
 
       await autocrat.methods
         .initializeDao()
@@ -165,7 +166,8 @@ describe("autocrat_v0", async function () {
           dao,
           payer: payer.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
-          token: mint,
+          metaMint: META,
+          usdcMint: USDC
         })
         .rpc()
         .then(
@@ -174,7 +176,8 @@ describe("autocrat_v0", async function () {
         );
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
-      assert(daoAcc.token.equals(mint));
+      assert(daoAcc.metaMint.equals(META));
+      assert(daoAcc.usdcMint.equals(USDC));
       assert.equal(daoAcc.proposalCount, 0);
       assert.equal(daoAcc.passThresholdBps, 500);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50)));
@@ -359,13 +362,13 @@ describe("autocrat_v0", async function () {
       aliceUnderlyingQuoteTokenAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
-        WSOL,
+        USDC,
         alice.publicKey
       );
       aliceUnderlyingBaseTokenAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
-        mint,
+        META,
         alice.publicKey
       );
 
@@ -1122,7 +1125,7 @@ async function initializeProposal(
   const basePassVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    storedDAO.token,
+    storedDAO.metaMint,
     baseNonce,
     payer
   );
@@ -1130,7 +1133,7 @@ async function initializeProposal(
   const quotePassVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    WSOL,
+    storedDAO.usdcMint,
     baseNonce.or(new BN(1).shln(63)),
     payer
   );
@@ -1138,7 +1141,7 @@ async function initializeProposal(
   const baseFailVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    storedDAO.token,
+    storedDAO.metaMint,
     baseNonce.or(new BN(1).shln(62)),
     payer
   );
@@ -1146,7 +1149,7 @@ async function initializeProposal(
   const quoteFailVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    WSOL,
+    storedDAO.usdcMint,
     baseNonce.or(new BN(3).shln(62)),
     payer
   );
@@ -1155,13 +1158,13 @@ async function initializeProposal(
     await vaultProgram.account.conditionalVault.fetch(basePassVault)
   ).conditionalTokenMint;
   const passQuoteMint = (
-    await vaultProgram.account.conditionalVault.fetch(quotePassVault)
+   await vaultProgram.account.conditionalVault.fetch(quotePassVault)
   ).conditionalTokenMint;
   const failBaseMint = (
-    await vaultProgram.account.conditionalVault.fetch(baseFailVault)
+   await vaultProgram.account.conditionalVault.fetch(baseFailVault)
   ).conditionalTokenMint;
   const failQuoteMint = (
-    await vaultProgram.account.conditionalVault.fetch(quoteFailVault)
+   await vaultProgram.account.conditionalVault.fetch(quoteFailVault)
   ).conditionalTokenMint;
 
   const [passMarket] = anchor.web3.PublicKey.findProgramAddressSync(

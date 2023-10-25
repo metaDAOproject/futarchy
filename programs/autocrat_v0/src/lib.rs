@@ -38,15 +38,10 @@ pub const MAX_BPS: u16 = 10_000;
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const TEN_DAYS_IN_SLOTS: u64 = 10 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
-pub use wsol::ID as WSOL;
-mod wsol {
-    use super::*;
-    declare_id!("So11111111111111111111111111111111111111112");
-}
-
 #[account]
 pub struct DAO {
-    pub token: Pubkey,
+    pub meta_mint: Pubkey,
+    pub usdc_mint: Pubkey,
     // the percentage, in basis points, the pass price needs to be above the
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
@@ -109,7 +104,9 @@ pub mod autocrat_v0 {
     pub fn initialize_dao(ctx: Context<InitializeDAO>) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        dao.token = ctx.accounts.token.key();
+        dao.meta_mint = ctx.accounts.meta_mint.key();
+        dao.usdc_mint = ctx.accounts.usdc_mint.key();
+
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
@@ -440,7 +437,9 @@ pub struct InitializeDAO<'info> {
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
     #[account(mint::decimals = 9)]
-    pub token: Account<'info, Mint>,
+    pub meta_mint: Account<'info, Mint>,
+    #[account(mint::decimals = 6)]
+    pub usdc_mint: Account<'info, Mint>,
 }
 
 #[derive(Accounts)]
@@ -457,22 +456,22 @@ pub struct InitializeProposal<'info> {
     )]
     pub dao_treasury: UncheckedAccount<'info>,
     #[account(
-        constraint = quote_pass_vault.underlying_token_mint == WSOL,
+        constraint = quote_pass_vault.underlying_token_mint == dao.usdc_mint,
         constraint = quote_pass_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = quote_fail_vault.underlying_token_mint == WSOL,
+        constraint = quote_fail_vault.underlying_token_mint == dao.usdc_mint,
         constraint = quote_fail_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_fail_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_pass_vault.underlying_token_mint == dao.token,
+        constraint = base_pass_vault.underlying_token_mint == dao.meta_mint,
         constraint = base_pass_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_pass_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_fail_vault.underlying_token_mint == dao.token,
+        constraint = base_fail_vault.underlying_token_mint == dao.meta_mint,
         constraint = base_fail_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
