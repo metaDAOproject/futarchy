@@ -147,7 +147,24 @@ pub mod autocrat_v0 {
             openbook_pass_market.quote_mint == ctx.accounts.quote_pass_vault.conditional_token_mint,
             AutocratError::InvalidMarket
         );
-
+        // this should also be checked by `openbook_twap`, but why not take the
+        // precaution?
+        require!(
+            openbook_pass_market.time_expiry == 0,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_pass_market.seq_num == 0,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_pass_market.taker_fee == 0,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_pass_market.maker_fee == 0,
+            AutocratError::InvalidMarket
+        );
 
         require!(
             fail_market.base == ctx.accounts.base_fail_vault.conditional_token_mint,
@@ -163,6 +180,22 @@ pub mod autocrat_v0 {
         );
         require!(
             openbook_fail_market.quote_mint == ctx.accounts.quote_fail_vault.conditional_token_mint,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.time_expiry == 0,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.seq_num == 0,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.taker_fee == 0,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.maker_fee == 0,
             AutocratError::InvalidMarket
         );
 
