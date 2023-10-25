@@ -165,6 +165,14 @@ pub mod autocrat_v0 {
             openbook_pass_market.maker_fee == 0,
             AutocratError::InvalidMarket
         );
+        require!(
+            openbook_pass_market.base_lot_size == 1_000_000_000, // minimum tradeable = 1 META
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
+            AutocratError::InvalidMarket
+        );
 
         require!(
             fail_market.base == ctx.accounts.base_fail_vault.conditional_token_mint,
@@ -196,6 +204,14 @@ pub mod autocrat_v0 {
         );
         require!(
             openbook_fail_market.maker_fee == 0,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.base_lot_size == 1_000_000_000,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_pass_market.quote_lot_size == 100,
             AutocratError::InvalidMarket
         );
 
