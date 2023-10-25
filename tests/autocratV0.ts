@@ -1248,9 +1248,16 @@ async function initializeProposal(
 
   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
+    let openbookPassMarketKP = Keypair.generate();
+
+    let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
+      [anchor.utils.bytes.utf8.encode("twap_market"), openbookPassMarketKP.publicKey.toBuffer()],
+      openbookTwap.programId
+    );
+
     let openbookPassMarket = await openbook.createMarket(
       payer,
-      "META/USDC",
+      "fMETA/fUSDC",
       passQuoteMint,
       passBaseMint,
       new BN(100),
@@ -1260,10 +1267,36 @@ async function initializeProposal(
       new BN(0),
       null,
       null,
+      openbookTwapPassMarket,
       null,
-      null,
-      null,
+      openbookTwapPassMarket,
+      { confFilter: 0.1, maxStalenessSlots: 100 },
+      openbookPassMarketKP
     );
+
+    await openbookTwap.methods.createTwapMarket()
+      .accounts({
+        market: openbookPassMarket,
+        twapMarket: openbookTwapPassMarket,
+      })
+      .rpc();
+
+    //let openbookPassMarket = await openbook.createMarket(
+    //  payer,
+    //  "META/USDC",
+    //  passQuoteMint,
+    //  passBaseMint,
+    //  new BN(100),
+    //  new BN(1e9),
+    //  new BN(0),
+    //  new BN(0),
+    //  new BN(0),
+    //  null,
+    //  null,
+    //  null,
+    //  null,
+    //  null,
+    //);
 
     let openbookFailMarketKP = Keypair.generate();
 
@@ -1297,23 +1330,6 @@ async function initializeProposal(
       })
       .rpc();
 
-    //let openbookFailMarket = await openbook.createMarket(
-    //  payer,
-    //  "META/USDC",
-    //  failQuoteMint,
-    //  failBaseMint,
-    //  new BN(100),
-    //  new BN(1e9),
-    //  new BN(0),
-    //  new BN(0),
-    //  new BN(0),
-    //  null,
-    //  null,
-    //  null,
-    //  null,
-    //  null,
-    //);
-
   await autocrat.methods
     .initializeProposal(dummyURL, ix)
     .preInstructions([
@@ -1329,6 +1345,7 @@ async function initializeProposal(
       baseFailVault,
       passMarket,
       failMarket,
+      openbookTwapPassMarket,
       openbookTwapFailMarket,
       openbookPassMarket,
       openbookFailMarket,
@@ -1355,8 +1372,8 @@ async function initializeProposal(
   assert.equal(storedProposal.descriptionUrl, dummyURL);
   assert.ok(storedProposal.passMarket.equals(passMarket));
   assert.ok(storedProposal.failMarket.equals(failMarket));
-  assert.ok(storedProposal.openbookPassMarket.equals(openbookPassMarket));
-  assert.ok(storedProposal.openbookFailMarket.equals(openbookFailMarket));
+  assert.ok(storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket));
+  assert.ok(storedProposal.openbookTwapPassMarket.equals(openbookTwapPassMarket));
   assert.equal(storedProposal.slotEnqueued.toString(), new BN(slot.toString()).toString());
   assert.deepEqual(storedProposal.state, { pending: {} });
 

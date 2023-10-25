@@ -78,8 +78,8 @@ pub struct Proposal {
     pub slot_enqueued: u64,
     pub state: ProposalState,
     pub instruction: ProposalInstruction,
-    pub openbook_pass_market: Pubkey,
-    pub openbook_fail_market: Pubkey,
+    pub openbook_twap_pass_market: Pubkey,
+    pub openbook_twap_fail_market: Pubkey,
     pub pass_market: Pubkey,
     pub fail_market: Pubkey,
     pub base_pass_vault: Pubkey,
@@ -259,8 +259,8 @@ pub mod autocrat_v0 {
         proposal.pass_market = ctx.accounts.pass_market.key();
         proposal.fail_market = ctx.accounts.fail_market.key();
 
-        proposal.openbook_pass_market = ctx.accounts.openbook_pass_market.key();
-        proposal.openbook_fail_market = ctx.accounts.openbook_fail_market.key();
+        proposal.openbook_twap_pass_market = ctx.accounts.openbook_twap_pass_market.key();
+        proposal.openbook_twap_fail_market = ctx.accounts.openbook_twap_fail_market.key();
 
         proposal.proposer = ctx.accounts.proposer.key();
         proposal.description_url = description_url;
@@ -478,6 +478,7 @@ pub struct InitializeProposal<'info> {
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
     pub openbook_pass_market: AccountLoader<'info, Market>,
     pub openbook_fail_market: AccountLoader<'info, Market>,
+    pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
