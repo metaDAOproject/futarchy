@@ -51,9 +51,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd7d5a2cecb58716e47d67d5703a249964b14c7be1ec3cad3affc295b2d1c35d"
+checksum = "91429305e9f0a25f6205c5b8e0d2db09e0708a7a6df0f42212bb56c32c8ac97a"
 dependencies = [
  "cfg-if",
  "getrandom 0.2.10",
@@ -401,6 +401,7 @@ dependencies = [
  "blake3",
  "clob",
  "conditional_vault",
+ "openbook-twap",
  "openbook-v2",
  "solana-program",
  "solana-security-txt",
@@ -1032,7 +1033,7 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
 dependencies = [
- "ahash 0.8.5",
+ "ahash 0.8.6",
 ]
 
 [[package]]
@@ -1534,9 +1535,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
+name = "openbook-twap"
+version = "0.1.0"
+source = "git+https://github.com/metaDAOproject/openbook-twap.git#b861b698846f89491a882e00e3dec35531c38123"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "num",
+ "openbook-v2",
+ "solana-program",
+]
+
+[[package]]
 name = "openbook-v2"
 version = "0.1.0"
-source = "git+https://github.com/openbook-dex/openbook-v2.git#af8aadf6d03ccf739673df8092d492fccfad479d"
+source = "git+https://github.com/openbook-dex/openbook-v2.git#4898bd0754b9dfcb6116b451a621e3ffacdc5e7b"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -1793,7 +1806,7 @@ dependencies = [
 [[package]]
 name = "raydium-amm-v3"
 version = "0.1.0"
-source = "git+https://github.com/raydium-io/raydium-clmm.git#21bb30792791176abc8d04ce3bd184af12d6005e"
+source = "git+https://github.com/raydium-io/raydium-clmm.git#cea4d49ef5acc643cb04fb4db96af6d73a5f0a1d"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -1801,6 +1814,7 @@ dependencies = [
  "bytemuck",
  "mpl-token-metadata",
  "solana-program",
+ "spl-memo 4.0.0",
  "uint",
 ]
 
@@ -2149,7 +2163,7 @@ version = "1.16.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a63aebf4beac713a1949216ae180355c044df9cc3db9a58ca153bb10bb5843b"
 dependencies = [
- "ahash 0.8.5",
+ "ahash 0.8.6",
  "blake3",
  "block-buffer 0.10.4",
  "bs58 0.4.0",
@@ -3039,18 +3053,18 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.7.14"
+version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69c48d63854f77746c68a5fbb4aa17f3997ece1cb301689a257af8cb80610d21"
+checksum = "81ba595b9f2772fbee2312de30eeb80ec773b4cb2f1e8098db024afadda6c06f"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.7.14"
+version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c258c1040279e4f88763a113de72ce32dde2d50e2a94573f15dd534cea36a16d"
+checksum = "772666c41fb6dceaf520b564b962d738a8e1a83b41bd48945f50837aed78bb1d"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
 use openbook_v2::state::Market;
+use openbook_twap::TWAPMarket;
 use clob::state::order_book::OrderBook;
 use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
@@ -477,6 +478,7 @@ pub struct InitializeProposal<'info> {
     pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
     pub openbook_pass_market: AccountLoader<'info, Market>,
     pub openbook_fail_market: AccountLoader<'info, Market>,
+    pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
     pub pass_market: AccountLoader<'info, OrderBook>,
     pub fail_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]

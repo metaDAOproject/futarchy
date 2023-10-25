@@ -70,7 +70,7 @@ const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
 );
 
 const OPENBOOK_PROGRAM_ID = new PublicKey(
-  "opnbkNkqux64GppQhwbyEVc3axhssFhVYuwar8rDHCu"
+  "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
 const WSOL = new PublicKey("So11111111111111111111111111111111111111112");
@@ -97,7 +97,8 @@ describe("autocrat_v0", async function () {
       {
         name: "openbook_v2",
         programId: OPENBOOK_PROGRAM_ID,
-      }, {
+      },
+      {
         name: "openbook_twap",
         programId: OPENBOOK_TWAP_PROGRAM_ID,
       }], []);
@@ -111,11 +112,11 @@ describe("autocrat_v0", async function () {
       provider
     );
     openbook = new OpenBookV2Client(provider);
-    //openbookTwap = new Program<OpenbookTwap>(
-    //  OpenbookTwapIDL,
-    //  OPENBOOK_TWAP_PROGRAM_ID,
-    //  provider
-    //);
+    openbookTwap = new Program<OpenbookTwap>(
+      OpenbookTwapIDL,
+      OPENBOOK_TWAP_PROGRAM_ID,
+      provider
+    );
     //console.log(openbookTwap);
 
     vaultProgram = new Program<ConditionalVault>(
@@ -221,7 +222,8 @@ describe("autocrat_v0", async function () {
         clobProgram,
         context,
         payer,
-        openbook
+        openbook,
+        openbookTwap
       );
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
@@ -1092,7 +1094,8 @@ async function initializeProposal(
   clobProgram: Program<Clob>,
   context: ProgramTestContext,
   payer: Keypair,
-  openbook: OpenBookV2Client
+  openbook: OpenBookV2Client,
+  openbookTwap: Program<OpenbookTwap>,
 ): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
@@ -1262,9 +1265,16 @@ async function initializeProposal(
       null,
     );
 
+    let openbookFailMarketKP = Keypair.generate();
+
+    let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
+      [anchor.utils.bytes.utf8.encode("twap_market"), openbookFailMarketKP.publicKey.toBuffer()],
+      openbookTwap.programId
+    );
+
     let openbookFailMarket = await openbook.createMarket(
       payer,
-      "META/USDC",
+      "fMETA/fUSDC",
       failQuoteMint,
       failBaseMint,
       new BN(100),
@@ -1274,10 +1284,35 @@ async function initializeProposal(
       new BN(0),
       null,
       null,
+      openbookTwapFailMarket,
       null,
-      null,
-      null,
+      openbookTwapFailMarket,
+      { confFilter: 0.1, maxStalenessSlots: 100 },
+      openbookFailMarketKP
     );
+    await openbookTwap.methods.createTwapMarket()
+      .accounts({
+        market: openbookFailMarket,
+        twapMarket: openbookTwapFailMarket,
+      })
+      .rpc();
+
+    //let openbookFailMarket = await openbook.createMarket(
+    //  payer,
+    //  "META/USDC",
+    //  failQuoteMint,
+    //  failBaseMint,
+    //  new BN(100),
+    //  new BN(1e9),
+    //  new BN(0),
+    //  new BN(0),
+    //  new BN(0),
+    //  null,
+    //  null,
+    //  null,
+    //  null,
+    //  null,
+    //);
 
   await autocrat.methods
     .initializeProposal(dummyURL, ix)
@@ -1294,6 +1329,7 @@ async function initializeProposal(
       baseFailVault,
       passMarket,
       failMarket,
+      openbookTwapFailMarket,
       openbookPassMarket,
       openbookFailMarket,
       proposer: payer.publicKey,
