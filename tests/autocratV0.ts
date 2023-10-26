@@ -54,7 +54,7 @@ import {
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "Ctt7cFZM6K7phtRo5NvjycpQju7X6QTSuqNen2ebXiuc"
+  "Euvur4akYaqT5djixEkf8J9Jb8SUrKZt8BZeSNnB5jYU"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
@@ -66,7 +66,7 @@ const CLOB_PROGRAM_ID = new PublicKey(
 );
 
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "EgYfg4KUAbXP4UfTrsauxvs75QFf28b3MVEV8qFUGBRh"
+  "4dchEcc6TTC4QVyZQUWgQgcdAsXrUBxsdxpu572BY3Y2"
 );
 
 const OPENBOOK_PROGRAM_ID = new PublicKey(
@@ -1291,23 +1291,6 @@ async function initializeProposal(
         twapMarket: openbookTwapPassMarket,
       })
       .rpc();
-
-    //let openbookPassMarket = await openbook.createMarket(
-    //  payer,
-    //  "META/USDC",
-    //  passQuoteMint,
-    //  passBaseMint,
-    //  new BN(100),
-    //  new BN(1e9),
-    //  new BN(0),
-    //  new BN(0),
-    //  new BN(0),
-    //  null,
-    //  null,
-    //  null,
-    //  null,
-    //  null,
-    //);
 
     let openbookFailMarketKP = Keypair.generate();
 

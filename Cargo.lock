@@ -723,9 +723,9 @@ checksum = "f7144d30dcf0fafbce74250a3963025d8d52177934239851c917d29f1df280c2"
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.10"
+version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fbc60abd742b35f2492f808e1abbb83d45f72db402e14c55057edc9c7b1e9e4"
+checksum = "ce420fe07aecd3e67c5f910618fe65e94158f6dcc0adf44e00d69ce2bdfe0fd0"
 dependencies = [
  "libc",
 ]
@@ -1537,10 +1537,11 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "openbook-twap"
 version = "0.1.0"
-source = "git+https://github.com/metaDAOproject/openbook-twap.git#b861b698846f89491a882e00e3dec35531c38123"
+source = "git+https://github.com/metaDAOproject/openbook-twap.git#085a6496ff67acff894ad32aa45a4868efa5639f"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "bytemuck",
  "num",
  "openbook-v2",
  "solana-program",
@@ -1549,7 +1550,7 @@ dependencies = [
 [[package]]
 name = "openbook-v2"
 version = "0.1.0"
-source = "git+https://github.com/openbook-dex/openbook-v2.git#4898bd0754b9dfcb6116b451a621e3ffacdc5e7b"
+source = "git+https://github.com/openbook-dex/openbook-v2.git#36206abd373adfa8769b5d1a2af7aa04d24d8c3d"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -1984,9 +1985,9 @@ checksum = "836fa6a3e1e547f9a2c4040802ec865b5d85f4014efe00555d7090a3dcaa1090"
 
 [[package]]
 name = "serde"
-version = "1.0.189"
+version = "1.0.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e422a44e74ad4001bdc8eede9a4570ab52f71190e9c076d14369f38b9200537"
+checksum = "91d3c334ca1ee894a2c6f6ad698fe8c435b76d504b13d436f0685d648d6d96f7"
 dependencies = [
  "serde_derive",
 ]
@@ -2002,9 +2003,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.189"
+version = "1.0.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e48d1f918009ce3145511378cf68d613e3b3d9137d67272562080d68a2b32d5"
+checksum = "67c5609f394e5c2bd7fc51efda478004ea80ef42fee983d5c67a65e34f32c0e3"
 dependencies = [
  "proc-macro2",
  "quote",
