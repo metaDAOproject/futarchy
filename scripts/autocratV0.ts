@@ -5,6 +5,10 @@ const { BN, Program } = anchor;
 
 import {
   OpenBookV2Client,
+  PlaceOrderArgs,
+  Side,
+  OrderType,
+  SelfTradeBehavior
 } from "@openbook-dex/openbook-v2";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
@@ -12,9 +16,10 @@ import { AutocratV0 } from "../target/types/autocrat_v0";
 import { IDL as ConditionalVaultIDL, ConditionalVault } from "../target/types/conditional_vault";
 import { IDL as ClobIDL, Clob } from "../target/types/clob";
 
-import { OpenbookTwap, IDL as OpenbookTwapIDL } from "../tests/fixtures/openbook_twap";
+import { OpenbookTwap } from "../tests/fixtures/openbook_twap";
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
+const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.json");
 
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "Euvur4akYaqT5djixEkf8J9Jb8SUrKZt8BZeSNnB5jYU"
@@ -375,16 +380,136 @@ async function initializeOrderBook(
 }
 
 
+async function mintConditionalTokens(amount: anchor.BN, vault: anchor.web3.PublicKey) {
+  const [depositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("deposit_slip"),
+      vault.toBuffer(),
+      payer.publicKey.toBuffer(),
+    ],
+    vaultProgram.programId
+  );
+
+  if (await vaultProgram.account.depositSlip.fetchNullable(depositSlip) == null) {
+    await vaultProgram.methods
+      .initializeDepositSlip(payer.publicKey)
+      .accounts({
+        depositSlip,
+        vault,
+      })
+      .rpc();
+  }
+
+  const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
+
+  const underlyingAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedVault.underlyingTokenMint, payer.publicKey);
+  const conditionalAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedVault.conditionalTokenMint, payer.publicKey);
+
+  await vaultProgram.methods
+    .mintConditionalTokens(amount)
+    .accounts({
+      authority: payer.publicKey,
+      depositSlip,
+      vault,
+      vaultUnderlyingTokenAccount: storedVault.underlyingTokenAccount,
+      userUnderlyingTokenAccount: underlyingAcc.address,
+      conditionalTokenMint: storedVault.conditionalTokenMint,
+      userConditionalTokenAccount: conditionalAcc.address,
+    })
+    .rpc();
+}
+
+async function placeOrdersOnBothSides(twapMarket: any) {
+  let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
+
+  let buyArgs: PlaceOrderArgs = {
+      side: Side.Bid,
+      priceLots: new BN(10_000), // 1 USDC for 1 META
+      maxBaseLots: new BN(10 * 10_000),
+      maxQuoteLotsIncludingFees: new BN(1),
+      clientOrderId: new BN(1),
+      orderType: OrderType.Limit,
+      expiryTimestamp: new BN(0),
+      selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+      limit: 255,
+    };
+
+  let sellArgs: PlaceOrderArgs = {
+      side: Side.Ask,
+      priceLots: new BN(12_000), // 1.2 USDC for 1 META
+      maxBaseLots: new BN(10 * 10_000),
+      maxQuoteLotsIncludingFees: new BN(1),
+      clientOrderId: new BN(1),
+      orderType: OrderType.Limit,
+      expiryTimestamp: new BN(0),
+      selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+      limit: 255,
+    };
+
+  const storedMarket = await openbook.getMarket(market);
+  let openOrdersAccount = await openbook.getOrCreateOpenOrders(market, new BN(1), "oo");
+
+  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.baseMint, payer.publicKey);
+  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.quoteMint, payer.publicKey);
+
+  await openbookTwap.methods
+    .placeOrder(buyArgs)
+    .accounts({
+      asks: storedMarket.asks,
+      bids: storedMarket.bids,
+      marketVault: storedMarket.marketQuoteVault,
+      eventHeap: storedMarket.eventHeap,
+      market,
+      openOrdersAccount,
+      userTokenAccount: userQuoteAccount.address,
+      twapMarket,
+      openbookProgram: OPENBOOK_PROGRAM_ID,
+    })
+    .rpc();
+
+  await openbookTwap.methods
+    .placeOrder(sellArgs)
+    .accounts({
+      asks: storedMarket.asks,
+      bids: storedMarket.bids,
+      marketVault: storedMarket.marketQuoteVault,
+      eventHeap: storedMarket.eventHeap,
+      market,
+      openOrdersAccount,
+      userTokenAccount: userBaseAccount.address,
+      twapMarket,
+      openbookProgram: OPENBOOK_PROGRAM_ID,
+    })
+   
+}
 async function main() {
   // let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
   // let META = await createMint(provider.publicKey, provider.publicKey, 9);
   // await initializeDAO(META, USDC);
 
   // await initializeGlobalState(provider.wallet.publicKey);
-  await initializeProposal();
+  //await initializeProposal();
+  const storedDAO = await autocratProgram.account.dao.fetch(dao);
 
-  // let proposals = await autocratProgram.account.proposal.all();
-  // console.log(proposals[0]);
+  const usdcAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedDAO.usdcMint, payer.publicKey);
+  const metaAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedDAO.metaMint, payer.publicKey);
+
+  // await token.mintTo(provider.connection, payer, storedDAO.usdcMint, usdcAcc.address, payer, 1_000n * 1_000_000n);
+  // await token.mintTo(provider.connection, payer, storedDAO.metaMint, metaAcc.address, payer, 1_000n * 1_000_000_000n);
+
+  
+  // await token.mintTo(provider.connection, payer, storedDAO.usdcMint, )
+  // console.log(await autocratProgram.)
+
+  let proposal = (await autocratProgram.account.proposal.all())[0];
+  await placeOrdersOnBothSides(proposal.account.openbookTwapPassMarket);
+
+  // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.basePassVault);
+  // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.baseFailVault);
+
+  // await mintConditionalTokens(new BN(100 * 1_000_000), proposal.account.quotePassVault);
+  // await mintConditionalTokens(new BN(100 * 1_000_000), proposal.account.quoteFailVault);
+
   //await initializeProposal();
 }
 
