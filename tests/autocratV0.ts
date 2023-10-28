@@ -28,7 +28,9 @@ import { expectError } from "./utils/utils";
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
 import { Clob } from "../target/types/clob";
-import { OpenbookTwap, IDL as OpenbookTwapIDL } from "./fixtures/openbook_twap";
+import { OpenbookTwap } from "./fixtures/openbook_twap";
+
+const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 /* import { generateMarketMaker } from "./clob"; */
 
@@ -54,7 +56,7 @@ import {
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "Euvur4akYaqT5djixEkf8J9Jb8SUrKZt8BZeSNnB5jYU"
+  "GLmTsw5A8DLCThjNgtMBKVDAG8EZYDVMic1pcjhGLiM1"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
@@ -66,7 +68,7 @@ const CLOB_PROGRAM_ID = new PublicKey(
 );
 
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "4dchEcc6TTC4QVyZQUWgQgcdAsXrUBxsdxpu572BY3Y2"
+  "2qjEsiMtWxAdqUSdaGM28pJRMtodnnkHZEoadc6JcFCb"
 );
 
 const OPENBOOK_PROGRAM_ID = new PublicKey(

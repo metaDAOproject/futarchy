@@ -26,7 +26,12 @@ export type OpenbookTwap = {
           "isSigner": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "expectedValue",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "placeOrder",
@@ -94,7 +99,394 @@ export type OpenbookTwap = {
             "defined": "PlaceOrderArgs"
           }
         }
+      ],
+      "returns": {
+        "option": "u128"
+      }
+    },
+    {
+      "name": "editOrder",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "clientOrderId",
+          "type": "u64"
+        },
+        {
+          "name": "expectedCancelSize",
+          "type": "i64"
+        },
+        {
+          "name": "placeOrder",
+          "type": {
+            "defined": "PlaceOrderArgs"
+          }
+        }
+      ],
+      "returns": {
+        "option": "u128"
+      }
+    },
+    {
+      "name": "cancelOrderByClientId",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "clientOrderId",
+          "type": "u64"
+        }
+      ],
+      "returns": "i64"
+    },
+    {
+      "name": "cancelAllOrders",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "sideOption",
+          "type": {
+            "option": {
+              "defined": "Side"
+            }
+          }
+        },
+        {
+          "name": "limit",
+          "type": "u8"
+        }
       ]
+    },
+    {
+      "name": "placeTakeOrder",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "referrerAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "PlaceTakeOrderArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancelAndPlaceOrders",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "cancelClientOrdersIds",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "placeOrders",
+          "type": {
+            "vec": {
+              "defined": "PlaceOrderArgs"
+            }
+          }
+        }
+      ],
+      "returns": {
+        "vec": {
+          "option": "u128"
+        }
+      }
+    },
+    {
+      "name": "getBestBidAndAsk",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "returns": {
+        "defined": "(u64,u64)"
+      }
     }
   ],
   "accounts": [
@@ -127,6 +519,10 @@ export type OpenbookTwap = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "expectedValue",
+            "type": "u64"
+          },
           {
             "name": "lastUpdatedSlot",
             "type": "u64"
@@ -215,6 +611,42 @@ export type OpenbookTwap = {
       }
     },
     {
+      "name": "PlaceTakeOrderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "side",
+            "type": {
+              "defined": "Side"
+            }
+          },
+          {
+            "name": "priceLots",
+            "type": "i64"
+          },
+          {
+            "name": "maxBaseLots",
+            "type": "i64"
+          },
+          {
+            "name": "maxQuoteLotsIncludingFees",
+            "type": "i64"
+          },
+          {
+            "name": "orderType",
+            "type": {
+              "defined": "PlaceOrderType"
+            }
+          },
+          {
+            "name": "limit",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "SelfTradeBehavior",
       "type": {
         "kind": "enum",
@@ -289,6 +721,11 @@ export type OpenbookTwap = {
       "code": 6003,
       "name": "NoOracles",
       "msg": "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidExpectedValue",
+      "msg": "Expected value must be gte 0"
     }
   ]
 };
@@ -321,7 +758,12 @@ export const IDL: OpenbookTwap = {
           "isSigner": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "expectedValue",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "placeOrder",
@@ -389,7 +831,394 @@ export const IDL: OpenbookTwap = {
             "defined": "PlaceOrderArgs"
           }
         }
+      ],
+      "returns": {
+        "option": "u128"
+      }
+    },
+    {
+      "name": "editOrder",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "clientOrderId",
+          "type": "u64"
+        },
+        {
+          "name": "expectedCancelSize",
+          "type": "i64"
+        },
+        {
+          "name": "placeOrder",
+          "type": {
+            "defined": "PlaceOrderArgs"
+          }
+        }
+      ],
+      "returns": {
+        "option": "u128"
+      }
+    },
+    {
+      "name": "cancelOrderByClientId",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "clientOrderId",
+          "type": "u64"
+        }
+      ],
+      "returns": "i64"
+    },
+    {
+      "name": "cancelAllOrders",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "sideOption",
+          "type": {
+            "option": {
+              "defined": "Side"
+            }
+          }
+        },
+        {
+          "name": "limit",
+          "type": "u8"
+        }
       ]
+    },
+    {
+      "name": "placeTakeOrder",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "referrerAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "PlaceTakeOrderArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancelAndPlaceOrders",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "cancelClientOrdersIds",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "placeOrders",
+          "type": {
+            "vec": {
+              "defined": "PlaceOrderArgs"
+            }
+          }
+        }
+      ],
+      "returns": {
+        "vec": {
+          "option": "u128"
+        }
+      }
+    },
+    {
+      "name": "getBestBidAndAsk",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "returns": {
+        "defined": "(u64,u64)"
+      }
     }
   ],
   "accounts": [
@@ -422,6 +1251,10 @@ export const IDL: OpenbookTwap = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "expectedValue",
+            "type": "u64"
+          },
           {
             "name": "lastUpdatedSlot",
             "type": "u64"
@@ -510,6 +1343,42 @@ export const IDL: OpenbookTwap = {
       }
     },
     {
+      "name": "PlaceTakeOrderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "side",
+            "type": {
+              "defined": "Side"
+            }
+          },
+          {
+            "name": "priceLots",
+            "type": "i64"
+          },
+          {
+            "name": "maxBaseLots",
+            "type": "i64"
+          },
+          {
+            "name": "maxQuoteLotsIncludingFees",
+            "type": "i64"
+          },
+          {
+            "name": "orderType",
+            "type": {
+              "defined": "PlaceOrderType"
+            }
+          },
+          {
+            "name": "limit",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "SelfTradeBehavior",
       "type": {
         "kind": "enum",
@@ -584,6 +1453,11 @@ export const IDL: OpenbookTwap = {
       "code": 6003,
       "name": "NoOracles",
       "msg": "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidExpectedValue",
+      "msg": "Expected value must be gte 0"
     }
   ]
 };

@@ -31,7 +31,7 @@ const CLOB_PROGRAM_ID = new PublicKey(
   "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "4dchEcc6TTC4QVyZQUWgQgcdAsXrUBxsdxpu572BY3Y2"
+  "2qjEsiMtWxAdqUSdaGM28pJRMtodnnkHZEoadc6JcFCb"
 );
 const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
@@ -264,7 +264,7 @@ async function initializeProposal() {
       openbookPassMarketKP
     );
 
-    await openbookTwap.methods.createTwapMarket()
+    await openbookTwap.methods.createTwapMarket(new BN(1_000))
       .accounts({
         market: openbookPassMarket,
         twapMarket: openbookTwapPassMarket,
@@ -296,7 +296,7 @@ async function initializeProposal() {
       { confFilter: 0.1, maxStalenessSlots: 100 },
       openbookFailMarketKP
     );
-    await openbookTwap.methods.createTwapMarket()
+    await openbookTwap.methods.createTwapMarket(new BN(1_000))
       .accounts({
         market: openbookFailMarket,
         twapMarket: openbookTwapFailMarket,
@@ -424,9 +424,9 @@ async function placeOrdersOnBothSides(twapMarket: any) {
 
   let buyArgs: PlaceOrderArgs = {
       side: Side.Bid,
-      priceLots: new BN(10_000), // 1 USDC for 1 META
-      maxBaseLots: new BN(10 * 10_000),
-      maxQuoteLotsIncludingFees: new BN(1),
+      priceLots: new BN(9_000), // 1 USDC for 1 META
+      maxBaseLots: new BN(10),
+      maxQuoteLotsIncludingFees: new BN(10 * 10_000), // 10 USDC
       clientOrderId: new BN(1),
       orderType: OrderType.Limit,
       expiryTimestamp: new BN(0),
@@ -436,10 +436,10 @@ async function placeOrdersOnBothSides(twapMarket: any) {
 
   let sellArgs: PlaceOrderArgs = {
       side: Side.Ask,
-      priceLots: new BN(12_000), // 1.2 USDC for 1 META
-      maxBaseLots: new BN(10 * 10_000),
-      maxQuoteLotsIncludingFees: new BN(1),
-      clientOrderId: new BN(1),
+      priceLots: new BN(13_000), // 1.2 USDC for 1 META
+      maxBaseLots: new BN(10),
+      maxQuoteLotsIncludingFees: new BN(10 * 12_000),
+      clientOrderId: new BN(2),
       orderType: OrderType.Limit,
       expiryTimestamp: new BN(0),
       selfTradeBehavior: SelfTradeBehavior.DecrementTake,
@@ -447,12 +447,13 @@ async function placeOrdersOnBothSides(twapMarket: any) {
     };
 
   const storedMarket = await openbook.getMarket(market);
-  let openOrdersAccount = await openbook.getOrCreateOpenOrders(market, new BN(1), "oo");
+  let openOrdersAccount = await openbook.getOrCreateOpenOrders(market, new BN(3), "oo3");
+  // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(1), "oo2");
 
   const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.baseMint, payer.publicKey);
   const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.quoteMint, payer.publicKey);
 
-  await openbookTwap.methods
+  let tx = await openbookTwap.methods
     .placeOrder(buyArgs)
     .accounts({
       asks: storedMarket.asks,
@@ -465,23 +466,71 @@ async function placeOrdersOnBothSides(twapMarket: any) {
       twapMarket,
       openbookProgram: OPENBOOK_PROGRAM_ID,
     })
-    .rpc();
+    .transaction();
 
-  await openbookTwap.methods
-    .placeOrder(sellArgs)
-    .accounts({
-      asks: storedMarket.asks,
-      bids: storedMarket.bids,
-      marketVault: storedMarket.marketQuoteVault,
-      eventHeap: storedMarket.eventHeap,
-      market,
-      openOrdersAccount,
-      userTokenAccount: userBaseAccount.address,
-      twapMarket,
-      openbookProgram: OPENBOOK_PROGRAM_ID,
-    })
-   
+  tx.feePayer = payer.publicKey;
+
+  const sim = await provider.connection.simulateTransaction(tx, undefined, true);
+
+  console.log(sim.value.accounts);
+
+  // await openbookTwap.methods
+  //   .placeOrder(sellArgs)
+  //   .accounts({
+  //     asks: storedMarket.asks,
+  //     bids: storedMarket.bids,
+  //     marketVault: storedMarket.marketBaseVault,
+  //     eventHeap: storedMarket.eventHeap,
+  //     market,
+  //     openOrdersAccount,
+  //     userTokenAccount: userBaseAccount.address,
+    //   twapMarket,
+    //   openbookProgram: OPENBOOK_PROGRAM_ID,
+    // })
+    // .rpc()
 }
+
+async function placeTakeOrder(twapMarket: any) {
+  let market = await openbookTwap.account.twapMarket.fetch(twapMarket);
+  // const storedMarket = await openbook.getMarket(market);
+
+  // const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.baseMint, payer.publicKey);
+  // const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.quoteMint, payer.publicKey);
+
+  // let buyArgs: PlaceOrderArgs = {
+  //     side: Side.Bid,
+  //     priceLots: new BN(13_000), // 1 USDC for 1 META
+  //     maxBaseLots: new BN(1),
+  //     maxQuoteLotsIncludingFees: new BN(1 * 13_000), // 10 USDC
+  //     clientOrderId: new BN(1),
+  //     orderType: OrderType.Market,
+  //     expiryTimestamp: new BN(0),
+  //     selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+  //     limit: 255,
+  // };
+
+  // let tx = await openbookTwap.methods
+  //   .placeTakeOrder(buyArgs)
+  //   .accounts({
+  //     asks: storedMarket.asks,
+  //     bids: storedMarket.bids,
+  //     eventHeap: storedMarket.eventHeap,
+  //     market,
+  //     marketAuthority: storedMarket.marketAuthority,
+  //     userQuoteAccount: userQuoteAccount.address,
+  //     twapMarket,
+  //     openbookProgram: OPENBOOK_PROGRAM_ID,
+  //   })
+  //   .simulate();
+
+//   tx.feePayer = payer.publicKey;
+
+//   const sim = await provider.connection.simulateTransaction(tx, undefined, true);
+
+//   console.log(sim.value.accounts);
+}
+
+
 async function main() {
   // let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
   // let META = await createMint(provider.publicKey, provider.publicKey, 9);
@@ -502,13 +551,22 @@ async function main() {
   // console.log(await autocratProgram.)
 
   let proposal = (await autocratProgram.account.proposal.all())[0];
-  await placeOrdersOnBothSides(proposal.account.openbookTwapPassMarket);
+
+  // await placeTakeOrder(proposal.account.openbookTwapPassMarket);
 
   // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.basePassVault);
   // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.baseFailVault);
-
+  
   // await mintConditionalTokens(new BN(100 * 1_000_000), proposal.account.quotePassVault);
   // await mintConditionalTokens(new BN(100 * 1_000_000), proposal.account.quoteFailVault);
+  // await placeOrdersOnBothSides(proposal.account.openbookTwapPassMarket);
+  // let twapMarket = proposal.account.openbookTwapPassMarket;
+  // let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
+  // let storedMarket = await openbook.getMarket(market);
+  // // console.log(await openbook.getLeafNodes(await openbook.getBookSide(storedMarket.asks)));
+  // console.log((await openbook.getBookSide(storedMarket.asks)).nodes.nodes[0]);
+
+
 
   //await initializeProposal();
 }

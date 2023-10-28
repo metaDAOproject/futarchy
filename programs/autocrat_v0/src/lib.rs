@@ -25,7 +25,7 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("Euvur4akYaqT5djixEkf8J9Jb8SUrKZt8BZeSNnB5jYU");
+declare_id!("GLmTsw5A8DLCThjNgtMBKVDAG8EZYDVMic1pcjhGLiM1");
 
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
