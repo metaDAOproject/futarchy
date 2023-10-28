@@ -53,7 +53,8 @@ describe("conditional_vault", async function () {
     underlyingTokenMint,
     vault,
     vaultUnderlyingTokenAccount,
-    conditionalTokenMint,
+    conditionalOnFinalizeMint,
+    conditionalOnRevertMint,
     depositSlip;
 
   before(async function () {
@@ -102,7 +103,8 @@ describe("conditional_vault", async function () {
 
   describe("#initialize_conditional_vault", async function () {
     it("initializes vaults", async function () {
-      let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
+      let conditionalOnFinalizeTokenMintKeypair = anchor.web3.Keypair.generate();
+      let conditionalOnRevertTokenMintKeypair = anchor.web3.Keypair.generate();
 
       await vaultProgram.methods
         .initializeConditionalVault(settlementAuthority.publicKey, nonce)
@@ -110,13 +112,14 @@ describe("conditional_vault", async function () {
           vault,
           underlyingTokenMint,
           vaultUnderlyingTokenAccount,
-          conditionalTokenMint: conditionalTokenMintKeypair.publicKey,
+          conditionalOnFinalizeTokenMint: conditionalOnFinalizeTokenMintKeypair.publicKey,
+          conditionalOnRevertTokenMint: conditionalOnRevertTokenMintKeypair.publicKey,
           payer: payer.publicKey,
           tokenProgram: token.TOKEN_PROGRAM_ID,
           associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
-        .signers([conditionalTokenMintKeypair])
+        .signers([conditionalOnFinalizeTokenMintKeypair, conditionalOnRevertTokenMintKeypair])
         .rpc();
 
       const storedVault = await vaultProgram.account.conditionalVault.fetch(
@@ -132,17 +135,19 @@ describe("conditional_vault", async function () {
         storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount)
       );
       assert.ok(
-        storedVault.conditionalTokenMint.equals(
-          conditionalTokenMintKeypair.publicKey
+        storedVault.conditionalOnFinalizeTokenMint.equals(
+          conditionalOnFinalizeTokenMintKeypair.publicKey
+        )
+      );
+      assert.ok(
+        storedVault.conditionalOnRevertTokenMint.equals(
+          conditionalOnRevertTokenMintKeypair.publicKey
         )
       );
 
-      conditionalTokenMint = conditionalTokenMintKeypair.publicKey;
+      conditionalOnFinalizeMint = conditionalOnFinalizeTokenMintKeypair.publicKey;
+      conditionalOnRevertMint = conditionalOnRevertTokenMintKeypair.publicKey;
     });
-  });
-
-  describe("#initialize_deposit_slip", async function () {
-    it("initializes deposit slips", async function () {});
   });
 
   describe("#mint_conditional_tokens", async function () {
