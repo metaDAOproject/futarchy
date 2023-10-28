@@ -399,7 +399,6 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "blake3",
- "clob",
  "conditional_vault",
  "openbook-twap",
  "openbook-v2",
@@ -673,17 +672,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ee52072ec15386f770805afd189a01c8841be8696bed250fa2f13c4c0d6dfb7"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "clob"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "bytemuck",
- "num",
- "solana-security-txt",
 ]
 
 [[package]]

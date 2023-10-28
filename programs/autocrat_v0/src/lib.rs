@@ -3,7 +3,6 @@ use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
 use openbook_v2::state::Market;
 use openbook_twap::TWAPMarket;
-use clob::state::order_book::OrderBook;
 use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
@@ -75,8 +74,6 @@ pub struct Proposal {
     pub instruction: ProposalInstruction,
     pub openbook_twap_pass_market: Pubkey,
     pub openbook_twap_fail_market: Pubkey,
-    pub pass_market: Pubkey,
-    pub fail_market: Pubkey,
     pub base_pass_vault: Pubkey,
     pub quote_pass_vault: Pubkey,
     pub base_fail_vault: Pubkey,
@@ -124,20 +121,8 @@ pub mod autocrat_v0 {
         description_url: String,
         instruction: ProposalInstruction,
     ) -> Result<()> {
-        let pass_market = ctx.accounts.pass_market.load()?;
-        let fail_market = ctx.accounts.fail_market.load()?;
-
         let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
         let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
-
-        require!(
-            pass_market.base == ctx.accounts.base_pass_vault.conditional_token_mint,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            pass_market.quote == ctx.accounts.quote_pass_vault.conditional_token_mint,
-            AutocratError::InvalidMarket
-        );
 
         require!(
             openbook_pass_market.base_mint == ctx.accounts.base_pass_vault.conditional_token_mint,
@@ -174,14 +159,6 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
 
-        require!(
-            fail_market.base == ctx.accounts.base_fail_vault.conditional_token_mint,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            fail_market.quote == ctx.accounts.quote_fail_vault.conditional_token_mint,
-            AutocratError::InvalidMarket
-        );
         require!(
             openbook_fail_market.base_mint == ctx.accounts.base_fail_vault.conditional_token_mint,
             AutocratError::InvalidMarket
@@ -268,9 +245,6 @@ pub mod autocrat_v0 {
                 ctx.accounts.dao_treasury.to_account_info(),
             ],
         )?;
-
-        proposal.pass_market = ctx.accounts.pass_market.key();
-        proposal.fail_market = ctx.accounts.fail_market.key();
 
         proposal.openbook_twap_pass_market = ctx.accounts.openbook_twap_pass_market.key();
         proposal.openbook_twap_fail_market = ctx.accounts.openbook_twap_fail_market.key();
@@ -501,8 +475,6 @@ pub struct InitializeProposal<'info> {
     pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
     #[account(constraint = openbook_twap_fail_market.market == openbook_fail_market.key())]
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
-    pub pass_market: AccountLoader<'info, OrderBook>,
-    pub fail_market: AccountLoader<'info, OrderBook>,
     #[account(mut)]
     pub proposer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -510,7 +482,8 @@ pub struct InitializeProposal<'info> {
 
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
-    #[account(mut, has_one = pass_market, has_one = fail_market, has_one = proposer,
+    #[account(mut, 
+        has_one = proposer,
         has_one = quote_pass_vault,
         has_one = quote_fail_vault,
         has_one = base_pass_vault,
@@ -521,8 +494,6 @@ pub struct FinalizeProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
-    pub pass_market: AccountLoader<'info, OrderBook>,
-    pub fail_market: AccountLoader<'info, OrderBook>,
     pub dao: Box<Account<'info, DAO>>,
     #[account(mut)]
     pub quote_pass_vault: Box<Account<'info, ConditionalVaultAccount>>,

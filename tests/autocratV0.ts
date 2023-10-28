@@ -187,8 +187,8 @@ describe("autocrat_v0", async function () {
     });
   });
 
-  describe("#initialize_proposal", async function () {
-    it("initializes proposals", async function () {
+  describe.only("#initialize_proposal", async function () {
+    it.only("initializes proposals", async function () {
       const accounts = [
         {
           pubkey: dao,
@@ -241,7 +241,7 @@ describe("autocrat_v0", async function () {
     });
   });
 
-  describe.only("#finalize_proposal", async function () {
+  describe("#finalize_proposal", async function () {
     let proposal,
       passMarket,
       failMarket,
@@ -1339,8 +1339,6 @@ async function initializeProposal(
       quoteFailVault,
       basePassVault,
       baseFailVault,
-      passMarket,
-      failMarket,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
       openbookPassMarket,
@@ -1366,8 +1364,6 @@ async function initializeProposal(
   assert.equal(storedProposal.number, daoBefore.proposalCount);
   assert.ok(storedProposal.proposer.equals(payer.publicKey));
   assert.equal(storedProposal.descriptionUrl, dummyURL);
-  assert.ok(storedProposal.passMarket.equals(passMarket));
-  assert.ok(storedProposal.failMarket.equals(failMarket));
   assert.ok(storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket));
   assert.ok(storedProposal.openbookTwapPassMarket.equals(openbookTwapPassMarket));
   assert.equal(storedProposal.slotEnqueued.toString(), new BN(slot.toString()).toString());

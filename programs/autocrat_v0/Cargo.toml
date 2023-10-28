@@ -24,4 +24,3 @@ openbook-twap = { git = "https://github.com/metaDAOproject/openbook-twap.git", f
 blake3 = "1.4.1"
 solana-program = "~1.16.1"
 conditional_vault = { path = "../conditional_vault", features = ["cpi"] }
-clob = { path = "../clob", features = ["cpi"] }
