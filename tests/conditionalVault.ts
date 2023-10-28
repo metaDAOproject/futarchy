@@ -155,8 +155,8 @@ describe("conditional_vault", async function () {
     let bob: Keypair;
     let amount = 1000;
     let bobUnderlyingTokenAccount: PublicKey;
-    let bobConditionalTokenAccount: PublicKey;
-    let bobDepositSlip: PublicKey;
+    let bobConditionalOnFinalizeTokenAccount: PublicKey;
+    let bobConditionalOnRevertTokenAccount: PublicKey;
 
     beforeEach(async function () {
       bob = anchor.web3.Keypair.generate();
@@ -169,36 +169,19 @@ describe("conditional_vault", async function () {
         bob.publicKey
       );
 
-      /* bobConditionalTokenAccount = await token.createAccount( */
-      /*   connection, */
-      bobConditionalTokenAccount = await createAssociatedTokenAccount(
+      bobConditionalOnFinalizeTokenAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
-        conditionalTokenMint,
+        conditionalOnFinalizeMint,
+        bob.publicKey
+      );
+      bobConditionalOnRevertTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        conditionalOnRevertMint,
         bob.publicKey
       );
 
-      [bobDepositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
-        [
-          anchor.utils.bytes.utf8.encode("deposit_slip"),
-          vault.toBuffer(),
-          bob.publicKey.toBuffer(),
-        ],
-        vaultProgram.programId
-      );
-
-      await vaultProgram.methods
-        .initializeDepositSlip(bob.publicKey)
-        .accounts({
-          depositSlip: bobDepositSlip,
-          vault,
-          payer: payer.publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        })
-        .rpc();
-
-      /* await token.mintTo( */
-      /*   connection, */
       await mintTo(
         banksClient,
         payer,
@@ -214,12 +197,7 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
         banksClient
       );
     });
@@ -234,12 +212,7 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount + 10,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
         banksClient
       ).then(callbacks[0], callbacks[1]);
     });
@@ -261,13 +234,12 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        maliciousVaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
-        banksClient
+        banksClient,
+        undefined,
+        undefined,
+        undefined,
+        maliciousVaultUnderlyingTokenAccount
       ).then(callbacks[0], callbacks[1]);
     });
 
@@ -298,21 +270,17 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
+        banksClient,
         nonOwnedUserUnderlyingAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
-        banksClient
       ).then(callbacks[0], callbacks[1]);
     });
 
-    it("checks that `user_conditional_token_account` is owned by the user", async function () {
+    it("checks that `user_conditional_on_finalize_token_account` is owned by the user", async function () {
       const nonOwnedUserConditionalAccount = await createAccount(
         banksClient,
         payer,
-        conditionalTokenMint,
+        conditionalOnFinalizeMint,
         anchor.web3.Keypair.generate().publicKey
       );
 
@@ -326,13 +294,35 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
-        nonOwnedUserConditionalAccount,
-        banksClient
+        banksClient,
+        undefined,
+        nonOwnedUserConditionalAccount
+      ).then(callbacks[0], callbacks[1]);
+    });
+    
+    it("checks that `user_conditional_on_revert_token_account` is owned by the user", async function () {
+      const nonOwnedUserConditionalAccount = await createAccount(
+        banksClient,
+        payer,
+        conditionalOnRevertMint,
+        anchor.web3.Keypair.generate().publicKey
+      );
+
+      const callbacks = expectError(
+        vaultProgram,
+        "ConstraintTokenOwner",
+        "mint suceeded despite `user_conditional_token_account` not being owned by the user"
+      );
+
+      await mintConditionalTokens(
+        vaultProgram,
+        amount,
+        bob,
+        vault,
+        banksClient,
+        undefined,
+        nonOwnedUserConditionalAccount
       ).then(callbacks[0], callbacks[1]);
     });
 
@@ -361,13 +351,10 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
+        banksClient,
+        undefined,
         wrongMintBobConditionalTokenAccount,
-        banksClient
       ).then(callbacks[0], callbacks[1]);
     });
 
@@ -406,43 +393,9 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
+        banksClient,
         wrongMintBobUnderlyingAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
-        banksClient
-      ).then(callbacks[0], callbacks[1]);
-    });
-
-    it("checks that `deposit_slip` was created for this conditional vault", async function () {
-      const [secondConditionalVault] = await generateRandomVault(vaultProgram, payer, banksClient);
-
-      const badDepositSlip = await initializeDepositSlip(
-        vaultProgram,
-        secondConditionalVault,
-        bob,
-        payer
-      );
-
-      const callbacks = expectError(
-        vaultProgram,
-        "ConstraintHasOne",
-        "mint suceeded despite `deposit_slip` having the wrong conditional vault"
-      );
-
-      await mintConditionalTokens(
-        vaultProgram,
-        amount,
-        bob,
-        badDepositSlip,
-        vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
-        banksClient
       ).then(callbacks[0], callbacks[1]);
     });
 
@@ -472,13 +425,13 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        wrongConditionalTokenMint,
+        banksClient,
+        undefined,
         wrongMintBobConditionalTokenAccount,
-        banksClient
+        undefined,
+        undefined,
+        wrongConditionalTokenMint
       ).then(callbacks[0], callbacks[1]);
     });
   });
@@ -556,8 +509,8 @@ describe("conditional_vault", async function () {
     let bob: Keypair;
     let amount = 1000;
     let bobUnderlyingTokenAccount: PublicKey;
-    let bobConditionalTokenAccount: PublicKey;
-    let bobDepositSlip: PublicKey;
+    let bobConditionalOnFinalizeTokenAccount: PublicKey;
+    let bobConditionalOnRevertTokenAccount: PublicKey;
 
     beforeEach(async function () {
       [vault, underlyingMintAuthority, settlementAuthority] =
@@ -566,25 +519,32 @@ describe("conditional_vault", async function () {
         vault
       );
       underlyingTokenMint = storedVault.underlyingTokenMint;
-      conditionalTokenMint = storedVault.conditionalTokenMint;
+      conditionalOnFinalizeMint = storedVault.conditionalOnFinalizeTokenMint;
+      conditionalOnRevertMint = storedVault.conditionalOnRevertTokenMint;
       vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
+
       bob = anchor.web3.Keypair.generate();
 
-      bobUnderlyingTokenAccount = await createAccount(
+      bobUnderlyingTokenAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
         underlyingTokenMint,
         bob.publicKey
       );
 
-      bobConditionalTokenAccount = await createAccount(
+      bobConditionalOnFinalizeTokenAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
-        conditionalTokenMint,
+        conditionalOnFinalizeMint,
         bob.publicKey
       );
 
-      bobDepositSlip = await initializeDepositSlip(vaultProgram, vault, bob, payer);
+      bobConditionalOnRevertTokenAccount = await createAccount(
+        banksClient,
+        payer,
+        conditionalOnRevertMint,
+        bob.publicKey
+      );
 
       await mintTo(
         banksClient,
@@ -599,17 +559,12 @@ describe("conditional_vault", async function () {
         vaultProgram,
         amount,
         bob,
-        bobDepositSlip,
         vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
         banksClient
       );
     });
-
-    it("allows users to redeem conditional tokens for underlying tokens when a vault has been finalized", async function () {
+    
+    it("allows users to redeem conditional-on-finalize tokens for underlying tokens when a vault has been finalized", async function () {
       await vaultProgram.methods
         .settleConditionalVault({ finalized: {} })
         .accounts({
@@ -622,14 +577,41 @@ describe("conditional_vault", async function () {
       await redeemConditionalTokens(
         vaultProgram,
         bob,
-        bobConditionalTokenAccount,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
         bobUnderlyingTokenAccount,
         vaultUnderlyingTokenAccount,
         vault,
-        conditionalTokenMint,
         banksClient
       );
     });
+
+    it("allows user to redeeming conditional-on-revert tokens for underlying tokens when a vault is reverted", async function () {
+      await vaultProgram.methods
+        .settleConditionalVault({ reverted: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      await redeemConditionalTokens(
+        vaultProgram,
+        bob,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        banksClient
+      );
+    });
+
 
     it("prevents users from redeeming conditional tokens while a vault is still active", async function () {
       const callbacks = expectError(
@@ -640,38 +622,13 @@ describe("conditional_vault", async function () {
       await redeemConditionalTokens(
         vaultProgram,
         bob,
-        bobConditionalTokenAccount,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
         bobUnderlyingTokenAccount,
         vaultUnderlyingTokenAccount,
         vault,
-        conditionalTokenMint,
-        banksClient
-      ).then(callbacks[0], callbacks[1]);
-    });
-
-    it("prevents users from redeeming conditional tokens while a vault is reverted", async function () {
-      await vaultProgram.methods
-        .settleConditionalVault({ reverted: {} })
-        .accounts({
-          settlementAuthority: settlementAuthority.publicKey,
-          vault,
-        })
-        .signers([settlementAuthority])
-        .rpc();
-
-      const callbacks = expectError(
-        vaultProgram,
-        "CantRedeemConditionalTokens",
-        "redemption suceeded even though this vault was reverted"
-      );
-      await redeemConditionalTokens(
-        vaultProgram,
-        bob,
-        bobConditionalTokenAccount,
-        bobUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        vault,
-        conditionalTokenMint,
         banksClient
       ).then(callbacks[0], callbacks[1]);
     });
@@ -701,199 +658,9 @@ describe("conditional_vault", async function () {
         vaultProgram,
         bob,
         wrongMintBobConditionalTokenAccount,
-        bobUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        vault,
+        bobConditionalOnRevertTokenAccount,
         wrongConditionalTokenMint,
-        banksClient
-      ).then(callbacks[0], callbacks[1]);
-    });
-  });
-
-  describe("#redeem_deposit_slip_for_underlying_tokens", async function () {
-    let bob: Keypair;
-    let amount = 1000;
-    let bobUnderlyingTokenAccount: PublicKey;
-    let bobConditionalTokenAccount: PublicKey;
-    let bobDepositSlip: PublicKey;
-
-    beforeEach(async function () {
-      [vault, underlyingMintAuthority, settlementAuthority] =
-        await generateRandomVault(vaultProgram, payer, banksClient);
-      let storedVault = await vaultProgram.account.conditionalVault.fetch(
-        vault
-      );
-      underlyingTokenMint = storedVault.underlyingTokenMint;
-      conditionalTokenMint = storedVault.conditionalTokenMint;
-      vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
-      bob = anchor.web3.Keypair.generate();
-
-      bobUnderlyingTokenAccount = await createAccount(
-        banksClient,
-        payer,
-        underlyingTokenMint,
-        bob.publicKey
-      );
-
-      bobConditionalTokenAccount = await createAccount(
-        banksClient,
-        payer,
-        conditionalTokenMint,
-        bob.publicKey
-      );
-
-      bobDepositSlip = await initializeDepositSlip(vaultProgram, vault, bob, payer);
-
-      await mintTo(
-        banksClient,
-        payer,
-        underlyingTokenMint,
-        bobUnderlyingTokenAccount,
-        underlyingMintAuthority,
-        amount
-      );
-
-      await mintConditionalTokens(
-        vaultProgram,
-        amount,
-        bob,
-        bobDepositSlip,
-        vault,
-        vaultUnderlyingTokenAccount,
-        bobUnderlyingTokenAccount,
-        conditionalTokenMint,
-        bobConditionalTokenAccount,
-        banksClient
-      );
-    });
-
-    it("allows users to redeem underlying tokens", async function () {
-      await vaultProgram.methods
-        .settleConditionalVault({ reverted: {} })
-        .accounts({
-          settlementAuthority: settlementAuthority.publicKey,
-          vault,
-        })
-        .signers([settlementAuthority])
-        .rpc();
-
-      await redeemDepositSlip(
-        vaultProgram,
-        bob,
-        bobDepositSlip,
-        bobUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        vault,
-        banksClient
-      );
-    });
-
-    it("prevents users from redeeming when the vault is still active", async function () {
-      const callbacks = expectError(
-        vaultProgram,
-        "CantRedeemDepositSlip",
-        "redemption suceeded even though this vault was still active"
-      );
-
-      await redeemDepositSlip(
-        vaultProgram,
-        bob,
-        bobDepositSlip,
-        bobUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        vault,
-        banksClient
-      ).then(callbacks[0], callbacks[1]);
-    });
-
-    it("prevents users from redeeming if the vault is finalized", async function () {
-      const callbacks = expectError(
-        vaultProgram,
-        "CantRedeemDepositSlip",
-        "redemption suceeded even though this vault was finalized"
-      );
-
-      await vaultProgram.methods
-        .settleConditionalVault({ finalized: {} })
-        .accounts({
-          settlementAuthority: settlementAuthority.publicKey,
-          vault,
-        })
-        .signers([settlementAuthority])
-        .rpc();
-
-      await redeemDepositSlip(
-        vaultProgram,
-        bob,
-        bobDepositSlip,
-        bobUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        vault,
-        banksClient
-      ).then(callbacks[0], callbacks[1]);
-    });
-
-    it("checks that the deposit slip is owned by the user", async function () {
-      await vaultProgram.methods
-        .settleConditionalVault({ reverted: {} })
-        .accounts({
-          settlementAuthority: settlementAuthority.publicKey,
-          vault,
-        })
-        .signers([settlementAuthority])
-        .rpc();
-
-      let aliceDepositSlip = await initializeDepositSlip(
-        vaultProgram,
-        vault,
-        alice,
-        payer
-      );
-      const callbacks = expectError(
-        vaultProgram,
-        "ConstraintHasOne",
-        "redemption suceeded even though this deposit slip was owned by another user"
-      );
-
-      await redeemDepositSlip(
-        vaultProgram,
-        bob,
-        aliceDepositSlip,
-        bobUnderlyingTokenAccount,
-        vaultUnderlyingTokenAccount,
-        vault,
-        banksClient
-      ).then(callbacks[0], callbacks[1]);
-    });
-
-    it("checks that the deposit slip is for this vault", async function () {
-      await vaultProgram.methods
-        .settleConditionalVault({ reverted: {} })
-        .accounts({
-          settlementAuthority: settlementAuthority.publicKey,
-          vault,
-        })
-        .signers([settlementAuthority])
-        .rpc();
-      let [vault2, underlyingMintAuthority2, settlementAuthority2] =
-        await generateRandomVault(vaultProgram, payer, banksClient);
-
-      let wrongVaultDepositSlip = await initializeDepositSlip(
-        vaultProgram,
-        vault2,
-        bob,
-        payer
-      );
-      const callbacks = expectError(
-        vaultProgram,
-        "ConstraintHasOne",
-        "redemption suceeded even though this deposit slip was for another vault"
-      );
-
-      await redeemDepositSlip(
-        vaultProgram,
-        bob,
-        wrongVaultDepositSlip,
+        conditionalOnRevertMint,
         bobUnderlyingTokenAccount,
         vaultUnderlyingTokenAccount,
         vault,
@@ -902,34 +669,6 @@ describe("conditional_vault", async function () {
     });
   });
 });
-
-async function initializeDepositSlip(
-  vaultProgram: VaultProgram,
-  vault: PublicKey,
-  authority: Keypair,
-  payer: Keypair
-): Promise<PublicKey> {
-  const [depositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("deposit_slip"),
-      vault.toBuffer(),
-      authority.publicKey.toBuffer(),
-    ],
-    vaultProgram.programId
-  );
-
-  await vaultProgram.methods
-    .initializeDepositSlip(authority.publicKey)
-    .accounts({
-      depositSlip,
-      vault,
-      payer: payer.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId,
-    })
-    .rpc();
-
-  return depositSlip;
-}
 
 async function generateRandomVault(
   vaultProgram: VaultProgram,
@@ -964,7 +703,8 @@ async function generateRandomVault(
     vault,
     true
   );
-  let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
+  let conditionalOnFinalizeTokenMintKeypair = anchor.web3.Keypair.generate();
+  let conditionalOnRevertTokenMintKeypair = anchor.web3.Keypair.generate();
 
   let result = await vaultProgram.methods
     .initializeConditionalVault(settlementAuthority.publicKey, nonce)
@@ -972,13 +712,14 @@ async function generateRandomVault(
       vault,
       underlyingTokenMint,
       vaultUnderlyingTokenAccount,
-      conditionalTokenMint: conditionalTokenMintKeypair.publicKey,
+      conditionalOnFinalizeTokenMint: conditionalOnFinalizeTokenMintKeypair.publicKey,
+      conditionalOnRevertTokenMint: conditionalOnRevertTokenMintKeypair.publicKey,
       payer: payer.publicKey,
       tokenProgram: token.TOKEN_PROGRAM_ID,
       associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
-    .signers([conditionalTokenMintKeypair])
+    .signers([conditionalOnFinalizeTokenMintKeypair, conditionalOnRevertTokenMintKeypair])
     .rpc();
 
   return [vault, underlyingMintAuthority, settlementAuthority];
@@ -988,17 +729,40 @@ export async function mintConditionalTokens(
   program: VaultProgram,
   amount: number,
   user: Signer,
-  depositSlip: PublicKey,
   vault: PublicKey,
-  vaultUnderlyingTokenAccount: PublicKey,
-  userUnderlyingTokenAccount: PublicKey,
-  conditionalTokenMint: PublicKey,
-  userConditionalTokenAccount: PublicKey,
   banksClient: BanksClient,
+  userUnderlyingTokenAccount?: PublicKey,
+  userConditionalOnFinalizeTokenAccount?: PublicKey,
+  userConditionalOnRevertTokenAccount?: PublicKey,
+  vaultUnderlyingTokenAccount?: PublicKey,
+  conditionalOnFinalizeTokenMint?: PublicKey,
 ) {
-  const depositSlipBefore = await program.account.depositSlip.fetch(
-    depositSlip
-  );
+  const storedVault = await program.account.conditionalVault.fetch(vault);
+  if (!userUnderlyingTokenAccount) {
+    userUnderlyingTokenAccount = token.getAssociatedTokenAddressSync(
+      storedVault.underlyingTokenMint,
+      user.publicKey
+    );
+  }
+  if (!userConditionalOnFinalizeTokenAccount) {
+    userConditionalOnFinalizeTokenAccount = token.getAssociatedTokenAddressSync(
+      storedVault.conditionalOnFinalizeTokenMint,
+      user.publicKey
+    );
+  }
+  if (!userConditionalOnRevertTokenAccount) {
+    userConditionalOnRevertTokenAccount = token.getAssociatedTokenAddressSync(
+      storedVault.conditionalOnRevertTokenMint,
+      user.publicKey
+    );
+  }
+  if (!vaultUnderlyingTokenAccount) {
+    vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
+  }
+  if (!conditionalOnFinalizeTokenMint) {
+    conditionalOnFinalizeTokenMint = storedVault.conditionalOnFinalizeTokenMint;
+  }
+
   const vaultUnderlyingTokenAccountBefore = await getAccount(
     banksClient,
     vaultUnderlyingTokenAccount
@@ -1007,9 +771,13 @@ export async function mintConditionalTokens(
     banksClient,
     userUnderlyingTokenAccount
   );
-  const userConditionalTokenAccountBefore = await getAccount(
+  const userConditionalOnFinalizeTokenAccountBefore = await getAccount(
     banksClient,
-    userConditionalTokenAccount
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
   );
 
   const bnAmount = new anchor.BN(amount);
@@ -1018,22 +786,17 @@ export async function mintConditionalTokens(
     .mintConditionalTokens(bnAmount)
     .accounts({
       authority: user.publicKey,
-      depositSlip,
       vault,
       vaultUnderlyingTokenAccount,
       userUnderlyingTokenAccount,
-      conditionalTokenMint,
-      userConditionalTokenAccount,
-      tokenProgram: token.TOKEN_PROGRAM_ID,
+      conditionalOnFinalizeTokenMint,
+      userConditionalOnFinalizeTokenAccount,
+      conditionalOnRevertTokenMint: storedVault.conditionalOnRevertTokenMint,
+      userConditionalOnRevertTokenAccount,
     })
     .signers([user])
     .rpc();
-  /* } catch (err) { */
-  /*   console.log(program.idl.errors); */
-  /*   console.log(err); */
-  /* } */
 
-  const depositSlipAfter = await program.account.depositSlip.fetch(depositSlip);
   const vaultUnderlyingTokenAccountAfter = await getAccount(
     banksClient,
     vaultUnderlyingTokenAccount
@@ -1042,16 +805,15 @@ export async function mintConditionalTokens(
     banksClient,
     userUnderlyingTokenAccount
   );
-  const userConditionalTokenAccountAfter = await getAccount(
+  const userConditionalOnFinalizeTokenAccountAfter = await getAccount(
     banksClient,
-    userConditionalTokenAccount
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
   );
 
-  assert.ok(
-    depositSlipAfter.depositedAmount.eq(
-      depositSlipBefore.depositedAmount.add(bnAmount)
-    )
-  );
   assert.equal(
     vaultUnderlyingTokenAccountAfter.amount,
     vaultUnderlyingTokenAccountBefore.amount + BigInt(amount)
@@ -1061,19 +823,25 @@ export async function mintConditionalTokens(
     userUnderlyingTokenAccountBefore.amount - BigInt(amount)
   );
   assert.equal(
-    userConditionalTokenAccountAfter.amount,
-    userConditionalTokenAccountBefore.amount + BigInt(amount)
+    userConditionalOnFinalizeTokenAccountAfter.amount,
+    userConditionalOnFinalizeTokenAccountBefore.amount + BigInt(amount)
+  );
+  assert.equal(
+    userConditionalOnRevertTokenAccountAfter.amount,
+    userConditionalOnRevertTokenAccountBefore.amount + BigInt(amount)
   );
 }
 
 export async function redeemConditionalTokens(
   vaultProgram: VaultProgram,
   user: Signer,
-  userConditionalTokenAccount: PublicKey,
+  userConditionalOnFinalizeTokenAccount: PublicKey,
+  userConditionalOnRevertTokenAccount: PublicKey,
+  conditionalOnFinalizeTokenMint: PublicKey,
+  conditionalOnRevertTokenMint: PublicKey,
   userUnderlyingTokenAccount: PublicKey,
   vaultUnderlyingTokenAccount: PublicKey,
   vault: PublicKey,
-  conditionalTokenMint: PublicKey,
   banksClient: BanksClient,
 ) {
   const vaultUnderlyingTokenAccountBefore = await getAccount(
@@ -1084,20 +852,26 @@ export async function redeemConditionalTokens(
     banksClient,
     userUnderlyingTokenAccount
   );
-  const userConditionalTokenAccountBefore = await getAccount(
+  const userConditionalOnFinalizeTokenAccountBefore = await getAccount(
     banksClient,
-    userConditionalTokenAccount
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
   );
 
   await vaultProgram.methods
     .redeemConditionalTokensForUnderlyingTokens()
     .accounts({
       authority: user.publicKey,
-      userConditionalTokenAccount,
+      userConditionalOnFinalizeTokenAccount,
+      userConditionalOnRevertTokenAccount,
       userUnderlyingTokenAccount,
       vaultUnderlyingTokenAccount,
       vault,
-      conditionalTokenMint,
+      conditionalOnFinalizeTokenMint,
+      conditionalOnRevertTokenMint,
       tokenProgram: token.TOKEN_PROGRAM_ID,
     })
     .signers([user])
@@ -1111,77 +885,35 @@ export async function redeemConditionalTokens(
     banksClient,
     userUnderlyingTokenAccount
   );
-  const userConditionalTokenAccountAfter = await getAccount(
+  const userConditionalOnFinalizeTokenAccountAfter = await getAccount(
     banksClient,
-    userConditionalTokenAccount
+    userConditionalOnFinalizeTokenAccount
   );
+  const userConditionalOnRevertTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
+  );
+
+  let storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
+
+  let amount;
+  if (storedVault.status.finalized) {
+    amount = userConditionalOnFinalizeTokenAccountBefore.amount;
+  } else {
+    amount = userConditionalOnRevertTokenAccountBefore.amount;
+  }
 
   assert.equal(
     vaultUnderlyingTokenAccountAfter.amount,
     vaultUnderlyingTokenAccountBefore.amount -
-      BigInt(userConditionalTokenAccountBefore.amount)
+      BigInt(amount)
   );
   assert.equal(
     userUnderlyingTokenAccountAfter.amount,
     userUnderlyingTokenAccountBefore.amount +
-      BigInt(userConditionalTokenAccountBefore.amount)
+      BigInt(amount)
   );
-  assert.equal(userConditionalTokenAccountAfter.amount, BigInt(0));
+  assert.equal(userConditionalOnFinalizeTokenAccountAfter.amount, BigInt(0));
+  assert.equal(userConditionalOnRevertTokenAccountAfter.amount, BigInt(0));
 }
 
-export async function redeemDepositSlip(
-  vaultProgram: VaultProgram,
-  user: Signer,
-  depositSlip: PublicKey,
-  userUnderlyingTokenAccount: PublicKey,
-  vaultUnderlyingTokenAccount: PublicKey,
-  vault: PublicKey,
-  banksClient: BanksClient,
-) {
-  const vaultUnderlyingTokenAccountBefore = await getAccount(
-    banksClient,
-    vaultUnderlyingTokenAccount
-  );
-  const userUnderlyingTokenAccountBefore = await getAccount(
-    banksClient,
-    userUnderlyingTokenAccount
-  );
-  const depositSlipBefore = await vaultProgram.account.depositSlip.fetch(
-    depositSlip
-  );
-
-  await vaultProgram.methods
-    .redeemDepositSlipForUnderlyingTokens()
-    .accounts({
-      authority: user.publicKey,
-      depositSlip,
-      userUnderlyingTokenAccount,
-      vaultUnderlyingTokenAccount,
-      vault,
-      tokenProgram: token.TOKEN_PROGRAM_ID,
-    })
-    .signers([user])
-    .rpc();
-
-  const vaultUnderlyingTokenAccountAfter = await getAccount(
-    banksClient,
-    vaultUnderlyingTokenAccount
-  );
-  const userUnderlyingTokenAccountAfter = await getAccount(
-    banksClient,
-    userUnderlyingTokenAccount
-  );
-
-  assert.isNull(await banksClient.getAccount(depositSlip));
-
-  assert.equal(
-    vaultUnderlyingTokenAccountAfter.amount,
-    vaultUnderlyingTokenAccountBefore.amount -
-      BigInt(depositSlipBefore.depositedAmount.toString())
-  );
-  assert.equal(
-    userUnderlyingTokenAccountAfter.amount,
-    userUnderlyingTokenAccountBefore.amount +
-      BigInt(depositSlipBefore.depositedAmount.toString())
-  );
-}
