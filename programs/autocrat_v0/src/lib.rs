@@ -74,10 +74,8 @@ pub struct Proposal {
     pub instruction: ProposalInstruction,
     pub openbook_twap_pass_market: Pubkey,
     pub openbook_twap_fail_market: Pubkey,
-    pub base_pass_vault: Pubkey,
-    pub quote_pass_vault: Pubkey,
-    pub base_fail_vault: Pubkey,
-    pub quote_fail_vault: Pubkey,
+    pub base_vault: Pubkey,
+    pub quote_vault: Pubkey,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -125,13 +123,14 @@ pub mod autocrat_v0 {
         let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
 
         require!(
-            openbook_pass_market.base_mint == ctx.accounts.base_pass_vault.conditional_token_mint,
+            openbook_pass_market.base_mint == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_mint == ctx.accounts.quote_pass_vault.conditional_token_mint,
+            openbook_pass_market.quote_mint == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
+
         // this should also be checked by `openbook_twap`, but why not take the
         // precaution?
         require!(
@@ -160,11 +159,11 @@ pub mod autocrat_v0 {
         );
 
         require!(
-            openbook_fail_market.base_mint == ctx.accounts.base_fail_vault.conditional_token_mint,
+            openbook_fail_market.base_mint == ctx.accounts.base_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.quote_mint == ctx.accounts.quote_fail_vault.conditional_token_mint,
+            openbook_fail_market.quote_mint == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
@@ -199,29 +198,18 @@ pub mod autocrat_v0 {
         dao.proposal_count += 1;
 
         // least signficant 32 bits of nonce are proposal number
-        // most significant bit of nonce is 0 for pass and 1 for fail
-        // second most significant bit of nonce is 0 for base and 1 for quote
+        // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
         require!(
-            ctx.accounts.base_pass_vault.nonce == proposal.number as u64,
+            ctx.accounts.base_vault.nonce == proposal.number as u64,
             AutocratError::InvalidVaultNonce
         );
         require!(
-            ctx.accounts.quote_pass_vault.nonce == (proposal.number as u64 | (1 << 63)),
-            AutocratError::InvalidVaultNonce
-        );
-        require!(
-            ctx.accounts.base_fail_vault.nonce == proposal.number as u64 | (1 << 62),
-            AutocratError::InvalidVaultNonce
-        );
-        require!(
-            ctx.accounts.quote_fail_vault.nonce == (proposal.number as u64 | (1 << 63) | (1 << 62)),
+            ctx.accounts.quote_vault.nonce == (proposal.number as u64 | (1 << 63)),
             AutocratError::InvalidVaultNonce
         );
 
-        proposal.quote_pass_vault = ctx.accounts.quote_pass_vault.key();
-        proposal.base_pass_vault = ctx.accounts.base_pass_vault.key();
-        proposal.quote_fail_vault = ctx.accounts.quote_fail_vault.key();
-        proposal.base_fail_vault = ctx.accounts.base_fail_vault.key();
+        proposal.quote_vault = ctx.accounts.quote_vault.key();
+        proposal.base_vault = ctx.accounts.base_vault.key();
 
         let clock = Clock::get()?;
 
@@ -259,9 +247,6 @@ pub mod autocrat_v0 {
     }
 
     pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
-        // let pass_market = ctx.accounts.pass_market.load()?;
-        // let fail_market = ctx.accounts.fail_market.load()?;
-
         let openbook_twap_pass_market = &ctx.accounts.openbook_twap_pass_market;
         let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
 
@@ -288,6 +273,7 @@ pub mod autocrat_v0 {
         assert!(pass_market_aggregator != 0);
         assert!(fail_market_aggregator != 0);
 
+        // should only overflow in a situation where we want a revert anyways
         let pass_market_slots_passed =
             openbook_twap_pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
         let fail_market_slots_passed =
@@ -329,23 +315,9 @@ pub mod autocrat_v0 {
                 signer,
             )?;
 
-            for (vault, new_state) in [
-                (
-                    ctx.accounts.base_pass_vault.to_account_info(),
-                    VaultStatus::Finalized,
-                ),
-                (
-                    ctx.accounts.quote_pass_vault.to_account_info(),
-                    VaultStatus::Finalized,
-                ),
-                (
-                    ctx.accounts.base_fail_vault.to_account_info(),
-                    VaultStatus::Reverted,
-                ),
-                (
-                    ctx.accounts.quote_fail_vault.to_account_info(),
-                    VaultStatus::Reverted,
-                ),
+            for vault in [
+                ctx.accounts.base_vault.to_account_info(),
+                ctx.accounts.quote_vault.to_account_info(),
             ] {
                 let vault_program = ctx.accounts.vault_program.to_account_info();
                 let cpi_accounts = SettleConditionalVault {
@@ -353,28 +325,14 @@ pub mod autocrat_v0 {
                     vault,
                 };
                 let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
-                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_state)?;
+                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, VaultStatus::Finalized)?;
             }
         } else {
             proposal.state = ProposalState::Failed;
 
-            for (vault, new_state) in [
-                (
-                    ctx.accounts.base_pass_vault.to_account_info(),
-                    VaultStatus::Reverted,
-                ),
-                (
-                    ctx.accounts.quote_pass_vault.to_account_info(),
-                    VaultStatus::Reverted,
-                ),
-                (
-                    ctx.accounts.base_fail_vault.to_account_info(),
-                    VaultStatus::Finalized,
-                ),
-                (
-                    ctx.accounts.quote_fail_vault.to_account_info(),
-                    VaultStatus::Finalized,
-                ),
+            for vault in [
+                ctx.accounts.base_vault.to_account_info(),
+                ctx.accounts.quote_vault.to_account_info(),
             ] {
                 let vault_program = ctx.accounts.vault_program.to_account_info();
                 let cpi_accounts = SettleConditionalVault {
@@ -382,7 +340,7 @@ pub mod autocrat_v0 {
                     vault,
                 };
                 let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
-                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_state)?;
+                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, VaultStatus::Reverted)?;
             }
         }
 
@@ -450,25 +408,15 @@ pub struct InitializeProposal<'info> {
     )]
     pub dao_treasury: UncheckedAccount<'info>,
     #[account(
-        constraint = quote_pass_vault.underlying_token_mint == dao.usdc_mint,
-        constraint = quote_pass_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
+        constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
+        constraint = quote_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
-    pub quote_pass_vault: Account<'info, ConditionalVaultAccount>,
+    pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = quote_fail_vault.underlying_token_mint == dao.usdc_mint,
-        constraint = quote_fail_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
+        constraint = base_vault.underlying_token_mint == dao.meta_mint,
+        constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
-    pub quote_fail_vault: Account<'info, ConditionalVaultAccount>,
-    #[account(
-        constraint = base_pass_vault.underlying_token_mint == dao.meta_mint,
-        constraint = base_pass_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
-    )]
-    pub base_pass_vault: Account<'info, ConditionalVaultAccount>,
-    #[account(
-        constraint = base_fail_vault.underlying_token_mint == dao.meta_mint,
-        constraint = base_fail_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
-    )]
-    pub base_fail_vault: Account<'info, ConditionalVaultAccount>,
+    pub base_vault: Account<'info, ConditionalVaultAccount>,
     pub openbook_pass_market: AccountLoader<'info, Market>,
     pub openbook_fail_market: AccountLoader<'info, Market>,
     #[account(constraint = openbook_twap_pass_market.market == openbook_pass_market.key())]
@@ -484,10 +432,8 @@ pub struct InitializeProposal<'info> {
 pub struct FinalizeProposal<'info> {
     #[account(mut, 
         has_one = proposer,
-        has_one = quote_pass_vault,
-        has_one = quote_fail_vault,
-        has_one = base_pass_vault,
-        has_one = base_fail_vault,
+        has_one = base_vault,
+        has_one = quote_vault,
         has_one = openbook_twap_pass_market,
         has_one = openbook_twap_fail_market,
     )]
@@ -496,13 +442,9 @@ pub struct FinalizeProposal<'info> {
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
     pub dao: Box<Account<'info, DAO>>,
     #[account(mut)]
-    pub quote_pass_vault: Box<Account<'info, ConditionalVaultAccount>>,
+    pub base_vault: Box<Account<'info, ConditionalVaultAccount>>,
     #[account(mut)]
-    pub quote_fail_vault: Box<Account<'info, ConditionalVaultAccount>>,
-    #[account(mut)]
-    pub base_pass_vault: Box<Account<'info, ConditionalVaultAccount>>,
-    #[account(mut)]
-    pub base_fail_vault: Box<Account<'info, ConditionalVaultAccount>>,
+    pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
     pub vault_program: Program<'info, ConditionalVaultProgram>,
     /// CHECK: never read
     #[account(
