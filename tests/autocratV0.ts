@@ -1287,7 +1287,7 @@ async function initializeProposal(
       openbookPassMarketKP
     );
 
-    await openbookTwap.methods.createTwapMarket()
+    await openbookTwap.methods.createTwapMarket(new BN(1000))
       .accounts({
         market: openbookPassMarket,
         twapMarket: openbookTwapPassMarket,
@@ -1319,7 +1319,7 @@ async function initializeProposal(
       { confFilter: 0.1, maxStalenessSlots: 100 },
       openbookFailMarketKP
     );
-    await openbookTwap.methods.createTwapMarket()
+    await openbookTwap.methods.createTwapMarket(new BN(1000))
       .accounts({
         market: openbookFailMarket,
         twapMarket: openbookTwapFailMarket,
