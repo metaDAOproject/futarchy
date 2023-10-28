@@ -485,7 +485,7 @@
       ],
       "args": [],
       "returns": {
-        "defined": "(u64,u64)"
+        "vec": "u64"
       }
     }
   ],

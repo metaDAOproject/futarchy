@@ -485,7 +485,7 @@ export type OpenbookTwap = {
       ],
       "args": [],
       "returns": {
-        "defined": "(u64,u64)"
+        "vec": "u64"
       }
     }
   ],
@@ -1217,7 +1217,7 @@ export const IDL: OpenbookTwap = {
       ],
       "args": [],
       "returns": {
-        "defined": "(u64,u64)"
+        "vec": "u64"
       }
     }
   ],
