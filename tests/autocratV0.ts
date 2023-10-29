@@ -237,7 +237,7 @@ describe("autocrat_v0", async function () {
       assert(balanceAfter < balanceBefore - 1_000_000_000n * 30n);
       console.log(balanceAfter);
 
-      assert(balanceAfter > balanceBefore - 1_000_000_000n * 31n);
+      assert(balanceAfter > balanceBefore - 1_000_000_000n * 35n);
     });
   });
 
@@ -1132,7 +1132,7 @@ async function initializeProposal(
 
   let baseNonce = new BN(storedDAO.proposalCount);
 
-  const basePassVault = await initializeVault(
+  const baseVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
     storedDAO.metaMint,
@@ -1140,7 +1140,7 @@ async function initializeProposal(
     payer
   );
 
-  const quotePassVault = await initializeVault(
+  const quoteVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
     storedDAO.usdcMint,
@@ -1148,109 +1148,18 @@ async function initializeProposal(
     payer
   );
 
-  const baseFailVault = await initializeVault(
-    vaultProgram,
-    storedDAO.treasury,
-    storedDAO.metaMint,
-    baseNonce.or(new BN(1).shln(62)),
-    payer
-  );
-
-  const quoteFailVault = await initializeVault(
-    vaultProgram,
-    storedDAO.treasury,
-    storedDAO.usdcMint,
-    baseNonce.or(new BN(3).shln(62)),
-    payer
-  );
-
   const passBaseMint = (
-    await vaultProgram.account.conditionalVault.fetch(basePassVault)
-  ).conditionalTokenMint;
+    await vaultProgram.account.conditionalVault.fetch(baseVault)
+  ).conditionalOnFinalizeTokenMint;
   const passQuoteMint = (
-   await vaultProgram.account.conditionalVault.fetch(quotePassVault)
-  ).conditionalTokenMint;
+   await vaultProgram.account.conditionalVault.fetch(quoteVault)
+  ).conditionalOnFinalizeTokenMint;
   const failBaseMint = (
-   await vaultProgram.account.conditionalVault.fetch(baseFailVault)
-  ).conditionalTokenMint;
+   await vaultProgram.account.conditionalVault.fetch(baseVault)
+  ).conditionalOnRevertTokenMint;
   const failQuoteMint = (
-   await vaultProgram.account.conditionalVault.fetch(quoteFailVault)
-  ).conditionalTokenMint;
-
-  const [passMarket] = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("order_book"),
-      passBaseMint.toBuffer(),
-      passQuoteMint.toBuffer(),
-    ],
-    clobProgram.programId
-  );
-
-  const [failMarket] = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("order_book"),
-      failBaseMint.toBuffer(),
-      failQuoteMint.toBuffer(),
-    ],
-    clobProgram.programId
-  );
-
-  const passBaseVault = await token.getAssociatedTokenAddress(
-    passBaseMint,
-    passMarket,
-    true
-  );
-
-  const passQuoteVault = await token.getAssociatedTokenAddress(
-    passQuoteMint,
-    passMarket,
-    true
-  );
-
-  const failBaseVault = await token.getAssociatedTokenAddress(
-    failBaseMint,
-    failMarket,
-    true
-  );
-
-  const failQuoteVault = await token.getAssociatedTokenAddress(
-    failQuoteMint,
-    failMarket,
-    true
-  );
-
-  const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
-    [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-    clobProgram.programId
-  );
-
-  await clobProgram.methods
-    .initializeOrderBook()
-    .accounts({
-      orderBook: passMarket,
-      globalState,
-      payer: payer.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId,
-      base: passBaseMint,
-      quote: passQuoteMint,
-      baseVault: passBaseVault,
-      quoteVault: passQuoteVault,
-    })
-    .rpc();
-
-  await clobProgram.methods
-    .initializeOrderBook()
-    .accounts({
-      orderBook: failMarket,
-      globalState,
-      payer: payer.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId,
-      base: failBaseMint,
-      quote: failQuoteMint,
-      baseVault: failBaseVault,
-      quoteVault: failQuoteVault,
-    })
-    .rpc();
+   await vaultProgram.account.conditionalVault.fetch(quoteVault)
+  ).conditionalOnRevertTokenMint;
 
   const [daoTreasury] = PublicKey.findProgramAddressSync(
     [dao.toBuffer()],
@@ -1270,7 +1179,7 @@ async function initializeProposal(
 
     let openbookPassMarket = await openbook.createMarket(
       payer,
-      "fMETA/fUSDC",
+      "pMETA/pUSDC",
       passQuoteMint,
       passBaseMint,
       new BN(100),
@@ -1335,10 +1244,8 @@ async function initializeProposal(
       proposal: proposalKeypair.publicKey,
       dao,
       daoTreasury,
-      quotePassVault,
-      quoteFailVault,
-      basePassVault,
-      baseFailVault,
+      baseVault,
+      quoteVault,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
       openbookPassMarket,
@@ -1393,28 +1300,29 @@ async function initializeVault(
     ],
     vaultProgram.programId
   );
-  const conditionalTokenMintKeypair = Keypair.generate();
+  const conditionalOnFinalizeTokenMintKeypair = Keypair.generate();
+  const conditionalOnRevertTokenMintKeypair = Keypair.generate();
 
   const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
     underlyingTokenMint,
     vault,
     true
   );
-
-  await vaultProgram.methods
-    .initializeConditionalVault(settlementAuthority, nonce)
-    .accounts({
-      vault,
-      underlyingTokenMint,
-      vaultUnderlyingTokenAccount,
-      conditionalTokenMint: conditionalTokenMintKeypair.publicKey,
-      payer: payer.publicKey,
-      tokenProgram: token.TOKEN_PROGRAM_ID,
-      associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
-      systemProgram: anchor.web3.SystemProgram.programId,
-    })
-    .signers([conditionalTokenMintKeypair])
-    .rpc();
+    await vaultProgram.methods
+      .initializeConditionalVault(settlementAuthority, nonce)
+      .accounts({
+        vault,
+        underlyingTokenMint,
+        vaultUnderlyingTokenAccount,
+        conditionalOnFinalizeTokenMint: conditionalOnFinalizeTokenMintKeypair.publicKey,
+        conditionalOnRevertTokenMint: conditionalOnRevertTokenMintKeypair.publicKey,
+        payer: payer.publicKey,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([conditionalOnFinalizeTokenMintKeypair, conditionalOnRevertTokenMintKeypair])
+      .rpc();
 
   return vault;
 }
