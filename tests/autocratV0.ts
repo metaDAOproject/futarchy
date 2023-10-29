@@ -32,8 +32,6 @@ import { OpenbookTwap } from "./fixtures/openbook_twap";
 
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
-/* import { generateMarketMaker } from "./clob"; */
-
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 const ClobIDL: Clob = require("../target/idl/clob.json");
@@ -51,6 +49,7 @@ import {
   createAssociatedTokenAccount,
   mintToOverride,
   getMint,
+  getAccount,
 } from "spl-token-bankrun";
 
 
@@ -243,8 +242,8 @@ describe("autocrat_v0", async function () {
 
   describe("#finalize_proposal", async function () {
     let proposal,
-      passMarket,
-      failMarket,
+      openbookPassMarket,
+      openbookFailMarket,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
       basePassVault,
@@ -253,8 +252,8 @@ describe("autocrat_v0", async function () {
       quoteFailVault,
       basePassVaultUnderlyingTokenAccount,
       basePassConditionalTokenMint,
-      passMM,
-      failMM,
+      mm0,
+      mm1,
       alice,
       aliceQuotePassDepositSlip,
       aliceUnderlyingQuoteTokenAccount,
@@ -299,8 +298,8 @@ describe("autocrat_v0", async function () {
       );
 
       ({
-        passMarket,
-        failMarket,
+        openbookPassMarket,
+        openbookFailMarket,
         openbookTwapPassMarket,
         openbookTwapFailMarket,
         basePassVault,
@@ -309,26 +308,24 @@ describe("autocrat_v0", async function () {
         quoteFailVault,
       } = await autocrat.account.proposal.fetch(proposal));
 
-      [passMM] = await generateMarketMaker(
-        0,
-        clobProgram,
+      [mm0] = await generateMarketMaker(
+        openbook,
+        openbookTwap,
         banksClient,
         payer,
-        clobGlobalState,
-        passMarket,
-        clobAdmin,
+        openbookPassMarket,
+        openbookFailMarket,
         vaultProgram,
         context
       );
 
-      [failMM] = await generateMarketMaker(
-        0,
-        clobProgram,
+      [mm1] = await generateMarketMaker(
+        openbook,
+        openbookTwap,
         banksClient,
         payer,
-        clobGlobalState,
-        failMarket,
-        clobAdmin,
+        openbookPassMarket,
+        openbookFailMarket,
         vaultProgram,
         context
       );
@@ -950,41 +947,58 @@ describe("autocrat_v0", async function () {
 });
 
 async function generateMarketMaker(
-  index: number,
-  program: Program<Clob>,
+  openbook: OpenBookV2Client,
+  openbookTwap: Program<OpenbookTwap>,
   banksClient: BanksClient,
   payer: anchor.web3.Keypair,
-  globalState: anchor.web3.PublicKey,
-  orderBook: anchor.web3.PublicKey,
-  admin: anchor.web3.Keypair,
+  passMarket: anchor.web3.PublicKey,
+  failMarket: anchor.web3.PublicKey,
   vaultProgram: Program<ConditionalVault>,
   context: ProgramTestContext
 ): Promise<[Keypair]> {
   const mm = anchor.web3.Keypair.generate();
 
-  const storedOrderBook = await program.account.orderBook.fetch(orderBook);
+  const storedPassMarket = await openbook.getMarket(passMarket);
+  const storedFailMarket = await openbook.getMarket(failMarket);
 
-  /* console.log(storedOrderBook); */
-
-  const mmBase = await createAccount(
+  const metaPassAcc = await createAccount(
     banksClient,
     payer,
-    storedOrderBook.base,
+    storedPassMarket.baseMint,
     mm.publicKey
   );
 
-  const mmQuote = await createAccount(
+  const usdcPassAcc = await createAccount(
     banksClient,
     payer,
-    storedOrderBook.quote,
+    storedPassMarket.quoteMint,
     mm.publicKey
   );
 
-  const baseMint = await getMint(banksClient, storedOrderBook.base);
-  const quoteMint = await getMint(banksClient, storedOrderBook.quote);
+  const metaFailAcc = await createAccount(
+    banksClient,
+    payer,
+    storedFailMarket.baseMint,
+    mm.publicKey
+  );
+
+  const usdcFailAcc = await createAccount(
+    banksClient,
+    payer,
+    storedFailMarket.quoteMint,
+    mm.publicKey
+  );
+
+  // we can use either to get the base/quote vault
+  const baseMint = await getMint(banksClient, storedPassMarket.baseMint);
+  const quoteMint = await getMint(banksClient, storedPassMarket.quoteMint);
 
   const baseVault = baseMint.mintAuthority;
   const quoteVault = quoteMint.mintAuthority;
+
+  assert(baseVault.equals((await getMint(banksClient, storedFailMarket.baseMint)).mintAuthority));
+  assert(quoteVault.equals((await getMint(banksClient, storedFailMarket.quoteMint)).mintAuthority));
+
 
   const storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
     baseVault
@@ -992,6 +1006,7 @@ async function generateMarketMaker(
   const storedQuoteVault = await vaultProgram.account.conditionalVault.fetch(
     quoteVault
   );
+
 
   const mmBaseUnderlying = await createAccount(
     banksClient,
@@ -1006,67 +1021,35 @@ async function generateMarketMaker(
     mm.publicKey
   );
 
-  await mintToOverride(context, mmBaseUnderlying, 1_000_000_000n);
-  await mintToOverride(context, mmQuoteUnderlying, 1_000_000_000n);
-
-  let [mmBaseDepositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("deposit_slip"),
-      baseVault.toBuffer(),
-      mm.publicKey.toBuffer(),
-    ],
-    vaultProgram.programId
-  );
-  await vaultProgram.methods
-    .initializeDepositSlip(mm.publicKey)
-    .accounts({
-      depositSlip: mmBaseDepositSlip,
-      vault: baseVault,
-      payer: payer.publicKey,
-    })
-    .rpc();
-
-  let [mmQuoteDepositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("deposit_slip"),
-      quoteVault.toBuffer(),
-      mm.publicKey.toBuffer(),
-    ],
-    vaultProgram.programId
-  );
-  await vaultProgram.methods
-    .initializeDepositSlip(mm.publicKey)
-    .accounts({
-      depositSlip: mmQuoteDepositSlip,
-      vault: quoteVault,
-      payer: payer.publicKey,
-    })
-    .rpc();
+  const MM_BASE_AMOUNT = 10_000n * 1_000_000_000n;
+  const MM_QUOTE_AMOUNT = 100_000n * 1_000_000n;
+  await mintToOverride(context, mmBaseUnderlying, MM_BASE_AMOUNT);
+  await mintToOverride(context, mmQuoteUnderlying, MM_QUOTE_AMOUNT);
 
   await mintConditionalTokens(
     vaultProgram,
-    1_000_000_000,
+    MM_BASE_AMOUNT,
     mm,
-    mmBaseDepositSlip,
     baseVault,
-    storedBaseVault.underlyingTokenAccount,
-    mmBaseUnderlying,
-    storedBaseVault.conditionalTokenMint,
-    mmBase,
     banksClient
   );
+  
   await mintConditionalTokens(
     vaultProgram,
-    1_000_000_000,
+    MM_QUOTE_AMOUNT,
     mm,
-    mmQuoteDepositSlip,
     quoteVault,
-    storedQuoteVault.underlyingTokenAccount,
-    mmQuoteUnderlying,
-    storedQuoteVault.conditionalTokenMint,
-    mmQuote,
     banksClient
   );
+
+  console.log(passMarket);
+
+  let openOrders = await openbook.createOpenOrders(
+    passMarket,
+    new BN(1),
+    'oo'
+  );
+  assert.fail();
 
   await program.methods
     .addMarketMaker(mm.publicKey, index)

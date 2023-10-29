@@ -74,6 +74,8 @@ pub struct Proposal {
     pub instruction: ProposalInstruction,
     pub openbook_twap_pass_market: Pubkey,
     pub openbook_twap_fail_market: Pubkey,
+    pub openbook_pass_market: Pubkey,
+    pub openbook_fail_market: Pubkey,
     pub base_vault: Pubkey,
     pub quote_vault: Pubkey,
 }
@@ -236,6 +238,8 @@ pub mod autocrat_v0 {
 
         proposal.openbook_twap_pass_market = ctx.accounts.openbook_twap_pass_market.key();
         proposal.openbook_twap_fail_market = ctx.accounts.openbook_twap_fail_market.key();
+        proposal.openbook_pass_market = ctx.accounts.openbook_pass_market.key();
+        proposal.openbook_fail_market = ctx.accounts.openbook_fail_market.key();
 
         proposal.proposer = ctx.accounts.proposer.key();
         proposal.description_url = description_url;
