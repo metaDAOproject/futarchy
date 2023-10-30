@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
-use openbook_v2::state::Market;
-use openbook_twap::TWAPMarket;
 use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use conditional_vault::VaultStatus;
+use openbook_twap::TWAPMarket;
+use openbook_v2::state::Market;
 use solana_program::instruction::Instruction;
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
@@ -127,11 +127,13 @@ pub mod autocrat_v0 {
         let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
 
         require!(
-            openbook_pass_market.base_mint == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
+            openbook_pass_market.base_mint
+                == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_mint == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
+            openbook_pass_market.quote_mint
+                == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
 
@@ -163,11 +165,13 @@ pub mod autocrat_v0 {
         );
 
         require!(
-            openbook_fail_market.base_mint == ctx.accounts.base_vault.conditional_on_revert_token_mint,
+            openbook_fail_market.base_mint
+                == ctx.accounts.base_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.quote_mint == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
+            openbook_fail_market.quote_mint
+                == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
@@ -200,14 +204,20 @@ pub mod autocrat_v0 {
         let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
 
         require!(
-            openbook_twap_pass_market.twap_oracle.initial_slot + 50
-                >= clock.slot,
+            openbook_twap_pass_market.twap_oracle.initial_slot + 50 >= clock.slot,
             AutocratError::TWAPMarketTooOld
         );
         require!(
-            openbook_twap_fail_market.twap_oracle.initial_slot + 50
-                >= clock.slot,
+            openbook_twap_fail_market.twap_oracle.initial_slot + 50 >= clock.slot,
             AutocratError::TWAPMarketTooOld
+        );
+        require!(
+            openbook_twap_pass_market.twap_oracle.expected_value == 1000,
+            AutocratError::TWAPMarketInvalidExpectedValue
+        );
+        require!(
+            openbook_twap_fail_market.twap_oracle.expected_value == 1000,
+            AutocratError::TWAPMarketInvalidExpectedValue
         );
 
         let dao = &mut ctx.accounts.dao;
@@ -229,7 +239,6 @@ pub mod autocrat_v0 {
 
         proposal.quote_vault = ctx.accounts.quote_vault.key();
         proposal.base_vault = ctx.accounts.base_vault.key();
-
 
         let slots_passed = clock.slot - dao.last_proposal_slot;
         let burn_amount = dao.base_burn_lamports.saturating_sub(
@@ -299,7 +308,6 @@ pub mod autocrat_v0 {
         let fail_market_slots_passed =
             openbook_twap_fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
 
-
         require!(
             pass_market_slots_passed >= TEN_DAYS_IN_SLOTS,
             AutocratError::MarketsTooYoung
@@ -318,7 +326,7 @@ pub mod autocrat_v0 {
         let threshold = (fail_market_twap
             * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
             / MAX_BPS as u128;
-        
+
         if pass_market_twap > threshold {
             proposal.state = ProposalState::Passed;
 
@@ -450,7 +458,7 @@ pub struct InitializeProposal<'info> {
 
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
-    #[account(mut, 
+    #[account(mut,
         has_one = base_vault,
         has_one = quote_vault,
         has_one = openbook_twap_pass_market,
@@ -510,6 +518,8 @@ pub enum AutocratError {
     InvalidMarket,
     #[msg("`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`")]
     TWAPMarketTooOld,
+    #[msg("`TWAPMarket` must have an expected value of 1000, or 0.1 USDC per META")]
+    TWAPMarketInvalidExpectedValue,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
     InvalidSettlementAuthority,
     #[msg("Proposal is too young to be executed or rejected")]
