@@ -287,6 +287,7 @@ describe("autocrat_v0", async function () {
       aliceBasePassConditionalTokenAccount,
       aliceBaseFailConditionalTokenAccount,
       aliceQuotePassConditionalTokenAccount,
+      aliceQuoteFailConditionalTokenAccount,
       newPassThresholdBps;
 
     beforeEach(async function () {
@@ -416,7 +417,7 @@ describe("autocrat_v0", async function () {
           quotePassConditionalTokenMint,
           alice.publicKey
         );
-      await createAssociatedTokenAccount(
+      aliceQuoteFailConditionalTokenAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
         quoteFailConditionalTokenMint,
@@ -474,7 +475,7 @@ describe("autocrat_v0", async function () {
 
       let passBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(1000), // 1 USDC for 1 META
+        priceLots: new BN(1000), // 0.1 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -485,7 +486,7 @@ describe("autocrat_v0", async function () {
       };
       let failBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(700), // 0.7 USDC for 1 META
+        priceLots: new BN(700), // 0.07 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -497,7 +498,7 @@ describe("autocrat_v0", async function () {
 
       let passSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(1200), // 1.2 USDC for 1 META
+        priceLots: new BN(2000), // 0.2 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -508,7 +509,7 @@ describe("autocrat_v0", async function () {
       };
       let failSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(800), // 1 USDC for 1 META
+        priceLots: new BN(800), // 0.8 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -618,7 +619,7 @@ describe("autocrat_v0", async function () {
         side: Side.Bid,
         priceLots: new BN(1_300), // 1.3 USDC for 1 META
         maxBaseLots: new BN(1),
-        maxQuoteLotsIncludingFees: new BN(1200),
+        maxQuoteLotsIncludingFees: new BN(2000),
         clientOrderId: new BN(1),
         orderType: OrderType.Market,
         expiryTimestamp: new BN(0),
@@ -769,8 +770,6 @@ describe("autocrat_v0", async function () {
         quoteVault
       );
 
-      console.log(storedBaseVault);
-
       assert.exists(storedBaseVault.status.finalized);
       assert.exists(storedQuoteVault.status.finalized);
 
@@ -792,13 +791,22 @@ describe("autocrat_v0", async function () {
         baseVault,
         banksClient
       );
+      await redeemConditionalTokens(
+        vaultProgram,
+        alice,
+        aliceQuotePassConditionalTokenAccount,
+        aliceQuoteFailConditionalTokenAccount,
+        storedQuoteVault.conditionalOnFinalizeTokenMint,
+        storedQuoteVault.conditionalOnRevertTokenMint,
+        aliceUnderlyingQuoteTokenAccount,
+        storedQuoteVault.underlyingTokenAccount,
+        quoteVault,
+        banksClient
+      );
 
-      //console.log(await banksClient.getBalance(payer.publicKey));
-
-      //assert(
-      //  (await banksClient.getBalance(payer.publicKey)) >
-      //    proposerBalanceBefore + 1_000_000_000n * 19n
-      //);
+      // alice should have gained 1 META & lost 0.2 USDC
+      assert.equal((await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount, 1_000_000_000n);
+      assert.equal((await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount)).amount, (10_000n * 1_000_000n) - 200_000n);
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
