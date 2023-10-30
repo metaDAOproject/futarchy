@@ -8,12 +8,15 @@ import {
   PlaceOrderArgs,
   Side,
   OrderType,
-  SelfTradeBehavior
+  SelfTradeBehavior,
 } from "@openbook-dex/openbook-v2";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 
-import { IDL as ConditionalVaultIDL, ConditionalVault } from "../target/types/conditional_vault";
+import {
+  IDL as ConditionalVaultIDL,
+  ConditionalVault,
+} from "../target/types/conditional_vault";
 import { IDL as ClobIDL, Clob } from "../target/types/clob";
 
 import { OpenbookTwap } from "../tests/fixtures/openbook_twap";
@@ -31,7 +34,7 @@ const CLOB_PROGRAM_ID = new PublicKey(
   "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "2qjEsiMtWxAdqUSdaGM28pJRMtodnnkHZEoadc6JcFCb"
+  "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
 );
 const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
@@ -40,7 +43,7 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
-const payer = provider.wallet['payer'];
+const payer = provider.wallet["payer"];
 
 const autocratProgram = new Program<AutocratV0>(
   AutocratIDL,
@@ -53,11 +56,7 @@ const vaultProgram = new Program<ConditionalVault>(
   CONDITIONAL_VAULT_PROGRAM_ID,
   provider
 );
-const clobProgram = new Program<Clob>(
-  ClobIDL,
-  CLOB_PROGRAM_ID,
-  provider
-);
+const clobProgram = new Program<Clob>(ClobIDL, CLOB_PROGRAM_ID, provider);
 
 const openbook = new OpenBookV2Client(provider);
 const openbookTwap = new Program<OpenbookTwap>(
@@ -81,11 +80,10 @@ const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
   clobProgram.programId
 );
 
-
 async function createMint(
   mintAuthority: any,
   freezeAuthority: any,
-  decimals: number,
+  decimals: number
 ): Promise<any> {
   return await token.createMint(
     provider.connection,
@@ -96,9 +94,7 @@ async function createMint(
   );
 }
 
-async function initializeGlobalState(
-  admin: any
-) {
+async function initializeGlobalState(admin: any) {
   await clobProgram.methods
     .initializeGlobalState(admin)
     .accounts({
@@ -110,19 +106,21 @@ async function initializeGlobalState(
 async function initializeVault(
   settlementAuthority: any,
   underlyingTokenMint: any,
-  nonce: any,
+  nonce: any
 ): Promise<any> {
   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
-      [
-        anchor.utils.bytes.utf8.encode("conditional_vault"),
-        settlementAuthority.toBuffer(),
-        underlyingTokenMint.toBuffer(),
-        nonce.toBuffer("le", 8),
-      ],
-      vaultProgram.programId
-    );
+    [
+      anchor.utils.bytes.utf8.encode("conditional_vault"),
+      settlementAuthority.toBuffer(),
+      underlyingTokenMint.toBuffer(),
+      nonce.toBuffer("le", 8),
+    ],
+    vaultProgram.programId
+  );
 
-  if (await vaultProgram.account.conditionalVault.fetchNullable(vault) != null) {
+  if (
+    (await vaultProgram.account.conditionalVault.fetchNullable(vault)) != null
+  ) {
     return vault;
   }
 
@@ -165,7 +163,7 @@ async function initializeDAO(META: any, USDC: any) {
       metaMint: META,
       usdcMint: USDC,
     })
-    .rpc()
+    .rpc();
 }
 
 async function initializeProposal() {
@@ -181,9 +179,12 @@ async function initializeProposal() {
       isWritable: false,
     },
   ];
-  const data = autocratProgram.coder.instruction.encode("set_pass_threshold_bps", {
-    passThresholdBps: 1000,
-  });
+  const data = autocratProgram.coder.instruction.encode(
+    "set_pass_threshold_bps",
+    {
+      passThresholdBps: 1000,
+    }
+  );
   const instruction = {
     programId: autocratProgram.programId,
     accounts,
@@ -204,25 +205,25 @@ async function initializeProposal() {
   const basePassVault = await initializeVault(
     storedDAO.treasury,
     storedDAO.metaMint,
-    baseNonce,
+    baseNonce
   );
 
   const quotePassVault = await initializeVault(
     storedDAO.treasury,
     storedDAO.usdcMint,
-    baseNonce.or(new BN(1).shln(63)),
+    baseNonce.or(new BN(1).shln(63))
   );
 
   const baseFailVault = await initializeVault(
     storedDAO.treasury,
     storedDAO.metaMint,
-    baseNonce.or(new BN(1).shln(62)),
+    baseNonce.or(new BN(1).shln(62))
   );
 
   const quoteFailVault = await initializeVault(
     storedDAO.treasury,
     storedDAO.usdcMint,
-    baseNonce.or(new BN(3).shln(62)),
+    baseNonce.or(new BN(3).shln(62))
   );
 
   const passBaseMint = (
@@ -240,68 +241,76 @@ async function initializeProposal() {
 
   let openbookPassMarketKP = Keypair.generate();
 
-    let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
-      [anchor.utils.bytes.utf8.encode("twap_market"), openbookPassMarketKP.publicKey.toBuffer()],
-      openbookTwap.programId
-    );
+  let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("twap_market"),
+      openbookPassMarketKP.publicKey.toBuffer(),
+    ],
+    openbookTwap.programId
+  );
 
-    let openbookPassMarket = await openbook.createMarket(
-      payer,
-      "test",
-      passQuoteMint,
-      passBaseMint,
-      new BN(100),
-      new BN(1e9),
-      new BN(0),
-      new BN(0),
-      new BN(0),
-      null,
-      null,
-      openbookTwapPassMarket,
-      null,
-      openbookTwapPassMarket,
-      { confFilter: 0.1, maxStalenessSlots: 100 },
-      openbookPassMarketKP
-    );
+  let openbookPassMarket = await openbook.createMarket(
+    payer,
+    "test",
+    passQuoteMint,
+    passBaseMint,
+    new BN(100),
+    new BN(1e9),
+    new BN(0),
+    new BN(0),
+    new BN(0),
+    null,
+    null,
+    openbookTwapPassMarket,
+    null,
+    openbookTwapPassMarket,
+    { confFilter: 0.1, maxStalenessSlots: 100 },
+    openbookPassMarketKP
+  );
 
-    await openbookTwap.methods.createTwapMarket(new BN(1_000))
-      .accounts({
-        market: openbookPassMarket,
-        twapMarket: openbookTwapPassMarket,
-      })
-      .rpc();
+  await openbookTwap.methods
+    .createTwapMarket(new BN(1_000))
+    .accounts({
+      market: openbookPassMarket,
+      twapMarket: openbookTwapPassMarket,
+    })
+    .rpc();
 
-    let openbookFailMarketKP = Keypair.generate();
+  let openbookFailMarketKP = Keypair.generate();
 
-    let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
-      [anchor.utils.bytes.utf8.encode("twap_market"), openbookFailMarketKP.publicKey.toBuffer()],
-      openbookTwap.programId
-    );
+  let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("twap_market"),
+      openbookFailMarketKP.publicKey.toBuffer(),
+    ],
+    openbookTwap.programId
+  );
 
-    let openbookFailMarket = await openbook.createMarket(
-      payer,
-      "fMETA/fUSDC",
-      failQuoteMint,
-      failBaseMint,
-      new BN(100),
-      new BN(1e9),
-      new BN(0),
-      new BN(0),
-      new BN(0),
-      null,
-      null,
-      openbookTwapFailMarket,
-      null,
-      openbookTwapFailMarket,
-      { confFilter: 0.1, maxStalenessSlots: 100 },
-      openbookFailMarketKP
-    );
-    await openbookTwap.methods.createTwapMarket(new BN(1_000))
-      .accounts({
-        market: openbookFailMarket,
-        twapMarket: openbookTwapFailMarket,
-      })
-      .rpc();
+  let openbookFailMarket = await openbook.createMarket(
+    payer,
+    "fMETA/fUSDC",
+    failQuoteMint,
+    failBaseMint,
+    new BN(100),
+    new BN(1e9),
+    new BN(0),
+    new BN(0),
+    new BN(0),
+    null,
+    null,
+    openbookTwapFailMarket,
+    null,
+    openbookTwapFailMarket,
+    { confFilter: 0.1, maxStalenessSlots: 100 },
+    openbookFailMarketKP
+  );
+  await openbookTwap.methods
+    .createTwapMarket(new BN(1_000))
+    .accounts({
+      market: openbookFailMarket,
+      twapMarket: openbookTwapFailMarket,
+    })
+    .rpc();
 
   const daoBefore = await autocratProgram.account.dao.fetch(dao);
 
@@ -313,7 +322,10 @@ async function initializeProposal() {
   await autocratProgram.methods
     .initializeProposal(dummyURL, instruction)
     .preInstructions([
-      await autocratProgram.account.proposal.createInstruction(proposalKeypair, 1500),
+      await autocratProgram.account.proposal.createInstruction(
+        proposalKeypair,
+        1500
+      ),
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
@@ -337,7 +349,7 @@ async function initializeProposal() {
 
 async function initializeOrderBook(
   base: anchor.web3.PublicKey,
-  quote: anchor.web3.PublicKey,
+  quote: anchor.web3.PublicKey
 ): Promise<anchor.web3.PublicKey> {
   const [orderBook] = anchor.web3.PublicKey.findProgramAddressSync(
     [
@@ -348,7 +360,7 @@ async function initializeOrderBook(
     clobProgram.programId
   );
 
-  if (await clobProgram.account.orderBook.fetchNullable(orderBook) != null) {
+  if ((await clobProgram.account.orderBook.fetchNullable(orderBook)) != null) {
     return orderBook;
   }
 
@@ -379,8 +391,10 @@ async function initializeOrderBook(
   return orderBook;
 }
 
-
-async function mintConditionalTokens(amount: anchor.BN, vault: anchor.web3.PublicKey) {
+async function mintConditionalTokens(
+  amount: anchor.BN,
+  vault: anchor.web3.PublicKey
+) {
   const [depositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("deposit_slip"),
@@ -390,7 +404,9 @@ async function mintConditionalTokens(amount: anchor.BN, vault: anchor.web3.Publi
     vaultProgram.programId
   );
 
-  if (await vaultProgram.account.depositSlip.fetchNullable(depositSlip) == null) {
+  if (
+    (await vaultProgram.account.depositSlip.fetchNullable(depositSlip)) == null
+  ) {
     await vaultProgram.methods
       .initializeDepositSlip(payer.publicKey)
       .accounts({
@@ -402,8 +418,18 @@ async function mintConditionalTokens(amount: anchor.BN, vault: anchor.web3.Publi
 
   const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
 
-  const underlyingAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedVault.underlyingTokenMint, payer.publicKey);
-  const conditionalAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedVault.conditionalTokenMint, payer.publicKey);
+  const underlyingAcc = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedVault.underlyingTokenMint,
+    payer.publicKey
+  );
+  const conditionalAcc = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedVault.conditionalTokenMint,
+    payer.publicKey
+  );
 
   await vaultProgram.methods
     .mintConditionalTokens(amount)
@@ -423,35 +449,49 @@ async function placeOrdersOnBothSides(twapMarket: any) {
   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
 
   let buyArgs: PlaceOrderArgs = {
-      side: Side.Bid,
-      priceLots: new BN(9_000), // 1 USDC for 1 META
-      maxBaseLots: new BN(10),
-      maxQuoteLotsIncludingFees: new BN(10 * 10_000), // 10 USDC
-      clientOrderId: new BN(1),
-      orderType: OrderType.Limit,
-      expiryTimestamp: new BN(0),
-      selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-      limit: 255,
-    };
+    side: Side.Bid,
+    priceLots: new BN(9_000), // 1 USDC for 1 META
+    maxBaseLots: new BN(10),
+    maxQuoteLotsIncludingFees: new BN(10 * 10_000), // 10 USDC
+    clientOrderId: new BN(1),
+    orderType: OrderType.Limit,
+    expiryTimestamp: new BN(0),
+    selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+    limit: 255,
+  };
 
   let sellArgs: PlaceOrderArgs = {
-      side: Side.Ask,
-      priceLots: new BN(12_000), // 1.2 USDC for 1 META
-      maxBaseLots: new BN(10),
-      maxQuoteLotsIncludingFees: new BN(10 * 12_000),
-      clientOrderId: new BN(2),
-      orderType: OrderType.Limit,
-      expiryTimestamp: new BN(0),
-      selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-      limit: 255,
-    };
+    side: Side.Ask,
+    priceLots: new BN(12_000), // 1.2 USDC for 1 META
+    maxBaseLots: new BN(10),
+    maxQuoteLotsIncludingFees: new BN(10 * 12_000),
+    clientOrderId: new BN(2),
+    orderType: OrderType.Limit,
+    expiryTimestamp: new BN(0),
+    selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+    limit: 255,
+  };
 
   const storedMarket = await openbook.getMarket(market);
-  let openOrdersAccount = await openbook.getOrCreateOpenOrders(market, new BN(4), "oo");
+  let openOrdersAccount = await openbook.getOrCreateOpenOrders(
+    market,
+    new BN(4),
+    "oo"
+  );
   // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
 
-  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.baseMint, payer.publicKey);
-  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.quoteMint, payer.publicKey);
+  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.baseMint,
+    payer.publicKey
+  );
+  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.quoteMint,
+    payer.publicKey
+  );
 
   await openbookTwap.methods
     .placeOrder(buyArgs)
@@ -481,30 +521,48 @@ async function placeOrdersOnBothSides(twapMarket: any) {
       twapMarket,
       openbookProgram: OPENBOOK_PROGRAM_ID,
     })
-    .rpc()
+    .rpc();
 }
 
 async function placeTakeOrder(twapMarket: any) {
   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
   const storedMarket = await openbook.getMarket(market);
 
-  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.baseMint, payer.publicKey);
-  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedMarket.quoteMint, payer.publicKey);
+  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.baseMint,
+    payer.publicKey
+  );
+  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.quoteMint,
+    payer.publicKey
+  );
 
   let buyArgs: PlaceOrderArgs = {
-      side: Side.Bid,
-      priceLots: new BN(13_000), // 1 USDC for 1 META
-      maxBaseLots: new BN(1),
-      maxQuoteLotsIncludingFees: new BN(1 * 13_000), // 10 USDC
-      clientOrderId: new BN(1),
-      orderType: OrderType.Market,
-      expiryTimestamp: new BN(0),
-      selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-      limit: 255,
+    side: Side.Bid,
+    priceLots: new BN(13_000), // 1 USDC for 1 META
+    maxBaseLots: new BN(1),
+    maxQuoteLotsIncludingFees: new BN(1 * 13_000), // 10 USDC
+    clientOrderId: new BN(1),
+    orderType: OrderType.Market,
+    expiryTimestamp: new BN(0),
+    selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+    limit: 255,
   };
 
-  console.log("base balance before:", (await token.getAccount(provider.connection, userBaseAccount.address)).amount);
-  console.log("quote balance before", (await token.getAccount(provider.connection, userQuoteAccount.address)).amount);
+  console.log(
+    "base balance before:",
+    (await token.getAccount(provider.connection, userBaseAccount.address))
+      .amount
+  );
+  console.log(
+    "quote balance before",
+    (await token.getAccount(provider.connection, userQuoteAccount.address))
+      .amount
+  );
 
   let tx = await openbookTwap.methods
     .placeTakeOrder(buyArgs)
@@ -523,30 +581,45 @@ async function placeTakeOrder(twapMarket: any) {
       openbookProgram: OPENBOOK_PROGRAM_ID,
     })
     .transaction();
-    
+
   tx.feePayer = payer.publicKey;
-  
-  const sim = await provider.connection.simulateTransaction(tx, undefined, [userBaseAccount.address, userQuoteAccount.address]);
+
+  const sim = await provider.connection.simulateTransaction(tx, undefined, [
+    userBaseAccount.address,
+    userQuoteAccount.address,
+  ]);
   // console.log(sim.value.accounts[0])
   const data = sim.value.accounts[0].data;
   const buf = Buffer.from(data[0], data[1] as BufferEncoding);
 
-  console.log((token.unpackAccount(userBaseAccount.address, {
-    data: Buffer.from(Buffer.from(sim.value.accounts[0].data[0], sim.value.accounts[0].data[1] as BufferEncoding)),
-    executable: false,
-    lamports: 0,
-    owner: token.TOKEN_PROGRAM_ID,
-  })).amount);
+  console.log(
+    token.unpackAccount(userBaseAccount.address, {
+      data: Buffer.from(
+        Buffer.from(
+          sim.value.accounts[0].data[0],
+          sim.value.accounts[0].data[1] as BufferEncoding
+        )
+      ),
+      executable: false,
+      lamports: 0,
+      owner: token.TOKEN_PROGRAM_ID,
+    }).amount
+  );
 
-  console.log((token.unpackAccount(userQuoteAccount.address, {
-    data: Buffer.from(Buffer.from(sim.value.accounts[1].data[0], sim.value.accounts[1].data[1] as BufferEncoding)),
-    executable: false,
-    lamports: 0,
-    owner: token.TOKEN_PROGRAM_ID,
-  })).amount);
-
+  console.log(
+    token.unpackAccount(userQuoteAccount.address, {
+      data: Buffer.from(
+        Buffer.from(
+          sim.value.accounts[1].data[0],
+          sim.value.accounts[1].data[1] as BufferEncoding
+        )
+      ),
+      executable: false,
+      lamports: 0,
+      owner: token.TOKEN_PROGRAM_ID,
+    }).amount
+  );
 }
-
 
 async function main() {
   let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
@@ -557,17 +630,41 @@ async function main() {
   //await initializeProposal();
   const storedDAO = await autocratProgram.account.dao.fetch(dao);
 
-  const usdcAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedDAO.usdcMint, payer.publicKey);
-  const metaAcc = await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, storedDAO.metaMint, payer.publicKey);
+  const usdcAcc = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedDAO.usdcMint,
+    payer.publicKey
+  );
+  const metaAcc = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedDAO.metaMint,
+    payer.publicKey
+  );
 
-  await token.mintTo(provider.connection, payer, storedDAO.usdcMint, usdcAcc.address, payer, 1_000n * 1_000_000n);
-  await token.mintTo(provider.connection, payer, storedDAO.metaMint, metaAcc.address, payer, 1_000n * 1_000_000_000n);
+  await token.mintTo(
+    provider.connection,
+    payer,
+    storedDAO.usdcMint,
+    usdcAcc.address,
+    payer,
+    1_000n * 1_000_000n
+  );
+  await token.mintTo(
+    provider.connection,
+    payer,
+    storedDAO.metaMint,
+    metaAcc.address,
+    payer,
+    1_000n * 1_000_000_000n
+  );
 
   // await initializeProposal();
-  
+
   let proposal = (await autocratProgram.account.proposal.all())[0];
   // console.log(proposal)
-  
+
   // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.basePassVault);
   // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.baseFailVault);
   // await mintConditionalTokens(new BN(100 * 1_000_000), proposal.account.quotePassVault);
@@ -581,7 +678,8 @@ async function main() {
   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
   let storedMarket = await openbook.getMarket(market);
 
-  let x = await openbookTwap.methods.getBestBidAndAsk()
+  let x = await openbookTwap.methods
+    .getBestBidAndAsk()
     .accounts({
       market,
       bids: storedMarket.bids,
@@ -591,12 +689,8 @@ async function main() {
 
   console.log(x[0].toString(), x[1].toString());
 
-  
   // // console.log(await openbook.getLeafNodes(await openbook.getBookSide(storedMarket.asks)));
   // console.log((await openbook.getBookSide(storedMarket.asks)).nodes.nodes[0]);
-
-
-
 }
 
 main();

@@ -401,7 +401,7 @@ dependencies = [
  "blake3",
  "conditional_vault",
  "openbook-twap",
- "openbook-v2",
+ "openbook-v2 0.1.0 (git+https://github.com/openbook-dex/openbook-v2.git)",
  "solana-program",
  "solana-security-txt",
 ]
@@ -1524,21 +1524,43 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "openbook-twap"
-version = "0.1.0"
-source = "git+https://github.com/metaDAOproject/openbook-twap.git#0346585b680ed816339b72e56fea1d8a72ff470c"
+version = "1.0.0"
+source = "git+https://github.com/metaDAOproject/openbook-twap.git#f572bb8c08b38b9cc5d7bce1b855e5553c2a3465"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
  "num",
- "openbook-v2",
+ "openbook-v2 0.1.0 (git+https://github.com/openbook-dex/openbook-v2.git?tag=v1.0)",
  "solana-program",
+ "solana-security-txt",
 ]
 
 [[package]]
 name = "openbook-v2"
 version = "0.1.0"
-source = "git+https://github.com/openbook-dex/openbook-v2.git#36206abd373adfa8769b5d1a2af7aa04d24d8c3d"
+source = "git+https://github.com/openbook-dex/openbook-v2.git?tag=v1.0#7873553af28fd183b5645944907fab62a4704984"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "arrayref",
+ "bytemuck",
+ "derivative",
+ "fixed",
+ "itertools",
+ "num_enum 0.5.11",
+ "pyth-sdk-solana",
+ "raydium-amm-v3",
+ "solana-program",
+ "static_assertions",
+ "switchboard-program",
+ "switchboard-v2",
+]
+
+[[package]]
+name = "openbook-v2"
+version = "0.1.0"
+source = "git+https://github.com/openbook-dex/openbook-v2.git#64861969b57b7d1d3429d93a6951aa155826293d"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -2022,9 +2044,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.107"
+version = "1.0.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b420ce6e3d8bd882e9b243c6eed35dbc9a6110c9769e74b584e0d68d1f20c65"
+checksum = "3d1c7e3eac408d115102c4c24ad393e0821bb3a5df4d506a80f85f7a742a526b"
 dependencies = [
  "itoa",
  "ryu",
@@ -3062,18 +3084,18 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.7.18"
+version = "0.7.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ede7d7c7970ca2215b8c1ccf4d4f354c4733201dfaaba72d44ae5b37472e4901"
+checksum = "dd66a62464e3ffd4e37bd09950c2b9dd6c4f8767380fabba0d523f9a775bc85a"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.7.18"
+version = "0.7.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b27b1bb92570f989aac0ab7e9cbfbacdd65973f7ee920d9f0e71ebac878fd0b"
+checksum = "255c4596d41e6916ced49cfafea18727b24d67878fa180ddfd69b9df34fd1726"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -3,7 +3,10 @@ import * as token from "@solana/spl-token";
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
 
-import { IDL as ConditionalVaultIDL, ConditionalVault } from "../target/types/conditional_vault";
+import {
+  IDL as ConditionalVaultIDL,
+  ConditionalVault,
+} from "../target/types/conditional_vault";
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
@@ -24,7 +27,7 @@ async function main() {
   console.log(provider.wallet.publicKey);
   const settlementAuthority = provider.wallet.publicKey;
 
-  const payer = provider.wallet['payer'];
+  const payer = provider.wallet["payer"];
 
   const underlyingTokenMint = await token.createMint(
     provider.connection,
@@ -69,11 +72,8 @@ async function main() {
     .signers([conditionalTokenMintKeypair])
     .rpc();
 
-  const storedVault = await vaultProgram.account.conditionalVault.fetch(
-    vault
-  );
+  const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
   console.log(storedVault);
-
 
   //await vaultProgram.methods.initializeConditionalVault
 }
@@ -81,4 +81,3 @@ async function main() {
 main();
 
 //vaultProgram.methods.initializeVault
-

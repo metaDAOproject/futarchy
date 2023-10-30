@@ -12,11 +12,7 @@ const CLOB_PROGRAM_ID = new PublicKey(
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
-const clobProgram = new Program<Clob>(
-  ClobIDL,
-  CLOB_PROGRAM_ID,
-  provider
-);
+const clobProgram = new Program<Clob>(ClobIDL, CLOB_PROGRAM_ID, provider);
 
 const [globalState] = PublicKey.findProgramAddressSync(
   [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
@@ -30,9 +26,7 @@ async function main() {
   //await initializeGlobalState(provider.wallet.publicKey);
 }
 
-async function initializeGlobalState(
-  admin: any
-) {
+async function initializeGlobalState(admin: any) {
   await clobProgram.methods
     .initializeGlobalState(admin)
     .accounts({

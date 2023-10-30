@@ -302,6 +302,10 @@ pub mod autocrat_v0 {
         let threshold = (fail_market_twap
             * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
             / MAX_BPS as u128;
+        
+        msg!("fail_market_twap: {}", fail_market_twap);
+        msg!("threshold: {}", threshold);
+        msg!("pass_market_twap: {}", pass_market_twap);
 
         if pass_market_twap > threshold {
             proposal.state = ProposalState::Passed;

@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
-import { BN, Program, web3 } from "@coral-xyz/anchor"
-const { PublicKey, Keypair } = web3
+import { BN, Program, web3 } from "@coral-xyz/anchor";
+const { PublicKey, Keypair } = web3;
 import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 
@@ -103,7 +103,8 @@ describe("conditional_vault", async function () {
 
   describe("#initialize_conditional_vault", async function () {
     it("initializes vaults", async function () {
-      let conditionalOnFinalizeTokenMintKeypair = anchor.web3.Keypair.generate();
+      let conditionalOnFinalizeTokenMintKeypair =
+        anchor.web3.Keypair.generate();
       let conditionalOnRevertTokenMintKeypair = anchor.web3.Keypair.generate();
 
       await vaultProgram.methods
@@ -112,14 +113,19 @@ describe("conditional_vault", async function () {
           vault,
           underlyingTokenMint,
           vaultUnderlyingTokenAccount,
-          conditionalOnFinalizeTokenMint: conditionalOnFinalizeTokenMintKeypair.publicKey,
-          conditionalOnRevertTokenMint: conditionalOnRevertTokenMintKeypair.publicKey,
+          conditionalOnFinalizeTokenMint:
+            conditionalOnFinalizeTokenMintKeypair.publicKey,
+          conditionalOnRevertTokenMint:
+            conditionalOnRevertTokenMintKeypair.publicKey,
           payer: payer.publicKey,
           tokenProgram: token.TOKEN_PROGRAM_ID,
           associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
-        .signers([conditionalOnFinalizeTokenMintKeypair, conditionalOnRevertTokenMintKeypair])
+        .signers([
+          conditionalOnFinalizeTokenMintKeypair,
+          conditionalOnRevertTokenMintKeypair,
+        ])
         .rpc();
 
       const storedVault = await vaultProgram.account.conditionalVault.fetch(
@@ -145,7 +151,8 @@ describe("conditional_vault", async function () {
         )
       );
 
-      conditionalOnFinalizeMint = conditionalOnFinalizeTokenMintKeypair.publicKey;
+      conditionalOnFinalizeMint =
+        conditionalOnFinalizeTokenMintKeypair.publicKey;
       conditionalOnRevertMint = conditionalOnRevertTokenMintKeypair.publicKey;
     });
   });
@@ -272,7 +279,7 @@ describe("conditional_vault", async function () {
         bob,
         vault,
         banksClient,
-        nonOwnedUserUnderlyingAccount,
+        nonOwnedUserUnderlyingAccount
       ).then(callbacks[0], callbacks[1]);
     });
 
@@ -300,7 +307,7 @@ describe("conditional_vault", async function () {
         nonOwnedUserConditionalAccount
       ).then(callbacks[0], callbacks[1]);
     });
-    
+
     it("checks that `user_conditional_on_revert_token_account` is owned by the user", async function () {
       const nonOwnedUserConditionalAccount = await createAccount(
         banksClient,
@@ -354,7 +361,7 @@ describe("conditional_vault", async function () {
         vault,
         banksClient,
         undefined,
-        wrongMintBobConditionalTokenAccount,
+        wrongMintBobConditionalTokenAccount
       ).then(callbacks[0], callbacks[1]);
     });
 
@@ -395,7 +402,7 @@ describe("conditional_vault", async function () {
         bob,
         vault,
         banksClient,
-        wrongMintBobUnderlyingAccount,
+        wrongMintBobUnderlyingAccount
       ).then(callbacks[0], callbacks[1]);
     });
 
@@ -563,7 +570,7 @@ describe("conditional_vault", async function () {
         banksClient
       );
     });
-    
+
     it("allows users to redeem conditional-on-finalize tokens for underlying tokens when a vault has been finalized", async function () {
       await vaultProgram.methods
         .settleConditionalVault({ finalized: {} })
@@ -611,7 +618,6 @@ describe("conditional_vault", async function () {
         banksClient
       );
     });
-
 
     it("prevents users from redeeming conditional tokens while a vault is still active", async function () {
       const callbacks = expectError(
@@ -712,14 +718,19 @@ async function generateRandomVault(
       vault,
       underlyingTokenMint,
       vaultUnderlyingTokenAccount,
-      conditionalOnFinalizeTokenMint: conditionalOnFinalizeTokenMintKeypair.publicKey,
-      conditionalOnRevertTokenMint: conditionalOnRevertTokenMintKeypair.publicKey,
+      conditionalOnFinalizeTokenMint:
+        conditionalOnFinalizeTokenMintKeypair.publicKey,
+      conditionalOnRevertTokenMint:
+        conditionalOnRevertTokenMintKeypair.publicKey,
       payer: payer.publicKey,
       tokenProgram: token.TOKEN_PROGRAM_ID,
       associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
-    .signers([conditionalOnFinalizeTokenMintKeypair, conditionalOnRevertTokenMintKeypair])
+    .signers([
+      conditionalOnFinalizeTokenMintKeypair,
+      conditionalOnRevertTokenMintKeypair,
+    ])
     .rpc();
 
   return [vault, underlyingMintAuthority, settlementAuthority];
@@ -735,7 +746,7 @@ export async function mintConditionalTokens(
   userConditionalOnFinalizeTokenAccount?: PublicKey,
   userConditionalOnRevertTokenAccount?: PublicKey,
   vaultUnderlyingTokenAccount?: PublicKey,
-  conditionalOnFinalizeTokenMint?: PublicKey,
+  conditionalOnFinalizeTokenMint?: PublicKey
 ) {
   const storedVault = await program.account.conditionalVault.fetch(vault);
   if (!userUnderlyingTokenAccount) {
@@ -842,7 +853,7 @@ export async function redeemConditionalTokens(
   userUnderlyingTokenAccount: PublicKey,
   vaultUnderlyingTokenAccount: PublicKey,
   vault: PublicKey,
-  banksClient: BanksClient,
+  banksClient: BanksClient
 ) {
   const vaultUnderlyingTokenAccountBefore = await getAccount(
     banksClient,
@@ -905,15 +916,12 @@ export async function redeemConditionalTokens(
 
   assert.equal(
     vaultUnderlyingTokenAccountAfter.amount,
-    vaultUnderlyingTokenAccountBefore.amount -
-      BigInt(amount)
+    vaultUnderlyingTokenAccountBefore.amount - BigInt(amount)
   );
   assert.equal(
     userUnderlyingTokenAccountAfter.amount,
-    userUnderlyingTokenAccountBefore.amount +
-      BigInt(amount)
+    userUnderlyingTokenAccountBefore.amount + BigInt(amount)
   );
   assert.equal(userConditionalOnFinalizeTokenAccountAfter.amount, BigInt(0));
   assert.equal(userConditionalOnRevertTokenAccountAfter.amount, BigInt(0));
 }
-
