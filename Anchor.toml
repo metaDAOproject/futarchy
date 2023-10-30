@@ -7,6 +7,13 @@ autocrat_v0 = "GLmTsw5A8DLCThjNgtMBKVDAG8EZYDVMic1pcjhGLiM1"
 conditional_vault = "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
 clob = "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 
+[[test.genesis]]
+address = "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
+program = "./tests/fixtures/openbook_v2.so"
+[[test.genesis]]
+address = "2qjEsiMtWxAdqUSdaGM28pJRMtodnnkHZEoadc6JcFCb"
+program = "./tests/fixtures/openbook_twap.so"
+
 [registry]
 url = "https://api.apr.dev"
 
