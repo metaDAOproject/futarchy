@@ -124,6 +124,8 @@ pub mod autocrat_v0 {
         let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
         let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
 
+        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
+
         require!(
             openbook_pass_market.base_mint == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
@@ -192,6 +194,21 @@ pub mod autocrat_v0 {
             openbook_pass_market.quote_lot_size == 100,
             AutocratError::InvalidMarket
         );
+        let clock = Clock::get()?;
+
+        let openbook_twap_pass_market = &ctx.accounts.openbook_twap_pass_market;
+        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
+
+        require!(
+            openbook_twap_pass_market.twap_oracle.initial_slot + 50
+                >= clock.slot,
+            AutocratError::TWAPMarketTooOld
+        );
+        require!(
+            openbook_twap_fail_market.twap_oracle.initial_slot + 50
+                >= clock.slot,
+            AutocratError::TWAPMarketTooOld
+        );
 
         let dao = &mut ctx.accounts.dao;
         let proposal = &mut ctx.accounts.proposal;
@@ -213,7 +230,6 @@ pub mod autocrat_v0 {
         proposal.quote_vault = ctx.accounts.quote_vault.key();
         proposal.base_vault = ctx.accounts.base_vault.key();
 
-        let clock = Clock::get()?;
 
         let slots_passed = clock.slot - dao.last_proposal_slot;
         let burn_amount = dao.base_burn_lamports.saturating_sub(
@@ -303,10 +319,6 @@ pub mod autocrat_v0 {
             * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
             / MAX_BPS as u128;
         
-        msg!("fail_market_twap: {}", fail_market_twap);
-        msg!("threshold: {}", threshold);
-        msg!("pass_market_twap: {}", pass_market_twap);
-
         if pass_market_twap > threshold {
             proposal.state = ProposalState::Passed;
 
@@ -496,6 +508,8 @@ pub enum AutocratError {
         "Either the `pass_market` or the `fail_market`'s tokens doesn't match the vaults supplied"
     )]
     InvalidMarket,
+    #[msg("`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`")]
+    TWAPMarketTooOld,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
     InvalidSettlementAuthority,
     #[msg("Proposal is too young to be executed or rejected")]
