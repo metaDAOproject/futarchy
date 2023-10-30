@@ -11,7 +11,7 @@ clob = "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 address = "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 program = "./tests/fixtures/openbook_v2.so"
 [[test.genesis]]
-address = "2qjEsiMtWxAdqUSdaGM28pJRMtodnnkHZEoadc6JcFCb"
+address = "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
 program = "./tests/fixtures/openbook_twap.so"
 
 [registry]

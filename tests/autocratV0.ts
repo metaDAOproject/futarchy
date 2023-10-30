@@ -73,10 +73,6 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
 );
 
-const CLOB_PROGRAM_ID = new PublicKey(
-  "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
-);
-
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
   "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
 );
