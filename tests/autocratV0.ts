@@ -9,8 +9,6 @@ import {
 import {
   OpenBookV2Client,
   IDL,
-  BooksideSpace,
-  EventHeapSpace,
   PlaceOrderArgs,
   Side,
   OrderType,
@@ -32,15 +30,12 @@ import { expectError } from "./utils/utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
-import { Clob } from "../target/types/clob";
 import { OpenbookTwap } from "./fixtures/openbook_twap";
 
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
-const ClobIDL: Clob = require("../target/idl/clob.json");
-//const OpenBookTWAP
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
@@ -102,9 +97,6 @@ describe("autocrat_v0", async function () {
     META,
     USDC,
     vaultProgram,
-    clobProgram,
-    clobAdmin,
-    clobGlobalState,
     openbook,
     openbookTwap;
 
@@ -146,24 +138,7 @@ describe("autocrat_v0", async function () {
       provider
     );
 
-    clobProgram = new Program<Clob>(ClobIDL, CLOB_PROGRAM_ID, provider);
-
     payer = autocrat.provider.wallet.payer;
-
-    [clobGlobalState] = anchor.web3.PublicKey.findProgramAddressSync(
-      [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-      clobProgram.programId
-    );
-    clobAdmin = anchor.web3.Keypair.generate();
-
-    await clobProgram.methods
-      .initializeGlobalState(clobAdmin.publicKey)
-      .accounts({
-        globalState: clobGlobalState,
-        payer: payer.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .rpc();
 
     USDC = await createMint(
       banksClient,
@@ -249,7 +224,6 @@ describe("autocrat_v0", async function () {
         instruction,
         vaultProgram,
         dao,
-        clobProgram,
         context,
         payer,
         openbook,
@@ -318,7 +292,6 @@ describe("autocrat_v0", async function () {
         instruction,
         vaultProgram,
         dao,
-        clobProgram,
         context,
         payer,
         openbook,
@@ -1301,7 +1274,6 @@ async function initializeProposal(
   ix: ProposalInstruction,
   vaultProgram: Program<ConditionalVault>,
   dao: PublicKey,
-  clobProgram: Program<Clob>,
   context: ProgramTestContext,
   payer: Keypair,
   openbook: OpenBookV2Client,
