@@ -5,7 +5,7 @@
     },
     "dependencies": {
         "@coral-xyz/anchor": "0.28.1-beta.2",
-        "@openbook-dex/openbook-v2": "^0.0.7",
+        "@openbook-dex/openbook-v2": "^0.0.11",
         "@solana/spl-token": "^0.3.0",
         "anchor-bankrun": "^0.2.0",
         "solana-bankrun": "^0.2.0",
