@@ -435,7 +435,6 @@ pub struct InitializeProposal<'info> {
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
     #[account(mut, 
-        has_one = proposer,
         has_one = base_vault,
         has_one = quote_vault,
         has_one = openbook_twap_pass_market,
@@ -457,7 +456,6 @@ pub struct FinalizeProposal<'info> {
         mut
     )]
     pub dao_treasury: UncheckedAccount<'info>,
-    pub proposer: Signer<'info>,
 }
 
 #[derive(Accounts)]

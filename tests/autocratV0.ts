@@ -246,10 +246,8 @@ describe("autocrat_v0", async function () {
       openbookFailMarket,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
-      basePassVault,
-      quotePassVault,
-      baseFailVault,
-      quoteFailVault,
+      baseVault,
+      quoteVault,
       basePassVaultUnderlyingTokenAccount,
       basePassConditionalTokenMint,
       mm0,
@@ -259,7 +257,6 @@ describe("autocrat_v0", async function () {
       aliceUnderlyingQuoteTokenAccount,
       aliceUnderlyingBaseTokenAccount,
       aliceBasePassConditionalTokenAccount,
-      aliceQuotePassConditionalTokenAccount,
       newPassThresholdBps;
 
     beforeEach(async function () {
@@ -302,10 +299,8 @@ describe("autocrat_v0", async function () {
         openbookFailMarket,
         openbookTwapPassMarket,
         openbookTwapFailMarket,
-        basePassVault,
-        quotePassVault,
-        baseFailVault,
-        quoteFailVault,
+        baseVault,
+        quoteVault,
       } = await autocrat.account.proposal.fetch(proposal));
 
       [mm0] = await generateMarketMaker(
@@ -330,39 +325,22 @@ describe("autocrat_v0", async function () {
         context
       );
 
+      // alice wants to buy META if the proposal passes, so she locks up USDC
+      // and swaps her pUSDC for pMETA
       alice = Keypair.generate();
 
-      [aliceQuotePassDepositSlip] =
-        anchor.web3.PublicKey.findProgramAddressSync(
-          [
-            anchor.utils.bytes.utf8.encode("deposit_slip"),
-            quotePassVault.toBuffer(),
-            alice.publicKey.toBuffer(),
-          ],
-          vaultProgram.programId
-        );
-
-      await vaultProgram.methods
-        .initializeDepositSlip(alice.publicKey)
-        .accounts({
-          depositSlip: aliceQuotePassDepositSlip,
-          vault: quotePassVault,
-          payer: payer.publicKey,
-        })
-        .rpc();
-
-      const storedQuotePassVault =
-        await vaultProgram.account.conditionalVault.fetch(quotePassVault);
-      const quotePassVaultUnderlyingTokenAccount =
-        storedQuotePassVault.underlyingTokenAccount;
+      const storedQuoteVault =
+        await vaultProgram.account.conditionalVault.fetch(quoteVault);
+      const quoteVaultUnderlyingTokenAccount =
+        storedQuoteVault.underlyingTokenAccount;
       const quotePassConditionalTokenMint =
-        storedQuotePassVault.conditionalTokenMint;
+        storedQuoteVault.conditionalOnFinalizeTokenMint;
+      const quoteFailConditionalTokenMint =
+        storedQuoteVault.conditionalOnRevertTokenMint;
 
-      const storedBasePassVault =
-        await vaultProgram.account.conditionalVault.fetch(basePassVault);
-      basePassVaultUnderlyingTokenAccount =
-        storedBasePassVault.underlyingTokenAccount;
-      basePassConditionalTokenMint = storedBasePassVault.conditionalTokenMint;
+      const storedBaseVault =
+        await vaultProgram.account.conditionalVault.fetch(baseVault);
+      basePassConditionalTokenMint = storedBaseVault.conditionalOnFinalizeTokenMint;
 
       aliceUnderlyingQuoteTokenAccount = await createAssociatedTokenAccount(
         banksClient,
@@ -377,27 +355,27 @@ describe("autocrat_v0", async function () {
         alice.publicKey
       );
 
-      await mintToOverride(context, aliceUnderlyingQuoteTokenAccount, 10_000n);
+      await mintToOverride(context, aliceUnderlyingQuoteTokenAccount, 10_000n * 1_000_000n);
 
-      aliceQuotePassConditionalTokenAccount =
         await createAssociatedTokenAccount(
           banksClient,
           payer,
           quotePassConditionalTokenMint,
           alice.publicKey
         );
+        await createAssociatedTokenAccount(
+          banksClient,
+          payer,
+          quoteFailConditionalTokenMint,
+          alice.publicKey
+        );
 
       await mintConditionalTokens(
         vaultProgram,
-        10_000,
+        10_000 * 1_000_000,
         alice,
-        aliceQuotePassDepositSlip,
-        quotePassVault,
-        quotePassVaultUnderlyingTokenAccount,
-        aliceUnderlyingQuoteTokenAccount,
-        quotePassConditionalTokenMint,
-        aliceQuotePassConditionalTokenAccount,
-        banksClient
+        quoteVault,
+        banksClient,
       );
 
       aliceBasePassConditionalTokenAccount = await createAssociatedTokenAccount(
@@ -408,7 +386,7 @@ describe("autocrat_v0", async function () {
       );
     });
 
-    it("doesn't finalize proposals that are too young", async function () {
+    it.only("doesn't finalize proposals that are too young", async function () {
       const callbacks = expectError(
         autocrat,
         "ProposalTooYoung",
@@ -419,21 +397,19 @@ describe("autocrat_v0", async function () {
         .finalizeProposal()
         .accounts({
           proposal,
-          passMarket,
-          failMarket,
-          basePassVault,
-          quotePassVault,
-          baseFailVault,
-          quoteFailVault,
-          vaultProgram: vaultProgram.programId,
+          openbookTwapPassMarket,
+          openbookTwapFailMarket,
           dao,
+          baseVault,
+          quoteVault,
+          vaultProgram: vaultProgram.programId,
           daoTreasury,
         })
         .rpc()
         .then(callbacks[0], callbacks[1]);
     });
 
-    it.only("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
+    it("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
 
       // pass market should be higher
@@ -1042,42 +1018,13 @@ async function generateMarketMaker(
     banksClient
   );
 
-  console.log(passMarket);
-
   let openOrders = await openbook.createOpenOrders(
+    payer,
     passMarket,
     new BN(1),
-    'oo'
+    'oo',
+    mm
   );
-  assert.fail();
-
-  await program.methods
-    .addMarketMaker(mm.publicKey, index)
-    .accounts({
-      orderBook,
-      payer: payer.publicKey,
-      globalState,
-      admin: admin.publicKey,
-    })
-    .rpc();
-
-  await program.methods
-    .topUpBalance(
-      index,
-      new anchor.BN(1_000_000_000),
-      new anchor.BN(1_000_000_000)
-    )
-    .accounts({
-      orderBook,
-      authority: mm.publicKey,
-      baseFrom: mmBase,
-      quoteFrom: mmQuote,
-      baseVault: storedOrderBook.baseVault,
-      quoteVault: storedOrderBook.quoteVault,
-      tokenProgram: token.TOKEN_PROGRAM_ID,
-    })
-    .signers([mm])
-    .rpc();
 
   return [mm];
 }
