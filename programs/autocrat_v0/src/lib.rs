@@ -24,7 +24,7 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("GLmTsw5A8DLCThjNgtMBKVDAG8EZYDVMic1pcjhGLiM1");
+declare_id!("meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi");
 
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
@@ -123,8 +123,6 @@ pub mod autocrat_v0 {
     ) -> Result<()> {
         let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
         let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
-
-        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
 
         require!(
             openbook_pass_market.base_mint

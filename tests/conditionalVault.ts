@@ -28,7 +28,7 @@ export type Signer = anchor.web3.Signer;
 export type Keypair = anchor.web3.Keypair;
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
+  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 );
 
 export enum VaultStatus {
@@ -54,8 +54,7 @@ describe("conditional_vault", async function () {
     vault,
     vaultUnderlyingTokenAccount,
     conditionalOnFinalizeMint,
-    conditionalOnRevertMint,
-    depositSlip;
+    conditionalOnRevertMint;
 
   before(async function () {
     context = await startAnchor("./", [], []);

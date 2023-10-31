@@ -66,11 +66,11 @@ import { open } from "fs";
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "GLmTsw5A8DLCThjNgtMBKVDAG8EZYDVMic1pcjhGLiM1"
+  "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
+  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 );
 
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
@@ -126,7 +126,6 @@ describe("autocrat_v0", async function () {
       OPENBOOK_TWAP_PROGRAM_ID,
       provider
     );
-    //console.log(openbookTwap);
 
     vaultProgram = new Program<ConditionalVault>(
       ConditionalVaultIDL,
@@ -230,7 +229,6 @@ describe("autocrat_v0", async function () {
 
       // two days, so proposer should burn 30 SOL
       assert(balanceAfter < balanceBefore - 1_000_000_000n * 30n);
-      console.log(balanceAfter);
 
       assert(balanceAfter > balanceBefore - 1_000_000_000n * 35n);
     });
@@ -596,9 +594,6 @@ describe("autocrat_v0", async function () {
         limit: 255,
       };
 
-      console.log(await getAccount(banksClient, storedPassMarket.marketBaseVault));
-      console.log(OPENBOOK_PROGRAM_ID)
-
       await openbookTwap.methods
         .placeTakeOrder(takeBuyArgs)
         .accountsStrict({
@@ -935,9 +930,6 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-
-      console.log(await getAccount(banksClient, storedPassMarket.marketBaseVault));
-      console.log(OPENBOOK_PROGRAM_ID)
 
       await openbookTwap.methods
         .placeTakeOrder(takeBuyArgs)

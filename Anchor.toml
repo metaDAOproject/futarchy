@@ -3,9 +3,8 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-autocrat_v0 = "GLmTsw5A8DLCThjNgtMBKVDAG8EZYDVMic1pcjhGLiM1"
-conditional_vault = "4nCk4qKJSJf8pzJadMnr9LubA6Y7Zw3EacsVqH1TwVXH"
-clob = "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
+autocrat_v0 = "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
+conditional_vault = "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 
 [[test.genesis]]
 address = "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
