@@ -74,7 +74,7 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
 );
 
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
+  "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
 );
 
 const OPENBOOK_PROGRAM_ID = new PublicKey(
@@ -465,7 +465,7 @@ describe("autocrat_v0", async function () {
 
       let passSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(2000), // 0.2 USDC for 1 META
+        priceLots: new BN(1100), // 0.11 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -768,9 +768,9 @@ describe("autocrat_v0", async function () {
         banksClient
       );
 
-      // alice should have gained 1 META & lost 0.2 USDC
+      // alice should have gained 1 META & lost 0.11 USDC
       assert.equal((await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount, 1_000_000_000n);
-      assert.equal((await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount)).amount, (10_000n * 1_000_000n) - 200_000n);
+      assert.equal((await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount)).amount, (10_000n * 1_000_000n) - 110_000n);
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
@@ -801,7 +801,7 @@ describe("autocrat_v0", async function () {
 
       let passSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(2000), // 0.2 USDC for 1 META
+        priceLots: new BN(1100), // 0.11 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -813,7 +813,7 @@ describe("autocrat_v0", async function () {
       
       let failSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(5000), // 0.5 USDC for 1 META
+        priceLots: new BN(3200), // 0.32 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
