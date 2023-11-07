@@ -13,3 +13,5 @@ and what they do can be found at [themetadao.org](https://themetadao.org).
 | conditional_vault | v0  | vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe |
 
 All programs are immutable and verifiable, and have been verified with the OtterSec API.
+
+The META token mint is METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr.
