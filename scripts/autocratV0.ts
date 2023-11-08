@@ -447,181 +447,181 @@ async function initializeDAO(META: any, USDC: any) {
 //     .rpc();
 // }
 
-// async function placeOrdersOnBothSides(twapMarket: any) {
-//   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
+async function placeOrdersOnBothSides(twapMarket: any) {
+  let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
 
-//   let buyArgs: PlaceOrderArgs = {
-//     side: Side.Bid,
-//     priceLots: new BN(9_000), // 1 USDC for 1 META
-//     maxBaseLots: new BN(10),
-//     maxQuoteLotsIncludingFees: new BN(10 * 10_000), // 10 USDC
-//     clientOrderId: new BN(1),
-//     orderType: OrderType.Limit,
-//     expiryTimestamp: new BN(0),
-//     selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-//     limit: 255,
-//   };
+  let buyArgs: PlaceOrderArgs = {
+    side: Side.Bid,
+    priceLots: new BN(9_000), // 1 USDC for 1 META
+    maxBaseLots: new BN(10),
+    maxQuoteLotsIncludingFees: new BN(10 * 10_000), // 10 USDC
+    clientOrderId: new BN(1),
+    orderType: OrderType.Limit,
+    expiryTimestamp: new BN(0),
+    selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+    limit: 255,
+  };
 
-//   let sellArgs: PlaceOrderArgs = {
-//     side: Side.Ask,
-//     priceLots: new BN(12_000), // 1.2 USDC for 1 META
-//     maxBaseLots: new BN(10),
-//     maxQuoteLotsIncludingFees: new BN(10 * 12_000),
-//     clientOrderId: new BN(2),
-//     orderType: OrderType.Limit,
-//     expiryTimestamp: new BN(0),
-//     selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-//     limit: 255,
-//   };
+  let sellArgs: PlaceOrderArgs = {
+    side: Side.Ask,
+    priceLots: new BN(12_000), // 1.2 USDC for 1 META
+    maxBaseLots: new BN(10),
+    maxQuoteLotsIncludingFees: new BN(10 * 12_000),
+    clientOrderId: new BN(2),
+    orderType: OrderType.Limit,
+    expiryTimestamp: new BN(0),
+    selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+    limit: 255,
+  };
 
-//   const storedMarket = await openbook.getMarket(market);
-//   let openOrdersAccount = await openbook.getOrCreateOpenOrders(
-//     market,
-//     new BN(4),
-//     "oo"
-//   );
-//   // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
+  const storedMarket = await openbook.getMarket(market);
+  let openOrdersAccount = await openbook.getOrCreateOpenOrders(
+    market,
+    new BN(4),
+    "oo"
+  );
+  // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
 
-//   const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedMarket.baseMint,
-//     payer.publicKey
-//   );
-//   const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedMarket.quoteMint,
-//     payer.publicKey
-//   );
+  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.baseMint,
+    payer.publicKey
+  );
+  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.quoteMint,
+    payer.publicKey
+  );
 
-//   await openbookTwap.methods
-//     .placeOrder(buyArgs)
-//     .accounts({
-//       asks: storedMarket.asks,
-//       bids: storedMarket.bids,
-//       marketVault: storedMarket.marketQuoteVault,
-//       eventHeap: storedMarket.eventHeap,
-//       market,
-//       openOrdersAccount,
-//       userTokenAccount: userQuoteAccount.address,
-//       twapMarket,
-//       openbookProgram: OPENBOOK_PROGRAM_ID,
-//     })
-//     .rpc();
+  await openbookTwap.methods
+    .placeOrder(buyArgs)
+    .accounts({
+      asks: storedMarket.asks,
+      bids: storedMarket.bids,
+      marketVault: storedMarket.marketQuoteVault,
+      eventHeap: storedMarket.eventHeap,
+      market,
+      openOrdersAccount,
+      userTokenAccount: userQuoteAccount.address,
+      twapMarket,
+      openbookProgram: OPENBOOK_PROGRAM_ID,
+    })
+    .rpc();
 
-//   await openbookTwap.methods
-//     .placeOrder(sellArgs)
-//     .accounts({
-//       asks: storedMarket.asks,
-//       bids: storedMarket.bids,
-//       marketVault: storedMarket.marketBaseVault,
-//       eventHeap: storedMarket.eventHeap,
-//       market,
-//       openOrdersAccount,
-//       userTokenAccount: userBaseAccount.address,
-//       twapMarket,
-//       openbookProgram: OPENBOOK_PROGRAM_ID,
-//     })
-//     .rpc();
-// }
+  await openbookTwap.methods
+    .placeOrder(sellArgs)
+    .accounts({
+      asks: storedMarket.asks,
+      bids: storedMarket.bids,
+      marketVault: storedMarket.marketBaseVault,
+      eventHeap: storedMarket.eventHeap,
+      market,
+      openOrdersAccount,
+      userTokenAccount: userBaseAccount.address,
+      twapMarket,
+      openbookProgram: OPENBOOK_PROGRAM_ID,
+    })
+    .rpc();
+}
 
-// async function placeTakeOrder(twapMarket: any) {
-//   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
-//   const storedMarket = await openbook.getMarket(market);
+async function placeTakeOrder(twapMarket: any) {
+  let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
+  const storedMarket = await openbook.getMarket(market);
 
-//   const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedMarket.baseMint,
-//     payer.publicKey
-//   );
-//   const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedMarket.quoteMint,
-//     payer.publicKey
-//   );
+  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.baseMint,
+    payer.publicKey
+  );
+  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.quoteMint,
+    payer.publicKey
+  );
 
-//   let buyArgs: PlaceOrderArgs = {
-//     side: Side.Bid,
-//     priceLots: new BN(13_000), // 1 USDC for 1 META
-//     maxBaseLots: new BN(1),
-//     maxQuoteLotsIncludingFees: new BN(1 * 13_000), // 10 USDC
-//     clientOrderId: new BN(1),
-//     orderType: OrderType.Market,
-//     expiryTimestamp: new BN(0),
-//     selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-//     limit: 255,
-//   };
+  let buyArgs: PlaceOrderArgs = {
+    side: Side.Bid,
+    priceLots: new BN(13_000), // 1 USDC for 1 META
+    maxBaseLots: new BN(1),
+    maxQuoteLotsIncludingFees: new BN(1 * 13_000), // 10 USDC
+    clientOrderId: new BN(1),
+    orderType: OrderType.Market,
+    expiryTimestamp: new BN(0),
+    selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+    limit: 255,
+  };
 
-//   console.log(
-//     "base balance before:",
-//     (await token.getAccount(provider.connection, userBaseAccount.address))
-//       .amount
-//   );
-//   console.log(
-//     "quote balance before",
-//     (await token.getAccount(provider.connection, userQuoteAccount.address))
-//       .amount
-//   );
+  console.log(
+    "base balance before:",
+    (await token.getAccount(provider.connection, userBaseAccount.address))
+      .amount
+  );
+  console.log(
+    "quote balance before",
+    (await token.getAccount(provider.connection, userQuoteAccount.address))
+      .amount
+  );
 
-//   let tx = await openbookTwap.methods
-//     .placeTakeOrder(buyArgs)
-//     .accounts({
-//       asks: storedMarket.asks,
-//       bids: storedMarket.bids,
-//       eventHeap: storedMarket.eventHeap,
-//       market,
-//       marketAuthority: storedMarket.marketAuthority,
-//       marketBaseVault: storedMarket.marketBaseVault,
-//       marketQuoteVault: storedMarket.marketQuoteVault,
-//       userQuoteAccount: userQuoteAccount.address,
-//       userBaseAccount: userBaseAccount.address,
-//       referrerAccount: null,
-//       twapMarket,
-//       openbookProgram: OPENBOOK_PROGRAM_ID,
-//     })
-//     .transaction();
+  let tx = await openbookTwap.methods
+    .placeTakeOrder(buyArgs)
+    .accounts({
+      asks: storedMarket.asks,
+      bids: storedMarket.bids,
+      eventHeap: storedMarket.eventHeap,
+      market,
+      marketAuthority: storedMarket.marketAuthority,
+      marketBaseVault: storedMarket.marketBaseVault,
+      marketQuoteVault: storedMarket.marketQuoteVault,
+      userQuoteAccount: userQuoteAccount.address,
+      userBaseAccount: userBaseAccount.address,
+      referrerAccount: null,
+      twapMarket,
+      openbookProgram: OPENBOOK_PROGRAM_ID,
+    })
+    .transaction();
 
-//   tx.feePayer = payer.publicKey;
+  tx.feePayer = payer.publicKey;
 
-//   const sim = await provider.connection.simulateTransaction(tx, undefined, [
-//     userBaseAccount.address,
-//     userQuoteAccount.address,
-//   ]);
-//   // console.log(sim.value.accounts[0])
-//   const data = sim.value.accounts[0].data;
-//   const buf = Buffer.from(data[0], data[1] as BufferEncoding);
+  const sim = await provider.connection.simulateTransaction(tx, undefined, [
+    userBaseAccount.address,
+    userQuoteAccount.address,
+  ]);
+  // console.log(sim.value.accounts[0])
+  const data = sim.value.accounts[0].data;
+  const buf = Buffer.from(data[0], data[1] as BufferEncoding);
 
-//   console.log(
-//     token.unpackAccount(userBaseAccount.address, {
-//       data: Buffer.from(
-//         Buffer.from(
-//           sim.value.accounts[0].data[0],
-//           sim.value.accounts[0].data[1] as BufferEncoding
-//         )
-//       ),
-//       executable: false,
-//       lamports: 0,
-//       owner: token.TOKEN_PROGRAM_ID,
-//     }).amount
-//   );
+  console.log(
+    token.unpackAccount(userBaseAccount.address, {
+      data: Buffer.from(
+        Buffer.from(
+          sim.value.accounts[0].data[0],
+          sim.value.accounts[0].data[1] as BufferEncoding
+        )
+      ),
+      executable: false,
+      lamports: 0,
+      owner: token.TOKEN_PROGRAM_ID,
+    }).amount
+  );
 
-//   console.log(
-//     token.unpackAccount(userQuoteAccount.address, {
-//       data: Buffer.from(
-//         Buffer.from(
-//           sim.value.accounts[1].data[0],
-//           sim.value.accounts[1].data[1] as BufferEncoding
-//         )
-//       ),
-//       executable: false,
-//       lamports: 0,
-//       owner: token.TOKEN_PROGRAM_ID,
-//     }).amount
-//   );
-// }
+  console.log(
+    token.unpackAccount(userQuoteAccount.address, {
+      data: Buffer.from(
+        Buffer.from(
+          sim.value.accounts[1].data[0],
+          sim.value.accounts[1].data[1] as BufferEncoding
+        )
+      ),
+      executable: false,
+      lamports: 0,
+      owner: token.TOKEN_PROGRAM_ID,
+    }).amount
+  );
+}
 
 // async function oldMain() {
 //   let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
