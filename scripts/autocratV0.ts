@@ -157,16 +157,16 @@ async function createMint(
 //   return vault;
 // }
 
-// async function initializeDAO(META: any, USDC: any) {
-//   await autocratProgram.methods
-//     .initializeDao()
-//     .accounts({
-//       dao,
-//       metaMint: META,
-//       usdcMint: USDC,
-//     })
-//     .rpc();
-// }
+async function initializeDAO(META: any, USDC: any) {
+  await autocratProgram.methods
+    .initializeDao()
+    .accounts({
+      dao,
+      metaMint: META,
+      usdcMint: USDC,
+    })
+    .rpc();
+}
 
 // async function initializeProposal() {
 //   const accounts = [
@@ -703,85 +703,89 @@ async function main() {
   let metaKP = Keypair.fromSecretKey(new Uint8Array(
 [198,220,220,16,30,46,95,30,142,241,177,114,188,149,13,195,94,238,149,12,97,136,195,247,135,159,224,249,19,125,121,149,5,46,211,70,74,232,252,23,217,77,149,94,232,103,3,173,198,146,148,34,223,156,53,149,1,246,213,183,221,233,82,165]
   ));
-  console.log(metaKP.publicKey.toBase58())
-  // let META = await createMint(provider.publicKey, PublicKey.default, 9, metaKP);
+//   console.log(metaKP.publicKey.toBase58())
+//   // let META = await createMint(provider.publicKey, PublicKey.default, 9, metaKP);
   let META = metaKP.publicKey;
-  console.log(daoTreasury.toBase58());
+  let USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+//   console.log(daoTreasury.toBase58());
+  // let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
+  await initializeDAO(META, USDC);
+  // console.log(await autocratProgram.account.dao.fetch(dao));
 
-  const myMetaAcc = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    META,
-    payer.publicKey
-  );
+//   const myMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+//     provider.connection,
+//     payer,
+//     META,
+//     payer.publicKey
+//   );
 
-  const treasuryMetaAcc = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    META,
-    daoTreasury,
-    true
-  );
+//   const treasuryMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+//     provider.connection,
+//     payer,
+//     META,
+//     daoTreasury,
+//     true
+//   );
 
-  // await token.mintTo(
-  //   provider.connection,
-  //   payer,
-  //   META,
-  //   myMetaAcc.address,
-  //   payer,
-  //   10_000n * 1_000_000_000n
-  // );
+//   // await token.mintTo(
+//   //   provider.connection,
+//   //   payer,
+//   //   META,
+//   //   myMetaAcc.address,
+//   //   payer,
+//   //   10_000n * 1_000_000_000n
+//   // );
 
-  // await token.mintTo(
-  //   provider.connection,
-  //   payer,
-  //   META,
-  //   treasuryMetaAcc.address,
-  //   payer,
-  //   990_000n * 1_000_000_000n
-  // );
+//   // await token.mintTo(
+//   //   provider.connection,
+//   //   payer,
+//   //   META,
+//   //   treasuryMetaAcc.address,
+//   //   payer,
+//   //   990_000n * 1_000_000_000n
+//   // );
 
-  const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
-        {
-          metadata: PublicKey.findProgramAddressSync(
-            [
-              Buffer.from("metadata"),
-              PROGRAM_ID.toBuffer(),
-              META.toBuffer(),
-            ],
-            PROGRAM_ID,
-          )[0],
-          mint: META,
-          mintAuthority: payer.publicKey,
-          payer: payer.publicKey,
-          updateAuthority: payer.publicKey,
-        },
-        {
-          createMetadataAccountArgsV3: {
-            data: {
-              name: "META",
-              symbol: "META",
-              uri: "https://ftgnmxferax7tpgqyzdo76sisk5fhpsjv34omvgz33m7udvnsfba.arweave.net/LMzWXKSIL_m80MZG7_pIkrpTvkmu-OZU2d7Z-g6tkUI",
-              creators: null,
-              sellerFeeBasisPoints: 0,
-              uses: null,
-              collection: null,
-            },
-            isMutable: false,
-            collectionDetails: null,
-          },
-        },
-      );
+//   const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
+//         {
+//           metadata: PublicKey.findProgramAddressSync(
+//             [
+//               Buffer.from("metadata"),
+//               PROGRAM_ID.toBuffer(),
+//               META.toBuffer(),
+//             ],
+//             PROGRAM_ID,
+//           )[0],
+//           mint: META,
+//           mintAuthority: payer.publicKey,
+//           payer: payer.publicKey,
+//           updateAuthority: payer.publicKey,
+//         },
+//         {
+//           createMetadataAccountArgsV3: {
+//             data: {
+//               name: "META",
+//               symbol: "META",
+//               uri: "https://ftgnmxferax7tpgqyzdo76sisk5fhpsjv34omvgz33m7udvnsfba.arweave.net/LMzWXKSIL_m80MZG7_pIkrpTvkmu-OZU2d7Z-g6tkUI",
+//               creators: null,
+//               sellerFeeBasisPoints: 0,
+//               uses: null,
+//               collection: null,
+//             },
+//             isMutable: false,
+//             collectionDetails: null,
+//           },
+//         },
+//       );
 
-    await anchor.web3.sendAndConfirmTransaction(provider.connection, new anchor.web3.Transaction().add(createMetadataInstruction), [payer]);
-  await token.setAuthority(
-    provider.connection,
-    payer,
-    META,
-    provider.publicKey,
-    token.AuthorityType.MintTokens,
-    null,
-  );
+//     await anchor.web3.sendAndConfirmTransaction(provider.connection, new anchor.web3.Transaction().add(createMetadataInstruction), [payer]);
+//   await token.setAuthority(
+//     provider.connection,
+//     payer,
+//     META,
+//     provider.publicKey,
+//     token.AuthorityType.MintTokens,
+//     null,
+//   );
 
 
 }
