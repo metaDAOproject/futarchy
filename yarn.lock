@@ -140,10 +140,10 @@
   resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-2.0.0.tgz#c214269d45e0233ad6a8ae5104655453636e253d"
   integrity sha512-rUGBd95e2a45rlmFTqQJYEFA4/gdIARFfuTuTqLglz0PZ6AKyzyXsEZZq7UZn8hZsvaBgpCzKKBJizT2cJERXw==
 
-"@openbook-dex/openbook-v2@^0.0.11":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@openbook-dex/openbook-v2/-/openbook-v2-0.0.11.tgz#d4ba7509a554575c41046451413d2aaceec79874"
-  integrity sha512-2QB5WS0jJ8V2lfKdOBi198r5qePVzLtZ/lzM4QyfvO5QUJvHKCUOvM4KnZzPaGdMbv21uu3IFygrTUwZmXkEdQ==
+"@openbook-dex/openbook-v2@=0.0.12":
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/@openbook-dex/openbook-v2/-/openbook-v2-0.0.12.tgz#abb8cd2b51b573854656eb7605463a0153cf2ca1"
+  integrity sha512-SxYEslImHB3Qd2KH2ueXCEZC+Tu00p5R+MWPsGHeSt8M+p5kL811mAymanKEUrxY99gd8/F/oV64vJyXZAIf2g==
   dependencies:
     "@coral-xyz/anchor" "^0.28.0"
     "@solana/spl-token" "0.3.8"

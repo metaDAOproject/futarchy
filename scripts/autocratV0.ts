@@ -17,7 +17,6 @@ import {
   IDL as ConditionalVaultIDL,
   ConditionalVault,
 } from "../target/types/conditional_vault";
-import { IDL as ClobIDL, Clob } from "../target/types/clob";
 
 import { OpenbookTwap } from "../tests/fixtures/openbook_twap";
 
@@ -34,7 +33,7 @@ const CLOB_PROGRAM_ID = new PublicKey(
   "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
+  "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
 );
 const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
@@ -56,7 +55,6 @@ const vaultProgram = new Program<ConditionalVault>(
   CONDITIONAL_VAULT_PROGRAM_ID,
   provider
 );
-const clobProgram = new Program<Clob>(ClobIDL, CLOB_PROGRAM_ID, provider);
 
 const openbook = new OpenBookV2Client(provider);
 const openbookTwap = new Program<OpenbookTwap>(
@@ -75,11 +73,6 @@ const [daoTreasury] = PublicKey.findProgramAddressSync(
   autocratProgram.programId
 );
 
-// const [globalState] = anchor.web3.PublicKey.findProgramAddressSync(
-//   [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-//   clobProgram.programId
-// );
-
 async function createMint(
   mintAuthority: any,
   freezeAuthority: any,
@@ -96,66 +89,59 @@ async function createMint(
   );
 }
 
-// async function initializeGlobalState(admin: any) {
-//   await clobProgram.methods
-//     .initializeGlobalState(admin)
-//     .accounts({
-//       globalState,
-//     })
-//     .rpc();
-// }
+async function initializeVault(
+  settlementAuthority: any,
+  underlyingTokenMint: any,
+  nonce: any
+): Promise<any> {
+  const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("conditional_vault"),
+      settlementAuthority.toBuffer(),
+      underlyingTokenMint.toBuffer(),
+      nonce.toBuffer("le", 8),
+    ],
+    vaultProgram.programId
+  );
 
-// async function initializeVault(
-//   settlementAuthority: any,
-//   underlyingTokenMint: any,
-//   nonce: any
-// ): Promise<any> {
-//   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
-//     [
-//       anchor.utils.bytes.utf8.encode("conditional_vault"),
-//       settlementAuthority.toBuffer(),
-//       underlyingTokenMint.toBuffer(),
-//       nonce.toBuffer("le", 8),
-//     ],
-//     vaultProgram.programId
-//   );
+  if (
+    (await vaultProgram.account.conditionalVault.fetchNullable(vault)) != null
+  ) {
+    return vault;
+  }
 
-//   if (
-//     (await vaultProgram.account.conditionalVault.fetchNullable(vault)) != null
-//   ) {
-//     return vault;
-//   }
+  const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
+    underlyingTokenMint,
+    vault,
+    true
+  );
 
-//   const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
-//     underlyingTokenMint,
-//     vault,
-//     true
-//   );
+  let conditionalOnFinalizeKP = anchor.web3.Keypair.generate();
+  let conditionalOnRevertKP = anchor.web3.Keypair.generate();
 
-//   let conditionalTokenMintKeypair = anchor.web3.Keypair.generate();
+  await vaultProgram.methods
+    .initializeConditionalVault(settlementAuthority, nonce)
+    .accounts({
+      vault,
+      underlyingTokenMint,
+      vaultUnderlyingTokenAccount,
+      conditionalOnFinalizeTokenMint: conditionalOnFinalizeKP.publicKey,
+      conditionalOnRevertTokenMint: conditionalOnRevertKP.publicKey,
+      payer: payer.publicKey,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+      associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .signers([conditionalOnFinalizeKP, conditionalOnRevertKP])
+    .rpc();
 
-//   await vaultProgram.methods
-//     .initializeConditionalVault(settlementAuthority, nonce)
-//     .accounts({
-//       vault,
-//       underlyingTokenMint,
-//       vaultUnderlyingTokenAccount,
-//       conditionalTokenMint: conditionalTokenMintKeypair.publicKey,
-//       payer: payer.publicKey,
-//       tokenProgram: token.TOKEN_PROGRAM_ID,
-//       associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
-//       systemProgram: anchor.web3.SystemProgram.programId,
-//     })
-//     .signers([conditionalTokenMintKeypair])
-//     .rpc();
+  //const storedVault = await vaultProgram.account.conditionalVault.fetch(
+  //  vault
+  //);
+  //console.log(storedVault);
 
-//   //const storedVault = await vaultProgram.account.conditionalVault.fetch(
-//   //  vault
-//   //);
-//   //console.log(storedVault);
-
-//   return vault;
-// }
+  return vault;
+}
 
 async function initializeDAO(META: any, USDC: any) {
   await autocratProgram.methods
@@ -168,284 +154,168 @@ async function initializeDAO(META: any, USDC: any) {
     .rpc();
 }
 
-// async function initializeProposal() {
-//   const accounts = [
-//     {
-//       pubkey: dao,
-//       isSigner: true,
-//       isWritable: true,
-//     },
-//     {
-//       pubkey: daoTreasury,
-//       isSigner: true,
-//       isWritable: false,
-//     },
-//   ];
-//   const data = autocratProgram.coder.instruction.encode(
-//     "set_pass_threshold_bps",
-//     {
-//       passThresholdBps: 1000,
-//     }
-//   );
-//   const instruction = {
-//     programId: autocratProgram.programId,
-//     accounts,
-//     data,
-//   };
+async function initializeProposal() {
+  const accounts = [
+    {
+      pubkey: dao,
+      isSigner: true,
+      isWritable: true,
+    },
+    {
+      pubkey: daoTreasury,
+      isSigner: true,
+      isWritable: false,
+    },
+  ];
+  const data = autocratProgram.coder.instruction.encode(
+    "set_pass_threshold_bps",
+    {
+      passThresholdBps: 1000,
+    }
+  );
+  const instruction = {
+    programId: autocratProgram.programId,
+    accounts,
+    data,
+  };
 
-//   const proposalKeypair = Keypair.generate();
+  const proposalKeypair = Keypair.generate();
 
-//   const storedDAO = await autocratProgram.account.dao.fetch(dao);
-//   console.log(storedDAO);
+  const storedDAO = await autocratProgram.account.dao.fetch(dao);
+  console.log(storedDAO);
 
-//   // least signficant 32 bits of nonce are proposal number
-//   // most significant bit of nonce is 0 for pass and 1 for fail
-//   // second most significant bit of nonce is 0 for base and 1 for quote
+  // least signficant 32 bits of nonce are proposal number
+  // most significant bit of nonce is 0 for base and 1 for quote
 
-//   let baseNonce = new BN(storedDAO.proposalCount);
+  let baseNonce = new BN(storedDAO.proposalCount);
 
-//   const basePassVault = await initializeVault(
-//     storedDAO.treasury,
-//     storedDAO.metaMint,
-//     baseNonce
-//   );
+  const baseVault = await initializeVault(
+    storedDAO.treasury,
+    storedDAO.metaMint,
+    baseNonce
+  );
 
-//   const quotePassVault = await initializeVault(
-//     storedDAO.treasury,
-//     storedDAO.usdcMint,
-//     baseNonce.or(new BN(1).shln(63))
-//   );
+  const quoteVault = await initializeVault(
+    storedDAO.treasury,
+    storedDAO.usdcMint,
+    baseNonce.or(new BN(1).shln(63))
+  );
 
-//   const baseFailVault = await initializeVault(
-//     storedDAO.treasury,
-//     storedDAO.metaMint,
-//     baseNonce.or(new BN(1).shln(62))
-//   );
+  const passBaseMint = (
+    await vaultProgram.account.conditionalVault.fetch(baseVault)
+  ).conditionalOnFinalizeTokenMint;
+  const passQuoteMint = (
+    await vaultProgram.account.conditionalVault.fetch(quoteVault)
+  ).conditionalOnFinalizeTokenMint;
 
-//   const quoteFailVault = await initializeVault(
-//     storedDAO.treasury,
-//     storedDAO.usdcMint,
-//     baseNonce.or(new BN(3).shln(62))
-//   );
+  const failBaseMint = (
+    await vaultProgram.account.conditionalVault.fetch(baseVault)
+  ).conditionalOnRevertTokenMint;
+  const failQuoteMint = (
+    await vaultProgram.account.conditionalVault.fetch(quoteVault)
+  ).conditionalOnRevertTokenMint;
 
-//   const passBaseMint = (
-//     await vaultProgram.account.conditionalVault.fetch(basePassVault)
-//   ).conditionalTokenMint;
-//   const passQuoteMint = (
-//     await vaultProgram.account.conditionalVault.fetch(quotePassVault)
-//   ).conditionalTokenMint;
-//   const failBaseMint = (
-//     await vaultProgram.account.conditionalVault.fetch(baseFailVault)
-//   ).conditionalTokenMint;
-//   const failQuoteMint = (
-//     await vaultProgram.account.conditionalVault.fetch(quoteFailVault)
-//   ).conditionalTokenMint;
+  let openbookPassMarketKP = Keypair.generate();
 
-//   let openbookPassMarketKP = Keypair.generate();
+  let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("twap_market"),
+      openbookPassMarketKP.publicKey.toBuffer(),
+    ],
+    openbookTwap.programId
+  );
 
-//   let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
-//     [
-//       anchor.utils.bytes.utf8.encode("twap_market"),
-//       openbookPassMarketKP.publicKey.toBuffer(),
-//     ],
-//     openbookTwap.programId
-//   );
+  let openbookPassMarket = await openbook.createMarket(
+    payer,
+    "pMETA/pUSDC",
+    passQuoteMint,
+    passBaseMint,
+    new BN(100),
+    new BN(1e9),
+    new BN(0),
+    new BN(0),
+    new BN(0),
+    null,
+    null,
+    openbookTwapPassMarket,
+    null,
+    openbookTwapPassMarket,
+    { confFilter: 0.1, maxStalenessSlots: 100 },
+    openbookPassMarketKP
+  );
 
-//   let openbookPassMarket = await openbook.createMarket(
-//     payer,
-//     "test",
-//     passQuoteMint,
-//     passBaseMint,
-//     new BN(100),
-//     new BN(1e9),
-//     new BN(0),
-//     new BN(0),
-//     new BN(0),
-//     null,
-//     null,
-//     openbookTwapPassMarket,
-//     null,
-//     openbookTwapPassMarket,
-//     { confFilter: 0.1, maxStalenessSlots: 100 },
-//     openbookPassMarketKP
-//   );
+  await openbookTwap.methods
+    .createTwapMarket(new BN(1_000))
+    .accounts({
+      market: openbookPassMarket,
+      twapMarket: openbookTwapPassMarket,
+    })
+    .rpc();
 
-//   await openbookTwap.methods
-//     .createTwapMarket(new BN(1_000))
-//     .accounts({
-//       market: openbookPassMarket,
-//       twapMarket: openbookTwapPassMarket,
-//     })
-//     .rpc();
+  let openbookFailMarketKP = Keypair.generate();
 
-//   let openbookFailMarketKP = Keypair.generate();
+  let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("twap_market"),
+      openbookFailMarketKP.publicKey.toBuffer(),
+    ],
+    openbookTwap.programId
+  );
 
-//   let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
-//     [
-//       anchor.utils.bytes.utf8.encode("twap_market"),
-//       openbookFailMarketKP.publicKey.toBuffer(),
-//     ],
-//     openbookTwap.programId
-//   );
+  let openbookFailMarket = await openbook.createMarket(
+    payer,
+    "fMETA/fUSDC",
+    failQuoteMint,
+    failBaseMint,
+    new BN(100),
+    new BN(1e9),
+    new BN(0),
+    new BN(0),
+    new BN(0),
+    null,
+    null,
+    openbookTwapFailMarket,
+    null,
+    openbookTwapFailMarket,
+    { confFilter: 0.1, maxStalenessSlots: 100 },
+    openbookFailMarketKP
+  );
+  await openbookTwap.methods
+    .createTwapMarket(new BN(1_000))
+    .accounts({
+      market: openbookFailMarket,
+      twapMarket: openbookTwapFailMarket,
+    })
+    .rpc();
 
-//   let openbookFailMarket = await openbook.createMarket(
-//     payer,
-//     "fMETA/fUSDC",
-//     failQuoteMint,
-//     failBaseMint,
-//     new BN(100),
-//     new BN(1e9),
-//     new BN(0),
-//     new BN(0),
-//     new BN(0),
-//     null,
-//     null,
-//     openbookTwapFailMarket,
-//     null,
-//     openbookTwapFailMarket,
-//     { confFilter: 0.1, maxStalenessSlots: 100 },
-//     openbookFailMarketKP
-//   );
-//   await openbookTwap.methods
-//     .createTwapMarket(new BN(1_000))
-//     .accounts({
-//       market: openbookFailMarket,
-//       twapMarket: openbookTwapFailMarket,
-//     })
-//     .rpc();
+  const daoBefore = await autocratProgram.account.dao.fetch(dao);
 
-//   const daoBefore = await autocratProgram.account.dao.fetch(dao);
+  const dummyURL = "https://www.eff.org/cyberspace-independence";
 
-//   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
-//   const passMarket = await initializeOrderBook(passBaseMint, passQuoteMint);
-//   const failMarket = await initializeOrderBook(failBaseMint, failQuoteMint);
-
-//   await autocratProgram.methods
-//     .initializeProposal(dummyURL, instruction)
-//     .preInstructions([
-//       await autocratProgram.account.proposal.createInstruction(
-//         proposalKeypair,
-//         1500
-//       ),
-//     ])
-//     .accounts({
-//       proposal: proposalKeypair.publicKey,
-//       dao,
-//       daoTreasury,
-//       quotePassVault,
-//       quoteFailVault,
-//       basePassVault,
-//       baseFailVault,
-//       openbookPassMarket,
-//       openbookFailMarket,
-//       openbookTwapPassMarket,
-//       openbookTwapFailMarket,
-//       passMarket,
-//       failMarket,
-//       proposer: payer.publicKey,
-//     })
-//     .signers([proposalKeypair])
-//     .rpc();
-// }
-
-// async function initializeOrderBook(
-//   base: anchor.web3.PublicKey,
-//   quote: anchor.web3.PublicKey
-// ): Promise<anchor.web3.PublicKey> {
-//   const [orderBook] = anchor.web3.PublicKey.findProgramAddressSync(
-//     [
-//       anchor.utils.bytes.utf8.encode("order_book"),
-//       base.toBuffer(),
-//       quote.toBuffer(),
-//     ],
-//     clobProgram.programId
-//   );
-
-//   if ((await clobProgram.account.orderBook.fetchNullable(orderBook)) != null) {
-//     return orderBook;
-//   }
-
-//   const baseVault = await token.getAssociatedTokenAddress(
-//     base,
-//     orderBook,
-//     true
-//   );
-
-//   const quoteVault = await token.getAssociatedTokenAddress(
-//     quote,
-//     orderBook,
-//     true
-//   );
-
-//   await clobProgram.methods
-//     .initializeOrderBook()
-//     .accounts({
-//       orderBook,
-//       globalState,
-//       base,
-//       quote,
-//       baseVault,
-//       quoteVault,
-//     })
-//     .rpc();
-
-//   return orderBook;
-// }
-
-// async function mintConditionalTokens(
-//   amount: anchor.BN,
-//   vault: anchor.web3.PublicKey
-// ) {
-//   const [depositSlip] = anchor.web3.PublicKey.findProgramAddressSync(
-//     [
-//       anchor.utils.bytes.utf8.encode("deposit_slip"),
-//       vault.toBuffer(),
-//       payer.publicKey.toBuffer(),
-//     ],
-//     vaultProgram.programId
-//   );
-
-//   if (
-//     (await vaultProgram.account.depositSlip.fetchNullable(depositSlip)) == null
-//   ) {
-//     await vaultProgram.methods
-//       .initializeDepositSlip(payer.publicKey)
-//       .accounts({
-//         depositSlip,
-//         vault,
-//       })
-//       .rpc();
-//   }
-
-//   const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
-
-//   const underlyingAcc = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedVault.underlyingTokenMint,
-//     payer.publicKey
-//   );
-//   const conditionalAcc = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedVault.conditionalTokenMint,
-//     payer.publicKey
-//   );
-
-//   await vaultProgram.methods
-//     .mintConditionalTokens(amount)
-//     .accounts({
-//       authority: payer.publicKey,
-//       depositSlip,
-//       vault,
-//       vaultUnderlyingTokenAccount: storedVault.underlyingTokenAccount,
-//       userUnderlyingTokenAccount: underlyingAcc.address,
-//       conditionalTokenMint: storedVault.conditionalTokenMint,
-//       userConditionalTokenAccount: conditionalAcc.address,
-//     })
-//     .rpc();
-// }
+  await autocratProgram.methods
+    .initializeProposal(dummyURL, instruction)
+    .preInstructions([
+      await autocratProgram.account.proposal.createInstruction(
+        proposalKeypair,
+        1500
+      ),
+    ])
+    .accounts({
+      proposal: proposalKeypair.publicKey,
+      dao,
+      daoTreasury,
+      quoteVault,
+      baseVault,
+      openbookPassMarket,
+      openbookFailMarket,
+      openbookTwapPassMarket,
+      openbookTwapFailMarket,
+      proposer: payer.publicKey,
+    })
+    .signers([proposalKeypair])
+    .rpc();
+}
 
 async function placeOrdersOnBothSides(twapMarket: any) {
   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
@@ -474,61 +344,61 @@ async function placeOrdersOnBothSides(twapMarket: any) {
     limit: 255,
   };
 
-  const storedMarket = await openbook.getMarket(market);
-  let openOrdersAccount = await openbook.getOrCreateOpenOrders(
-    market,
-    new BN(4),
-    "oo"
-  );
-  // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
+  // const storedMarket = await openbook.getMarket(market);
+  // let openOrdersAccount = await openbook.getOrCreateOpenOrders(
+  //   market,
+  //   new BN(4),
+  //   "oo"
+  // );
+  // // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
 
-  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    storedMarket.baseMint,
-    payer.publicKey
-  );
-  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    storedMarket.quoteMint,
-    payer.publicKey
-  );
+  // const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
+  //   provider.connection,
+  //   payer,
+  //   storedMarket.baseMint,
+  //   payer.publicKey
+  // );
+  // const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
+  //   provider.connection,
+  //   payer,
+  //   storedMarket.quoteMint,
+  //   payer.publicKey
+  // );
 
-  await openbookTwap.methods
-    .placeOrder(buyArgs)
-    .accounts({
-      asks: storedMarket.asks,
-      bids: storedMarket.bids,
-      marketVault: storedMarket.marketQuoteVault,
-      eventHeap: storedMarket.eventHeap,
-      market,
-      openOrdersAccount,
-      userTokenAccount: userQuoteAccount.address,
-      twapMarket,
-      openbookProgram: OPENBOOK_PROGRAM_ID,
-    })
-    .rpc();
+  // await openbookTwap.methods
+  //   .placeOrder(buyArgs)
+  //   .accounts({
+  //     asks: storedMarket.asks,
+  //     bids: storedMarket.bids,
+  //     marketVault: storedMarket.marketQuoteVault,
+  //     eventHeap: storedMarket.eventHeap,
+  //     market,
+  //     openOrdersAccount,
+  //     userTokenAccount: userQuoteAccount.address,
+  //     twapMarket,
+  //     openbookProgram: OPENBOOK_PROGRAM_ID,
+  //   })
+  //   .rpc();
 
-  await openbookTwap.methods
-    .placeOrder(sellArgs)
-    .accounts({
-      asks: storedMarket.asks,
-      bids: storedMarket.bids,
-      marketVault: storedMarket.marketBaseVault,
-      eventHeap: storedMarket.eventHeap,
-      market,
-      openOrdersAccount,
-      userTokenAccount: userBaseAccount.address,
-      twapMarket,
-      openbookProgram: OPENBOOK_PROGRAM_ID,
-    })
-    .rpc();
+  // await openbookTwap.methods
+  //   .placeOrder(sellArgs)
+  //   .accounts({
+  //     asks: storedMarket.asks,
+  //     bids: storedMarket.bids,
+  //     marketVault: storedMarket.marketBaseVault,
+  //     eventHeap: storedMarket.eventHeap,
+  //     market,
+  //     openOrdersAccount,
+  //     userTokenAccount: userBaseAccount.address,
+  //     twapMarket,
+  //     openbookProgram: OPENBOOK_PROGRAM_ID,
+  //   })
+  //   .rpc();
 }
 
 async function placeTakeOrder(twapMarket: any) {
   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
-  const storedMarket = await openbook.getMarket(market);
+  const storedMarket = await openbook.getMarketAccount(market);
 
   const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
     provider.connection,
@@ -578,7 +448,6 @@ async function placeTakeOrder(twapMarket: any) {
       marketQuoteVault: storedMarket.marketQuoteVault,
       userQuoteAccount: userQuoteAccount.address,
       userBaseAccount: userBaseAccount.address,
-      referrerAccount: null,
       twapMarket,
       openbookProgram: OPENBOOK_PROGRAM_ID,
     })
@@ -700,94 +569,8 @@ import Arweave from "arweave";
 import { createCreateMetadataAccountV3Instruction, PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 
 async function main() {
-  let metaKP = Keypair.fromSecretKey(new Uint8Array(
-[198,220,220,16,30,46,95,30,142,241,177,114,188,149,13,195,94,238,149,12,97,136,195,247,135,159,224,249,19,125,121,149,5,46,211,70,74,232,252,23,217,77,149,94,232,103,3,173,198,146,148,34,223,156,53,149,1,246,213,183,221,233,82,165]
-  ));
-//   console.log(metaKP.publicKey.toBase58())
-//   // let META = await createMint(provider.publicKey, PublicKey.default, 9, metaKP);
-  let META = metaKP.publicKey;
-  let USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
-//   console.log(daoTreasury.toBase58());
-  // let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
-  await initializeDAO(META, USDC);
-  // console.log(await autocratProgram.account.dao.fetch(dao));
-
-//   const myMetaAcc = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     META,
-//     payer.publicKey
-//   );
-
-//   const treasuryMetaAcc = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     META,
-//     daoTreasury,
-//     true
-//   );
-
-//   // await token.mintTo(
-//   //   provider.connection,
-//   //   payer,
-//   //   META,
-//   //   myMetaAcc.address,
-//   //   payer,
-//   //   10_000n * 1_000_000_000n
-//   // );
-
-//   // await token.mintTo(
-//   //   provider.connection,
-//   //   payer,
-//   //   META,
-//   //   treasuryMetaAcc.address,
-//   //   payer,
-//   //   990_000n * 1_000_000_000n
-//   // );
-
-//   const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
-//         {
-//           metadata: PublicKey.findProgramAddressSync(
-//             [
-//               Buffer.from("metadata"),
-//               PROGRAM_ID.toBuffer(),
-//               META.toBuffer(),
-//             ],
-//             PROGRAM_ID,
-//           )[0],
-//           mint: META,
-//           mintAuthority: payer.publicKey,
-//           payer: payer.publicKey,
-//           updateAuthority: payer.publicKey,
-//         },
-//         {
-//           createMetadataAccountArgsV3: {
-//             data: {
-//               name: "META",
-//               symbol: "META",
-//               uri: "https://ftgnmxferax7tpgqyzdo76sisk5fhpsjv34omvgz33m7udvnsfba.arweave.net/LMzWXKSIL_m80MZG7_pIkrpTvkmu-OZU2d7Z-g6tkUI",
-//               creators: null,
-//               sellerFeeBasisPoints: 0,
-//               uses: null,
-//               collection: null,
-//             },
-//             isMutable: false,
-//             collectionDetails: null,
-//           },
-//         },
-//       );
-
-//     await anchor.web3.sendAndConfirmTransaction(provider.connection, new anchor.web3.Transaction().add(createMetadataInstruction), [payer]);
-//   await token.setAuthority(
-//     provider.connection,
-//     payer,
-//     META,
-//     provider.publicKey,
-//     token.AuthorityType.MintTokens,
-//     null,
-//   );
-
-
+  console.log(await autocratProgram.account.dao.fetch(dao));
+  await initializeProposal();
 }
 
 main();
