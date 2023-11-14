@@ -29,9 +29,6 @@ const AUTOCRAT_PROGRAM_ID = new PublicKey(
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 );
-const CLOB_PROGRAM_ID = new PublicKey(
-  "8BnUecJAvKB7zCcwqhMiVWoqKWcw5S6PDCxWWEM2oxWA"
-);
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
   "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
 );
@@ -344,56 +341,57 @@ async function placeOrdersOnBothSides(twapMarket: any) {
     limit: 255,
   };
 
-  // const storedMarket = await openbook.getMarket(market);
-  // let openOrdersAccount = await openbook.getOrCreateOpenOrders(
-  //   market,
-  //   new BN(4),
-  //   "oo"
-  // );
-  // // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
+  const storedMarket = await openbook.getMarketAccount(market);
+  let openOrdersAccount = await openbook.createOpenOrders(
+    payer,
+    market,
+    new BN(5),
+    "oo"
+  );
+  // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
 
-  // const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
-  //   provider.connection,
-  //   payer,
-  //   storedMarket.baseMint,
-  //   payer.publicKey
-  // );
-  // const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
-  //   provider.connection,
-  //   payer,
-  //   storedMarket.quoteMint,
-  //   payer.publicKey
-  // );
+  const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.baseMint,
+    payer.publicKey
+  );
+  const userQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedMarket.quoteMint,
+    payer.publicKey
+  );
 
-  // await openbookTwap.methods
-  //   .placeOrder(buyArgs)
-  //   .accounts({
-  //     asks: storedMarket.asks,
-  //     bids: storedMarket.bids,
-  //     marketVault: storedMarket.marketQuoteVault,
-  //     eventHeap: storedMarket.eventHeap,
-  //     market,
-  //     openOrdersAccount,
-  //     userTokenAccount: userQuoteAccount.address,
-  //     twapMarket,
-  //     openbookProgram: OPENBOOK_PROGRAM_ID,
-  //   })
-  //   .rpc();
+  await openbookTwap.methods
+    .placeOrder(buyArgs)
+    .accounts({
+      asks: storedMarket.asks,
+      bids: storedMarket.bids,
+      marketVault: storedMarket.marketQuoteVault,
+      eventHeap: storedMarket.eventHeap,
+      market,
+      openOrdersAccount,
+      userTokenAccount: userQuoteAccount.address,
+      twapMarket,
+      openbookProgram: OPENBOOK_PROGRAM_ID,
+    })
+    .rpc();
 
-  // await openbookTwap.methods
-  //   .placeOrder(sellArgs)
-  //   .accounts({
-  //     asks: storedMarket.asks,
-  //     bids: storedMarket.bids,
-  //     marketVault: storedMarket.marketBaseVault,
-  //     eventHeap: storedMarket.eventHeap,
-  //     market,
-  //     openOrdersAccount,
-  //     userTokenAccount: userBaseAccount.address,
-  //     twapMarket,
-  //     openbookProgram: OPENBOOK_PROGRAM_ID,
-  //   })
-  //   .rpc();
+  await openbookTwap.methods
+    .placeOrder(sellArgs)
+    .accounts({
+      asks: storedMarket.asks,
+      bids: storedMarket.bids,
+      marketVault: storedMarket.marketBaseVault,
+      eventHeap: storedMarket.eventHeap,
+      market,
+      openOrdersAccount,
+      userTokenAccount: userBaseAccount.address,
+      twapMarket,
+      openbookProgram: OPENBOOK_PROGRAM_ID,
+    })
+    .rpc();
 }
 
 async function placeTakeOrder(twapMarket: any) {
@@ -568,9 +566,31 @@ import Arweave from "arweave";
 
 import { createCreateMetadataAccountV3Instruction, PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 
+const hotWallet = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg")
+
 async function main() {
-  console.log(await autocratProgram.account.dao.fetch(dao));
-  await initializeProposal();
+  const storedDAO = await autocratProgram.account.dao.fetch(dao);
+
+  console.log(storedDAO);
+
+  const senderMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedDAO.metaMint,
+    payer.publicKey
+  );
+
+  const receiverMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    storedDAO.metaMint,
+    hotWallet
+  );
+
+  await token.transfer(provider.connection, payer, senderMetaAcc.address, receiverMetaAcc.address, payer, 10_000_000_000n);
+
+
+  // await initializeProposal();
 }
 
 main();
