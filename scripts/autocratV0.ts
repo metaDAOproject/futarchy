@@ -342,12 +342,14 @@ async function placeOrdersOnBothSides(twapMarket: any) {
   };
 
   const storedMarket = await openbook.getMarketAccount(market);
-  let openOrdersAccount = await openbook.createOpenOrders(
-    payer,
-    market,
-    new BN(5),
-    "oo"
-  );
+  let openOrdersAccount = new anchor.web3.PublicKey("CxDQ5RSYebF6mRLDrXYn1An7bawe6S3iyaU5rZBjz4Xs");
+  // let openOrdersAccount = await openbook.createOpenOrders(
+  //   payer,
+  //   market,
+  //   new BN(1),
+  //   "oo"
+  // );
+  // console.log(openOrdersAccount);
   // let openOrdersAccount = await openbook.createOpenOrders(market, new BN(4), "oo2");
 
   const userBaseAccount = await token.getOrCreateAssociatedTokenAccount(
@@ -490,6 +492,47 @@ async function placeTakeOrder(twapMarket: any) {
   );
 }
 
+export async function mintConditionalTokens(
+  amount: number,
+  vault: anchor.web3.PublicKey,
+) {
+  const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
+
+
+  // Setting default values for optional parameters
+  const userUnderlyingTokenAccount = await getOrCreateAccount(storedVault.underlyingTokenMint);
+  const userConditionalOnFinalizeTokenAccount = await getOrCreateAccount(storedVault.conditionalOnFinalizeTokenMint);
+  const userConditionalOnRevertTokenAccount = await getOrCreateAccount(storedVault.conditionalOnRevertTokenMint);
+  const vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
+
+  const bnAmount = new anchor.BN(amount);
+
+  // Mint conditional tokens
+  await vaultProgram.methods
+    .mintConditionalTokens(bnAmount)
+    .accounts({
+      authority: payer.publicKey,
+      vault,
+      vaultUnderlyingTokenAccount,
+      userUnderlyingTokenAccount,
+      userConditionalOnFinalizeTokenAccount,
+      userConditionalOnRevertTokenAccount,
+      conditionalOnFinalizeTokenMint: storedVault.conditionalOnFinalizeTokenMint,
+      conditionalOnRevertTokenMint: storedVault.conditionalOnRevertTokenMint,
+    })
+    .signers([payer])
+    .rpc();
+}
+
+async function getOrCreateAccount(mint: anchor.web3.PublicKey) {
+  return (await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    mint,
+    payer.publicKey
+  )).address;
+}
+
 // async function oldMain() {
 //   let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
 //   let META = await createMint(provider.publicKey, provider.publicKey, 9);
@@ -571,23 +614,39 @@ const hotWallet = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg")
 async function main() {
   const storedDAO = await autocratProgram.account.dao.fetch(dao);
 
-  console.log(storedDAO);
+  // console.log(storedDAO);
 
-  const senderMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+  const usdcAcc = await token.getOrCreateAssociatedTokenAccount(
     provider.connection,
     payer,
-    storedDAO.metaMint,
+    storedDAO.usdcMint,
     payer.publicKey
   );
+  let proposal = (await autocratProgram.account.proposal.all())[0];
 
-  const receiverMetaAcc = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    storedDAO.metaMint,
-    hotWallet
-  );
 
-  await token.transfer(provider.connection, payer, senderMetaAcc.address, receiverMetaAcc.address, payer, 10_000_000_000n);
+  // await mintConditionalTokens(100 * 1_000_000_000, proposal.account.baseVault);
+  // await mintConditionalTokens(1000 * 1_000_000, proposal.account.quoteVault);
+
+  // console.log(proposal.account);
+
+  await placeOrdersOnBothSides(proposal.account.openbookTwapPassMarket);
+
+  // const senderMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+  //   provider.connection,
+  //   payer,
+  //   storedDAO.metaMint,
+  //   payer.publicKey
+  // );
+
+  // const receiverMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+  //   provider.connection,
+  //   payer,
+  //   storedDAO.metaMint,
+  //   hotWallet
+  // );
+
+  // await token.transfer(provider.connection, payer, senderMetaAcc.address, receiverMetaAcc.address, payer, 10_000_000_000n);
 
 
   // await initializeProposal();
