@@ -398,7 +398,6 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "blake3",
  "conditional_vault",
  "openbook-twap",
  "openbook-v2 0.1.0 (git+https://github.com/openbook-dex/openbook-v2.git)",
