@@ -321,7 +321,7 @@ async function placeOrdersOnBothSides(twapMarket: any) {
     side: Side.Bid,
     priceLots: new BN(9_000), // 1 USDC for 1 META
     maxBaseLots: new BN(10),
-    maxQuoteLotsIncludingFees: new BN(10 * 10_000), // 10 USDC
+    maxQuoteLotsIncludingFees: new BN(10 * 1000_000), // 10 USDC
     clientOrderId: new BN(1),
     orderType: OrderType.Limit,
     expiryTimestamp: new BN(0),
@@ -416,7 +416,7 @@ async function placeTakeOrder(twapMarket: any) {
   let buyArgs: PlaceOrderArgs = {
     side: Side.Bid,
     priceLots: new BN(13_000), // 1 USDC for 1 META
-    maxBaseLots: new BN(1),
+    maxBaseLots: new BN(10000),
     maxQuoteLotsIncludingFees: new BN(1 * 13_000), // 10 USDC
     clientOrderId: new BN(1),
     orderType: OrderType.Market,
