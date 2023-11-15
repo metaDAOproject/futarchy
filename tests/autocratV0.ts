@@ -384,16 +384,17 @@ describe("autocrat_v0", async function () {
           quotePassConditionalTokenMint,
           alice.publicKey
         );
-      aliceQuoteFailConditionalTokenAccount = await createAssociatedTokenAccount(
-        banksClient,
-        payer,
-        quoteFailConditionalTokenMint,
-        alice.publicKey
-      );
+      aliceQuoteFailConditionalTokenAccount =
+        await createAssociatedTokenAccount(
+          banksClient,
+          payer,
+          quoteFailConditionalTokenMint,
+          alice.publicKey
+        );
 
       await mintConditionalTokens(
         vaultProgram,
-        10_000 * 1_000_000,
+        10_000n * 1_000_000n,
         alice,
         quoteVault,
         banksClient
@@ -485,8 +486,12 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      const storedPassMarket = await openbook.getMarket(openbookPassMarket);
-      const storedFailMarket = await openbook.getMarket(openbookFailMarket);
+      const storedPassMarket = await openbook.getMarketAccount(
+        openbookPassMarket
+      );
+      const storedFailMarket = await openbook.getMarketAccount(
+        openbookFailMarket
+      );
 
       let currentClock;
       for (let i = 0; i < 10; i++) {
@@ -557,18 +562,17 @@ describe("autocrat_v0", async function () {
           })
           .signers([mm0.keypair])
           .rpc();
-      currentClock = await context.banksClient.getClock();
-      context.setClock(
-        new Clock(
-          currentClock.slot + 10_000n,
-          currentClock.epochStartTimestamp,
-          currentClock.epoch,
-          currentClock.leaderScheduleEpoch,
-          currentClock.unixTimestamp
-        )
-      );
+        currentClock = await context.banksClient.getClock();
+        context.setClock(
+          new Clock(
+            currentClock.slot + 10_000n,
+            currentClock.epochStartTimestamp,
+            currentClock.epoch,
+            currentClock.leaderScheduleEpoch,
+            currentClock.unixTimestamp
+          )
+        );
       }
-
 
       // set the current clock slot to +10_000
       currentClock = await context.banksClient.getClock();
@@ -769,8 +773,15 @@ describe("autocrat_v0", async function () {
       );
 
       // alice should have gained 1 META & lost 0.11 USDC
-      assert.equal((await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount, 1_000_000_000n);
-      assert.equal((await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount)).amount, (10_000n * 1_000_000n) - 110_000n);
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,
+        1_000_000_000n
+      );
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
+          .amount,
+        10_000n * 1_000_000n - 110_000n
+      );
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
@@ -810,7 +821,7 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      
+
       let failSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
         priceLots: new BN(3200), // 0.32 USDC for 1 META
@@ -822,8 +833,12 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      const storedPassMarket = await openbook.getMarket(openbookPassMarket);
-      const storedFailMarket = await openbook.getMarket(openbookFailMarket);
+      const storedPassMarket = await openbook.getMarketAccount(
+        openbookPassMarket
+      );
+      const storedFailMarket = await openbook.getMarketAccount(
+        openbookFailMarket
+      );
 
       let currentClock;
       for (let i = 0; i < 10; i++) {
@@ -894,18 +909,17 @@ describe("autocrat_v0", async function () {
           })
           .signers([mm0.keypair])
           .rpc();
-      currentClock = await context.banksClient.getClock();
-      context.setClock(
-        new Clock(
-          currentClock.slot + 10_000n,
-          currentClock.epochStartTimestamp,
-          currentClock.epoch,
-          currentClock.leaderScheduleEpoch,
-          currentClock.unixTimestamp
-        )
-      );
+        currentClock = await context.banksClient.getClock();
+        context.setClock(
+          new Clock(
+            currentClock.slot + 10_000n,
+            currentClock.epochStartTimestamp,
+            currentClock.epoch,
+            currentClock.leaderScheduleEpoch,
+            currentClock.unixTimestamp
+          )
+        );
       }
-
 
       // set the current clock slot to +10_000
       currentClock = await context.banksClient.getClock();
@@ -1109,8 +1123,15 @@ describe("autocrat_v0", async function () {
       );
 
       // alice should have the same balance as she started with
-      assert.equal((await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount, 0n);
-      assert.equal((await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount)).amount, 10_000n * 1_000_000n);
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,
+        0n
+      );
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
+          .amount,
+        10_000n * 1_000_000n
+      );
     });
   });
 });
@@ -1127,8 +1148,8 @@ async function generateMarketMaker(
 ): Promise<MarketMaker> {
   const mm = anchor.web3.Keypair.generate();
 
-  const storedPassMarket = await openbook.getMarket(passMarket);
-  const storedFailMarket = await openbook.getMarket(failMarket);
+  const storedPassMarket = await openbook.getMarketAccount(passMarket);
+  const storedFailMarket = await openbook.getMarketAccount(failMarket);
 
   const metaPassAcc = await createAccount(
     banksClient,

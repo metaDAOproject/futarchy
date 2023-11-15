@@ -737,7 +737,7 @@ async function generateRandomVault(
 
 export async function mintConditionalTokens(
   program: VaultProgram,
-  amount: number,
+  amount: number | bigint,
   user: Signer,
   vault: PublicKey,
   banksClient: BanksClient,
@@ -790,7 +790,7 @@ export async function mintConditionalTokens(
     userConditionalOnRevertTokenAccount
   );
 
-  const bnAmount = new anchor.BN(amount);
+  const bnAmount = new anchor.BN(amount.toString());
   /* try { */
   await program.methods
     .mintConditionalTokens(bnAmount)
