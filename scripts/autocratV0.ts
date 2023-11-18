@@ -36,6 +36,9 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
+const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
+const PROPH3t_PUBKEY = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg");
+
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
@@ -152,26 +155,34 @@ async function initializeDAO(META: any, USDC: any) {
 }
 
 async function initializeProposal() {
-  const accounts = [
-    {
-      pubkey: dao,
-      isSigner: true,
-      isWritable: true,
-    },
-    {
-      pubkey: daoTreasury,
-      isSigner: true,
-      isWritable: false,
-    },
-  ];
-  const data = autocratProgram.coder.instruction.encode(
-    "set_pass_threshold_bps",
-    {
-      passThresholdBps: 1000,
-    }
+  const senderAcc = await token.getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        META,
+        daoTreasury,
+        true
+    );
+
+  const receiverAcc = await token.getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        META,
+        PROPH3t_PUBKEY
+    );
+
+  const transferIx = token.createTransferInstruction(
+    senderAcc.address,
+    receiverAcc.address,
+    daoTreasury,
+    1000 * 1_000_000_000, // 1,000 META
   );
+
+  const programId = transferIx.programId;
+  const accounts = transferIx.keys;
+  const data = transferIx.data;
+
   const instruction = {
-    programId: autocratProgram.programId,
+    programId,
     accounts,
     data,
   };
@@ -285,13 +296,10 @@ async function initializeProposal() {
     })
     .rpc();
 
-  const daoBefore = await autocratProgram.account.dao.fetch(dao);
-
-  const dummyURL = "https://www.eff.org/cyberspace-independence";
-
+  const proposalURL = "https://hackmd.io/ammvq88QRtayu7c9VLnHOA?view";
 
   await autocratProgram.methods
-    .initializeProposal(dummyURL, instruction)
+    .initializeProposal(proposalURL, instruction)
     .preInstructions([
       await autocratProgram.account.proposal.createInstruction(
         proposalKeypair,
@@ -612,27 +620,12 @@ import { createCreateMetadataAccountV3Instruction, PROGRAM_ID } from '@metaplex-
 const hotWallet = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg")
 
 async function main() {
-  const storedDAO = await autocratProgram.account.dao.fetch(dao);
+  await initializeProposal();
+  // const storedDAO = await autocratProgram.account.dao.fetch(dao);
 
   // console.log(storedDAO);
 
-  const usdcAcc = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    storedDAO.usdcMint,
-    payer.publicKey
-  );
-  let proposal = (await autocratProgram.account.proposal.all())[0];
-
-
-  // await mintConditionalTokens(100 * 1_000_000_000, proposal.account.baseVault);
-  // await mintConditionalTokens(1000 * 1_000_000, proposal.account.quoteVault);
-
-  // console.log(proposal.account);
-
-  await placeOrdersOnBothSides(proposal.account.openbookTwapPassMarket);
-
-  // const senderMetaAcc = await token.getOrCreateAssociatedTokenAccount(
+    // const senderMetaAcc = await token.getOrCreateAssociatedTokenAccount(
   //   provider.connection,
   //   payer,
   //   storedDAO.metaMint,
