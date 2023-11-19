@@ -36,28 +36,28 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
-const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
-const PROPH3t_PUBKEY = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg");
+export const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
+export const PROPH3t_PUBKEY = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg");
 
-const provider = anchor.AnchorProvider.env();
+export const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
-const payer = provider.wallet["payer"];
+export const payer = provider.wallet["payer"];
 
-const autocratProgram = new Program<AutocratV0>(
+export const autocratProgram = new Program<AutocratV0>(
   AutocratIDL,
   AUTOCRAT_PROGRAM_ID,
   provider
 );
 
-const vaultProgram = new Program<ConditionalVault>(
+export const vaultProgram = new Program<ConditionalVault>(
   ConditionalVaultIDL,
   CONDITIONAL_VAULT_PROGRAM_ID,
   provider
 );
 
-const openbook = new OpenBookV2Client(provider);
-const openbookTwap = new Program<OpenbookTwap>(
+export const openbook = new OpenBookV2Client(provider);
+export const openbookTwap = new Program<OpenbookTwap>(
   OpenbookTwapIDL,
   OPENBOOK_TWAP_PROGRAM_ID,
   provider
@@ -540,109 +540,3 @@ async function getOrCreateAccount(mint: anchor.web3.PublicKey) {
     payer.publicKey
   )).address;
 }
-
-// async function oldMain() {
-//   let USDC = await createMint(provider.publicKey, provider.publicKey, 6);
-//   let META = await createMint(provider.publicKey, provider.publicKey, 9);
-//   // await initializeDAO(META, USDC);
-
-//   // await initializeGlobalState(provider.wallet.publicKey);
-//   //await initializeProposal();
-//   const storedDAO = await autocratProgram.account.dao.fetch(dao);
-
-//   const usdcAcc = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedDAO.usdcMint,
-//     payer.publicKey
-//   );
-//   const metaAcc = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     storedDAO.metaMint,
-//     payer.publicKey
-//   );
-
-//   await token.mintTo(
-//     provider.connection,
-//     payer,
-//     storedDAO.usdcMint,
-//     usdcAcc.address,
-//     payer,
-//     1_000n * 1_000_000n
-//   );
-//   await token.mintTo(
-//     provider.connection,
-//     payer,
-//     storedDAO.metaMint,
-//     metaAcc.address,
-//     payer,
-//     1_000n * 1_000_000_000n
-//   );
-
-//   // await initializeProposal();
-
-//   let proposal = (await autocratProgram.account.proposal.all())[0];
-//   // console.log(proposal)
-
-//   // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.basePassVault);
-//   // await mintConditionalTokens(new BN(100 * 1_000_000_000), proposal.account.baseFailVault);
-//   // await mintConditionalTokens(new BN(100 * 1_000_000), proposal.account.quotePassVault);
-//   // await mintConditionalTokens(new BN(100 * 1_000_000), proposal.account.quoteFailVault);
-
-//   // await placeOrdersOnBothSides(proposal.account.openbookTwapPassMarket);
-
-//   // await placeTakeOrder(proposal.account.openbookTwapPassMarket);
-
-//   let twapMarket = proposal.account.openbookTwapPassMarket;
-//   let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
-//   let storedMarket = await openbook.getMarket(market);
-
-//   let x = await openbookTwap.methods
-//     .getBestBidAndAsk()
-//     .accounts({
-//       market,
-//       bids: storedMarket.bids,
-//       asks: storedMarket.asks,
-//     })
-//     .view();
-
-//   console.log(x[0].toString(), x[1].toString());
-
-//   // // console.log(await openbook.getLeafNodes(await openbook.getBookSide(storedMarket.asks)));
-//   // console.log((await openbook.getBookSide(storedMarket.asks)).nodes.nodes[0]);
-// }
-
-import Arweave from "arweave";
-
-import { createCreateMetadataAccountV3Instruction, PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
-
-const hotWallet = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg")
-
-async function main() {
-  await initializeProposal();
-  // const storedDAO = await autocratProgram.account.dao.fetch(dao);
-
-  // console.log(storedDAO);
-
-    // const senderMetaAcc = await token.getOrCreateAssociatedTokenAccount(
-  //   provider.connection,
-  //   payer,
-  //   storedDAO.metaMint,
-  //   payer.publicKey
-  // );
-
-  // const receiverMetaAcc = await token.getOrCreateAssociatedTokenAccount(
-  //   provider.connection,
-  //   payer,
-  //   storedDAO.metaMint,
-  //   hotWallet
-  // );
-
-  // await token.transfer(provider.connection, payer, senderMetaAcc.address, receiverMetaAcc.address, payer, 10_000_000_000n);
-
-
-  // await initializeProposal();
-}
-
-main();

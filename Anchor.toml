@@ -25,6 +25,7 @@ initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --
 clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && node scripts/clob.js && rm scripts/clob.js"
 autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
 airdrop = "yarn run ts-node scripts/airdrop.ts"
+place_order = "yarn run ts-node scripts/placeOrder.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]
