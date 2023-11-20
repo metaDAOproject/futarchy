@@ -26,6 +26,7 @@ clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && no
 autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
 airdrop = "yarn run ts-node scripts/airdrop.ts"
 place_order = "yarn run ts-node scripts/placeOrder.ts"
+crank = "yarn run ts-node scripts/crank.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]
