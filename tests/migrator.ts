@@ -7,9 +7,7 @@ const { PublicKey, Keypair } = anchor.web3;
 
 import { assert } from "chai";
 
-import {
-  startAnchor,
-} from "solana-bankrun";
+import { startAnchor } from "solana-bankrun";
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "8C4WEdr54tBPdtmeTPUBuZX5bgUMZw4XdvpNoNaQ6NwR"
@@ -30,14 +28,7 @@ import {
 } from "spl-token-bankrun";
 
 describe("autocrat_migrator", async function () {
-  let provider,
-    connection,
-    migrator,
-    payer,
-    context,
-    banksClient,
-    META,
-    USDC;
+  let provider, connection, migrator, payer, context, banksClient, META, USDC;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -113,7 +104,7 @@ describe("autocrat_migrator", async function () {
           to1,
         })
         .rpc();
-    
+
       assert((await getAccount(banksClient, from0)).amount == 0n);
       assert((await getAccount(banksClient, from1)).amount == 0n);
 

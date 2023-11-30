@@ -87,7 +87,6 @@ const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "8C4WEdr54tBPdtmeTPUBuZX5bgUMZw4XdvpNoNaQ6NwR"
 );
 
-
 describe("autocrat_v0", async function () {
   let provider,
     connection,
@@ -173,7 +172,6 @@ describe("autocrat_v0", async function () {
         autocrat.programId
       );
 
-
       await autocrat.methods
         .initializeDao()
         .accounts({
@@ -192,13 +190,23 @@ describe("autocrat_v0", async function () {
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.metaMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
-      assert.equal(daoAcc.proposalCount, 0);
+      assert.equal(daoAcc.proposalCount, 1);
       assert.equal(daoAcc.passThresholdBps, 500);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50)));
       assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(46_300)));
 
-      treasuryMetaAccount = await createAssociatedTokenAccount(banksClient, payer, META, daoTreasury);
-      treasuryUsdcAccount = await createAssociatedTokenAccount(banksClient, payer, USDC, daoTreasury);
+      treasuryMetaAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        META,
+        daoTreasury
+      );
+      treasuryUsdcAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        USDC,
+        daoTreasury
+      );
     });
   });
 
@@ -278,7 +286,6 @@ describe("autocrat_v0", async function () {
       aliceQuoteFailConditionalTokenAccount,
       newPassThresholdBps,
       instruction;
-    
 
     beforeEach(async function () {
       // const accounts = [
@@ -307,10 +314,21 @@ describe("autocrat_v0", async function () {
       await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
 
       let receiver = Keypair.generate();
-      let to0 = await createAccount(banksClient, payer, META, receiver.publicKey);
-      let to1 = await createAccount(banksClient, payer, USDC, receiver.publicKey);
+      let to0 = await createAccount(
+        banksClient,
+        payer,
+        META,
+        receiver.publicKey
+      );
+      let to1 = await createAccount(
+        banksClient,
+        payer,
+        USDC,
+        receiver.publicKey
+      );
 
-      const ix = await migrator.methods.multiTransfer2()
+      const ix = await migrator.methods
+        .multiTransfer2()
         .accounts({
           authority: daoTreasury,
           from0: treasuryMetaAccount,
@@ -324,7 +342,7 @@ describe("autocrat_v0", async function () {
         programId: ix.programId,
         accounts: ix.keys,
         data: ix.data,
-      }
+      };
 
       proposal = await initializeProposal(
         autocrat,
@@ -768,7 +786,7 @@ describe("autocrat_v0", async function () {
           //     isWritable: false,
           //     isSigner: false,
           //   })
-            instruction.accounts
+          instruction.accounts
             .concat({
               pubkey: migrator.programId,
               isWritable: false,

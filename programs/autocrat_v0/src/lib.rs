@@ -26,6 +26,9 @@ security_txt! {
 
 declare_id!("meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi");
 
+pub const SLOTS_PER_10_SECS: u64 = 25;
+pub const THREE_DAYS_IN_SLOTS: u64 = 5 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
+
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
 
@@ -34,8 +37,6 @@ pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 50 * solana_program::native_token::L
 pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 46_300;
 
 pub const MAX_BPS: u16 = 10_000;
-pub const SLOTS_PER_10_SECS: u64 = 25;
-pub const TEN_DAYS_IN_SLOTS: u64 = 10 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
 #[account]
 pub struct DAO {
@@ -52,6 +53,7 @@ pub struct DAO {
     pub last_proposal_slot: u64,
     pub base_burn_lamports: u64,
     pub burn_decay_per_slot_lamports: u64,
+    pub slots_per_proposal: u64,
     // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
     pub treasury_pda_bump: u8,
     pub treasury: Pubkey,
@@ -104,9 +106,12 @@ pub mod autocrat_v0 {
         dao.meta_mint = ctx.accounts.meta_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
 
+        dao.proposal_count = 1;
+
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
+        dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
 
         let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -281,7 +286,7 @@ pub mod autocrat_v0 {
         let clock = Clock::get()?;
 
         require!(
-            clock.slot >= proposal.slot_enqueued + TEN_DAYS_IN_SLOTS,
+            clock.slot >= proposal.slot_enqueued + ctx.accounts.dao.slots_per_proposal,
             AutocratError::ProposalTooYoung
         );
 
@@ -307,11 +312,11 @@ pub mod autocrat_v0 {
             openbook_twap_fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
 
         require!(
-            pass_market_slots_passed >= TEN_DAYS_IN_SLOTS,
+            pass_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
             AutocratError::MarketsTooYoung
         );
         require!(
-            fail_market_slots_passed >= TEN_DAYS_IN_SLOTS,
+            fail_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
             AutocratError::MarketsTooYoung
         );
 
@@ -393,6 +398,14 @@ pub mod autocrat_v0 {
         let dao = &mut ctx.accounts.dao;
 
         dao.base_burn_lamports = base_burn_lamports;
+
+        Ok(())
+    }
+
+    pub fn set_slots_per_proposal(ctx: Context<Auth>, slots_per_proposal: u64) -> Result<()> {
+        let dao = &mut ctx.accounts.dao;
+
+        dao.slots_per_proposal = slots_per_proposal;
 
         Ok(())
     }
