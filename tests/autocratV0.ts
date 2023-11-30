@@ -30,12 +30,14 @@ import { expectError } from "./utils/utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
+import { AutocratMigrator } from "../target/types/autocrat_migrator";
 import { OpenbookTwap } from "./fixtures/openbook_twap";
 
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
+const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
@@ -81,6 +83,11 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
+const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
+  "8C4WEdr54tBPdtmeTPUBuZX5bgUMZw4XdvpNoNaQ6NwR"
+);
+
+
 describe("autocrat_v0", async function () {
   let provider,
     connection,
@@ -94,7 +101,10 @@ describe("autocrat_v0", async function () {
     USDC,
     vaultProgram,
     openbook,
-    openbookTwap;
+    openbookTwap,
+    migrator,
+    treasuryMetaAccount,
+    treasuryUsdcAccount;
 
   before(async function () {
     context = await startAnchor(
@@ -133,6 +143,12 @@ describe("autocrat_v0", async function () {
       provider
     );
 
+    migrator = new anchor.Program<AutocratMigrator>(
+      AutocratMigratorIDL,
+      AUTOCRAT_MIGRATOR_PROGRAM_ID,
+      provider
+    );
+
     payer = autocrat.provider.wallet.payer;
 
     USDC = await createMint(
@@ -142,6 +158,8 @@ describe("autocrat_v0", async function () {
       payer.publicKey,
       6
     );
+
+    META = await createMint(banksClient, payer, dao, dao, 9);
   });
 
   describe("#initialize_dao", async function () {
@@ -155,7 +173,6 @@ describe("autocrat_v0", async function () {
         autocrat.programId
       );
 
-      META = await createMint(banksClient, payer, dao, dao, 9);
 
       await autocrat.methods
         .initializeDao()
@@ -179,6 +196,9 @@ describe("autocrat_v0", async function () {
       assert.equal(daoAcc.passThresholdBps, 500);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50)));
       assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(46_300)));
+
+      treasuryMetaAccount = await createAssociatedTokenAccount(banksClient, payer, META, daoTreasury);
+      treasuryUsdcAccount = await createAssociatedTokenAccount(banksClient, payer, USDC, daoTreasury);
     });
   });
 
@@ -256,30 +276,55 @@ describe("autocrat_v0", async function () {
       aliceBaseFailConditionalTokenAccount,
       aliceQuotePassConditionalTokenAccount,
       aliceQuoteFailConditionalTokenAccount,
-      newPassThresholdBps;
+      newPassThresholdBps,
+      instruction;
+    
 
     beforeEach(async function () {
-      const accounts = [
-        {
-          pubkey: dao,
-          isSigner: false,
-          isWritable: true,
-        },
-        {
-          pubkey: daoTreasury,
-          isSigner: true,
-          isWritable: false,
-        },
-      ];
-      newPassThresholdBps = Math.floor(Math.random() * 1000);
-      const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
-        passThresholdBps: newPassThresholdBps,
-      });
-      const instruction = {
-        programId: autocrat.programId,
-        accounts,
-        data,
-      };
+      // const accounts = [
+      //   {
+      //     pubkey: dao,
+      //     isSigner: false,
+      //     isWritable: true,
+      //   },
+      //   {
+      //     pubkey: daoTreasury,
+      //     isSigner: true,
+      //     isWritable: false,
+      //   },
+      // ];
+      // newPassThresholdBps = Math.floor(Math.random() * 1000);
+      // const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
+      //   passThresholdBps: newPassThresholdBps,
+      // });
+      // const instruction = {
+      //   programId: autocrat.programId,
+      //   accounts,
+      //   data,
+      // };
+
+      await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
+      await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+
+      let receiver = Keypair.generate();
+      let to0 = await createAccount(banksClient, payer, META, receiver.publicKey);
+      let to1 = await createAccount(banksClient, payer, USDC, receiver.publicKey);
+
+      const ix = await migrator.methods.multiTransfer2()
+        .accounts({
+          authority: daoTreasury,
+          from0: treasuryMetaAccount,
+          to0,
+          from1: treasuryUsdcAccount,
+          to1,
+        })
+        .instruction();
+
+      instruction = {
+        programId: ix.programId,
+        accounts: ix.keys,
+        data: ix.data,
+      }
 
       proposal = await initializeProposal(
         autocrat,
@@ -700,7 +745,7 @@ describe("autocrat_v0", async function () {
         .signers([mm0.keypair])
         .rpc();
 
-      await autocrat.methods
+      let tx = await autocrat.methods
         .finalizeProposal()
         .accounts({
           proposal,
@@ -713,13 +758,19 @@ describe("autocrat_v0", async function () {
           daoTreasury,
         })
         .remainingAccounts(
-          autocrat.instruction.setPassThresholdBps
-            .accounts({
-              dao,
-              daoTreasury,
-            })
+          // autocrat.instruction.setPassThresholdBps
+          //   .accounts({
+          //     dao,
+          //     daoTreasury,
+          //   })
+          //   .concat({
+          //     pubkey: autocrat.programId,
+          //     isWritable: false,
+          //     isSigner: false,
+          //   })
+            instruction.accounts
             .concat({
-              pubkey: autocrat.programId,
+              pubkey: migrator.programId,
               isWritable: false,
               isSigner: false,
             })
@@ -729,6 +780,7 @@ describe("autocrat_v0", async function () {
                 : meta
             )
         )
+        // .transaction();
         .rpc();
 
       let storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
@@ -744,8 +796,11 @@ describe("autocrat_v0", async function () {
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
-      const storedDao = await autocrat.account.dao.fetch(dao);
-      assert.equal(storedDao.passThresholdBps, newPassThresholdBps);
+      assert((await getAccount(banksClient, treasuryMetaAccount)).amount == 0n);
+      assert((await getAccount(banksClient, treasuryUsdcAccount)).amount == 0n);
+
+      // const storedDao = await autocrat.account.dao.fetch(dao);
+      // assert.equal(storedDao.passThresholdBps, newPassThresholdBps);
 
       await redeemConditionalTokens(
         vaultProgram,

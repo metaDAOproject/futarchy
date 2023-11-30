@@ -22,7 +22,7 @@ bankrun-vault:
     (find programs && find tests) | entr -csr 'anchor build -p conditional_vault && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts'
 
 bankrun-migrator:
-    (find programs && find tests) | entr -csr 'anchor build -p autocrat_migrator && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/migrator.ts'
+    (find programs && find tests) | entr -csr 'anchor build -p autocrat_migrator && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/migrator.ts'
 
 bankrun-vault-logs:
     (find programs && find tests) | entr -csr 'anchor build -p conditional_vault && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts'

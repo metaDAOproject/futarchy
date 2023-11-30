@@ -9,23 +9,13 @@ import { assert } from "chai";
 
 import {
   startAnchor,
-  Clock,
-  BanksClient,
-  ProgramTestContext,
 } from "solana-bankrun";
-const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
-);
+
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "8C4WEdr54tBPdtmeTPUBuZX5bgUMZw4XdvpNoNaQ6NwR"
 );
-import { AutocratV0 } from "../target/types/autocrat_v0";
-const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
-
-import { expectError } from "./utils/utils";
 
 import { AutocratMigrator } from "../target/types/autocrat_migrator";
-
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 export type PublicKey = anchor.web3.PublicKey;
@@ -35,9 +25,6 @@ export type Keypair = anchor.web3.Keypair;
 import {
   createMint,
   createAccount,
-  createAssociatedTokenAccount,
-  mintToOverride,
-  getMint,
   getAccount,
   mintTo,
 } from "spl-token-bankrun";
@@ -50,8 +37,7 @@ describe("autocrat_migrator", async function () {
     context,
     banksClient,
     META,
-    USDC,
-    autocrat;
+    USDC;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -62,12 +48,6 @@ describe("autocrat_migrator", async function () {
     migrator = new anchor.Program<AutocratMigrator>(
       AutocratMigratorIDL,
       AUTOCRAT_MIGRATOR_PROGRAM_ID,
-      provider
-    );
-
-    autocrat = new anchor.Program<AutocratV0>(
-      AutocratIDL,
-      AUTOCRAT_PROGRAM_ID,
       provider
     );
 
@@ -122,21 +102,23 @@ describe("autocrat_migrator", async function () {
 
       await mintTo(banksClient, payer, META, from0, payer, 1_000_000);
       await mintTo(banksClient, payer, USDC, from1, payer, 10_000);
-      console.log(await getAccount(banksClient, from0));
 
-      let tx = await migrator.methods
+      await migrator.methods
         .multiTransfer2()
         .accounts({
           authority: payer.publicKey,
-          lamportReceiver: receiver.publicKey,
           from0,
           to0,
           from1,
           to1,
         })
         .rpc();
+    
+      assert((await getAccount(banksClient, from0)).amount == 0n);
+      assert((await getAccount(banksClient, from1)).amount == 0n);
 
-      console.log(await getAccount(banksClient, from0));
+      assert((await getAccount(banksClient, to0)).amount == 1_000_000n);
+      assert((await getAccount(banksClient, to1)).amount == 10_000n);
     });
   });
 });
