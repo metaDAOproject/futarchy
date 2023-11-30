@@ -1,34 +1,39 @@
+[toolchain]
+
 [features]
 seeds = false
 skip-lint = false
 
 [programs.localnet]
+autocrat_migrator = "8C4WEdr54tBPdtmeTPUBuZX5bgUMZw4XdvpNoNaQ6NwR"
 autocrat_v0 = "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
 conditional_vault = "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
-
-[[test.genesis]]
-address = "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
-program = "./tests/fixtures/openbook_v2.so"
-[[test.genesis]]
-address = "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
-program = "./tests/fixtures/openbook_twap.so"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "Localnet"
-wallet = "~/.config/solana/id.json"
+wallet = "/home/user/.config/solana/id.json"
 
 [scripts]
-initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
-clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && node scripts/clob.js && rm scripts/clob.js"
-autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
 airdrop = "yarn run ts-node scripts/airdrop.ts"
-place_order = "yarn run ts-node scripts/placeOrder.ts"
+autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
+clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && node scripts/clob.js && rm scripts/clob.js"
 crank = "yarn run ts-node scripts/crank.ts"
+initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
+place_order = "yarn run ts-node scripts/placeOrder.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]
 startup_wait = 5000
 shutdown_wait = 2000
+upgradeable = false
+
+[[test.genesis]]
+address = "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
+program = "./tests/fixtures/openbook_v2.so"
+
+[[test.genesis]]
+address = "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
+program = "./tests/fixtures/openbook_twap.so"

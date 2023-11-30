@@ -36,8 +36,12 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
-export const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
-export const PROPH3t_PUBKEY = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg");
+export const META = new PublicKey(
+  "METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr"
+);
+export const PROPH3t_PUBKEY = new PublicKey(
+  "65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg"
+);
 
 export const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
@@ -156,25 +160,25 @@ async function initializeDAO(META: any, USDC: any) {
 
 async function initializeProposal() {
   const senderAcc = await token.getOrCreateAssociatedTokenAccount(
-        provider.connection,
-        payer,
-        META,
-        daoTreasury,
-        true
-    );
+    provider.connection,
+    payer,
+    META,
+    daoTreasury,
+    true
+  );
 
   const receiverAcc = await token.getOrCreateAssociatedTokenAccount(
-        provider.connection,
-        payer,
-        META,
-        PROPH3t_PUBKEY
-    );
+    provider.connection,
+    payer,
+    META,
+    PROPH3t_PUBKEY
+  );
 
   const transferIx = token.createTransferInstruction(
     senderAcc.address,
     receiverAcc.address,
     daoTreasury,
-    1000 * 1_000_000_000, // 1,000 META
+    1000 * 1_000_000_000 // 1,000 META
   );
 
   const programId = transferIx.programId;
@@ -350,7 +354,9 @@ async function placeOrdersOnBothSides(twapMarket: any) {
   };
 
   const storedMarket = await openbook.getMarketAccount(market);
-  let openOrdersAccount = new anchor.web3.PublicKey("CxDQ5RSYebF6mRLDrXYn1An7bawe6S3iyaU5rZBjz4Xs");
+  let openOrdersAccount = new anchor.web3.PublicKey(
+    "CxDQ5RSYebF6mRLDrXYn1An7bawe6S3iyaU5rZBjz4Xs"
+  );
   // let openOrdersAccount = await openbook.createOpenOrders(
   //   payer,
   //   market,
@@ -502,15 +508,20 @@ async function placeTakeOrder(twapMarket: any) {
 
 export async function mintConditionalTokens(
   amount: number,
-  vault: anchor.web3.PublicKey,
+  vault: anchor.web3.PublicKey
 ) {
   const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
 
-
   // Setting default values for optional parameters
-  const userUnderlyingTokenAccount = await getOrCreateAccount(storedVault.underlyingTokenMint);
-  const userConditionalOnFinalizeTokenAccount = await getOrCreateAccount(storedVault.conditionalOnFinalizeTokenMint);
-  const userConditionalOnRevertTokenAccount = await getOrCreateAccount(storedVault.conditionalOnRevertTokenMint);
+  const userUnderlyingTokenAccount = await getOrCreateAccount(
+    storedVault.underlyingTokenMint
+  );
+  const userConditionalOnFinalizeTokenAccount = await getOrCreateAccount(
+    storedVault.conditionalOnFinalizeTokenMint
+  );
+  const userConditionalOnRevertTokenAccount = await getOrCreateAccount(
+    storedVault.conditionalOnRevertTokenMint
+  );
   const vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
 
   const bnAmount = new anchor.BN(amount);
@@ -525,7 +536,8 @@ export async function mintConditionalTokens(
       userUnderlyingTokenAccount,
       userConditionalOnFinalizeTokenAccount,
       userConditionalOnRevertTokenAccount,
-      conditionalOnFinalizeTokenMint: storedVault.conditionalOnFinalizeTokenMint,
+      conditionalOnFinalizeTokenMint:
+        storedVault.conditionalOnFinalizeTokenMint,
       conditionalOnRevertTokenMint: storedVault.conditionalOnRevertTokenMint,
     })
     .signers([payer])
@@ -533,10 +545,12 @@ export async function mintConditionalTokens(
 }
 
 async function getOrCreateAccount(mint: anchor.web3.PublicKey) {
-  return (await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    mint,
-    payer.publicKey
-  )).address;
+  return (
+    await token.getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      payer,
+      mint,
+      payer.publicKey
+    )
+  ).address;
 }
