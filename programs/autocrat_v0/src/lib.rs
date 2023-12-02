@@ -40,24 +40,24 @@ pub const MAX_BPS: u16 = 10_000;
 
 #[account]
 pub struct DAO {
+    // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
+    pub treasury_pda_bump: u8,
+    pub treasury: Pubkey,
     pub meta_mint: Pubkey,
     pub usdc_mint: Pubkey,
+    pub proposal_count: u32,
+    pub last_proposal_slot: u64,
     // the percentage, in basis points, the pass price needs to be above the
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
-    pub proposal_count: u32,
     // for anti-spam, proposers need to burn some SOL. the amount that they need
     // to burn is inversely proportional to the amount of time that has passed
     // since the last proposal.
     // burn_amount = base_lamport_burn - (lamport_burn_decay_per_slot * slots_passed)
-    pub last_proposal_slot: u64,
     pub base_burn_lamports: u64,
     pub burn_decay_per_slot_lamports: u64,
     pub slots_per_proposal: u64,
     pub market_taker_fee: i64,
-    // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
-    pub treasury_pda_bump: u8,
-    pub treasury: Pubkey,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -169,6 +169,10 @@ pub mod autocrat_v0 {
             openbook_pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
             AutocratError::InvalidMarket
         );
+        require!(
+            openbook_pass_market.collect_fee_admin == dao.treasury,
+            AutocratError::InvalidMarket
+        );
 
         require!(
             openbook_fail_market.base_mint
@@ -202,6 +206,10 @@ pub mod autocrat_v0 {
         );
         require!(
             openbook_pass_market.quote_lot_size == 100,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.collect_fee_admin == dao.treasury,
             AutocratError::InvalidMarket
         );
         let clock = Clock::get()?;
@@ -380,45 +388,86 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn set_pass_threshold_bps(ctx: Context<Auth>, pass_threshold_bps: u16) -> Result<()> {
-        let dao = &mut ctx.accounts.dao;
+    // pub fn set_pass_threshold_bps(ctx: Context<Auth>, pass_threshold_bps: u16) -> Result<()> {
+    //     let dao = &mut ctx.accounts.dao;
 
-        dao.pass_threshold_bps = pass_threshold_bps;
+    //     dao.pass_threshold_bps = pass_threshold_bps;
 
-        Ok(())
+    //     Ok(())
+    // }
+
+    // pub fn set_base_burn_lamports(ctx: Context<Auth>, base_burn_lamports: u64) -> Result<()> {
+    //     let dao = &mut ctx.accounts.dao;
+
+    //     dao.base_burn_lamports = base_burn_lamports;
+
+    //     Ok(())
+    // }
+
+    // pub fn set_burn_decay_per_slot_lamports(
+    //     ctx: Context<Auth>,
+    //     burn_decay_per_slot_lamports: u64,
+    // ) -> Result<()> {
+    //     let dao = &mut ctx.accounts.dao;
+
+    //     dao.burn_decay_per_slot_lamports = burn_decay_per_slot_lamports;
+
+    //     Ok(())
+    // }
+
+    // pub fn set_slots_per_proposal(ctx: Context<Auth>, slots_per_proposal: u64) -> Result<()> {
+    //     let dao = &mut ctx.accounts.dao;
+
+    //     dao.slots_per_proposal = slots_per_proposal;
+
+    //     Ok(())
+    // }
+
+    // pub fn set_market_taker_fee(ctx: Context<Auth>, market_taker_fee: i64) -> Result<()> {
+    //     let dao = &mut ctx.accounts.dao;
+
+    //     dao.market_taker_fee = market_taker_fee;
+
+    //     Ok(())
+    // }
+
+    #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize)]
+    pub enum Test {
+        Boo,
+        Foo,
     }
 
-    pub fn set_base_burn_lamports(ctx: Context<Auth>, base_burn_lamports: u64) -> Result<()> {
-        let dao = &mut ctx.accounts.dao;
-
-        dao.base_burn_lamports = base_burn_lamports;
-
-        Ok(())
+    #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, Eq, PartialEq, Debug)]
+    pub struct Testy {
+        pub thing: Option<u64>,
     }
 
-    pub fn set_burn_decay_per_slot_lamports(
-        ctx: Context<Auth>,
-        burn_decay_per_slot_lamports: u64,
+
+    pub fn update_dao(
+        ctx: Context<UpdateDao>,
+        dao_params: UpdateDaoParams,
     ) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        dao.burn_decay_per_slot_lamports = burn_decay_per_slot_lamports;
+        if let Some(pass_threshold_bps) = dao_params.pass_threshold_bps {
+            dao.pass_threshold_bps = pass_threshold_bps;
+        }
 
-        Ok(())
-    }
+        if let Some(base_burn_lamports) = dao_params.base_burn_lamports {
+            dao.base_burn_lamports = base_burn_lamports;
+        }
 
-    pub fn set_slots_per_proposal(ctx: Context<Auth>, slots_per_proposal: u64) -> Result<()> {
-        let dao = &mut ctx.accounts.dao;
+        if let Some(burn_decay_per_slot_lamports) = dao_params.burn_decay_per_slot_lamports {
+            dao.burn_decay_per_slot_lamports = burn_decay_per_slot_lamports;
+        }
 
-        dao.slots_per_proposal = slots_per_proposal;
+        if let Some(slots_per_proposal) = dao_params.slots_per_proposal {
+            dao.slots_per_proposal = slots_per_proposal;
+        }
 
-        Ok(())
-    }
-
-    pub fn set_market_taker_fee(ctx: Context<Auth>, market_taker_fee: i64) -> Result<()> {
-        let dao = &mut ctx.accounts.dao;
-
-        dao.market_taker_fee = market_taker_fee;
+        if let Some(market_taker_fee) = dao_params.market_taker_fee {
+            dao.market_taker_fee = market_taker_fee;
+        }
 
         Ok(())
     }
@@ -513,11 +562,24 @@ pub struct FinalizeProposal<'info> {
     pub dao_treasury: UncheckedAccount<'info>,
 }
 
+#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub struct UpdateDaoParams {
+    pub pass_threshold_bps: Option<u16>,
+    pub base_burn_lamports: Option<u64>,
+    pub burn_decay_per_slot_lamports: Option<u64>,
+    pub slots_per_proposal: Option<u64>,
+    pub market_taker_fee: Option<i64>,
+}
+
 #[derive(Accounts)]
-pub struct Auth<'info> {
+pub struct UpdateDao<'info> {
     #[account(mut)]
     pub dao: Account<'info, DAO>,
     /// CHECK: never read
+    #[account(
+        seeds = [dao.key().as_ref()],
+        bump = dao.treasury_pda_bump,
+    )]
     pub dao_treasury: Signer<'info>,
 }
 

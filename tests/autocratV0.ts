@@ -219,8 +219,14 @@ describe("autocrat_v0", async function () {
           isWritable: true,
         },
       ];
-      const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
-        passThresholdBps: 1000,
+      const data = autocrat.coder.instruction.encode("update_dao", {
+        daoParams: {
+          passThresholdBps: 500,
+          baseBurnLamports: null,
+          burnDecayPerSlotLamports: null,
+          slotsPerProposal: null,
+          marketTakerFee: null,
+        }
       });
       const instruction = {
         programId: autocrat.programId,
@@ -1136,7 +1142,7 @@ describe("autocrat_v0", async function () {
           daoTreasury,
         })
         .remainingAccounts(
-          autocrat.instruction.setPassThresholdBps
+          autocrat.instruction.updateDao
             .accounts({
               dao,
               daoTreasury,
@@ -1447,7 +1453,8 @@ async function initializeProposal(
     null,
     openbookTwapPassMarket,
     { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookPassMarketKP
+    openbookPassMarketKP,
+    daoTreasury
   );
 
   await openbookTwap.methods
@@ -1484,7 +1491,8 @@ async function initializeProposal(
     null,
     openbookTwapFailMarket,
     { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookFailMarketKP
+    openbookFailMarketKP,
+    daoTreasury
   );
   await openbookTwap.methods
     .createTwapMarket(new BN(1000))
