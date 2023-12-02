@@ -422,6 +422,13 @@ pub mod autocrat_v0 {
 
         Ok(())
     }
+
+    pub fn transfer_to(ctx: Context<TransferTo>, lamports: u64) -> Result<()> {
+        **ctx.accounts.dao_treasury.to_account_info().try_borrow_mut_lamports()? -= lamports;
+        **ctx.accounts.lamport_receiver.to_account_info().try_borrow_mut_lamports()? += lamports;
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -512,6 +519,14 @@ pub struct Auth<'info> {
     pub dao: Account<'info, DAO>,
     /// CHECK: never read
     pub dao_treasury: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct TransferTo<'info> {
+    #[account(mut)]
+    pub dao_treasury: Signer<'info>,
+    /// CHECK: no r/w, just lamport add
+    pub lamport_receiver: UncheckedAccount<'info>,
 }
 
 impl From<&ProposalInstruction> for Instruction {
