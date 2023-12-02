@@ -190,10 +190,10 @@ describe("autocrat_v0", async function () {
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.metaMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
-      assert.equal(daoAcc.proposalCount, 1);
+      assert.equal(daoAcc.proposalCount, 2);
       assert.equal(daoAcc.passThresholdBps, 500);
-      assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50)));
-      assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(46_300)));
+      assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
+      assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
 
       treasuryMetaAccount = await createAssociatedTokenAccount(
         banksClient,
@@ -229,7 +229,7 @@ describe("autocrat_v0", async function () {
       };
 
       let currentClock = await context.banksClient.getClock();
-      let newSlot = currentClock.slot + 432_000n; // 2 days
+      let newSlot = currentClock.slot + 216_000n; // 1 day
       context.setClock(
         new Clock(
           newSlot,
@@ -255,10 +255,10 @@ describe("autocrat_v0", async function () {
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
 
-      // two days, so proposer should burn 30 SOL
-      assert(balanceAfter < balanceBefore - 1_000_000_000n * 30n);
+      // two days, so proposer should burn 5 SOL
+      assert(balanceAfter < balanceBefore - 1_000_000_000n * 5n);
 
-      assert(balanceAfter > balanceBefore - 1_000_000_000n * 35n);
+      assert(balanceAfter > balanceBefore - 1_000_000_000n * 10n);
     });
   });
 

@@ -32,9 +32,9 @@ pub const THREE_DAYS_IN_SLOTS: u64 = 5 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
 
-// start at 50 SOL ($1000 at current prices), decay by ~10 SOL per day
-pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 50 * solana_program::native_token::LAMPORTS_PER_SOL;
-pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 46_300;
+// start at 10 SOL ($600 at current prices), decay by ~5 SOL per day
+pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 10 * solana_program::native_token::LAMPORTS_PER_SOL;
+pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 23_150;
 
 pub const MAX_BPS: u16 = 10_000;
 
@@ -107,7 +107,7 @@ pub mod autocrat_v0 {
         dao.meta_mint = ctx.accounts.meta_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
 
-        dao.proposal_count = 1;
+        dao.proposal_count = 2;
 
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
@@ -388,18 +388,21 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn set_last_proposal_slot(ctx: Context<Auth>, last_proposal_slot: u64) -> Result<()> {
-        let dao = &mut ctx.accounts.dao;
-
-        dao.last_proposal_slot = last_proposal_slot;
-
-        Ok(())
-    }
-
     pub fn set_base_burn_lamports(ctx: Context<Auth>, base_burn_lamports: u64) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         dao.base_burn_lamports = base_burn_lamports;
+
+        Ok(())
+    }
+
+    pub fn set_burn_decay_per_slot_lamports(
+        ctx: Context<Auth>,
+        burn_decay_per_slot_lamports: u64,
+    ) -> Result<()> {
+        let dao = &mut ctx.accounts.dao;
+
+        dao.burn_decay_per_slot_lamports = burn_decay_per_slot_lamports;
 
         Ok(())
     }
