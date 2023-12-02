@@ -54,6 +54,7 @@ pub struct DAO {
     pub base_burn_lamports: u64,
     pub burn_decay_per_slot_lamports: u64,
     pub slots_per_proposal: u64,
+    pub market_taker_fee: i64,
     // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
     pub treasury_pda_bump: u8,
     pub treasury: Pubkey,
@@ -112,6 +113,7 @@ pub mod autocrat_v0 {
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
+        dao.market_taker_fee = 0;
 
         let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -128,6 +130,7 @@ pub mod autocrat_v0 {
     ) -> Result<()> {
         let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
         let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
+        let dao = &mut ctx.accounts.dao;
 
         require!(
             openbook_pass_market.base_mint
@@ -151,7 +154,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.taker_fee == 0,
+            openbook_pass_market.taker_fee == dao.market_taker_fee,
             AutocratError::InvalidMarket
         );
         require!(
@@ -186,7 +189,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.taker_fee == 0,
+            openbook_fail_market.taker_fee == dao.market_taker_fee,
             AutocratError::InvalidMarket
         );
         require!(
@@ -223,7 +226,6 @@ pub mod autocrat_v0 {
             AutocratError::TWAPMarketInvalidExpectedValue
         );
 
-        let dao = &mut ctx.accounts.dao;
         let proposal = &mut ctx.accounts.proposal;
 
         proposal.number = dao.proposal_count;
@@ -406,6 +408,14 @@ pub mod autocrat_v0 {
         let dao = &mut ctx.accounts.dao;
 
         dao.slots_per_proposal = slots_per_proposal;
+
+        Ok(())
+    }
+
+    pub fn set_market_taker_fee(ctx: Context<Auth>, market_taker_fee: i64) -> Result<()> {
+        let dao = &mut ctx.accounts.dao;
+
+        dao.market_taker_fee = market_taker_fee;
 
         Ok(())
     }
