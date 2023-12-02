@@ -526,6 +526,7 @@ pub struct TransferTo<'info> {
     #[account(mut)]
     pub dao_treasury: Signer<'info>,
     /// CHECK: no r/w, just lamport add
+    #[account(mut)]
     pub lamport_receiver: UncheckedAccount<'info>,
 }
 
