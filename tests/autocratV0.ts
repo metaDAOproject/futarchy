@@ -512,7 +512,7 @@ describe("autocrat_v0", async function () {
 
       let passBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(1000), // 0.1 USDC for 1 META
+        priceLots: new BN(10000), // 1 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -523,7 +523,7 @@ describe("autocrat_v0", async function () {
       };
       let failBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(700), // 0.07 USDC for 1 META
+        priceLots: new BN(7000), // 0.7 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -535,7 +535,7 @@ describe("autocrat_v0", async function () {
 
       let passSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(1100), // 0.11 USDC for 1 META
+        priceLots: new BN(11_000), // 1.1 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -546,7 +546,7 @@ describe("autocrat_v0", async function () {
       };
       let failSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(800), // 0.8 USDC for 1 META
+        priceLots: new BN(8_000), // 8 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -657,9 +657,9 @@ describe("autocrat_v0", async function () {
 
       let takeBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(1_300), // 1.3 USDC for 1 META
+        priceLots: new BN(13000), // 13 USDC for 1 META
         maxBaseLots: new BN(1),
-        maxQuoteLotsIncludingFees: new BN(2000),
+        maxQuoteLotsIncludingFees: new BN(20000),
         clientOrderId: new BN(1),
         orderType: OrderType.Market,
         expiryTimestamp: new BN(0),
@@ -859,7 +859,7 @@ describe("autocrat_v0", async function () {
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
           .amount,
-        10_000n * 1_000_000n - 110_000n
+        10_000n * 1_000_000n - 1_100_000n
       );
     });
 
@@ -1458,7 +1458,7 @@ async function initializeProposal(
   );
 
   await openbookTwap.methods
-    .createTwapMarket(new BN(1000))
+    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
       market: openbookPassMarket,
       twapMarket: openbookTwapPassMarket,
@@ -1495,7 +1495,7 @@ async function initializeProposal(
     daoTreasury
   );
   await openbookTwap.methods
-    .createTwapMarket(new BN(1000))
+    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
       market: openbookFailMarket,
       twapMarket: openbookTwapFailMarket,

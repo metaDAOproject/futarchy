@@ -58,6 +58,7 @@ pub struct DAO {
     pub burn_decay_per_slot_lamports: u64,
     pub slots_per_proposal: u64,
     pub market_taker_fee: i64,
+    pub twap_expected_value: u64,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -114,6 +115,7 @@ pub mod autocrat_v0 {
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
+        dao.twap_expected_value = 10_000; // 1 USDC per META
 
         let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -226,11 +228,11 @@ pub mod autocrat_v0 {
             AutocratError::TWAPMarketTooOld
         );
         require!(
-            openbook_twap_pass_market.twap_oracle.expected_value == 1000,
+            openbook_twap_pass_market.twap_oracle.expected_value == dao.twap_expected_value,
             AutocratError::TWAPMarketInvalidExpectedValue
         );
         require!(
-            openbook_twap_fail_market.twap_oracle.expected_value == 1000,
+            openbook_twap_fail_market.twap_oracle.expected_value == dao.twap_expected_value,
             AutocratError::TWAPMarketInvalidExpectedValue
         );
 
@@ -388,61 +390,6 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    // pub fn set_pass_threshold_bps(ctx: Context<Auth>, pass_threshold_bps: u16) -> Result<()> {
-    //     let dao = &mut ctx.accounts.dao;
-
-    //     dao.pass_threshold_bps = pass_threshold_bps;
-
-    //     Ok(())
-    // }
-
-    // pub fn set_base_burn_lamports(ctx: Context<Auth>, base_burn_lamports: u64) -> Result<()> {
-    //     let dao = &mut ctx.accounts.dao;
-
-    //     dao.base_burn_lamports = base_burn_lamports;
-
-    //     Ok(())
-    // }
-
-    // pub fn set_burn_decay_per_slot_lamports(
-    //     ctx: Context<Auth>,
-    //     burn_decay_per_slot_lamports: u64,
-    // ) -> Result<()> {
-    //     let dao = &mut ctx.accounts.dao;
-
-    //     dao.burn_decay_per_slot_lamports = burn_decay_per_slot_lamports;
-
-    //     Ok(())
-    // }
-
-    // pub fn set_slots_per_proposal(ctx: Context<Auth>, slots_per_proposal: u64) -> Result<()> {
-    //     let dao = &mut ctx.accounts.dao;
-
-    //     dao.slots_per_proposal = slots_per_proposal;
-
-    //     Ok(())
-    // }
-
-    // pub fn set_market_taker_fee(ctx: Context<Auth>, market_taker_fee: i64) -> Result<()> {
-    //     let dao = &mut ctx.accounts.dao;
-
-    //     dao.market_taker_fee = market_taker_fee;
-
-    //     Ok(())
-    // }
-
-    #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize)]
-    pub enum Test {
-        Boo,
-        Foo,
-    }
-
-    #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, Eq, PartialEq, Debug)]
-    pub struct Testy {
-        pub thing: Option<u64>,
-    }
-
-
     pub fn update_dao(
         ctx: Context<UpdateDao>,
         dao_params: UpdateDaoParams,
@@ -467,6 +414,10 @@ pub mod autocrat_v0 {
 
         if let Some(market_taker_fee) = dao_params.market_taker_fee {
             dao.market_taker_fee = market_taker_fee;
+        }
+
+        if let Some(twap_expected_value) = dao_params.twap_expected_value {
+            dao.twap_expected_value = twap_expected_value;
         }
 
         Ok(())
@@ -569,6 +520,7 @@ pub struct UpdateDaoParams {
     pub burn_decay_per_slot_lamports: Option<u64>,
     pub slots_per_proposal: Option<u64>,
     pub market_taker_fee: Option<i64>,
+    pub twap_expected_value: Option<u64>,
 }
 
 #[derive(Accounts)]
@@ -620,7 +572,7 @@ pub enum AutocratError {
     InvalidMarket,
     #[msg("`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`")]
     TWAPMarketTooOld,
-    #[msg("`TWAPMarket` must have an expected value of 1000, or 0.1 USDC per META")]
+    #[msg("`TWAPMarket` has the wrong `expected_value`")]
     TWAPMarketInvalidExpectedValue,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
     InvalidSettlementAuthority,
