@@ -1300,10 +1300,10 @@ source-map@^0.6.0:
   resolved "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
-spl-token-bankrun@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.npmjs.org/spl-token-bankrun/-/spl-token-bankrun-0.2.1.tgz"
-  integrity sha512-uovBD5DTW91dJOfdvexdBGz5a3Z4hBverKfPemRYOQCEOfHdzrBUyWc9gIY8rSPtMjQQwQtpyoUarVw/SK6Lxw==
+spl-token-bankrun@0.2.3:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/spl-token-bankrun/-/spl-token-bankrun-0.2.3.tgz#929e7ea8872ad4f2065d97b185b8cb1b92b2366d"
+  integrity sha512-jQ0V+2GsL6rMrZfqLSbYBtYc5EvdVgsgVeYsZlJLRqrBoVENGve6oDAnJnuiY8JMXGxUs53iYYhG871knI7Vww==
   dependencies:
     "@solana/spl-token" "^0.3.8"
     solana-bankrun "^0.2.0"
