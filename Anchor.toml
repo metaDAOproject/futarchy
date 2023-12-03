@@ -14,7 +14,7 @@ url = "https://api.apr.dev"
 
 [provider]
 cluster = "Localnet"
-wallet = "/home/user/.config/solana/id.json"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
 airdrop = "yarn run ts-node scripts/airdrop.ts"
