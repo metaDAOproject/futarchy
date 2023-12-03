@@ -24,7 +24,7 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi");
+declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 5 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
@@ -422,13 +422,6 @@ pub mod autocrat_v0 {
 
         Ok(())
     }
-
-    pub fn transfer_to(ctx: Context<TransferTo>, lamports: u64) -> Result<()> {
-        **ctx.accounts.dao_treasury.to_account_info().try_borrow_mut_lamports()? -= lamports;
-        **ctx.accounts.lamport_receiver.to_account_info().try_borrow_mut_lamports()? += lamports;
-
-        Ok(())
-    }
 }
 
 #[derive(Accounts)]
@@ -533,15 +526,6 @@ pub struct UpdateDao<'info> {
         bump = dao.treasury_pda_bump,
     )]
     pub dao_treasury: Signer<'info>,
-}
-
-#[derive(Accounts)]
-pub struct TransferTo<'info> {
-    #[account(mut)]
-    pub dao_treasury: Signer<'info>,
-    /// CHECK: no r/w, just lamport add
-    #[account(mut)]
-    pub lamport_receiver: UncheckedAccount<'info>,
 }
 
 impl From<&ProposalInstruction> for Instruction {
