@@ -10,7 +10,7 @@ import { assert } from "chai";
 import { startAnchor } from "solana-bankrun";
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
-  "8C4WEdr54tBPdtmeTPUBuZX5bgUMZw4XdvpNoNaQ6NwR"
+  "miqe4jQYw11JE9o5AbZGYXm1dsWYbCoiGqZSqkYK5sV"
 );
 
 import { AutocratMigrator } from "../target/types/autocrat_migrator";
@@ -102,6 +102,7 @@ describe("autocrat_migrator", async function () {
           to0,
           from1,
           to1,
+          lamportReceiver: receiver.publicKey,
         })
         .rpc();
 

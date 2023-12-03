@@ -3,8 +3,9 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
+use anchor_lang::solana_program;
 
-declare_id!("8C4WEdr54tBPdtmeTPUBuZX5bgUMZw4XdvpNoNaQ6NwR");
+declare_id!("miqe4jQYw11JE9o5AbZGYXm1dsWYbCoiGqZSqkYK5sV");
 
 #[program]
 pub mod autocrat_migrator {
@@ -35,6 +36,22 @@ pub mod autocrat_migrator {
             ctx.accounts.from1.amount,
         )?;
 
+        let rent = Rent::get()?;
+
+        let lamport_transfer = solana_program::system_instruction::transfer(
+            &ctx.accounts.authority.key(),
+            &ctx.accounts.lamport_receiver.key(),
+            ctx.accounts.authority.get_lamports().saturating_sub(rent.minimum_balance(0)),
+        );
+
+        solana_program::program::invoke(
+            &lamport_transfer,
+            &[
+                ctx.accounts.authority.to_account_info(),
+                ctx.accounts.lamport_receiver.to_account_info(),
+            ]
+        )?;
+
         Ok(())
     }
 }
@@ -52,4 +69,8 @@ pub struct MultiTransfer2<'info> {
     from1: Account<'info, TokenAccount>,
     #[account(mut)]
     to1: Account<'info, TokenAccount>,
+    system_program: Program<'info, System>,
+    /// CHECK: no r/w, just lamport sub
+    #[account(mut)]
+    lamport_receiver: UncheckedAccount<'info>,
 }
