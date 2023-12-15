@@ -15,14 +15,20 @@ const PROPOSAL_NUMBER = 1;
 const PASS_MARKET = true;
 
 async function placeOrder() {
-    let proposals = await autocratProgram.account.proposal.all();
+  let proposals = await autocratProgram.account.proposal.all();
 
-    let proposal = proposals.filter((proposal) => proposal.account.number == PROPOSAL_NUMBER)[0].account;
+  let proposal = proposals.filter(
+    (proposal) => proposal.account.number == PROPOSAL_NUMBER
+  )[0].account;
 
-    let twapMarket = PASS_MARKET ? proposal.openbookTwapPassMarket : proposal.openbookTwapFailMarket;
-    let market = PASS_MARKET ? proposal.openbookPassMarket : proposal.openbookFailMarket;
+  let twapMarket = PASS_MARKET
+    ? proposal.openbookTwapPassMarket
+    : proposal.openbookTwapFailMarket;
+  let market = PASS_MARKET
+    ? proposal.openbookPassMarket
+    : proposal.openbookFailMarket;
 
-    // let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
+  // let market = (await openbookTwap.account.twapMarket.fetch(twapMarket)).market;
 
   let buyArgs: PlaceOrderArgs = {
     side: Side.Bid,
@@ -49,7 +55,9 @@ async function placeOrder() {
   };
 
   const storedMarket = await openbook.getMarketAccount(market);
-  let openOrdersAccount = new anchor.web3.PublicKey("CxDQ5RSYebF6mRLDrXYn1An7bawe6S3iyaU5rZBjz4Xs");
+  let openOrdersAccount = new anchor.web3.PublicKey(
+    "CxDQ5RSYebF6mRLDrXYn1An7bawe6S3iyaU5rZBjz4Xs"
+  );
   // let openOrdersAccount = await openbook.createOpenOrders(
   //   payer,
   //   market,

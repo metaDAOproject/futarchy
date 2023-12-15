@@ -19,10 +19,15 @@ import {
 } from "../target/types/conditional_vault";
 
 import { OpenbookTwap } from "../tests/fixtures/openbook_twap";
+import { AutocratMigrator } from "../target/types/autocrat_migrator";
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.json");
+const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
+const NEW_AUTOCRAT_PROGRAM_ID = new PublicKey(
+  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
+);
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
 );
@@ -36,8 +41,21 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
-export const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
-export const PROPH3t_PUBKEY = new PublicKey("65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg");
+export const META = new PublicKey(
+  "METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr"
+);
+export const DEVNET_USDC = new PublicKey(
+  "B9CZDrwg7d34MiPiWoUSmddriCtQB5eB2h9EUSDHt48b"
+);
+export const USDC = new PublicKey(
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+);
+export const PROPH3t_PUBKEY = new PublicKey(
+  "65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg"
+);
+const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
+  "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
+);
 
 export const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
@@ -47,6 +65,11 @@ export const payer = provider.wallet["payer"];
 export const autocratProgram = new Program<AutocratV0>(
   AutocratIDL,
   AUTOCRAT_PROGRAM_ID,
+  provider
+);
+export const newAutocratProgram = new Program<AutocratV0>(
+  AutocratIDL,
+  NEW_AUTOCRAT_PROGRAM_ID,
   provider
 );
 
@@ -63,6 +86,12 @@ export const openbookTwap = new Program<OpenbookTwap>(
   provider
 );
 
+export const migrator = new anchor.Program<AutocratMigrator>(
+  AutocratMigratorIDL,
+  AUTOCRAT_MIGRATOR_PROGRAM_ID,
+  provider
+);
+
 const [dao] = PublicKey.findProgramAddressSync(
   [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
   autocratProgram.programId
@@ -72,6 +101,17 @@ const [daoTreasury] = PublicKey.findProgramAddressSync(
   [dao.toBuffer()],
   autocratProgram.programId
 );
+
+const [newDao] = PublicKey.findProgramAddressSync(
+  [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+  newAutocratProgram.programId
+);
+
+const [newDaoTreasury] = PublicKey.findProgramAddressSync(
+  [newDao.toBuffer()],
+  newAutocratProgram.programId
+);
+
 
 async function createMint(
   mintAuthority: any,
@@ -155,57 +195,85 @@ async function initializeDAO(META: any, USDC: any) {
 }
 
 async function initializeProposal() {
-  const senderAcc = await token.getOrCreateAssociatedTokenAccount(
-        provider.connection,
-        payer,
-        META,
-        daoTreasury,
-        true
-    );
-
-  const receiverAcc = await token.getOrCreateAssociatedTokenAccount(
-        provider.connection,
-        payer,
-        META,
-        PROPH3t_PUBKEY
-    );
-
-  const transferIx = token.createTransferInstruction(
-    senderAcc.address,
-    receiverAcc.address,
+  const treasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    META,
     daoTreasury,
-    1000 * 1_000_000_000, // 1,000 META
+    true
   );
 
-  const programId = transferIx.programId;
-  const accounts = transferIx.keys;
-  const data = transferIx.data;
+  const treasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    USDC,
+    daoTreasury,
+    true
+  );
+
+  const newTreasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    META,
+    newDaoTreasury,
+    true
+  );
+
+  const newTreasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    USDC,
+    newDaoTreasury,
+    true
+  );
+
+  const ix = await migrator.methods
+        .multiTransfer2()
+        .accounts({
+          authority: daoTreasury,
+          from0: treasuryMetaAccount.address,
+          to0: newTreasuryMetaAccount.address,
+          from1: treasuryUsdcAccount.address,
+          to1: newTreasuryUsdcAccount.address,
+          lamportReceiver: newDaoTreasury,
+        })
+        .instruction();
 
   const instruction = {
-    programId,
-    accounts,
-    data,
+    programId: ix.programId,
+    accounts: ix.keys,
+    data: ix.data,
   };
+
+  // const programId = transferIx.programId;
+  // const accounts = transferIx.keys;
+  // const data = transferIx.data;
+
+  // const instruction = {
+  //   programId,
+  //   accounts,
+  //   data,
+  // };
 
   const proposalKeypair = Keypair.generate();
 
-  const storedDAO = await autocratProgram.account.dao.fetch(dao);
-  console.log(storedDAO);
+  // const storedDAO = await autocratProgram.account.dao.fetch(dao);
+  // console.log(storedDAO);
 
   // least signficant 32 bits of nonce are proposal number
   // most significant bit of nonce is 0 for base and 1 for quote
 
-  let baseNonce = new BN(storedDAO.proposalCount);
+  let baseNonce = new BN(1);
 
   const baseVault = await initializeVault(
-    storedDAO.treasury,
-    storedDAO.metaMint,
+    daoTreasury,
+    META,
     baseNonce
   );
 
   const quoteVault = await initializeVault(
-    storedDAO.treasury,
-    storedDAO.usdcMint,
+    daoTreasury,
+    USDC,
     baseNonce.or(new BN(1).shln(63))
   );
 
@@ -296,7 +364,7 @@ async function initializeProposal() {
     })
     .rpc();
 
-  const proposalURL = "https://hackmd.io/ammvq88QRtayu7c9VLnHOA?view";
+  const proposalURL = "https://hackmd.io/5ZkjJtE5STGZn2fH9iMPPw?view";
 
   await autocratProgram.methods
     .initializeProposal(proposalURL, instruction)
@@ -350,7 +418,9 @@ async function placeOrdersOnBothSides(twapMarket: any) {
   };
 
   const storedMarket = await openbook.getMarketAccount(market);
-  let openOrdersAccount = new anchor.web3.PublicKey("CxDQ5RSYebF6mRLDrXYn1An7bawe6S3iyaU5rZBjz4Xs");
+  let openOrdersAccount = new anchor.web3.PublicKey(
+    "CxDQ5RSYebF6mRLDrXYn1An7bawe6S3iyaU5rZBjz4Xs"
+  );
   // let openOrdersAccount = await openbook.createOpenOrders(
   //   payer,
   //   market,
@@ -502,15 +572,20 @@ async function placeTakeOrder(twapMarket: any) {
 
 export async function mintConditionalTokens(
   amount: number,
-  vault: anchor.web3.PublicKey,
+  vault: anchor.web3.PublicKey
 ) {
   const storedVault = await vaultProgram.account.conditionalVault.fetch(vault);
 
-
   // Setting default values for optional parameters
-  const userUnderlyingTokenAccount = await getOrCreateAccount(storedVault.underlyingTokenMint);
-  const userConditionalOnFinalizeTokenAccount = await getOrCreateAccount(storedVault.conditionalOnFinalizeTokenMint);
-  const userConditionalOnRevertTokenAccount = await getOrCreateAccount(storedVault.conditionalOnRevertTokenMint);
+  const userUnderlyingTokenAccount = await getOrCreateAccount(
+    storedVault.underlyingTokenMint
+  );
+  const userConditionalOnFinalizeTokenAccount = await getOrCreateAccount(
+    storedVault.conditionalOnFinalizeTokenMint
+  );
+  const userConditionalOnRevertTokenAccount = await getOrCreateAccount(
+    storedVault.conditionalOnRevertTokenMint
+  );
   const vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
 
   const bnAmount = new anchor.BN(amount);
@@ -525,7 +600,8 @@ export async function mintConditionalTokens(
       userUnderlyingTokenAccount,
       userConditionalOnFinalizeTokenAccount,
       userConditionalOnRevertTokenAccount,
-      conditionalOnFinalizeTokenMint: storedVault.conditionalOnFinalizeTokenMint,
+      conditionalOnFinalizeTokenMint:
+        storedVault.conditionalOnFinalizeTokenMint,
       conditionalOnRevertTokenMint: storedVault.conditionalOnRevertTokenMint,
     })
     .signers([payer])
@@ -533,10 +609,18 @@ export async function mintConditionalTokens(
 }
 
 async function getOrCreateAccount(mint: anchor.web3.PublicKey) {
-  return (await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    mint,
-    payer.publicKey
-  )).address;
+  return (
+    await token.getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      payer,
+      mint,
+      payer.publicKey
+    )
+  ).address;
 }
+
+async function main() {
+  await initializeProposal();
+}
+
+main();

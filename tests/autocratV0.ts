@@ -30,12 +30,14 @@ import { expectError } from "./utils/utils";
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
+import { AutocratMigrator } from "../target/types/autocrat_migrator";
 import { OpenbookTwap } from "./fixtures/openbook_twap";
 
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
+const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
@@ -66,7 +68,7 @@ import { open } from "fs";
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
+  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
@@ -79,6 +81,10 @@ const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
 
 const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
+);
+
+const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
+  "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
 );
 
 describe("autocrat_v0", async function () {
@@ -94,7 +100,10 @@ describe("autocrat_v0", async function () {
     USDC,
     vaultProgram,
     openbook,
-    openbookTwap;
+    openbookTwap,
+    migrator,
+    treasuryMetaAccount,
+    treasuryUsdcAccount;
 
   before(async function () {
     context = await startAnchor(
@@ -133,6 +142,12 @@ describe("autocrat_v0", async function () {
       provider
     );
 
+    migrator = new anchor.Program<AutocratMigrator>(
+      AutocratMigratorIDL,
+      AUTOCRAT_MIGRATOR_PROGRAM_ID,
+      provider
+    );
+
     payer = autocrat.provider.wallet.payer;
 
     USDC = await createMint(
@@ -142,6 +157,8 @@ describe("autocrat_v0", async function () {
       payer.publicKey,
       6
     );
+
+    META = await createMint(banksClient, payer, dao, dao, 9);
   });
 
   describe("#initialize_dao", async function () {
@@ -154,8 +171,6 @@ describe("autocrat_v0", async function () {
         [dao.toBuffer()],
         autocrat.programId
       );
-
-      META = await createMint(banksClient, payer, dao, dao, 9);
 
       await autocrat.methods
         .initializeDao()
@@ -175,10 +190,23 @@ describe("autocrat_v0", async function () {
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.metaMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
-      assert.equal(daoAcc.proposalCount, 0);
+      assert.equal(daoAcc.proposalCount, 2);
       assert.equal(daoAcc.passThresholdBps, 500);
-      assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(50)));
-      assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(46_300)));
+      assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
+      assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
+
+      treasuryMetaAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        META,
+        daoTreasury
+      );
+      treasuryUsdcAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        USDC,
+        daoTreasury
+      );
     });
   });
 
@@ -191,8 +219,14 @@ describe("autocrat_v0", async function () {
           isWritable: true,
         },
       ];
-      const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
-        passThresholdBps: 1000,
+      const data = autocrat.coder.instruction.encode("update_dao", {
+        daoParams: {
+          passThresholdBps: 500,
+          baseBurnLamports: null,
+          burnDecayPerSlotLamports: null,
+          slotsPerProposal: null,
+          marketTakerFee: null,
+        }
       });
       const instruction = {
         programId: autocrat.programId,
@@ -201,7 +235,7 @@ describe("autocrat_v0", async function () {
       };
 
       let currentClock = await context.banksClient.getClock();
-      let newSlot = currentClock.slot + 432_000n; // 2 days
+      let newSlot = currentClock.slot + 216_000n; // 1 day
       context.setClock(
         new Clock(
           newSlot,
@@ -227,10 +261,10 @@ describe("autocrat_v0", async function () {
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
 
-      // two days, so proposer should burn 30 SOL
-      assert(balanceAfter < balanceBefore - 1_000_000_000n * 30n);
+      // two days, so proposer should burn 5 SOL
+      assert(balanceAfter < balanceBefore - 1_000_000_000n * 5n);
 
-      assert(balanceAfter > balanceBefore - 1_000_000_000n * 35n);
+      assert(balanceAfter > balanceBefore - 1_000_000_000n * 10n);
     });
   });
 
@@ -256,29 +290,86 @@ describe("autocrat_v0", async function () {
       aliceBaseFailConditionalTokenAccount,
       aliceQuotePassConditionalTokenAccount,
       aliceQuoteFailConditionalTokenAccount,
-      newPassThresholdBps;
+      newPassThresholdBps,
+      instruction;
 
     beforeEach(async function () {
-      const accounts = [
-        {
-          pubkey: dao,
-          isSigner: false,
-          isWritable: true,
-        },
-        {
-          pubkey: daoTreasury,
-          isSigner: true,
-          isWritable: false,
-        },
-      ];
-      newPassThresholdBps = Math.floor(Math.random() * 1000);
-      const data = autocrat.coder.instruction.encode("set_pass_threshold_bps", {
-        passThresholdBps: newPassThresholdBps,
-      });
-      const instruction = {
-        programId: autocrat.programId,
-        accounts,
-        data,
+      // just uncomment this and replace with another instruction that you wish to test
+      // const accounts = [
+      //   {
+      //     pubkey: dao,
+      //     isSigner: false,
+      //     isWritable: true,
+      //   },
+      //   {
+      //     pubkey: daoTreasury,
+      //     isSigner: true,
+      //     isWritable: false,
+      //   },
+      // ];
+      // newPassThresholdBps = Math.floor(Math.random() * 1000);
+      // const data = autocrat.coder.instruction.encode("update_dao", {
+      //   daoParams: {
+      //     passThresholdBps: newPassThresholdBps,
+      //     baseBurnLamports: null,
+      //     burnDecayPerSlotLamports: null,
+      //     slotsPerProposal: null,
+      //     marketTakerFee: null,
+      //     twapExpectedValue: null,
+      //   }
+      // });
+      // instruction = {
+      //   programId: autocrat.programId,
+      //   accounts,
+      //   data,
+      // };
+      // let lamportReceiver = Keypair.generate();
+
+      // let ix = anchor.web3.SystemProgram.transfer({
+      //   fromPubkey: daoTreasury,
+      //   toPubkey: lamportReceiver.publicKey,
+      //   lamports: 1_000_000,
+      // });
+      
+      // instruction = {
+      //   programId: ix.programId,
+      //   accounts: ix.keys,
+      //   data: ix.data,
+      // };
+
+      await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
+      await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+
+      let receiver = Keypair.generate();
+      let to0 = await createAccount(
+        banksClient,
+        payer,
+        META,
+        receiver.publicKey
+      );
+      let to1 = await createAccount(
+        banksClient,
+        payer,
+        USDC,
+        receiver.publicKey
+      );
+
+      const ix = await migrator.methods
+        .multiTransfer2()
+        .accounts({
+          authority: daoTreasury,
+          from0: treasuryMetaAccount,
+          to0,
+          from1: treasuryUsdcAccount,
+          to1,
+          lamportReceiver: receiver.publicKey,
+        })
+        .instruction();
+
+      instruction = {
+        programId: ix.programId,
+        accounts: ix.keys,
+        data: ix.data,
       };
 
       proposal = await initializeProposal(
@@ -333,6 +424,11 @@ describe("autocrat_v0", async function () {
           fromPubkey: payer.publicKey,
           lamports: 1_000_000_000n,
           toPubkey: alice.publicKey,
+        }),
+        anchor.web3.SystemProgram.transfer({
+          fromPubkey: payer.publicKey,
+          lamports: 1_000_000_000n,
+          toPubkey: daoTreasury,
         }),
       ];
       let tx = new anchor.web3.Transaction().add(...ixs);
@@ -443,7 +539,7 @@ describe("autocrat_v0", async function () {
 
       let passBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(1000), // 0.1 USDC for 1 META
+        priceLots: new BN(10000), // 1 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -454,7 +550,7 @@ describe("autocrat_v0", async function () {
       };
       let failBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(700), // 0.07 USDC for 1 META
+        priceLots: new BN(7000), // 0.7 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -466,7 +562,7 @@ describe("autocrat_v0", async function () {
 
       let passSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(1100), // 0.11 USDC for 1 META
+        priceLots: new BN(11_000), // 1.1 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -477,7 +573,7 @@ describe("autocrat_v0", async function () {
       };
       let failSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(800), // 0.8 USDC for 1 META
+        priceLots: new BN(8_000), // 8 USDC for 1 META
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -588,9 +684,9 @@ describe("autocrat_v0", async function () {
 
       let takeBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(1_300), // 1.3 USDC for 1 META
+        priceLots: new BN(13000), // 13 USDC for 1 META
         maxBaseLots: new BN(1),
-        maxQuoteLotsIncludingFees: new BN(2000),
+        maxQuoteLotsIncludingFees: new BN(20000),
         clientOrderId: new BN(1),
         orderType: OrderType.Market,
         expiryTimestamp: new BN(0),
@@ -700,7 +796,7 @@ describe("autocrat_v0", async function () {
         .signers([mm0.keypair])
         .rpc();
 
-      await autocrat.methods
+      let tx = await autocrat.methods
         .finalizeProposal()
         .accounts({
           proposal,
@@ -713,13 +809,9 @@ describe("autocrat_v0", async function () {
           daoTreasury,
         })
         .remainingAccounts(
-          autocrat.instruction.setPassThresholdBps
-            .accounts({
-              dao,
-              daoTreasury,
-            })
+          instruction.accounts
             .concat({
-              pubkey: autocrat.programId,
+              pubkey: instruction.programId,
               isWritable: false,
               isSigner: false,
             })
@@ -744,8 +836,13 @@ describe("autocrat_v0", async function () {
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
-      const storedDao = await autocrat.account.dao.fetch(dao);
-      assert.equal(storedDao.passThresholdBps, newPassThresholdBps);
+      assert((await getAccount(banksClient, treasuryMetaAccount)).amount == 0n);
+      assert((await getAccount(banksClient, treasuryUsdcAccount)).amount == 0n);
+
+      // console.log(await banksClient.getAccount(daoTreasury));
+
+      // const storedDao = await autocrat.account.dao.fetch(dao);
+      // assert.equal(storedDao.passThresholdBps, newPassThresholdBps);
 
       await redeemConditionalTokens(
         vaultProgram,
@@ -780,7 +877,7 @@ describe("autocrat_v0", async function () {
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
           .amount,
-        10_000n * 1_000_000n - 110_000n
+        10_000n * 1_000_000n - 1_100_000n
       );
     });
 
@@ -1063,7 +1160,7 @@ describe("autocrat_v0", async function () {
           daoTreasury,
         })
         .remainingAccounts(
-          autocrat.instruction.setPassThresholdBps
+          autocrat.instruction.updateDao
             .accounts({
               dao,
               daoTreasury,
@@ -1374,11 +1471,12 @@ async function initializeProposal(
     null,
     openbookTwapPassMarket,
     { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookPassMarketKP
+    openbookPassMarketKP,
+    daoTreasury
   );
 
   await openbookTwap.methods
-    .createTwapMarket(new BN(1000))
+    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
       market: openbookPassMarket,
       twapMarket: openbookTwapPassMarket,
@@ -1411,10 +1509,11 @@ async function initializeProposal(
     null,
     openbookTwapFailMarket,
     { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookFailMarketKP
+    openbookFailMarketKP,
+    daoTreasury
   );
   await openbookTwap.methods
-    .createTwapMarket(new BN(1000))
+    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
       market: openbookFailMarket,
       twapMarket: openbookTwapFailMarket,

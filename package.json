@@ -13,7 +13,7 @@
         "anchor-bankrun": "^0.2.0",
         "arweave": "^1.14.4",
         "solana-bankrun": "^0.2.0",
-        "spl-token-bankrun": "^0.2.1"
+        "spl-token-bankrun": "0.2.3"
     },
     "devDependencies": {
         "@types/bn.js": "^5.1.0",

@@ -24,37 +24,41 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi");
+declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
+
+pub const SLOTS_PER_10_SECS: u64 = 25;
+pub const THREE_DAYS_IN_SLOTS: u64 = 5 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
 
-// start at 50 SOL ($1000 at current prices), decay by ~10 SOL per day
-pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 50 * solana_program::native_token::LAMPORTS_PER_SOL;
-pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 46_300;
+// start at 10 SOL ($600 at current prices), decay by ~5 SOL per day
+pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 10 * solana_program::native_token::LAMPORTS_PER_SOL;
+pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 23_150;
 
 pub const MAX_BPS: u16 = 10_000;
-pub const SLOTS_PER_10_SECS: u64 = 25;
-pub const TEN_DAYS_IN_SLOTS: u64 = 10 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
 #[account]
 pub struct DAO {
+    // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
+    pub treasury_pda_bump: u8,
+    pub treasury: Pubkey,
     pub meta_mint: Pubkey,
     pub usdc_mint: Pubkey,
+    pub proposal_count: u32,
+    pub last_proposal_slot: u64,
     // the percentage, in basis points, the pass price needs to be above the
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
-    pub proposal_count: u32,
     // for anti-spam, proposers need to burn some SOL. the amount that they need
     // to burn is inversely proportional to the amount of time that has passed
     // since the last proposal.
     // burn_amount = base_lamport_burn - (lamport_burn_decay_per_slot * slots_passed)
-    pub last_proposal_slot: u64,
     pub base_burn_lamports: u64,
     pub burn_decay_per_slot_lamports: u64,
-    // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
-    pub treasury_pda_bump: u8,
-    pub treasury: Pubkey,
+    pub slots_per_proposal: u64,
+    pub market_taker_fee: i64,
+    pub twap_expected_value: u64,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -104,9 +108,14 @@ pub mod autocrat_v0 {
         dao.meta_mint = ctx.accounts.meta_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
 
+        dao.proposal_count = 2;
+
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
+        dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
+        dao.market_taker_fee = 0;
+        dao.twap_expected_value = 10_000; // 1 USDC per META
 
         let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -123,6 +132,7 @@ pub mod autocrat_v0 {
     ) -> Result<()> {
         let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
         let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
+        let dao = &mut ctx.accounts.dao;
 
         require!(
             openbook_pass_market.base_mint
@@ -146,7 +156,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.taker_fee == 0,
+            openbook_pass_market.taker_fee == dao.market_taker_fee,
             AutocratError::InvalidMarket
         );
         require!(
@@ -159,6 +169,10 @@ pub mod autocrat_v0 {
         );
         require!(
             openbook_pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_pass_market.collect_fee_admin == dao.treasury,
             AutocratError::InvalidMarket
         );
 
@@ -181,7 +195,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.taker_fee == 0,
+            openbook_fail_market.taker_fee == dao.market_taker_fee,
             AutocratError::InvalidMarket
         );
         require!(
@@ -194,6 +208,10 @@ pub mod autocrat_v0 {
         );
         require!(
             openbook_pass_market.quote_lot_size == 100,
+            AutocratError::InvalidMarket
+        );
+        require!(
+            openbook_fail_market.collect_fee_admin == dao.treasury,
             AutocratError::InvalidMarket
         );
         let clock = Clock::get()?;
@@ -210,15 +228,14 @@ pub mod autocrat_v0 {
             AutocratError::TWAPMarketTooOld
         );
         require!(
-            openbook_twap_pass_market.twap_oracle.expected_value == 1000,
+            openbook_twap_pass_market.twap_oracle.expected_value == dao.twap_expected_value,
             AutocratError::TWAPMarketInvalidExpectedValue
         );
         require!(
-            openbook_twap_fail_market.twap_oracle.expected_value == 1000,
+            openbook_twap_fail_market.twap_oracle.expected_value == dao.twap_expected_value,
             AutocratError::TWAPMarketInvalidExpectedValue
         );
 
-        let dao = &mut ctx.accounts.dao;
         let proposal = &mut ctx.accounts.proposal;
 
         proposal.number = dao.proposal_count;
@@ -281,7 +298,7 @@ pub mod autocrat_v0 {
         let clock = Clock::get()?;
 
         require!(
-            clock.slot >= proposal.slot_enqueued + TEN_DAYS_IN_SLOTS,
+            clock.slot >= proposal.slot_enqueued + ctx.accounts.dao.slots_per_proposal,
             AutocratError::ProposalTooYoung
         );
 
@@ -307,11 +324,11 @@ pub mod autocrat_v0 {
             openbook_twap_fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
 
         require!(
-            pass_market_slots_passed >= TEN_DAYS_IN_SLOTS,
+            pass_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
             AutocratError::MarketsTooYoung
         );
         require!(
-            fail_market_slots_passed >= TEN_DAYS_IN_SLOTS,
+            fail_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
             AutocratError::MarketsTooYoung
         );
 
@@ -373,26 +390,35 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn set_pass_threshold_bps(ctx: Context<Auth>, pass_threshold_bps: u16) -> Result<()> {
+    pub fn update_dao(
+        ctx: Context<UpdateDao>,
+        dao_params: UpdateDaoParams,
+    ) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        dao.pass_threshold_bps = pass_threshold_bps;
+        if let Some(pass_threshold_bps) = dao_params.pass_threshold_bps {
+            dao.pass_threshold_bps = pass_threshold_bps;
+        }
 
-        Ok(())
-    }
+        if let Some(base_burn_lamports) = dao_params.base_burn_lamports {
+            dao.base_burn_lamports = base_burn_lamports;
+        }
 
-    pub fn set_last_proposal_slot(ctx: Context<Auth>, last_proposal_slot: u64) -> Result<()> {
-        let dao = &mut ctx.accounts.dao;
+        if let Some(burn_decay_per_slot_lamports) = dao_params.burn_decay_per_slot_lamports {
+            dao.burn_decay_per_slot_lamports = burn_decay_per_slot_lamports;
+        }
 
-        dao.last_proposal_slot = last_proposal_slot;
+        if let Some(slots_per_proposal) = dao_params.slots_per_proposal {
+            dao.slots_per_proposal = slots_per_proposal;
+        }
 
-        Ok(())
-    }
+        if let Some(market_taker_fee) = dao_params.market_taker_fee {
+            dao.market_taker_fee = market_taker_fee;
+        }
 
-    pub fn set_base_burn_lamports(ctx: Context<Auth>, base_burn_lamports: u64) -> Result<()> {
-        let dao = &mut ctx.accounts.dao;
-
-        dao.base_burn_lamports = base_burn_lamports;
+        if let Some(twap_expected_value) = dao_params.twap_expected_value {
+            dao.twap_expected_value = twap_expected_value;
+        }
 
         Ok(())
     }
@@ -480,11 +506,25 @@ pub struct FinalizeProposal<'info> {
     pub dao_treasury: UncheckedAccount<'info>,
 }
 
+#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub struct UpdateDaoParams {
+    pub pass_threshold_bps: Option<u16>,
+    pub base_burn_lamports: Option<u64>,
+    pub burn_decay_per_slot_lamports: Option<u64>,
+    pub slots_per_proposal: Option<u64>,
+    pub market_taker_fee: Option<i64>,
+    pub twap_expected_value: Option<u64>,
+}
+
 #[derive(Accounts)]
-pub struct Auth<'info> {
+pub struct UpdateDao<'info> {
     #[account(mut)]
     pub dao: Account<'info, DAO>,
     /// CHECK: never read
+    #[account(
+        seeds = [dao.key().as_ref()],
+        bump = dao.treasury_pda_bump,
+    )]
     pub dao_treasury: Signer<'info>,
 }
 
@@ -516,7 +556,7 @@ pub enum AutocratError {
     InvalidMarket,
     #[msg("`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`")]
     TWAPMarketTooOld,
-    #[msg("`TWAPMarket` must have an expected value of 1000, or 0.1 USDC per META")]
+    #[msg("`TWAPMarket` has the wrong `expected_value`")]
     TWAPMarketInvalidExpectedValue,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
     InvalidSettlementAuthority,
