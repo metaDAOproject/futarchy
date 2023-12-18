@@ -226,7 +226,7 @@ describe("autocrat_v0", async function () {
           burnDecayPerSlotLamports: null,
           slotsPerProposal: null,
           marketTakerFee: null,
-        }
+        },
       });
       const instruction = {
         programId: autocrat.programId,
@@ -330,7 +330,7 @@ describe("autocrat_v0", async function () {
       //   toPubkey: lamportReceiver.publicKey,
       //   lamports: 1_000_000,
       // });
-      
+
       // instruction = {
       //   programId: ix.programId,
       //   accounts: ix.keys,

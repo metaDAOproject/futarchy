@@ -2,6 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
+import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 
 import {
   OpenBookV2Client,
@@ -25,12 +26,12 @@ const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.json");
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
-const NEW_AUTOCRAT_PROGRAM_ID = new PublicKey(
+const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
 );
-const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
-);
+// const AUTOCRAT_PROGRAM_ID = new PublicKey(
+//   "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
+// );
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 );
@@ -67,11 +68,6 @@ export const autocratProgram = new Program<AutocratV0>(
   AUTOCRAT_PROGRAM_ID,
   provider
 );
-export const newAutocratProgram = new Program<AutocratV0>(
-  AutocratIDL,
-  NEW_AUTOCRAT_PROGRAM_ID,
-  provider
-);
 
 export const vaultProgram = new Program<ConditionalVault>(
   ConditionalVaultIDL,
@@ -101,17 +97,6 @@ const [daoTreasury] = PublicKey.findProgramAddressSync(
   [dao.toBuffer()],
   autocratProgram.programId
 );
-
-const [newDao] = PublicKey.findProgramAddressSync(
-  [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-  newAutocratProgram.programId
-);
-
-const [newDaoTreasury] = PublicKey.findProgramAddressSync(
-  [newDao.toBuffer()],
-  newAutocratProgram.programId
-);
-
 
 async function createMint(
   mintAuthority: any,
@@ -194,82 +179,101 @@ async function initializeDAO(META: any, USDC: any) {
     .rpc();
 }
 
-async function initializeProposal() {
-  const treasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    META,
-    daoTreasury,
-    true
-  );
+// async function finalizeProposal(proposal: anchor.web3.PublicKey) {
+//   const storedProposal = await autocratProgram.account.proposal.fetch(proposal);
+//   console.log(storedProposal)
+//   const treasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
+//     provider.connection,
+//     payer,
+//     META,
+//     daoTreasury,
+//     true
+//   );
 
-  const treasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    USDC,
-    daoTreasury,
-    true
-  );
+//   const treasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
+//     provider.connection,
+//     payer,
+//     USDC,
+//     daoTreasury,
+//     true
+//   );
 
-  const newTreasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    META,
-    newDaoTreasury,
-    true
-  );
+//   const newTreasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
+//     provider.connection,
+//     payer,
+//     META,
+//     newDaoTreasury,
+//     true
+//   );
 
-  const newTreasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    USDC,
-    newDaoTreasury,
-    true
-  );
+//   const newTreasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
+//     provider.connection,
+//     payer,
+//     USDC,
+//     newDaoTreasury,
+//     true
+//   );
 
-  const ix = await migrator.methods
-        .multiTransfer2()
-        .accounts({
-          authority: daoTreasury,
-          from0: treasuryMetaAccount.address,
-          to0: newTreasuryMetaAccount.address,
-          from1: treasuryUsdcAccount.address,
-          to1: newTreasuryUsdcAccount.address,
-          lamportReceiver: newDaoTreasury,
-        })
-        .instruction();
+//   const ix = await migrator.methods
+//         .multiTransfer2()
+//         .accounts({
+//           authority: daoTreasury,
+//           from0: treasuryMetaAccount.address,
+//           to0: newTreasuryMetaAccount.address,
+//           from1: treasuryUsdcAccount.address,
+//           to1: newTreasuryUsdcAccount.address,
+//           lamportReceiver: newDaoTreasury,
+//         })
+//         .instruction();
 
-  const instruction = {
-    programId: ix.programId,
-    accounts: ix.keys,
-    data: ix.data,
-  };
+//   const instruction = {
+//     programId: ix.programId,
+//     accounts: ix.keys,
+//     data: ix.data,
+//   };
 
-  // const programId = transferIx.programId;
-  // const accounts = transferIx.keys;
-  // const data = transferIx.data;
+//   let tx = await autocratProgram.methods
+//         .finalizeProposal()
+//         .accounts({
+//           proposal,
+//           openbookTwapPassMarket: storedProposal.openbookTwapPassMarket,
+//           openbookTwapFailMarket: storedProposal.openbookTwapFailMarket,
+//           dao,
+//           baseVault: storedProposal.baseVault,
+//           quoteVault: storedProposal.quoteVault,
+//           vaultProgram: vaultProgram.programId,
+//           daoTreasury,
+//         })
+//         .remainingAccounts(
+//           instruction.accounts
+//             .concat({
+//               pubkey: instruction.programId,
+//               isWritable: false,
+//               isSigner: false,
+//             })
+//             .map((meta) =>
+//               meta.pubkey.equals(daoTreasury)
+//                 ? { ...meta, isSigner: false }
+//                 : meta
+//             )
+//         )
+//         .rpc();
 
-  // const instruction = {
-  //   programId,
-  //   accounts,
-  //   data,
-  // };
+//     console.log("Proposal finalized", tx);
+// }
 
+async function initializeProposal(instruction: any, proposalURL: string) {
   const proposalKeypair = Keypair.generate();
 
-  // const storedDAO = await autocratProgram.account.dao.fetch(dao);
-  // console.log(storedDAO);
+  const storedDAO = await autocratProgram.account.dao.fetch(dao);
+  console.log(storedDAO);
 
   // least signficant 32 bits of nonce are proposal number
   // most significant bit of nonce is 0 for base and 1 for quote
 
-  let baseNonce = new BN(1);
+  let baseNonce = new BN(storedDAO.proposalCount);
 
-  const baseVault = await initializeVault(
-    daoTreasury,
-    META,
-    baseNonce
-  );
+  const baseVault = await initializeVault(daoTreasury, META, baseNonce);
 
   const quoteVault = await initializeVault(
     daoTreasury,
@@ -292,6 +296,7 @@ async function initializeProposal() {
   ).conditionalOnRevertTokenMint;
 
   let openbookPassMarketKP = Keypair.generate();
+  console.log(openbookPassMarketKP);
 
   let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
     [
@@ -303,7 +308,7 @@ async function initializeProposal() {
 
   let openbookPassMarket = await openbook.createMarket(
     payer,
-    "pMETA/pUSDC",
+    `${baseNonce}pMETA/pUSDC`,
     passQuoteMint,
     passBaseMint,
     new BN(100),
@@ -317,11 +322,12 @@ async function initializeProposal() {
     null,
     openbookTwapPassMarket,
     { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookPassMarketKP
+    openbookPassMarketKP,
+    daoTreasury
   );
 
   await openbookTwap.methods
-    .createTwapMarket(new BN(1_000))
+    .createTwapMarket(new BN(10_000))
     .accounts({
       market: openbookPassMarket,
       twapMarket: openbookTwapPassMarket,
@@ -329,6 +335,7 @@ async function initializeProposal() {
     .rpc();
 
   let openbookFailMarketKP = Keypair.generate();
+  console.log(openbookFailMarketKP);
 
   let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
     [
@@ -340,7 +347,7 @@ async function initializeProposal() {
 
   let openbookFailMarket = await openbook.createMarket(
     payer,
-    "fMETA/fUSDC",
+    `${baseNonce}fMETA/fUSDC`,
     failQuoteMint,
     failBaseMint,
     new BN(100),
@@ -354,17 +361,16 @@ async function initializeProposal() {
     null,
     openbookTwapFailMarket,
     { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookFailMarketKP
+    openbookFailMarketKP,
+    daoTreasury
   );
   await openbookTwap.methods
-    .createTwapMarket(new BN(1_000))
+    .createTwapMarket(new BN(10_000))
     .accounts({
       market: openbookFailMarket,
       twapMarket: openbookTwapFailMarket,
     })
     .rpc();
-
-  const proposalURL = "https://hackmd.io/5ZkjJtE5STGZn2fH9iMPPw?view";
 
   await autocratProgram.methods
     .initializeProposal(proposalURL, instruction)
@@ -620,7 +626,48 @@ async function getOrCreateAccount(mint: anchor.web3.PublicKey) {
 }
 
 async function main() {
-  await initializeProposal();
+  // await initializeProposal();
+  // let proposal = (await autocratProgram.account.proposal.all())[0];
+
+  // console.log(proposal.publicKey)
+  // console.log(newDaoTreasury)
+  // console.log(await newAutocratProgram.account.dao.fetch(newDao));
+
+  const memoText =
+    "I, glorious autocrat of the divine Meta-DAO, " +
+    "sanction the creation of this Saber vote market platform.\n\n" +
+    "That I shall bestow lavish rewards upon those who contribute to its creation is guaranteed. " +
+    "Remember that my word is not the word of a man but the word of a market.\n\n" +
+    "Godspeed, futards!";
+
+  const memoInstruction = {
+    programId: new PublicKey(MEMO_PROGRAM_ID),
+    data: Buffer.from(memoText),
+    accounts: [],
+  };
+
+  await initializeProposal(
+    memoInstruction,
+    "https://hackmd.io/@jlPYU3_dTOuQkU5duRNUlg/rkhWWXjLp"
+  );
+
+  // Create a transaction and add the memo instruction
+  // const transaction = new anchor.web3.Transaction();
+  // transaction.add(memoInstruction);
+
+  // Send the transaction
+  // const signature = await anchor.web3.sendAndConfirmTransaction(
+  //   provider.connection,
+  //   transaction,
+  //   [payer] // The account that will sign the transaction
+  // );
+
+  // console.log(`Transaction sent with signature: ${signature}`);
+
+  // await finalizeProposal(proposal.publicKey)
+
+  // console.log(await openbookTwap.account.twapMarket.fetch(proposal.openbookTwapPassMarket));
+  // console.log(await openbookTwap.account.twapMarket.fetch(proposal.openbookTwapPassMarket));
 }
 
 main();
