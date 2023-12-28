@@ -29,9 +29,6 @@ const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_mi
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
 );
-// const AUTOCRAT_PROGRAM_ID = new PublicKey(
-//   "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
-// );
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 );
@@ -88,12 +85,12 @@ export const migrator = new anchor.Program<AutocratMigrator>(
   provider
 );
 
-const [dao] = PublicKey.findProgramAddressSync(
+export const [dao] = PublicKey.findProgramAddressSync(
   [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
   autocratProgram.programId
 );
 
-const [daoTreasury] = PublicKey.findProgramAddressSync(
+export const [daoTreasury] = PublicKey.findProgramAddressSync(
   [dao.toBuffer()],
   autocratProgram.programId
 );
@@ -262,7 +259,10 @@ async function initializeDAO(META: any, USDC: any) {
 //     console.log("Proposal finalized", tx);
 // }
 
-async function initializeProposal(instruction: any, proposalURL: string) {
+export async function initializeProposal(
+  instruction: any,
+  proposalURL: string
+) {
   const proposalKeypair = Keypair.generate();
 
   const storedDAO = await autocratProgram.account.dao.fetch(dao);
@@ -277,7 +277,7 @@ async function initializeProposal(instruction: any, proposalURL: string) {
 
   const quoteVault = await initializeVault(
     daoTreasury,
-    USDC,
+    DEVNET_USDC,
     baseNonce.or(new BN(1).shln(63))
   );
 
@@ -296,7 +296,6 @@ async function initializeProposal(instruction: any, proposalURL: string) {
   ).conditionalOnRevertTokenMint;
 
   let openbookPassMarketKP = Keypair.generate();
-  console.log(openbookPassMarketKP);
 
   let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
     [
@@ -335,7 +334,6 @@ async function initializeProposal(instruction: any, proposalURL: string) {
     .rpc();
 
   let openbookFailMarketKP = Keypair.generate();
-  console.log(openbookFailMarketKP);
 
   let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
     [
@@ -624,50 +622,3 @@ async function getOrCreateAccount(mint: anchor.web3.PublicKey) {
     )
   ).address;
 }
-
-async function main() {
-  // await initializeProposal();
-  // let proposal = (await autocratProgram.account.proposal.all())[0];
-
-  // console.log(proposal.publicKey)
-  // console.log(newDaoTreasury)
-  // console.log(await newAutocratProgram.account.dao.fetch(newDao));
-
-  const memoText =
-    "I, glorious autocrat of the divine Meta-DAO, " +
-    "sanction the creation of this Saber vote market platform.\n\n" +
-    "That I shall bestow lavish rewards upon those who contribute to its creation is guaranteed. " +
-    "Remember that my word is not the word of a man but the word of a market.\n\n" +
-    "Godspeed, futards!";
-
-  const memoInstruction = {
-    programId: new PublicKey(MEMO_PROGRAM_ID),
-    data: Buffer.from(memoText),
-    accounts: [],
-  };
-
-  await initializeProposal(
-    memoInstruction,
-    "https://hackmd.io/@jlPYU3_dTOuQkU5duRNUlg/rkhWWXjLp"
-  );
-
-  // Create a transaction and add the memo instruction
-  // const transaction = new anchor.web3.Transaction();
-  // transaction.add(memoInstruction);
-
-  // Send the transaction
-  // const signature = await anchor.web3.sendAndConfirmTransaction(
-  //   provider.connection,
-  //   transaction,
-  //   [payer] // The account that will sign the transaction
-  // );
-
-  // console.log(`Transaction sent with signature: ${signature}`);
-
-  // await finalizeProposal(proposal.publicKey)
-
-  // console.log(await openbookTwap.account.twapMarket.fetch(proposal.openbookTwapPassMarket));
-  // console.log(await openbookTwap.account.twapMarket.fetch(proposal.openbookTwapPassMarket));
-}
-
-main();
