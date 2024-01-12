@@ -277,7 +277,7 @@ export async function initializeProposal(
 
   const quoteVault = await initializeVault(
     daoTreasury,
-    DEVNET_USDC,
+    USDC,
     baseNonce.or(new BN(1).shln(63))
   );
 
@@ -325,13 +325,6 @@ export async function initializeProposal(
     daoTreasury
   );
 
-  await openbookTwap.methods
-    .createTwapMarket(new BN(10_000))
-    .accounts({
-      market: openbookPassMarket,
-      twapMarket: openbookTwapPassMarket,
-    })
-    .rpc();
 
   let openbookFailMarketKP = Keypair.generate();
 
@@ -362,13 +355,6 @@ export async function initializeProposal(
     openbookFailMarketKP,
     daoTreasury
   );
-  await openbookTwap.methods
-    .createTwapMarket(new BN(10_000))
-    .accounts({
-      market: openbookFailMarket,
-      twapMarket: openbookTwapFailMarket,
-    })
-    .rpc();
 
   await autocratProgram.methods
     .initializeProposal(proposalURL, instruction)
@@ -377,6 +363,20 @@ export async function initializeProposal(
         proposalKeypair,
         1500
       ),
+      await openbookTwap.methods
+        .createTwapMarket(new BN(10_000))
+          .accounts({
+            market: openbookPassMarket,
+            twapMarket: openbookTwapPassMarket,
+          })
+          .instruction(),
+        await openbookTwap.methods
+          .createTwapMarket(new BN(10_000))
+          .accounts({
+            market: openbookFailMarket,
+            twapMarket: openbookTwapFailMarket,
+          })
+          .instruction()
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,

@@ -8,10 +8,9 @@ const { BN, Program } = anchor;
 async function main() {
   const memoText =
     "I, glorious autocrat of the divine Meta-DAO, " +
-    "sanction the creation of this Saber vote market platform.\n\n" +
-    "That I shall bestow lavish rewards upon those who contribute to its creation is guaranteed. " +
-    "Remember that my word is not the word of a man but the word of a market.\n\n" +
-    "Godspeed, futards!";
+    "hereby endorse this endeavor to elevate the futarchy domain. " +
+    "Recognize that my utterance echoes not the voice of a mortal but resonates as the proclamation of an omniscient market." +
+    "Onward, futards, with the swiftness of the divine!";
 
   const memoInstruction = {
     programId: new PublicKey(MEMO_PROGRAM_ID),
@@ -28,7 +27,7 @@ async function main() {
 
   await initializeProposal(
     memoInstruction,
-    "https://hackmd.io/@jlPYU3_dTOuQkU5duRNUlg/rkhWWXjLp"
+    "https://bafybeicfx3w6om4sk6ly7lgfnoy7wj3qpfzv6iet6qvyjzu6yvubmgeu5i.ipfs.nftstorage.link/"
   );
 }
 
