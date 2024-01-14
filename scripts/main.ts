@@ -35,7 +35,7 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
   "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
 );
-const OPENBOOK_PROGRAM_ID = new PublicKey(
+export const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
