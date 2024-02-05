@@ -30,7 +30,7 @@ async function crankTwap() {
 
     const failMarketTwap = storedProposal.openbookTwapFailMarket;
     const failMarket = storedProposal.openbookFailMarket;
-    const storedFailMarket = await openbook.program.account.market.fetch(passMarket);
+    const storedFailMarket = await openbook.program.account.market.fetch(failMarket);
 
     let emptyBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
