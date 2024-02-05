@@ -16,7 +16,6 @@ import {
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 
-
 import { openbookTwap, autocratProgram, openbook, OPENBOOK_PROGRAM_ID } from "./main";
 
 const PROPOSAL_PUBKEY = new PublicKey("9ABv3Phb44BNF4VFteSi9qcWEyABdnRqkorNuNtzdh2b")
@@ -27,12 +26,12 @@ async function crankTwap() {
 
     const passMarketTwap = storedProposal.openbookTwapPassMarket;
     const passMarket = storedProposal.openbookPassMarket;
-    const storedPassMarket = await openbook.getMarketAccount(passMarket);
+    const storedPassMarket = await openbook.program.account.market.fetch(passMarket);
 
     const failMarketTwap = storedProposal.openbookTwapFailMarket;
     const failMarket = storedProposal.openbookFailMarket;
-    const storedFailMarket = await openbook.getMarketAccount(failMarket);
-    
+    const storedFailMarket = await openbook.program.account.market.fetch(passMarket);
+
     let emptyBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
         priceLots: new BN(10_000), // 1 USDC for 1 META
@@ -60,18 +59,15 @@ async function crankTwap() {
     );
 
     // TODO: have this done programmatically
-    let passMarketOpenOrdersAccount = openbook.findOpenOrders(
-        passMarket,
+    let passMarketOpenOrdersAccount = openbook.findOpenOrderAtIndex(
+        payer.publicKey,
         new BN(3),
-        payer.publicKey
     );
 
-    let failMarketOpenOrdersAccount = openbook.findOpenOrders(
-        failMarket,
+    let failMarketOpenOrdersAccount = openbook.findOpenOrderAtIndex(
+        payer.publicKey,
         new BN(4),
-        payer.publicKey
     );
-
 
     // let openOrdersAccount = await openbook.createOpenOrders(
     //   payer,
@@ -84,8 +80,8 @@ async function crankTwap() {
 
     // console.log(await openbook.getOpenOrdersIndexer(indexer));
 
-    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ 
-        microLamports: 1 
+    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1
     });
 
     for (let i = 0; i < 300; i++) {
