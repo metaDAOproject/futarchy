@@ -15,7 +15,7 @@ import {
   SelfTradeBehavior,
 } from "@openbook-dex/openbook-v2";
 
-const { PublicKey, Keypair } = anchor.web3;
+const { PublicKey, Keypair, Transaction } = anchor.web3;
 
 import { assert } from "chai";
 
@@ -65,6 +65,7 @@ import {
   getAccount,
 } from "spl-token-bankrun";
 import { open } from "fs";
+import {openbook} from "../scripts/main";
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
@@ -582,12 +583,9 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      const storedPassMarket = await openbook.getMarketAccount(
-        openbookPassMarket
-      );
-      const storedFailMarket = await openbook.getMarketAccount(
-        openbookFailMarket
-      );
+
+      const storedPassMarket = await openbook.program.account.market.fetch(openbookPassMarket);
+      const storedFailMarket = await openbook.program.account.market.fetch(openbookFailMarket);
 
       let currentClock;
       for (let i = 0; i < 10; i++) {
@@ -930,12 +928,9 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      const storedPassMarket = await openbook.getMarketAccount(
-        openbookPassMarket
-      );
-      const storedFailMarket = await openbook.getMarketAccount(
-        openbookFailMarket
-      );
+
+      const storedPassMarket = await openbook.program.account.market.fetch(openbookPassMarket);
+      const storedFailMarket = await openbook.program.account.market.fetch(openbookFailMarket);
 
       let currentClock;
       for (let i = 0; i < 10; i++) {
@@ -1245,8 +1240,8 @@ async function generateMarketMaker(
 ): Promise<MarketMaker> {
   const mm = anchor.web3.Keypair.generate();
 
-  const storedPassMarket = await openbook.getMarketAccount(passMarket);
-  const storedFailMarket = await openbook.getMarketAccount(failMarket);
+  const storedPassMarket = await openbook.program.account.market.fetch(passMarket);
+  const storedFailMarket = await openbook.program.account.market.fetch(failMarket);
 
   const metaPassAcc = await createAccount(
     banksClient,
@@ -1338,7 +1333,6 @@ async function generateMarketMaker(
   let pOpenOrdersAccount = await openbook.createOpenOrders(
     payer,
     passMarket,
-    new BN(1),
     "oo",
     mm
   );
@@ -1346,7 +1340,6 @@ async function generateMarketMaker(
   let fOpenOrdersAccount = await openbook.createOpenOrders(
     payer,
     failMarket,
-    new BN(2),
     "oo",
     mm
   );
@@ -1455,8 +1448,8 @@ async function initializeProposal(
     openbookTwap.programId
   );
 
-  let openbookPassMarket = await openbook.createMarket(
-    payer,
+  let openbookPassMarketIx = await openbook.createMarketIx(
+    payer.publicKey,
     "pMETA/pUSDC",
     passQuoteMint,
     passBaseMint,
@@ -1475,10 +1468,13 @@ async function initializeProposal(
     daoTreasury
   );
 
+  let openbookPassMarketTx = new Transaction().add(...openbookPassMarketIx[0])
+  await autocrat.provider.sendAndConfirm(openbookPassMarketTx, openbookPassMarketIx[1])
+
   await openbookTwap.methods
     .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
-      market: openbookPassMarket,
+      market: openbookPassMarketKP.publicKey,
       twapMarket: openbookTwapPassMarket,
     })
     .rpc();
@@ -1493,8 +1489,8 @@ async function initializeProposal(
     openbookTwap.programId
   );
 
-  let openbookFailMarket = await openbook.createMarket(
-    payer,
+  let openbookFailMarketIx = await openbook.createMarketIx(
+    payer.publicKey,
     "fMETA/fUSDC",
     failQuoteMint,
     failBaseMint,
@@ -1512,10 +1508,14 @@ async function initializeProposal(
     openbookFailMarketKP,
     daoTreasury
   );
+
+  let openbookFailMarketTx = new Transaction().add(...openbookFailMarketIx[0])
+  await autocrat.provider.sendAndConfirm(openbookFailMarketTx, openbookFailMarketIx[1])
+
   await openbookTwap.methods
     .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
-      market: openbookFailMarket,
+      market: openbookFailMarketKP.publicKey,
       twapMarket: openbookTwapFailMarket,
     })
     .rpc();
@@ -1533,8 +1533,8 @@ async function initializeProposal(
       quoteVault,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
-      openbookPassMarket,
-      openbookFailMarket,
+      openbookPassMarket: openbookPassMarketKP.publicKey,
+      openbookFailMarket: openbookFailMarketKP.publicKey,
       proposer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
