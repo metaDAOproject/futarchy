@@ -26,6 +26,7 @@ main = "yarn run ts-node scripts/main.ts"
 propose = "yarn run ts-node scripts/initializeProposal.ts"
 initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
 place_order = "yarn run ts-node scripts/placeOrder.ts"
+multisig = "yarn run tsx scripts/multisig.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]
