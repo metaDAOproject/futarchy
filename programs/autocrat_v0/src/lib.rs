@@ -390,10 +390,7 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn update_dao(
-        ctx: Context<UpdateDao>,
-        dao_params: UpdateDaoParams,
-    ) -> Result<()> {
+    pub fn update_dao(ctx: Context<UpdateDao>, dao_params: UpdateDaoParams) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         if let Some(pass_threshold_bps) = dao_params.pass_threshold_bps {

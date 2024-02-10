@@ -2,8 +2,8 @@
 //! to the new autocrat.
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 use anchor_lang::solana_program;
+use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 
 declare_id!("migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3");
 
@@ -41,7 +41,10 @@ pub mod autocrat_migrator {
         let lamport_transfer = solana_program::system_instruction::transfer(
             &ctx.accounts.authority.key(),
             &ctx.accounts.lamport_receiver.key(),
-            ctx.accounts.authority.get_lamports().saturating_sub(rent.minimum_balance(0)),
+            ctx.accounts
+                .authority
+                .get_lamports()
+                .saturating_sub(rent.minimum_balance(0)),
         );
 
         solana_program::program::invoke(
@@ -49,7 +52,7 @@ pub mod autocrat_migrator {
             &[
                 ctx.accounts.authority.to_account_info(),
                 ctx.accounts.lamport_receiver.to_account_info(),
-            ]
+            ],
         )?;
 
         Ok(())
