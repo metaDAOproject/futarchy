@@ -512,6 +512,84 @@ describe("conditional_vault", async function () {
     });
   });
 
+  describe("#merge_conditional_tokens", async function () {
+    let bob: Keypair;
+    let amount = 1000;
+    let bobUnderlyingTokenAccount: PublicKey;
+    let bobConditionalOnFinalizeTokenAccount: PublicKey;
+    let bobConditionalOnRevertTokenAccount: PublicKey;
+
+    beforeEach(async function () {
+      [vault, underlyingMintAuthority, settlementAuthority] =
+        await generateRandomVault(vaultProgram, payer, banksClient);
+      let storedVault = await vaultProgram.account.conditionalVault.fetch(
+        vault
+      );
+      underlyingTokenMint = storedVault.underlyingTokenMint;
+      conditionalOnFinalizeMint = storedVault.conditionalOnFinalizeTokenMint;
+      conditionalOnRevertMint = storedVault.conditionalOnRevertTokenMint;
+      vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
+
+      bob = anchor.web3.Keypair.generate();
+
+      bobUnderlyingTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        underlyingTokenMint,
+        bob.publicKey
+      );
+
+      bobConditionalOnFinalizeTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        conditionalOnFinalizeMint,
+        bob.publicKey
+      );
+
+      bobConditionalOnRevertTokenAccount = await createAccount(
+        banksClient,
+        payer,
+        conditionalOnRevertMint,
+        bob.publicKey
+      );
+
+      await mintTo(
+        banksClient,
+        payer,
+        underlyingTokenMint,
+        bobUnderlyingTokenAccount,
+        underlyingMintAuthority,
+        amount * 2
+      );
+
+      await mintConditionalTokens(
+        vaultProgram,
+        amount * 2,
+        bob,
+        vault,
+        banksClient
+      );
+    });
+
+    it("allows users to merge conditional tokens back into underlying tokens", async function () {
+      await vaultProgram.methods.mergeConditionalTokens(new anchor.BN(amount))
+        .accounts({
+          user: bob.publicKey,
+          authority: bob.publicKey,
+          userConditionalOnFinalizeTokenAccount: bobConditionalOnFinalizeTokenAccount,
+          userConditionalOnRevertTokenAccount: bobConditionalOnRevertTokenAccount,
+          userUnderlyingTokenAccount: bobUnderlyingTokenAccount,
+          vault: vault,
+          vaultUnderlyingTokenAccount: vaultUnderlyingTokenAccount,
+          conditionalOnFinalizeTokenMint: conditionalOnFinalizeMint,
+          conditionalOnRevertTokenMint: conditionalOnRevertMint,
+          tokenProgram: token.TOKEN_PROGRAM_ID, // You'll need to import or define TOKEN_PROGRAM_ID
+        })
+        .signers([bob])
+        .rpc();
+    });
+  });
+
   describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
     let bob: Keypair;
     let amount = 1000;

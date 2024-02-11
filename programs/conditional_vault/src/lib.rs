@@ -282,12 +282,12 @@ pub mod conditional_vault {
         let post_finalize_mint_supply = ctx.accounts.conditional_on_finalize_token_mint.supply;
         let post_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
 
-        assert!(post_user_conditional_on_finalize_balance == 0);
-        assert!(post_user_conditional_on_revert_balance == 0);
+        assert!(post_user_conditional_on_finalize_balance == conditional_on_finalize_balance - amount);
+        assert!(post_user_conditional_on_revert_balance == conditional_on_revert_balance - amount);
         assert!(
-            post_finalize_mint_supply == pre_finalize_mint_supply - conditional_on_finalize_balance
+            post_finalize_mint_supply == pre_finalize_mint_supply - amount
         );
-        assert!(post_revert_mint_supply == pre_revert_mint_supply - conditional_on_revert_balance);
+        assert!(post_revert_mint_supply == pre_revert_mint_supply - amount);
         assert!(post_vault_underlying_balance == pre_vault_underlying_balance - amount);
 
         Ok(())
