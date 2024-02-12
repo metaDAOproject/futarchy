@@ -325,7 +325,6 @@ export async function initializeProposal(
     daoTreasury
   );
 
-
   let openbookFailMarketKP = Keypair.generate();
 
   let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
