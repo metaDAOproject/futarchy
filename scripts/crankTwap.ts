@@ -19,7 +19,7 @@ import { AutocratV0 } from "../target/types/autocrat_v0";
 
 import { openbookTwap, autocratProgram, openbook, OPENBOOK_PROGRAM_ID } from "./main";
 
-const PROPOSAL_PUBKEY = new PublicKey("9ABv3Phb44BNF4VFteSi9qcWEyABdnRqkorNuNtzdh2b")
+const PROPOSAL_PUBKEY = new PublicKey("US8j6iLf9GkokZbk89Bo1qnGBees5etv5sEfsfvCoZK");
 
 // crank the TWAPs of a proposal's markets by passing in a bunch of empty orders
 async function crankTwap() {
@@ -27,11 +27,11 @@ async function crankTwap() {
 
     const passMarketTwap = storedProposal.openbookTwapPassMarket;
     const passMarket = storedProposal.openbookPassMarket;
-    const storedPassMarket = await openbook.getMarketAccount(passMarket);
+    const storedPassMarket = await openbook.deserializeMarketAccount(passMarket);
 
     const failMarketTwap = storedProposal.openbookTwapFailMarket;
     const failMarket = storedProposal.openbookFailMarket;
-    const storedFailMarket = await openbook.getMarketAccount(failMarket);
+    const storedFailMarket = await openbook.deserializeMarketAccount(failMarket);
     
     let emptyBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
@@ -59,26 +59,29 @@ async function crankTwap() {
         payer.publicKey
     );
 
+    let openOrdersAccount = await openbook.createOpenOrders(
+      payer,
+      failMarket,
+      new BN(8),
+      "oo"
+    );
+
+    return;
+
     // TODO: have this done programmatically
-    let passMarketOpenOrdersAccount = openbook.findOpenOrders(
-        passMarket,
-        new BN(3),
-        payer.publicKey
-    );
-
-    let failMarketOpenOrdersAccount = openbook.findOpenOrders(
-        failMarket,
-        new BN(4),
-        payer.publicKey
-    );
-
-
-    // let openOrdersAccount = await openbook.createOpenOrders(
-    //   payer,
-    //   failMarket,
-    //   new BN(4),
-    //   "oo"
+    // let passMarketOpenOrdersAccount = openbook.findOpenOrders(
+    //     passMarket,
+    //     new BN(3),
+    //     payer.publicKey
     // );
+
+    // let failMarketOpenOrdersAccount = openbook.findOpenOrders(
+    //     failMarket,
+    //     new BN(4),
+    //     payer.publicKey
+    // );
+
+
 
     // const indexer = openbook.findOpenOrdersIndexer(payer.publicKey);
 
