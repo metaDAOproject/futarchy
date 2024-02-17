@@ -19,11 +19,13 @@ import { AutocratV0 } from "../target/types/autocrat_v0";
 
 import { openbookTwap, autocratProgram, openbook, OPENBOOK_PROGRAM_ID } from "./main";
 
-const PROPOSAL_PUBKEY = new PublicKey("US8j6iLf9GkokZbk89Bo1qnGBees5etv5sEfsfvCoZK");
+const PROPOSAL_NUMBER = 7;
 
 // crank the TWAPs of a proposal's markets by passing in a bunch of empty orders
 async function crankTwap() {
-    const storedProposal = await autocratProgram.account.proposal.fetch(PROPOSAL_PUBKEY);
+    const proposals = await autocratProgram.account.proposal.all();
+    console.log(proposals);
+    const storedProposal = proposals.find(proposal => proposal.account.number == PROPOSAL_NUMBER).account;
 
     const passMarketTwap = storedProposal.openbookTwapPassMarket;
     const passMarket = storedProposal.openbookPassMarket;
@@ -61,7 +63,7 @@ async function crankTwap() {
         storedFailMarket.quoteMint,
         payer.publicKey
     );
-
+    
     let passMarketOpenOrdersAccount = await openbook.createOpenOrders(
       payer,
       passMarket,
@@ -101,7 +103,7 @@ async function crankTwap() {
         microLamports: 1 
     });
 
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 500; i++) {
         try {
             let tx = await openbookTwap.methods
                 .placeOrder(emptyBuyArgs)
