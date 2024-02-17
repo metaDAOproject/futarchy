@@ -11,7 +11,7 @@ anchor.setProvider(provider);
 
 const payer = provider.wallet["payer"];
 
-const BEN_PUBKEY = new PublicKey("GxHamnPVxsBaWdbUSjR4C5izhMv2snriGyYtjCkAVzze");
+const PANTERA_PUBKEY = new PublicKey("BtNPTBX1XkFCwazDJ6ZkK3hcUsomm1RPcfmtUrP6wd2K");
 
 async function main() {
   const senderAcc = await token.getOrCreateAssociatedTokenAccount(
@@ -26,14 +26,15 @@ async function main() {
     provider.connection,
     payer,
     META,
-    BEN_PUBKEY
+    PANTERA_PUBKEY,
+    true
   );
 
   const transferIx = token.createTransferInstruction(
     senderAcc.address,
     receiverAcc.address,
     daoTreasury,
-    1_500 * 1_000_000_000, // 1,500 META
+    1_000 * 1_000_000_000, // 1,000 META
   );
 
   const ix = {
@@ -44,7 +45,7 @@ async function main() {
 
   await initializeProposal(
     ix,
-    "https://gist.github.com/Benhawkins18/927177850e27a6254678059c99d98209"
+    "https://hackmd.io/@0xNallok/Hy2WJ46op"
   );
 }
 

@@ -32,6 +32,9 @@ async function crankTwap() {
     const failMarketTwap = storedProposal.openbookTwapFailMarket;
     const failMarket = storedProposal.openbookFailMarket;
     const storedFailMarket = await openbook.deserializeMarketAccount(failMarket);
+
+    console.log(await openbookTwap.account.twapMarket.fetch(passMarketTwap));
+    console.log(await openbookTwap.account.twapMarket.fetch(failMarketTwap));
     
     let emptyBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
@@ -59,28 +62,35 @@ async function crankTwap() {
         payer.publicKey
     );
 
-    let openOrdersAccount = await openbook.createOpenOrders(
+    let passMarketOpenOrdersAccount = await openbook.createOpenOrders(
       payer,
-      failMarket,
-      new BN(8),
+      passMarket,
       "oo"
     );
 
-    return;
+    let failMarketOpenOrdersAccount = await openbook.createOpenOrders(
+      payer,
+      failMarket,
+      "oo"
+    );
+
+    // openbook.findOpenOrdersForMarket()
+
+    // return;
 
     // TODO: have this done programmatically
-    // let passMarketOpenOrdersAccount = openbook.findOpenOrders(
+    // let passMarketOpenOrdersAccount = await openbook.findOpenOrdersForMarket(
+    //     payer.publicKey,
     //     passMarket,
-    //     new BN(3),
-    //     payer.publicKey
-    // );
+    // )[0];
 
-    // let failMarketOpenOrdersAccount = openbook.findOpenOrders(
+    // let failMarketOpenOrdersAccount = await openbook.findOpenOrdersForMarket(
+    //     payer.publicKey,
     //     failMarket,
-    //     new BN(4),
-    //     payer.publicKey
-    // );
+    // )[0];
 
+    // console.log(passMarketOpenOrdersAccount);
+    // return;
 
 
     // const indexer = openbook.findOpenOrdersIndexer(payer.publicKey);
