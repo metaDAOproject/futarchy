@@ -41,7 +41,7 @@ RUN . $NVM_DIR/nvm.sh && \
     npm install -g yarn
 
 # Install Solana tools.
-RUN sh -c "$(curl -sSfL https://release.solana.com/${SOLANA_CLI}/install)"
+RUN sh -c "$(curl -sSfL https://release.solana.com/v${SOLANA_CLI}/install)"
 
 # Install anchor.
 RUN cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
@@ -49,3 +49,4 @@ RUN avm install ${ANCHOR_CLI} && avm use ${ANCHOR_CLI}
 
 
 WORKDIR /workdir
+#be sure to add `/root/.avm/bin` to your PATH to be able to run the installed binaries
