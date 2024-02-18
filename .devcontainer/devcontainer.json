@@ -1,7 +1,5 @@
 {
   
-  // ...
   "build": { "dockerfile": "Dockerfile" },
-  // ...
 
 }
