@@ -67,20 +67,20 @@ async function clockworkTwap() {
     );
     
     // TODO Hardcode pubkeys, if open orders account already exists
-    let passMarketOpenOrdersAccount = new PublicKey("BTVx1LQajppoeE61gisqCJdJmTexZyxk68eXQApqawHm");
-    // let passMarketOpenOrdersAccount = await openbook.createOpenOrders(
-    //   payer,
-    //   passMarket,
-    //   "oo"
-    // );
+    // let passMarketOpenOrdersAccount = new PublicKey("BTVx1LQajppoeE61gisqCJdJmTexZyxk68eXQApqawHm");
+    let passMarketOpenOrdersAccount = await openbook.createOpenOrders(
+      payer,
+      passMarket,
+      "oo"
+    );
 
     // TODO Hardcode pubkeys, if open orders account already exists
-    let failMarketOpenOrdersAccount = new PublicKey("4hGCJuV3bcDQ4Y9pYAutyrCphVKLUVS3WuXX8QJYqkjc");
-    // let failMarketOpenOrdersAccount = await openbook.createOpenOrders(
-    //   payer,
-    //   failMarket,
-    //   "oo"
-    // );
+    // let failMarketOpenOrdersAccount = new PublicKey("4hGCJuV3bcDQ4Y9pYAutyrCphVKLUVS3WuXX8QJYqkjc");
+    let failMarketOpenOrdersAccount = await openbook.createOpenOrders(
+      payer,
+      failMarket,
+      "oo"
+    );
 
     const pass_crank = await openbookTwap.methods
                 .placeOrder(emptyBuyArgs)
