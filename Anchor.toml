@@ -13,10 +13,11 @@ conditional_vault = "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Mainnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
+clockwork_twap = "yarn run ts-node scripts/clockworkTwap.ts"
 crank_twap = "yarn run ts-node scripts/crankTwap.ts"
 airdrop = "yarn run ts-node scripts/airdrop.ts"
 autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
