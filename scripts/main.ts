@@ -413,7 +413,7 @@ export async function initializeProposal(
       daoTreasury,
       quoteVault,
       baseVault,
-      openbookPassMarket: openbookFailMarketKP.publicKey,
+      openbookPassMarket: openbookPassMarketKP.publicKey,
       openbookFailMarket: openbookFailMarketKP.publicKey,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
