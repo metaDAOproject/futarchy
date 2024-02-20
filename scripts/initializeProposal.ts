@@ -11,7 +11,7 @@ anchor.setProvider(provider);
 
 const payer = provider.wallet["payer"];
 
-const PANTERA_PUBKEY = new PublicKey("BtNPTBX1XkFCwazDJ6ZkK3hcUsomm1RPcfmtUrP6wd2K");
+const PROPOSAL_9_SQUADS = new PublicKey("CEMVjWZxUXzZCg5ZpEbY5cHyxpcSiynpvBWn5SbycCTb");
 
 async function main() {
   const senderAcc = await token.getOrCreateAssociatedTokenAccount(
@@ -26,7 +26,7 @@ async function main() {
     provider.connection,
     payer,
     META,
-    PANTERA_PUBKEY,
+    PROPOSAL_9_SQUADS,
     true
   );
 
@@ -34,7 +34,7 @@ async function main() {
     senderAcc.address,
     receiverAcc.address,
     daoTreasury,
-    1_000 * 1_000_000_000, // 1,000 META
+    200 * 1_000_000_000, // 200 META
   );
 
   const ix = {
@@ -45,7 +45,7 @@ async function main() {
 
   await initializeProposal(
     ix,
-    "https://hackmd.io/@0xNallok/Hy2WJ46op"
+    "https://hackmd.io/@FkZ3fWbzQD2E5PPpDMNzOQ/S18ZGHZn6"
   );
 }
 
