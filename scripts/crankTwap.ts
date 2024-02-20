@@ -3,6 +3,7 @@ import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 
+
 const { PublicKey, Keypair, SystemProgram, ComputeBudgetProgram } = anchor.web3;
 const { BN, Program } = anchor;
 
@@ -16,6 +17,10 @@ import {
 
 import { AutocratV0 } from "../target/types/autocrat_v0";
 
+const sleep = async(ms: number): Promise<void> => {
+    return new Promise(
+        (resolve) => setTimeout(resolve, ms));
+}
 
 import { openbookTwap, autocratProgram, openbook, OPENBOOK_PROGRAM_ID } from "./main";
 
@@ -103,7 +108,7 @@ async function crankTwap() {
         microLamports: 1 
     });
 
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 10_000; i++) {
         try {
             let tx = await openbookTwap.methods
                 .placeOrder(emptyBuyArgs)
@@ -138,6 +143,7 @@ async function crankTwap() {
                 .rpc();
 
             console.log(tx);
+            await sleep(400)
         } catch (err) {
             console.log("error");
         }

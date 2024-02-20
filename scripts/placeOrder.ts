@@ -10,7 +10,7 @@ import {
 } from "@openbook-dex/openbook-v2";
 
 // Put your own proposal number here
-const PROPOSAL_NUMBER = 1;
+const PROPOSAL_NUMBER = 7;
 // If false, it will do the fail market obviously.
 const PASS_MARKET = true;
 

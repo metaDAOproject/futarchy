@@ -395,7 +395,7 @@ export async function initializeProposal(
       await openbookTwap.methods
         .createTwapMarket(new BN(10_000))
           .accounts({
-            market: openbookFailMarketKP.publicKey,
+            market: openbookPassMarketKP.publicKey,
             twapMarket: openbookTwapPassMarket,
           })
           .instruction(),
