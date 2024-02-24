@@ -12,6 +12,8 @@ import {
   SelfTradeBehavior,
 } from "@openbook-dex/openbook-v2";
 
+import { ClockworkProvider } from "@clockwork-xyz/sdk";
+
 import { AutocratV0 } from "../target/types/autocrat_v0";
 
 import {
@@ -78,6 +80,8 @@ export const openbookTwap = new Program<OpenbookTwap>(
   OPENBOOK_TWAP_PROGRAM_ID,
   provider
 );
+
+export const clockwork = ClockworkProvider.fromAnchorProvider(provider);
 
 export const migrator = new anchor.Program<AutocratMigrator>(
   AutocratMigratorIDL,

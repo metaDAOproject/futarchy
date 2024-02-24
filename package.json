@@ -4,6 +4,7 @@
         "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
     },
     "dependencies": {
+        "@clockwork-xyz/sdk": "0.3.4",
         "@coral-xyz/anchor": "0.29.0",
         "@metaplex-foundation/mpl-token-metadata": "^2.5.2",
         "@noble/ed25519": "^2.0.0",

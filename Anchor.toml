@@ -17,6 +17,7 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
+clockwork_twap = "yarn run ts-node scripts/clockworkTwap.ts"
 crank_twap = "yarn run ts-node scripts/crankTwap.ts"
 airdrop = "yarn run ts-node scripts/airdrop.ts"
 autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
