@@ -1,11 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN, Program } from "@coral-xyz/anchor";
-import * as token from "@solana/spl-token";
-import { BankrunProvider } from "anchor-bankrun";
 import {
-  mintConditionalTokens,
-  redeemConditionalTokens,
-} from "./conditionalVault";
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+// @ts-ignore
+import { Token } from "@solana/spl-token-018";
+import { BankrunProvider } from "anchor-bankrun";
 import {
   OpenBookV2Client,
   IDL,
@@ -13,26 +14,37 @@ import {
   Side,
   OrderType,
   SelfTradeBehavior,
+  getAssociatedTokenAddress,
 } from "@openbook-dex/openbook-v2";
-
-const { PublicKey, Keypair } = anchor.web3;
-
 import { assert } from "chai";
-
 import {
   startAnchor,
   Clock,
   BanksClient,
   ProgramTestContext,
 } from "solana-bankrun";
+import {
+  createMint,
+  createAccount,
+  createAssociatedTokenAccount,
+  mintToOverride,
+  getMint,
+  getAccount,
+} from "spl-token-bankrun";
+
+import {
+  mintConditionalTokens,
+  redeemConditionalTokens,
+} from "./conditionalVault";
 
 import { expectError } from "./utils/utils";
-
 import { AutocratV0 } from "../target/types/autocrat_v0";
 import { ConditionalVault } from "../target/types/conditional_vault";
 import { AutocratMigrator } from "../target/types/autocrat_migrator";
-import { OpenbookTwap } from "./fixtures/openbook_twap";
 
+const { PublicKey, Keypair } = anchor.web3;
+
+import { OpenbookTwap } from "./fixtures/openbook_twap";
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
@@ -56,16 +68,6 @@ interface MarketMaker {
 
 type ProposalInstruction = anchor.IdlTypes<AutocratV0>["ProposalInstruction"];
 
-import {
-  createMint,
-  createAccount,
-  createAssociatedTokenAccount,
-  mintToOverride,
-  getMint,
-  getAccount,
-} from "spl-token-bankrun";
-import { open } from "fs";
-
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
@@ -86,6 +88,10 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
 );
+
+const getMarketFromOpenbookCreatMarketIx = (
+  instructions: Array<anchor.web3.TransactionInstruction>
+) => instructions[3].keys[0].pubkey;
 
 describe("autocrat_v0", async function () {
   let provider,
@@ -582,10 +588,10 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      const storedPassMarket = await openbook.getMarketAccount(
+      const storedPassMarket = await openbook.deserializeMarketAccount(
         openbookPassMarket
       );
-      const storedFailMarket = await openbook.getMarketAccount(
+      const storedFailMarket = await openbook.deserializeMarketAccount(
         openbookFailMarket
       );
 
@@ -709,7 +715,7 @@ describe("autocrat_v0", async function () {
           referrerAccount: null,
           twapMarket: openbookTwapPassMarket,
           openbookProgram: OPENBOOK_PROGRAM_ID,
-          tokenProgram: token.TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
           signer: alice.publicKey,
         })
@@ -839,11 +845,6 @@ describe("autocrat_v0", async function () {
       assert((await getAccount(banksClient, treasuryMetaAccount)).amount == 0n);
       assert((await getAccount(banksClient, treasuryUsdcAccount)).amount == 0n);
 
-      // console.log(await banksClient.getAccount(daoTreasury));
-
-      // const storedDao = await autocrat.account.dao.fetch(dao);
-      // assert.equal(storedDao.passThresholdBps, newPassThresholdBps);
-
       await redeemConditionalTokens(
         vaultProgram,
         alice,
@@ -930,10 +931,10 @@ describe("autocrat_v0", async function () {
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      const storedPassMarket = await openbook.getMarketAccount(
+      const storedPassMarket = await openbook.deserializeMarketAccount(
         openbookPassMarket
       );
-      const storedFailMarket = await openbook.getMarketAccount(
+      const storedFailMarket = await openbook.deserializeMarketAccount(
         openbookFailMarket
       );
 
@@ -1057,7 +1058,7 @@ describe("autocrat_v0", async function () {
           referrerAccount: null,
           twapMarket: openbookTwapPassMarket,
           openbookProgram: OPENBOOK_PROGRAM_ID,
-          tokenProgram: token.TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
           signer: alice.publicKey,
         })
@@ -1245,8 +1246,8 @@ async function generateMarketMaker(
 ): Promise<MarketMaker> {
   const mm = anchor.web3.Keypair.generate();
 
-  const storedPassMarket = await openbook.getMarketAccount(passMarket);
-  const storedFailMarket = await openbook.getMarketAccount(failMarket);
+  const storedPassMarket = await openbook.deserializeMarketAccount(passMarket);
+  const storedFailMarket = await openbook.deserializeMarketAccount(failMarket);
 
   const metaPassAcc = await createAccount(
     banksClient,
@@ -1335,18 +1336,16 @@ async function generateMarketMaker(
     banksClient
   );
 
-  let pOpenOrdersAccount = await openbook.createOpenOrders(
+  const pOpenOrdersAccount = await openbook.createOpenOrders(
     payer,
     passMarket,
-    new BN(1),
     "oo",
     mm
   );
 
-  let fOpenOrdersAccount = await openbook.createOpenOrders(
+  const fOpenOrdersAccount = await openbook.createOpenOrders(
     payer,
     failMarket,
-    new BN(2),
     "oo",
     mm
   );
@@ -1356,19 +1355,19 @@ async function generateMarketMaker(
     keypair: mm,
     pOpenOrdersAccount,
     fOpenOrdersAccount,
-    pMetaAcc: token.getAssociatedTokenAddressSync(
+    pMetaAcc: await getAssociatedTokenAddress(
       storedBaseVault.conditionalOnFinalizeTokenMint,
       mm.publicKey
     ),
-    fMetaAcc: token.getAssociatedTokenAddressSync(
+    fMetaAcc: await getAssociatedTokenAddress(
       storedBaseVault.conditionalOnRevertTokenMint,
       mm.publicKey
     ),
-    pUsdcAcc: token.getAssociatedTokenAddressSync(
+    pUsdcAcc: await getAssociatedTokenAddress(
       storedQuoteVault.conditionalOnFinalizeTokenMint,
       mm.publicKey
     ),
-    fUsdcAcc: token.getAssociatedTokenAddressSync(
+    fUsdcAcc: await getAssociatedTokenAddress(
       storedQuoteVault.conditionalOnRevertTokenMint,
       mm.publicKey
     ),
@@ -1455,32 +1454,39 @@ async function initializeProposal(
     openbookTwap.programId
   );
 
-  let openbookPassMarket = await openbook.createMarket(
-    payer,
-    "pMETA/pUSDC",
-    passQuoteMint,
-    passBaseMint,
-    new BN(100),
-    new BN(1e9),
-    new BN(0),
-    new BN(0),
-    new BN(0),
-    null,
-    null,
-    openbookTwapPassMarket,
-    null,
-    openbookTwapPassMarket,
-    { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookPassMarketKP,
-    daoTreasury
+  // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246
+  let [openbookPassMarketIxs, openbookPassMarketSigners] =
+    await openbook.createMarketIx(
+      payer.publicKey,
+      "pMETA/pUSDC",
+      passQuoteMint,
+      passBaseMint,
+      new BN(100),
+      new BN(1e9),
+      new BN(0),
+      new BN(0),
+      new BN(0),
+      null,
+      null,
+      openbookTwapPassMarket,
+      null,
+      openbookTwapPassMarket,
+      { confFilter: 0.1, maxStalenessSlots: 100 },
+      openbookPassMarketKP,
+      daoTreasury
+    );
+  const passMarketPubkey = getMarketFromOpenbookCreatMarketIx(
+    openbookPassMarketIxs
   );
 
   await openbookTwap.methods
     .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
-      market: openbookPassMarket,
+      market: passMarketPubkey,
       twapMarket: openbookTwapPassMarket,
     })
+    .preInstructions(openbookPassMarketIxs)
+    .signers(openbookPassMarketSigners)
     .rpc();
 
   let openbookFailMarketKP = Keypair.generate();
@@ -1493,31 +1499,39 @@ async function initializeProposal(
     openbookTwap.programId
   );
 
-  let openbookFailMarket = await openbook.createMarket(
-    payer,
-    "fMETA/fUSDC",
-    failQuoteMint,
-    failBaseMint,
-    new BN(100),
-    new BN(1e9),
-    new BN(0),
-    new BN(0),
-    new BN(0),
-    null,
-    null,
-    openbookTwapFailMarket,
-    null,
-    openbookTwapFailMarket,
-    { confFilter: 0.1, maxStalenessSlots: 100 },
-    openbookFailMarketKP,
-    daoTreasury
+  // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246
+  let [openbookFailMarketIxs, openbookFailMarketSigners] =
+    await openbook.createMarketIx(
+      payer.publicKey,
+      "fMETA/fUSDC",
+      failQuoteMint,
+      failBaseMint,
+      new BN(100),
+      new BN(1e9),
+      new BN(0),
+      new BN(0),
+      new BN(0),
+      null,
+      null,
+      openbookTwapFailMarket,
+      null,
+      openbookTwapFailMarket,
+      { confFilter: 0.1, maxStalenessSlots: 100 },
+      openbookFailMarketKP,
+      daoTreasury
+    );
+  const failMarketPubkey = getMarketFromOpenbookCreatMarketIx(
+    openbookFailMarketIxs
   );
+
   await openbookTwap.methods
     .createTwapMarket(new BN(daoBefore.twapExpectedValue))
     .accounts({
-      market: openbookFailMarket,
+      market: failMarketPubkey,
       twapMarket: openbookTwapFailMarket,
     })
+    .preInstructions(openbookFailMarketIxs)
+    .signers(openbookFailMarketSigners)
     .rpc();
 
   await autocrat.methods
@@ -1533,8 +1547,8 @@ async function initializeProposal(
       quoteVault,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
-      openbookPassMarket,
-      openbookFailMarket,
+      openbookPassMarket: passMarketPubkey,
+      openbookFailMarket: failMarketPubkey,
       proposer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
@@ -1595,11 +1609,14 @@ async function initializeVault(
   const conditionalOnFinalizeTokenMintKeypair = Keypair.generate();
   const conditionalOnRevertTokenMintKeypair = Keypair.generate();
 
-  const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
+  const vaultUnderlyingTokenAccount = await Token.getAssociatedTokenAddress(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
     underlyingTokenMint,
     vault,
     true
   );
+
   await vaultProgram.methods
     .initializeConditionalVault(settlementAuthority, nonce)
     .accounts({
@@ -1611,8 +1628,8 @@ async function initializeVault(
       conditionalOnRevertTokenMint:
         conditionalOnRevertTokenMintKeypair.publicKey,
       payer: payer.publicKey,
-      tokenProgram: token.TOKEN_PROGRAM_ID,
-      associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
     .signers([
