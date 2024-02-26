@@ -11,7 +11,8 @@ anchor.setProvider(provider);
 
 const payer = provider.wallet["payer"];
 
-const PROPOSAL_9_SQUADS = new PublicKey("CEMVjWZxUXzZCg5ZpEbY5cHyxpcSiynpvBWn5SbycCTb");
+// Durden setup Squads
+const DUTCH_AUCTION_LP_MULTISIG = new PublicKey("3LMRVapqnn1LEwKaD8PzYEs4i37whTgeVS41qKqyn1wi");
 
 async function main() {
   const senderAcc = await token.getOrCreateAssociatedTokenAccount(
@@ -26,7 +27,7 @@ async function main() {
     provider.connection,
     payer,
     META,
-    PROPOSAL_9_SQUADS,
+    DUTCH_AUCTION_LP_MULTISIG,
     true
   );
 
@@ -34,7 +35,7 @@ async function main() {
     senderAcc.address,
     receiverAcc.address,
     daoTreasury,
-    200 * 1_000_000_000, // 200 META
+    300545 * 10_000_000, // 3005.45 META
   );
 
   const ix = {
@@ -45,7 +46,7 @@ async function main() {
 
   await initializeProposal(
     ix,
-    "https://hackmd.io/@FkZ3fWbzQD2E5PPpDMNzOQ/S18ZGHZn6"
+    "https://hackmd.io/@Durden/Increase-META-Liquidity"
   );
 }
 
