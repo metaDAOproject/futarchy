@@ -1,8 +1,13 @@
 use anchor_lang::prelude::*;
+use anchor_spl::metadata::{
+    create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata, MetadataAccount,
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
+use mpl_token_metadata::state::DataV2;
+
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
@@ -80,6 +85,62 @@ pub mod conditional_vault {
         vault.conditional_on_revert_token_mint =
             ctx.accounts.conditional_on_revert_token_mint.key();
         vault.pda_bump = *ctx.bumps.get("vault").unwrap();
+
+        Ok(())
+    }
+
+    pub fn add_metadata_to_conditional_tokens(
+        ctx: Context<AddMetadataToConditionalTokens>,
+        proposal_number: u64,
+        on_finalize_uri: String,
+        on_revert_uri: String,
+    ) -> Result<()> {
+        let seeds = generate_vault_seeds!(ctx.accounts.vault);
+        let signer_seeds = &[&seeds[..]];
+
+        // there are null bytes we must trim from string, otherwise string value is longer than we want
+        let underlying_token_symbol_raw =
+            ctx.accounts.underlying_token_metadata.data.symbol.clone();
+        let underlying_token_symbol = underlying_token_symbol_raw.trim_matches(char::from(0));
+
+        let on_finalize_token_symbol = format!("p{}", underlying_token_symbol);
+        let on_revert_token_symbol = format!("f{}", underlying_token_symbol);
+
+        create_metadata_accounts_v3(
+            ctx.accounts
+                .into_create_on_finalize_token_metadata_context()
+                .with_signer(signer_seeds),
+            DataV2 {
+                name: format!("Proposal {}: {}", proposal_number, on_finalize_token_symbol),
+                symbol: on_finalize_token_symbol,
+                uri: on_finalize_uri,
+                seller_fee_basis_points: 0,
+                creators: None,
+                collection: None,
+                uses: None,
+            },
+            false,
+            true,
+            None,
+        )?;
+
+        create_metadata_accounts_v3(
+            ctx.accounts
+                .into_create_on_revert_token_metadata_context()
+                .with_signer(signer_seeds),
+            DataV2 {
+                name: format!("Proposal {}: {}", proposal_number, on_revert_token_symbol),
+                symbol: on_revert_token_symbol,
+                uri: on_revert_uri,
+                seller_fee_basis_points: 0,
+                creators: None,
+                collection: None,
+                uses: None,
+            },
+            false,
+            true,
+            None,
+        )?;
 
         Ok(())
     }
@@ -353,6 +414,84 @@ pub struct InitializeConditionalVault<'info> {
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct AddMetadataToConditionalTokens<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        mut,
+        has_one = underlying_token_mint,
+        constraint = vault.status == VaultStatus::Active @ ErrorCode::VaultAlreadySettled
+    )]
+    pub vault: Account<'info, ConditionalVault>,
+    #[account(mut)]
+    pub underlying_token_mint: Account<'info, Mint>,
+    pub underlying_token_metadata: Account<'info, MetadataAccount>,
+    #[account(
+        mut,
+        mint::authority = vault,
+        mint::freeze_authority = vault,
+        mint::decimals = underlying_token_mint.decimals
+    )]
+    pub conditional_on_finalize_token_mint: Account<'info, Mint>,
+    #[account(
+        mut,
+        mint::authority = vault,
+        mint::freeze_authority = vault,
+        mint::decimals = underlying_token_mint.decimals
+    )]
+    pub conditional_on_revert_token_mint: Account<'info, Mint>,
+    /// CHECK: verified via cpi into token metadata
+    #[account(mut)]
+    pub conditional_on_finalize_token_metadata: AccountInfo<'info>,
+    /// CHECK: verified via cpi into token metadata
+    #[account(mut)]
+    pub conditional_on_revert_token_metadata: AccountInfo<'info>,
+    pub token_metadata_program: Program<'info, Metadata>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+impl<'info> AddMetadataToConditionalTokens<'info> {
+    pub fn into_create_on_finalize_token_metadata_context(
+        &self,
+    ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
+        let cpi_program = self.token_metadata_program.to_account_info();
+
+        let cpi_accounts = CreateMetadataAccountsV3 {
+            metadata: self
+                .conditional_on_finalize_token_metadata
+                .to_account_info(),
+            mint: self.conditional_on_finalize_token_mint.to_account_info(),
+            mint_authority: self.vault.to_account_info(),
+            payer: self.payer.to_account_info(),
+            update_authority: self.vault.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+            rent: self.rent.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    pub fn into_create_on_revert_token_metadata_context(
+        &self,
+    ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
+        let cpi_program = self.token_metadata_program.to_account_info();
+
+        let cpi_accounts = CreateMetadataAccountsV3 {
+            metadata: self.conditional_on_revert_token_metadata.to_account_info(),
+            mint: self.conditional_on_revert_token_mint.to_account_info(),
+            mint_authority: self.vault.to_account_info(),
+            payer: self.payer.to_account_info(),
+            update_authority: self.vault.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+            rent: self.rent.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }
 
 #[derive(Accounts)]

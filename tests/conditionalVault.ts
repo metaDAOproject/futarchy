@@ -17,9 +17,30 @@ import {
 import { BanksClient, ProgramTestContext, startAnchor } from "solana-bankrun";
 // @ts-ignore
 import { Token } from "@solana/spl-token-018";
+import { SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import {
+  MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
+  createMetadataAccountV3,
+  findMetadataPda,
+} from "@metaplex-foundation/mpl-token-metadata";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
+  fromWeb3JsPublicKey,
+  toWeb3JsPublicKey,
+  fromWeb3JsKeypair,
+  toWeb3JsLegacyTransaction,
+} from "@metaplex-foundation/umi-web3js-adapters";
+import {
+  Umi,
+  createSignerFromKeypair,
+  generateSigner,
+  keypairIdentity,
+  none,
+} from "@metaplex-foundation/umi";
 
 import { expectError } from "./utils/utils";
 import { ConditionalVault } from "../target/types/conditional_vault";
+
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;
@@ -29,6 +50,12 @@ export type Keypair = anchor.web3.Keypair;
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+);
+
+const METADATA_URI =
+  "https://ftgnmxferax7tpgqyzdo76sisk5fhpsjv34omvgz33m7udvnsfba.arweave.net/LMzWXKSIL_m80MZG7_pIkrpTvkmu-OZU2d7Z-g6tkUI";
+const MPL_TOKEN_METADATA_PROGRAM_ID = toWeb3JsPublicKey(
+  UMI_MPL_TOKEN_METADATA_PROGRAM_ID
 );
 
 export enum VaultStatus {
@@ -53,16 +80,31 @@ describe("conditional_vault", async function () {
   let alice: anchor.web3.Keypair;
   let context: ProgramTestContext;
   let banksClient: BanksClient;
+  let umi: Umi;
 
   // note: adding types to these creates a slew of type errors below
   let payer;
   let vaultProgram;
 
   before(async function () {
-    context = await startAnchor("./", [], []);
+    context = await startAnchor(
+      "./",
+      [
+        // even though the program is loaded into the test validator, we need
+        // to tell banks test client to load it as well
+        {
+          name: "mpl_token_metadata",
+          programId: MPL_TOKEN_METADATA_PROGRAM_ID,
+        },
+      ],
+      []
+    );
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
+
+    console.log("anchor connection: ", anchor.AnchorProvider.env().connection);
+    umi = createUmi(anchor.AnchorProvider.env().connection);
 
     vaultProgram = new Program<ConditionalVault>(
       ConditionalVaultIDL,
@@ -74,6 +116,7 @@ describe("conditional_vault", async function () {
     alice = anchor.web3.Keypair.generate();
     settlementAuthority = anchor.web3.Keypair.generate();
     underlyingMintAuthority = anchor.web3.Keypair.generate();
+    umi.use(keypairIdentity(fromWeb3JsKeypair(payer)));
 
     underlyingTokenMint = await createMint(
       banksClient,
@@ -452,7 +495,8 @@ describe("conditional_vault", async function () {
       let [vault, _, settlementAuthority] = await generateRandomVault(
         vaultProgram,
         payer,
-        banksClient
+        banksClient,
+        umi
       );
 
       await vaultProgram.methods
@@ -469,7 +513,8 @@ describe("conditional_vault", async function () {
       let [vault, _, settlementAuthority] = await generateRandomVault(
         vaultProgram,
         payer,
-        banksClient
+        banksClient,
+        umi
       );
 
       await vaultProgram.methods
@@ -486,7 +531,8 @@ describe("conditional_vault", async function () {
       let [vault, _, settlementAuthority] = await generateRandomVault(
         vaultProgram,
         payer,
-        banksClient
+        banksClient,
+        umi
       );
 
       await vaultProgram.methods
@@ -525,7 +571,7 @@ describe("conditional_vault", async function () {
 
     beforeEach(async function () {
       [vault, underlyingMintAuthority, settlementAuthority] =
-        await generateRandomVault(vaultProgram, payer, banksClient);
+        await generateRandomVault(vaultProgram, payer, banksClient, umi);
       let storedVault = await vaultProgram.account.conditionalVault.fetch(
         vault
       );
@@ -684,6 +730,7 @@ async function generateRandomVault(
   vaultProgram: VaultProgram,
   payer: Keypair,
   banksClient: BanksClient,
+  umi: Umi,
   settlementAuthority: Keypair = anchor.web3.Keypair.generate()
 ): Promise<[PublicKey, Keypair, Keypair]> {
   const underlyingMintAuthority = anchor.web3.Keypair.generate();
@@ -695,6 +742,39 @@ async function generateRandomVault(
     null,
     8
   );
+
+  const tokenMint = fromWeb3JsPublicKey(underlyingTokenMint);
+  let builder = createMetadataAccountV3(umi, {
+    mint: tokenMint,
+    mintAuthority: createSignerFromKeypair(
+      umi,
+      fromWeb3JsKeypair(underlyingMintAuthority)
+    ),
+    data: {
+      name: "TOKE",
+      symbol: "TOKE",
+      uri: "METADATA_URI",
+      sellerFeeBasisPoints: 0,
+      creators: none(),
+      collection: none(),
+      uses: none(),
+    },
+    isMutable: false,
+    collectionDetails: none(),
+  });
+  builder = builder.setBlockhash(
+    (await umi.rpc.getLatestBlockhash()).blockhash
+  );
+
+  const createMetadataResult = await vaultProgram.provider.sendAndConfirm(
+    toWeb3JsLegacyTransaction(builder.build(umi)),
+    [underlyingMintAuthority],
+    {
+      skipPreflight: true,
+      commitment: "confirmed",
+    }
+  );
+  console.log(createMetadataResult);
 
   const nonce = new BN(1003239);
 
@@ -718,7 +798,61 @@ async function generateRandomVault(
   let conditionalOnFinalizeTokenMintKeypair = anchor.web3.Keypair.generate();
   let conditionalOnRevertTokenMintKeypair = anchor.web3.Keypair.generate();
 
-  let result = await vaultProgram.methods
+  // when we have a ts lib, we can consolidate this logic there
+  const [conditionalOnFinalizeTokenMetadata] =
+    anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("metadata"),
+        MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        conditionalOnFinalizeTokenMintKeypair.publicKey.toBuffer(),
+      ],
+      MPL_TOKEN_METADATA_PROGRAM_ID
+    );
+
+  const [conditionalOnRevertTokenMetadata] =
+    anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("metadata"),
+        MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        conditionalOnRevertTokenMintKeypair.publicKey.toBuffer(),
+      ],
+      MPL_TOKEN_METADATA_PROGRAM_ID
+    );
+
+  const [underlyingTokenMetadata] =
+    anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("metadata"),
+        MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        underlyingTokenMint.toBuffer(),
+      ],
+      MPL_TOKEN_METADATA_PROGRAM_ID
+    );
+
+  const addMetadataToConditionalTokensIx = await vaultProgram.methods
+    .addMetadataToConditionalTokens(
+      new BN(0), // nonce,
+      METADATA_URI,
+      METADATA_URI
+    )
+    .accounts({
+      payer: payer.publicKey,
+      vault,
+      underlyingTokenMint,
+      underlyingTokenMetadata,
+      conditionalOnFinalizeTokenMint:
+        conditionalOnFinalizeTokenMintKeypair.publicKey,
+      conditionalOnRevertTokenMint:
+        conditionalOnRevertTokenMintKeypair.publicKey,
+      conditionalOnFinalizeTokenMetadata,
+      conditionalOnRevertTokenMetadata,
+      tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+      systemProgram: anchor.web3.SystemProgram.programId,
+      rent: SYSVAR_RENT_PUBKEY,
+    })
+    .instruction();
+
+  await vaultProgram.methods
     .initializeConditionalVault(settlementAuthority.publicKey, nonce)
     .accounts({
       vault,
@@ -737,6 +871,7 @@ async function generateRandomVault(
       conditionalOnFinalizeTokenMintKeypair,
       conditionalOnRevertTokenMintKeypair,
     ])
+    .postInstructions([addMetadataToConditionalTokensIx])
     .rpc();
 
   return [vault, underlyingMintAuthority, settlementAuthority];
