@@ -129,6 +129,7 @@ pub mod autocrat_v0 {
         ctx: Context<InitializeProposal>,
         description_url: String,
         instruction: ProposalInstruction,
+        expected_lamport_burn: u64,
     ) -> Result<()> {
         let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
         let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
@@ -260,6 +261,12 @@ pub mod autocrat_v0 {
             dao.burn_decay_per_slot_lamports
                 .saturating_mul(slots_passed),
         );
+
+        require!(
+            burn_amount > expected_lamport_burn,
+            AutocratError::BurnExceedsExpected
+        )
+
         dao.last_proposal_slot = clock.slot;
 
         let lockup_ix = solana_program::system_instruction::transfer(
@@ -570,4 +577,6 @@ pub enum AutocratError {
     ProposalAlreadyFinalized,
     #[msg("A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits")]
     InvalidVaultNonce,
+    #[msg("The actual lamport burn exceeds the expected lamport burn")]
+    BurnExceedsExpected,
 }
