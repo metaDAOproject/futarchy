@@ -265,7 +265,7 @@ pub mod autocrat_v0 {
         require!(
             burn_amount > expected_lamport_burn,
             AutocratError::BurnExceedsExpected
-        )
+        );
 
         dao.last_proposal_slot = clock.slot;
 
