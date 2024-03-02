@@ -263,7 +263,7 @@ pub mod autocrat_v0 {
         );
 
         require!(
-            burn_amount > expected_lamport_burn,
+            expected_lamport_burn >= burn_amount,
             AutocratError::BurnExceedsExpected
         );
 
