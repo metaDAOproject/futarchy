@@ -2,6 +2,7 @@ import { initializeProposal, payer, provider } from "./main";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
+import { TransactionInstruction } from "@solana/web3.js"
 
 
 const { PublicKey, Keypair, SystemProgram, ComputeBudgetProgram } = anchor.web3;
@@ -24,7 +25,7 @@ const sleep = async(ms: number): Promise<void> => {
 
 import { openbookTwap, autocratProgram, openbook, OPENBOOK_PROGRAM_ID } from "./main";
 
-const PROPOSAL_NUMBER = 7;
+const PROPOSAL_NUMBER = 11;
 
 // crank the TWAPs of a proposal's markets by passing in a bunch of empty orders
 async function crankTwap() {
@@ -62,24 +63,153 @@ async function crankTwap() {
         payer.publicKey
     );
 
+    console.log(userPassQuoteAccount);
+
     const userFailQuoteAccount = await token.getOrCreateAssociatedTokenAccount(
         provider.connection,
         payer,
         storedFailMarket.quoteMint,
         payer.publicKey
     );
-    
-    let passMarketOpenOrdersAccount = await openbook.createOpenOrders(
-      payer,
-      passMarket,
-      "oo"
-    );
+    console.log('FAIL QUOTE ACCOUNT');
+    console.log(userFailQuoteAccount);
 
-    let failMarketOpenOrdersAccount = await openbook.createOpenOrders(
-      payer,
-      failMarket,
-      "oo"
-    );
+    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ 
+      microLamports: 1000
+    });
+    
+    // let passMarketOpenOrdersAccount = await openbook.createOpenOrders(
+    //   payer,
+    //   passMarket,
+    //   "oo"
+    // );
+
+    let passOpenOrdersIndexer = openbook.findOpenOrdersIndexer(payer.publicKey)
+    let passAccountIndex = new BN(1);
+    let addCreatePass = false
+    try {
+      const storedIndexer = await openbook.deserializeOpenOrdersIndexerAccount(
+        passOpenOrdersIndexer
+      )
+      if (storedIndexer == null){
+        console.log('error');
+        addCreatePass = true
+      } else {
+        passAccountIndex = new BN(storedIndexer.createdCounter + 1);
+      }
+    } catch {
+      console.log('error');
+      addCreatePass = true
+    }
+
+    const passMarketOpenOrdersAccount = openbook.findOpenOrderAtIndex(payer.publicKey, passAccountIndex)
+    console.log(passMarketOpenOrdersAccount)
+    console.log(passOpenOrdersIndexer)
+    console.log(passAccountIndex.toNumber())
+    console.log(passMarket)
+    try {
+      if (addCreatePass) {
+        await openbook.program.methods
+          .createOpenOrdersAccount("oo")
+          .accounts({
+            openOrdersIndexer: passOpenOrdersIndexer,
+            openOrdersAccount: passMarketOpenOrdersAccount,
+            market: passMarket,
+            owner: payer.publicKey,
+            delegateAccount: null
+          })
+          .preInstructions([
+            addPriorityFee,
+            await openbook.createOpenOrdersIndexerIx(passOpenOrdersIndexer, payer.publicKey)
+          ])
+          .rpc()
+       } else {
+        await openbook.program.methods
+          .createOpenOrdersAccount("oo")
+          .accounts({
+            openOrdersIndexer: passOpenOrdersIndexer,
+            openOrdersAccount: passMarketOpenOrdersAccount,
+            market: passMarket,
+            owner: payer.publicKey,
+            delegateAccount: null
+          })
+          .preInstructions([
+            addPriorityFee
+          ])
+          .rpc()
+      }
+    } catch (err) {
+      console.error(err);
+      return
+    }
+
+
+    // let failMarketOpenOrdersAccount = await openbook.createOpenOrders(
+    //   payer,
+    //   failMarket,
+    //   "oo"
+    // );
+    // console.log('FAIL OPEN ORDERS ACCOUNT');
+    // console.log(failMarketOpenOrdersAccount);
+
+    let failOpenOrdersIndexer = openbook.findOpenOrdersIndexer(payer.publicKey)
+    let failAccountIndex = new BN(1);
+    let addCreateFail = false
+    try {
+      const storedIndexer = await openbook.deserializeOpenOrdersIndexerAccount(
+        failOpenOrdersIndexer
+      )
+      if (storedIndexer == null){
+        console.log('error');
+        addCreateFail = true
+      } else {
+        failAccountIndex = new BN(storedIndexer.createdCounter + 1);
+      }
+    } catch {
+      console.log('error');
+      addCreateFail = true
+    }
+
+    const failMarketOpenOrdersAccount = openbook.findOpenOrderAtIndex(payer.publicKey, failAccountIndex)
+    console.log(failMarketOpenOrdersAccount)
+    console.log(failOpenOrdersIndexer)
+    console.log(failAccountIndex.toNumber())
+    console.log(failMarket)
+    try {
+      if (addCreateFail) {
+        await openbook.program.methods
+          .createOpenOrdersAccount("oo")
+          .accounts({
+            openOrdersIndexer: failOpenOrdersIndexer,
+            openOrdersAccount: failMarketOpenOrdersAccount,
+            market: failMarket,
+            owner: payer.publicKey,
+            delegateAccount: null
+          })
+          .preInstructions([
+            addPriorityFee,
+            await openbook.createOpenOrdersIndexerIx(failOpenOrdersIndexer, payer.publicKey)
+          ])
+          .rpc()
+       } else {
+        await openbook.program.methods
+          .createOpenOrdersAccount("oo")
+          .accounts({
+            openOrdersIndexer: failOpenOrdersIndexer,
+            openOrdersAccount: failMarketOpenOrdersAccount,
+            market: failMarket,
+            owner: payer.publicKey,
+            delegateAccount: null
+          })
+          .preInstructions([
+            addPriorityFee
+          ])
+          .rpc()
+      }
+    } catch (err) {
+      console.error(err);
+      return
+    }
 
     // openbook.findOpenOrdersForMarket()
 
@@ -103,10 +233,6 @@ async function crankTwap() {
     // const indexer = openbook.findOpenOrdersIndexer(payer.publicKey);
 
     // console.log(await openbook.getOpenOrdersIndexer(indexer));
-
-    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ 
-        microLamports: 1 
-    });
 
     for (let i = 0; i < 10_000; i++) {
         try {
@@ -141,11 +267,12 @@ async function crankTwap() {
                         .instruction()
                 ])
                 .rpc();
-
             console.log(tx);
-            await sleep(400)
         } catch (err) {
             console.log("error");
+            console.log(err);
+        } finally {
+            await sleep(600);
         }
     }
 }
