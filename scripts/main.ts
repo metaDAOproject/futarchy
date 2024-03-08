@@ -1,5 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
+//import { getOrCreateAssociatedTokenAccount, createBurnInstruction } from "@solana/spl-token";
 const { PublicKey, Keypair, SystemProgram, ComputeBudgetProgram, Transaction } = anchor.web3;
 const { BN, Program } = anchor;
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
@@ -21,6 +22,7 @@ import {
 
 import { OpenbookTwap } from "../tests/fixtures/openbook_twap";
 import { AutocratMigrator } from "../target/types/autocrat_migrator";
+import { Account } from "solana-bankrun/dist/internal";
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.json");
@@ -174,6 +176,55 @@ async function initializeDAO(META: any, USDC: any) {
       usdcMint: USDC,
     })
     .rpc();
+}
+
+export async function finalizeBurnProposal(proposal: anchor.web3.PublicKey) {
+  const storedProposal = await autocratProgram.account.proposal.fetch(proposal);
+  console.log(storedProposal);
+  console.log(storedProposal.slotEnqueued.toNumber());
+  console.log(storedProposal.slotEnqueued.toNumber() + 1_080_000);
+
+  const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ 
+    microLamports: 1000
+  });
+
+
+  // TODO: Confirm expected proposal output matches instructions generated from
+
+  const accounts = storedProposal.instruction.accounts
+  const program = storedProposal.instruction.programId
+
+  accounts[2].isSigner = false
+  
+  const _program: anchor.web3.AccountMeta = {
+    pubkey: program,
+    isSigner: false,
+    isWritable: false,
+  }
+
+  accounts.push(_program)
+
+  console.log(accounts)
+
+  let tx = await autocratProgram.methods
+    .finalizeProposal()
+    .accounts({
+      proposal,
+      openbookTwapPassMarket: storedProposal.openbookTwapPassMarket,
+      openbookTwapFailMarket: storedProposal.openbookTwapFailMarket,
+      dao,
+      baseVault: storedProposal.baseVault,
+      quoteVault: storedProposal.quoteVault,
+      vaultProgram: vaultProgram.programId,
+      daoTreasury,
+    })
+    .remainingAccounts(accounts)
+    .preInstructions([
+      addPriorityFee
+    ])
+    .rpc()
+
+    console.log("Proposal finalized", tx);
 }
 
 // async function finalizeProposal(proposal: anchor.web3.PublicKey) {
