@@ -27,7 +27,7 @@ security_txt! {
 declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
-pub const THREE_DAYS_IN_SLOTS: u64 = 5 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
+pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
@@ -107,8 +107,6 @@ pub mod autocrat_v0 {
 
         dao.meta_mint = ctx.accounts.meta_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
-
-        dao.proposal_count = 2;
 
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
