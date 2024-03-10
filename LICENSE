@@ -7,13 +7,15 @@ License text copyright (c) 2017 MariaDB Corporation Ab, All Rights Reserved.
 
 Parameters
 
-Licensor:             The Meta-DAO
+Licensor:             MetaDAO LLC
 
-Licensed Work:        Futarchy
-                      The Licensed Work is (c) 2024 The Meta-DAO
+Licensed Work:        Futarchy Monorepo
+                      The Licensed Work is (c) 2024 MetaDAO LLC
 
+Additional Use Grant: Any uses approved by MetaDAO LLC via calls to
+                      the SPL Memo program
 
-Change Date:          2027-02-13
+Change Date:          4200-06-09
 
 Change License:       GNU Lesser General Public License v2.0 or later
 
