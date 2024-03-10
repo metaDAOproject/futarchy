@@ -68,7 +68,7 @@ import { open } from "fs";
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
+  "MErTXfDBubnbJudhQCD7xN9WaCQySSPpPiHvkrX2Dh3"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
@@ -167,6 +167,7 @@ describe("autocrat_v0", async function () {
         [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
         autocrat.programId
       );
+
       [daoTreasury] = PublicKey.findProgramAddressSync(
         [dao.toBuffer()],
         autocrat.programId
