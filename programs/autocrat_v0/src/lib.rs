@@ -115,7 +115,7 @@ pub mod autocrat_v0 {
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
-        dao.twap_expected_value = 10_000; // 1 USDC per META
+        dao.twap_expected_value = 1_000; // 0.0001 USDC per MERTD
 
         let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -168,7 +168,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_lot_size == 1, // you can quote META in thousandths of pennies
+            openbook_pass_market.quote_lot_size == 1, // you can quote MERTD in thousandths of pennies
             AutocratError::InvalidMarket
         );
         require!(

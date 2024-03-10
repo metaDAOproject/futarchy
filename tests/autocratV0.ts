@@ -671,7 +671,7 @@ describe("autocrat_v0", async function () {
       }
 
       // /crank_that_twap
-      for (let i = 0; i < 500; i++) {
+      for (let i = 0; i < 100; i++) {
         let crankArgs: PlaceOrderArgs = {
             side: Side.Bid,
             priceLots: new BN(1), 
