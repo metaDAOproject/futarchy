@@ -539,7 +539,7 @@ describe("autocrat_v0", async function () {
 
       let passBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(10000), // 1 USDC for 1 META
+        priceLots: new BN(1000), // 0.001 USDC for 1 MERTD
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -550,7 +550,7 @@ describe("autocrat_v0", async function () {
       };
       let failBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(7000), // 0.7 USDC for 1 META
+        priceLots: new BN(700), // 0.0007 USDC for 1 MERTD
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -562,7 +562,7 @@ describe("autocrat_v0", async function () {
 
       let passSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(11_000), // 1.1 USDC for 1 META
+        priceLots: new BN(1_100), // 0.0011 USDC for 1 MERTD
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -573,7 +573,7 @@ describe("autocrat_v0", async function () {
       };
       let failSellArgs: PlaceOrderArgs = {
         side: Side.Ask,
-        priceLots: new BN(8_000), // 8 USDC for 1 META
+        priceLots: new BN(800), // 0.0008 USDC for 1 MERTD
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(12000),
         clientOrderId: new BN(2),
@@ -661,7 +661,68 @@ describe("autocrat_v0", async function () {
         currentClock = await context.banksClient.getClock();
         context.setClock(
           new Clock(
-            currentClock.slot + 10_000n,
+            currentClock.slot + 1n,
+            currentClock.epochStartTimestamp,
+            currentClock.epoch,
+            currentClock.leaderScheduleEpoch,
+            currentClock.unixTimestamp
+          )
+        );
+      }
+
+      // /crank_that_twap
+      for (let i = 0; i < 500; i++) {
+        let crankArgs: PlaceOrderArgs = {
+            side: Side.Bid,
+            priceLots: new BN(1), 
+            maxBaseLots: new BN(i),
+            maxQuoteLotsIncludingFees: new BN(0),
+            clientOrderId: new BN(2),
+            orderType: OrderType.Limit,
+            expiryTimestamp: new BN(0),
+            selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+            limit: 255,
+          };
+
+        await openbookTwap.methods
+          .placeOrder(crankArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookPassMarket,
+            asks: storedPassMarket.asks,
+            bids: storedPassMarket.bids,
+            marketVault: storedPassMarket.marketQuoteVault,
+            eventHeap: storedPassMarket.eventHeap,
+            openOrdersAccount: mm0.pOpenOrdersAccount,
+            userTokenAccount: mm0.pUsdcAcc,
+            twapMarket: openbookTwapPassMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        await openbookTwap.methods
+          .placeOrder(crankArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookFailMarket,
+            asks: storedFailMarket.asks,
+            bids: storedFailMarket.bids,
+            marketVault: storedFailMarket.marketQuoteVault,
+            eventHeap: storedFailMarket.eventHeap,
+            openOrdersAccount: mm0.fOpenOrdersAccount,
+            userTokenAccount: mm0.fUsdcAcc,
+            twapMarket: openbookTwapFailMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        // set the current clock slot to +1
+        currentClock = await context.banksClient.getClock();
+        context.setClock(
+          new Clock(
+            currentClock.slot + 1n,
             currentClock.epochStartTimestamp,
             currentClock.epoch,
             currentClock.leaderScheduleEpoch,
@@ -674,7 +735,7 @@ describe("autocrat_v0", async function () {
       currentClock = await context.banksClient.getClock();
       context.setClock(
         new Clock(
-          currentClock.slot + 10_000n,
+          currentClock.slot + 100_000n,
           currentClock.epochStartTimestamp,
           currentClock.epoch,
           currentClock.leaderScheduleEpoch,
@@ -823,6 +884,12 @@ describe("autocrat_v0", async function () {
         )
         .rpc();
 
+      // console.log(await openbookTwap.account.twapMarket.fetch(openbookTwapPassMarket));
+      // console.log(await openbookTwap.account.twapMarket.fetch(openbookTwapFailMarket));
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+      // console.log(storedProposal)
+      assert.exists(storedProposal.state.passed);
+
       let storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
         baseVault
       );
@@ -832,9 +899,6 @@ describe("autocrat_v0", async function () {
 
       assert.exists(storedBaseVault.status.finalized);
       assert.exists(storedQuoteVault.status.finalized);
-
-      storedProposal = await autocrat.account.proposal.fetch(proposal);
-      assert.exists(storedProposal.state.passed);
 
       assert((await getAccount(banksClient, treasuryMetaAccount)).amount == 0n);
       assert((await getAccount(banksClient, treasuryUsdcAccount)).amount == 0n);
@@ -877,7 +941,7 @@ describe("autocrat_v0", async function () {
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
           .amount,
-        10_000n * 1_000_000n - 11_000n
+        10_000n * 1_000_000n - 1_100n
       );
     });
 
@@ -886,7 +950,7 @@ describe("autocrat_v0", async function () {
 
       let passBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(1000), // 0.1 USDC for 1 META
+        priceLots: new BN(1000), // 0.001 USDC for 1 MERTD
         maxBaseLots: new BN(10),
         maxQuoteLotsIncludingFees: new BN(10000),
         clientOrderId: new BN(1),
@@ -1019,7 +1083,7 @@ describe("autocrat_v0", async function () {
       }
 
       // /crank_that_twap
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 5; i++) {
         let crankArgs: PlaceOrderArgs = {
             side: Side.Bid,
             priceLots: new BN(1), 
