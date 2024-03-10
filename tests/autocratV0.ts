@@ -1018,17 +1018,49 @@ describe("autocrat_v0", async function () {
         );
       }
 
-      // set the current clock slot to +10_000
-      currentClock = await context.banksClient.getClock();
-      context.setClock(
-        new Clock(
-          currentClock.slot + 10_000n,
-          currentClock.epochStartTimestamp,
-          currentClock.epoch,
-          currentClock.leaderScheduleEpoch,
-          currentClock.unixTimestamp
-        )
-      );
+      // /crank_that_twap
+      for (let i = 0; i < 1000; i++) {
+        let crankArgs: PlaceOrderArgs = {
+            side: Side.Bid,
+            priceLots: new BN(1), 
+            maxBaseLots: new BN(i),
+            maxQuoteLotsIncludingFees: new BN(0),
+            clientOrderId: new BN(2),
+            orderType: OrderType.Limit,
+            expiryTimestamp: new BN(0),
+            selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+            limit: 255,
+          };
+
+        await openbookTwap.methods
+          .placeOrder(crankArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookPassMarket,
+            asks: storedPassMarket.asks,
+            bids: storedPassMarket.bids,
+            marketVault: storedPassMarket.marketQuoteVault,
+            eventHeap: storedPassMarket.eventHeap,
+            openOrdersAccount: mm0.pOpenOrdersAccount,
+            userTokenAccount: mm0.pUsdcAcc,
+            twapMarket: openbookTwapPassMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        // set the current clock slot to +10_000
+        currentClock = await context.banksClient.getClock();
+        context.setClock(
+          new Clock(
+            currentClock.slot + 10_000n,
+            currentClock.epochStartTimestamp,
+            currentClock.epoch,
+            currentClock.leaderScheduleEpoch,
+            currentClock.unixTimestamp
+          )
+        );
+      }
 
       let takeBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,

@@ -339,13 +339,10 @@ agentkeepalive@^4.3.0:
   dependencies:
     humanize-ms "^1.2.1"
 
-anchor-bankrun@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.npmjs.org/anchor-bankrun/-/anchor-bankrun-0.2.0.tgz"
-  integrity sha512-k/GIiYjkFzj10iluAXPjLjDInZtNNZ2FTcCTrtqgxwm5wofLbD8T0sy13LU9IfQSirj8/6eaTawDo+IvI03KRQ==
-  dependencies:
-    "@coral-xyz/anchor" "^0.28.0"
-    solana-bankrun "^0.2.0"
+anchor-bankrun@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/anchor-bankrun/-/anchor-bankrun-0.3.0.tgz#3789fcecbc201a2334cff228b99cc0da8ef0167e"
+  integrity sha512-PYBW5fWX+iGicIS5MIM/omhk1tQPUc0ELAnI/IkLKQJ6d75De/CQRh8MF2bU/TgGyFi6zEel80wUe3uRol9RrQ==
 
 ansi-colors@4.1.1:
   version "4.1.1"
@@ -1275,7 +1272,7 @@ solana-bankrun-linux-x64-musl@0.2.0:
 
 solana-bankrun@^0.2.0:
   version "0.2.0"
-  resolved "https://registry.npmjs.org/solana-bankrun/-/solana-bankrun-0.2.0.tgz"
+  resolved "https://registry.yarnpkg.com/solana-bankrun/-/solana-bankrun-0.2.0.tgz#e1df2126ee887b9eae17962f09db18aaa25d736f"
   integrity sha512-TS6vYoO/9YJZng7oiLOVyuz8V7yLow5Hp4SLYWW71XM3702v+z9f1fvUBKudRfa4dfpta4tRNufApSiBIALxJQ==
   dependencies:
     "@solana/web3.js" "^1.68.0"
