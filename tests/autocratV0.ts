@@ -877,7 +877,7 @@ describe("autocrat_v0", async function () {
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
           .amount,
-        10_000n * 1_000_000n - 11_000n
+        10_000n * 1_000_000n - 1_100_000n
       );
     });
 
@@ -1460,7 +1460,7 @@ async function initializeProposal(
     "pMETA/pUSDC",
     passQuoteMint,
     passBaseMint,
-    new BN(1),
+    new BN(100),
     new BN(1e9),
     new BN(0),
     new BN(0),
@@ -1498,7 +1498,7 @@ async function initializeProposal(
     "fMETA/fUSDC",
     failQuoteMint,
     failBaseMint,
-    new BN(1),
+    new BN(100),
     new BN(1e9),
     new BN(0),
     new BN(0),

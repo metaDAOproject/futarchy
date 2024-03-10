@@ -164,11 +164,11 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.base_lot_size == 1_000_000_000, // minimum tradeable = 1 MERTD
+            openbook_pass_market.base_lot_size == 1_000_000_000, // minimum tradeable = 1 META
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_lot_size == 1, // you can quote META in thousandths of pennies
+            openbook_pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
             AutocratError::InvalidMarket
         );
         require!(
@@ -207,7 +207,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_lot_size == 1,
+            openbook_pass_market.quote_lot_size == 100,
             AutocratError::InvalidMarket
         );
         require!(
