@@ -1,9 +1,9 @@
-# Meta-DAO Monorepo
+# Futarchy Monorepo
 
 ![License BSLv1.1](https://img.shields.io/badge/License-BSLv1.1-lightgray.svg)
 
-Monorepo that houses the Meta-DAO's programs. A description of these programs
-and what they do can be found at [themetadao.org](https://themetadao.org).
+Monorepo that houses programs helpful for futarchy. A description of these programs
+and what they do can be found at [docs.themetadao.org](https://docs.themetadao.org).
 
 ## Scripts
 
