@@ -27,7 +27,7 @@ security_txt! {
 declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
-pub const THREE_DAYS_IN_SLOTS: u64 = 5 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
+pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
 // by default, the pass price needs to be 5% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
