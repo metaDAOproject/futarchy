@@ -1,46 +1,39 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN, Program, web3 } from "@coral-xyz/anchor";
-const { PublicKey, Keypair } = web3;
-import { BankrunProvider } from "anchor-bankrun";
-import { assert } from "chai";
-import {
-  createMint,
-  createAccount,
-  createAssociatedTokenAccount,
-  mintTo,
-  getAccount,
-} from "spl-token-bankrun";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { BanksClient, ProgramTestContext, startAnchor } from "solana-bankrun";
-// @ts-ignore
-import { Token } from "@solana/spl-token-018";
-import { SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import {
   MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
-  createMetadataAccountV3,
-  findMetadataPda,
+  createMetadataAccountV3
 } from "@metaplex-foundation/mpl-token-metadata";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import {
-  fromWeb3JsPublicKey,
-  toWeb3JsPublicKey,
-  fromWeb3JsKeypair,
-  toWeb3JsLegacyTransaction,
-} from "@metaplex-foundation/umi-web3js-adapters";
 import {
   Umi,
   createSignerFromKeypair,
-  generateSigner,
   keypairIdentity,
-  none,
+  none
 } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
+  fromWeb3JsKeypair,
+  fromWeb3JsPublicKey,
+  toWeb3JsLegacyTransaction,
+  toWeb3JsPublicKey,
+} from "@metaplex-foundation/umi-web3js-adapters";
+import * as token from "@solana/spl-token";
+import { SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { BankrunProvider } from "anchor-bankrun";
+import { assert } from "chai";
+import { BanksClient, ProgramTestContext, startAnchor } from "solana-bankrun";
+import {
+  createAccount,
+  createAssociatedTokenAccount,
+  createMint,
+  getAccount,
+  mintTo,
+} from "spl-token-bankrun";
 
-import { expectError } from "./utils/utils";
+const { PublicKey, Keypair } = web3;
+
 import { ConditionalVault } from "../target/types/conditional_vault";
-
+import { expectError } from "./utils/utils";
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;
@@ -138,10 +131,7 @@ describe("conditional_vault", async function () {
       vaultProgram.programId
     );
 
-    console.log("Token: ", Token === undefined, Token);
-    vaultUnderlyingTokenAccount = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
+    vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
       underlyingTokenMint,
       vault,
       true
@@ -165,8 +155,8 @@ describe("conditional_vault", async function () {
           conditionalOnRevertTokenMint:
             conditionalOnRevertTokenMintKeypair.publicKey,
           payer: payer.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .signers([
@@ -788,9 +778,7 @@ async function generateRandomVault(
     vaultProgram.programId
   );
 
-  const vaultUnderlyingTokenAccount = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
+  const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
     underlyingTokenMint,
     vault,
     true
@@ -863,8 +851,8 @@ async function generateRandomVault(
       conditionalOnRevertTokenMint:
         conditionalOnRevertTokenMintKeypair.publicKey,
       payer: payer.publicKey,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+      associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
     .signers([
@@ -891,28 +879,25 @@ export async function mintConditionalTokens(
 ) {
   const storedVault = await program.account.conditionalVault.fetch(vault);
   if (!userUnderlyingTokenAccount) {
-    userUnderlyingTokenAccount = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
+    userUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
       storedVault.underlyingTokenMint,
-      user.publicKey
+      user.publicKey,
+      true
     );
   }
   if (!userConditionalOnFinalizeTokenAccount) {
     userConditionalOnFinalizeTokenAccount =
-      await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
+      await token.getAssociatedTokenAddress(
         storedVault.conditionalOnFinalizeTokenMint,
-        user.publicKey
+        user.publicKey,
+        true
       );
   }
   if (!userConditionalOnRevertTokenAccount) {
-    userConditionalOnRevertTokenAccount = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
+    userConditionalOnRevertTokenAccount = await token.getAssociatedTokenAddress(
       storedVault.conditionalOnRevertTokenMint,
-      user.publicKey
+      user.publicKey,
+      true
     );
   }
   if (!vaultUnderlyingTokenAccount) {
@@ -1031,7 +1016,7 @@ export async function redeemConditionalTokens(
       vault,
       conditionalOnFinalizeTokenMint,
       conditionalOnRevertTokenMint,
-      tokenProgram: TOKEN_PROGRAM_ID,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
     })
     .signers([user])
     .rpc();

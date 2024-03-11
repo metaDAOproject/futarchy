@@ -1,11 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN, Program } from "@coral-xyz/anchor";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-// @ts-ignore
-import { Token } from "@solana/spl-token-018";
+import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 import {
   OpenBookV2Client,
@@ -13,8 +8,7 @@ import {
   PlaceOrderArgs,
   Side,
   OrderType,
-  SelfTradeBehavior,
-  getAssociatedTokenAddress,
+  SelfTradeBehavior
 } from "@openbook-dex/openbook-v2";
 import { assert } from "chai";
 import {
@@ -715,7 +709,7 @@ describe("autocrat_v0", async function () {
           referrerAccount: null,
           twapMarket: openbookTwapPassMarket,
           openbookProgram: OPENBOOK_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
           signer: alice.publicKey,
         })
@@ -1058,7 +1052,7 @@ describe("autocrat_v0", async function () {
           referrerAccount: null,
           twapMarket: openbookTwapPassMarket,
           openbookProgram: OPENBOOK_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
           signer: alice.publicKey,
         })
@@ -1355,21 +1349,25 @@ async function generateMarketMaker(
     keypair: mm,
     pOpenOrdersAccount,
     fOpenOrdersAccount,
-    pMetaAcc: await getAssociatedTokenAddress(
+    pMetaAcc: await token.getAssociatedTokenAddress(
       storedBaseVault.conditionalOnFinalizeTokenMint,
-      mm.publicKey
+      mm.publicKey,
+      true
     ),
-    fMetaAcc: await getAssociatedTokenAddress(
+    fMetaAcc: await token.getAssociatedTokenAddress(
       storedBaseVault.conditionalOnRevertTokenMint,
-      mm.publicKey
+      mm.publicKey,
+      true
     ),
-    pUsdcAcc: await getAssociatedTokenAddress(
+    pUsdcAcc: await token.getAssociatedTokenAddress(
       storedQuoteVault.conditionalOnFinalizeTokenMint,
-      mm.publicKey
+      mm.publicKey,
+      true
     ),
-    fUsdcAcc: await getAssociatedTokenAddress(
+    fUsdcAcc: await token.getAssociatedTokenAddress(
       storedQuoteVault.conditionalOnRevertTokenMint,
-      mm.publicKey
+      mm.publicKey,
+      true
     ),
   };
 }
@@ -1609,9 +1607,7 @@ async function initializeVault(
   const conditionalOnFinalizeTokenMintKeypair = Keypair.generate();
   const conditionalOnRevertTokenMintKeypair = Keypair.generate();
 
-  const vaultUnderlyingTokenAccount = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
+  const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
     underlyingTokenMint,
     vault,
     true
@@ -1628,8 +1624,8 @@ async function initializeVault(
       conditionalOnRevertTokenMint:
         conditionalOnRevertTokenMintKeypair.publicKey,
       payer: payer.publicKey,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+      associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
     .signers([
