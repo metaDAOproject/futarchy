@@ -73,10 +73,13 @@ async function main() {
     data: burnIx.data,
   };
 
-  await initializeProposal(
-    ix,
-    "https://hackmd.io/@doctorsolana/HydnXDeT6"
-  );
+  console.log(ix);
+  return;
+
+  // await initializeProposal(
+  //   ix,
+  //   "https://hackmd.io/@doctorsolana/HydnXDeT6"
+  // );
 }
 
 main();

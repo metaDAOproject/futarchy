@@ -167,16 +167,16 @@ async function initializeVault(
   return vault;
 }
 
-async function initializeDAO(META: any, USDC: any) {
-  await autocratProgram.methods
-    .initializeDao()
-    .accounts({
-      dao,
-      metaMint: META,
-      usdcMint: USDC,
-    })
-    .rpc();
-}
+// export async function initializeDAO(META: any, USDC: any) {
+//   await autocratProgram.methods
+//     .initializeDao()
+//     .accounts({
+//       dao,
+//       metaMint: META,
+//       usdcMint: USDC,
+//     })
+//     .rpc();
+// }
 
 export async function finalizeBurnProposal(proposal: anchor.web3.PublicKey) {
   const storedProposal = await autocratProgram.account.proposal.fetch(proposal);
