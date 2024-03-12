@@ -237,7 +237,7 @@ async function initializeVault(
   return vault;
 }
 
-async function initializeDAO(META: any, USDC: any) {
+export async function initializeDAO(META: any, USDC: any) {
   await autocratProgram.methods
     .initializeDao()
     .accounts({
