@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 // @ts-ignore
-import * as token from "@solana/spl-token-018";
+import * as token from "@solana/spl-token";
 const { BN, Program } = anchor;
 import { MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 
@@ -404,7 +404,7 @@ export async function initializeProposal(
     );
 
   const cuIx = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 100,
+    microLamports: 1000,
   });
 
   let tx1 = new Transaction();
