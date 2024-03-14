@@ -552,9 +552,10 @@ describe("conditional_vault", async function () {
     });
   });
 
-  describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
+  describe("#redeem_and_merge_conditional_tokens_for_underlying_tokens", async function () {
     let bob: Keypair;
     let amount = 1000;
+    let mergeAmount = 10;
     let bobUnderlyingTokenAccount: PublicKey;
     let bobConditionalOnFinalizeTokenAccount: PublicKey;
     let bobConditionalOnRevertTokenAccount: PublicKey;
@@ -609,6 +610,54 @@ describe("conditional_vault", async function () {
         vault,
         banksClient
       );
+    });
+
+    it("successfully merges 10 tokens before the vault has been finalized", async function () {
+      // Assuming the vault has not yet been finalized
+
+      await mergeConditionalTokens(
+        vaultProgram,
+        mergeAmount,
+        bob,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        banksClient
+      );
+    });
+
+    it("prevents users from merging conditional tokens after the vault has been finalized", async function () {
+      await vaultProgram.methods
+        .settleConditionalVault({ finalized: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      const callbacks = expectError(
+        vaultProgram,
+        "VaultAlreadySettled",
+        "merge suceeded even though this vault was finalized"
+      );
+      await mergeConditionalTokens(
+        vaultProgram,
+        mergeAmount,
+        bob,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        banksClient
+      ).then(callbacks[0], callbacks[1]);
     });
 
     it("allows users to redeem conditional-on-finalize tokens for underlying tokens when a vault has been finalized", async function () {
@@ -764,7 +813,7 @@ async function generateRandomVault(
       commitment: "confirmed",
     }
   );
-  console.log(createMetadataResult);
+  //   console.log(createMetadataResult);
 
   const nonce = new BN(1003239);
 
