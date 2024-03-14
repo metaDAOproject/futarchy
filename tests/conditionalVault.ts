@@ -2,13 +2,13 @@ import * as anchor from "@coral-xyz/anchor";
 import { BN, Program, web3 } from "@coral-xyz/anchor";
 import {
   MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
-  createMetadataAccountV3
+  createMetadataAccountV3,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
   Umi,
   createSignerFromKeypair,
   keypairIdentity,
-  none
+  none,
 } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
@@ -973,6 +973,88 @@ export async function mintConditionalTokens(
   assert.equal(
     userConditionalOnRevertTokenAccountAfter.amount,
     userConditionalOnRevertTokenAccountBefore.amount + BigInt(amount)
+  );
+}
+
+export async function mergeConditionalTokens(
+  vaultProgram: VaultProgram,
+  amount: number | bigint,
+  user: Signer,
+  userConditionalOnFinalizeTokenAccount: PublicKey,
+  userConditionalOnRevertTokenAccount: PublicKey,
+  conditionalOnFinalizeTokenMint: PublicKey,
+  conditionalOnRevertTokenMint: PublicKey,
+  userUnderlyingTokenAccount: PublicKey,
+  vaultUnderlyingTokenAccount: PublicKey,
+  vault: PublicKey,
+  banksClient: BanksClient
+) {
+  const vaultUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
+    vaultUnderlyingTokenAccount
+  );
+  const userUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
+    userUnderlyingTokenAccount
+  );
+  const userConditionalOnFinalizeTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
+  );
+
+  const bnAmount = new anchor.BN(amount.toString());
+  await vaultProgram.methods
+    .mergeConditionalTokensForUnderlyingTokens(bnAmount)
+    .accounts({
+      authority: user.publicKey,
+      userConditionalOnFinalizeTokenAccount,
+      userConditionalOnRevertTokenAccount,
+      userUnderlyingTokenAccount,
+      vaultUnderlyingTokenAccount,
+      vault,
+      conditionalOnFinalizeTokenMint,
+      conditionalOnRevertTokenMint,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+    })
+    .signers([user])
+    .rpc();
+
+  const vaultUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
+    vaultUnderlyingTokenAccount
+  );
+  const userUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
+    userUnderlyingTokenAccount
+  );
+  const userConditionalOnFinalizeTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
+  );
+
+  assert.equal(
+    vaultUnderlyingTokenAccountAfter.amount,
+    vaultUnderlyingTokenAccountBefore.amount - BigInt(amount)
+  );
+  assert.equal(
+    userUnderlyingTokenAccountAfter.amount,
+    userUnderlyingTokenAccountBefore.amount + BigInt(amount)
+  );
+  assert.equal(
+    userConditionalOnFinalizeTokenAccountAfter.amount,
+    userConditionalOnFinalizeTokenAccountBefore.amount - BigInt(amount)
+  );
+  assert.equal(
+    userConditionalOnRevertTokenAccountAfter.amount,
+    userConditionalOnRevertTokenAccountBefore.amount - BigInt(amount)
   );
 }
 
