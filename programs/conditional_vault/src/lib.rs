@@ -156,7 +156,7 @@ pub mod conditional_vault {
     }
 
     pub fn merge_conditional_tokens_for_underlying_tokens(
-        ctx: Context<RedeemConditionalTokensForUnderlyingTokens>, amount: u64
+        ctx: Context<MergeConditionalTokensForUnderlyingTokens>, amount: u64
     ) -> Result<()> {
         let accs = &ctx.accounts;
 
@@ -640,6 +640,45 @@ pub struct MintConditionalTokens<'info> {
         token::mint = conditional_on_revert_token_mint
     )]
     pub user_conditional_on_revert_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct MergeConditionalTokensForUnderlyingTokens<'info> {
+    #[account(
+        has_one = conditional_on_finalize_token_mint @ ErrorCode::InvalidConditionalTokenMint,
+        has_one = conditional_on_revert_token_mint @ ErrorCode::InvalidConditionalTokenMint,
+        constraint = vault.status == VaultStatus::Active @ ErrorCode::VaultAlreadySettled
+    )]
+    pub vault: Account<'info, ConditionalVault>,
+    #[account(mut)]
+    pub conditional_on_finalize_token_mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub conditional_on_revert_token_mint: Account<'info, Mint>,
+    #[account(
+        mut,
+        constraint = vault_underlying_token_account.key() == vault.underlying_token_account @ ErrorCode::InvalidVaultUnderlyingTokenAccount
+    )]
+    pub vault_underlying_token_account: Account<'info, TokenAccount>,
+    pub authority: Signer<'info>,
+    #[account(
+        mut,
+        token::authority = authority,
+        token::mint = conditional_on_finalize_token_mint
+    )]
+    pub user_conditional_on_finalize_token_account: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        token::authority = authority,
+        token::mint = conditional_on_revert_token_mint
+    )]
+    pub user_conditional_on_revert_token_account: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        token::authority = authority,
+        token::mint = vault.underlying_token_mint
+    )]
+    pub user_underlying_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
 }
 
