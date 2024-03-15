@@ -42,7 +42,7 @@ export type Signer = anchor.web3.Signer;
 export type Keypair = anchor.web3.Keypair;
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 );
 
 const METADATA_URI =
