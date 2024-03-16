@@ -3,7 +3,7 @@ import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 
-const { PublicKey, Keypair } = anchor.web3;
+const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 
 import { assert } from "chai";
 
@@ -61,15 +61,16 @@ describe("autocrat_migrator", async function () {
     );
   });
 
-  describe("#multi_transfer", async function () {
+  describe("#multi_transfer2", async function () {
     it("does transfer", async function () {
+      let sender = Keypair.generate();
       let receiver = Keypair.generate();
 
       let from0 = await createAccount(
         banksClient,
         payer,
         META,
-        payer.publicKey
+        sender.publicKey
       );
       let to0 = await createAccount(
         banksClient,
@@ -82,7 +83,7 @@ describe("autocrat_migrator", async function () {
         banksClient,
         payer,
         USDC,
-        payer.publicKey
+        sender.publicKey
       );
       let to1 = await createAccount(
         banksClient,
@@ -97,13 +98,21 @@ describe("autocrat_migrator", async function () {
       await migrator.methods
         .multiTransfer2()
         .accounts({
-          authority: payer.publicKey,
+          authority: sender.publicKey,
           from0,
           to0,
           from1,
           to1,
           lamportReceiver: receiver.publicKey,
         })
+        .preInstructions([
+          SystemProgram.transfer({
+            fromPubkey: payer.publicKey,
+            toPubkey: sender.publicKey,
+            lamports: 1_000_000_000n,
+          }),
+        ])
+        .signers([sender])
         .rpc();
 
       assert((await getAccount(banksClient, from0)).amount == 0n);
@@ -111,6 +120,11 @@ describe("autocrat_migrator", async function () {
 
       assert((await getAccount(banksClient, to0)).amount == 1_000_000n);
       assert((await getAccount(banksClient, to1)).amount == 10_000n);
+
+      assert(
+        (await banksClient.getAccount(receiver.publicKey)).lamports >
+          1_000_000_000 * 0.999
+      );
     });
   });
 });
