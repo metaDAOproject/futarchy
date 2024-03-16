@@ -8,7 +8,7 @@ const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
 const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 async function main() {
-    await initializeDAO(META, USDC);
+  await initializeDAO(META, USDC);
 }
 
 main();

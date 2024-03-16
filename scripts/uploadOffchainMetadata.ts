@@ -175,7 +175,7 @@ export const fetchOnchainMetadataForMint = async (
 
   const acct = await umi.rpc.getAccount(pda[0]);
   if (!acct.exists) {
-    throw new Error(`Unable to find metaplex metdata for mint = ${address}`)
+    throw new Error(`Unable to find metaplex metdata for mint = ${address}`);
   }
 
   return {
