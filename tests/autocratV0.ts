@@ -8,7 +8,7 @@ import {
   PlaceOrderArgs,
   Side,
   OrderType,
-  SelfTradeBehavior
+  SelfTradeBehavior,
 } from "@openbook-dex/openbook-v2";
 import { assert } from "chai";
 import {

@@ -2,13 +2,13 @@ import * as anchor from "@coral-xyz/anchor";
 import { BN, Program, web3 } from "@coral-xyz/anchor";
 import {
   MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
-  createMetadataAccountV3
+  createMetadataAccountV3,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
   Umi,
   createSignerFromKeypair,
   keypairIdentity,
-  none
+  none,
 } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
