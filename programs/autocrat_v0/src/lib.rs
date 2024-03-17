@@ -29,6 +29,8 @@ declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
+pub const TEN_DAYS_IN_SECONDS: i64 = 10  * 24 * 60 * 60;
+
 // by default, the pass price needs to be 3% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 300;
 
@@ -148,10 +150,13 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
 
-        // this should also be checked by `openbook_twap`, but why not take the
-        // precaution?
+        let current_time = clock::Clock::get().unwrap().unix_timestamp as i64;
+
+        // The market expires a minimum of 7 days after the end of the proposal.
+        // Make sure to do final TWAP crank after the proposal period has ended
+        // and before the market expires, or else! Allows for rent retrieval from openbook
         require!(
-            openbook_pass_market.time_expiry == 0,
+            openbook_pass_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
             AutocratError::InvalidMarket
         );
         require!(
@@ -190,7 +195,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.time_expiry == 0,
+            openbook_fail_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
             AutocratError::InvalidMarket
         );
         require!(
