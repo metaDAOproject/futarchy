@@ -162,11 +162,6 @@ pub mod conditional_vault {
         let accs = &ctx.accounts;
 
         let vault = &accs.vault;
-        let vault_status = vault.status;
-        require!(
-            vault_status == VaultStatus::Active,
-            ErrorCode::VaultAlreadySettled
-        );
 
         // Store Pre-operation Balances
         let pre_user_conditional_on_finalize_balance = ctx
