@@ -164,7 +164,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.base_lot_size == 1_000_000_000, // minimum tradeable = 1 META
+            openbook_pass_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
             AutocratError::InvalidMarket
         );
         require!(
@@ -203,7 +203,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.base_lot_size == 1_000_000_000,
+            openbook_fail_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
             AutocratError::InvalidMarket
         );
         require!(
