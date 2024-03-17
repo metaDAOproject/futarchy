@@ -29,8 +29,8 @@ declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
-// by default, the pass price needs to be 5% higher than the fail price
-pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
+// by default, the pass price needs to be 3% higher than the fail price
+pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 300;
 
 // start at 10 SOL ($600 at current prices), decay by ~5 SOL per day
 pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 10 * solana_program::native_token::LAMPORTS_PER_SOL;
