@@ -38,6 +38,9 @@ pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 23_150;
 
 pub const MAX_BPS: u16 = 10_000;
 
+// TWAP can only move by $5 per slot
+pub const MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 50_000;
+
 #[account]
 pub struct DAO {
     // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
@@ -226,6 +229,14 @@ pub mod autocrat_v0 {
         require!(
             openbook_twap_fail_market.twap_oracle.initial_slot + 50 >= clock.slot,
             AutocratError::TWAPMarketTooOld
+        );
+        require!(
+            openbook_twap_pass_market.twap_oracle.max_observation_change_per_update_lots == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+            AutocratError::TWAPOracleWrongChangeLots
+        );
+        require!(
+            openbook_twap_fail_market.twap_oracle.max_observation_change_per_update_lots == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+            AutocratError::TWAPOracleWrongChangeLots
         );
         require!(
             openbook_twap_pass_market.twap_oracle.expected_value == dao.twap_expected_value,
@@ -556,6 +567,8 @@ pub enum AutocratError {
     InvalidMarket,
     #[msg("`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`")]
     TWAPMarketTooOld,
+    #[msg("`TWAPOracle` must have a max_observation_change_per_update_lots of $5 / 50_000")]
+    TWAPOracleWrongChangeLots,
     #[msg("`TWAPMarket` has the wrong `expected_value`")]
     TWAPMarketInvalidExpectedValue,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
