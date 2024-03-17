@@ -150,7 +150,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
 
-        let current_time = clock::Clock::get().unwrap().unix_timestamp as i64;
+        let current_time = Clock::get().unwrap().unix_timestamp as i64;
 
         // The market expires a minimum of 7 days after the end of the proposal.
         // Make sure to do final TWAP crank after the proposal period has ended
