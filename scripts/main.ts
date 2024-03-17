@@ -41,7 +41,7 @@ const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
 );
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
   "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
