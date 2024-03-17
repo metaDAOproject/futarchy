@@ -156,19 +156,23 @@ pub mod conditional_vault {
     }
 
     pub fn merge_conditional_tokens_for_underlying_tokens(
-        ctx: Context<MergeConditionalTokensForUnderlyingTokens>, amount: u64
+        ctx: Context<MergeConditionalTokensForUnderlyingTokens>,
+        amount: u64,
     ) -> Result<()> {
         let accs = &ctx.accounts;
 
         let vault = &accs.vault;
         let vault_status = vault.status;
-        require!(vault_status == VaultStatus::Active, ErrorCode::VaultAlreadySettled);
+        require!(
+            vault_status == VaultStatus::Active,
+            ErrorCode::VaultAlreadySettled
+        );
 
         // Store Pre-operation Balances
         let pre_user_conditional_on_finalize_balance = ctx
-        .accounts
-        .user_conditional_on_finalize_token_account
-        .amount;
+            .accounts
+            .user_conditional_on_finalize_token_account
+            .amount;
         let pre_user_conditional_on_revert_balance =
             ctx.accounts.user_conditional_on_revert_token_account.amount;
         let pre_vault_underlying_balance = ctx.accounts.vault_underlying_token_account.amount;
@@ -222,8 +226,12 @@ pub mod conditional_vault {
         )?;
 
         // Reload Accounts to Reflect Changes
-        ctx.accounts.user_conditional_on_finalize_token_account.reload()?;
-        ctx.accounts.user_conditional_on_revert_token_account.reload()?;
+        ctx.accounts
+            .user_conditional_on_finalize_token_account
+            .reload()?;
+        ctx.accounts
+            .user_conditional_on_revert_token_account
+            .reload()?;
         ctx.accounts.vault_underlying_token_account.reload()?;
         ctx.accounts.conditional_on_finalize_token_mint.reload()?;
         ctx.accounts.conditional_on_revert_token_mint.reload()?;
@@ -240,15 +248,24 @@ pub mod conditional_vault {
         let post_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
 
         // Check that the user's conditional token balances are unchanged (since we're not necessarily burning all tokens)
-        require_eq!(post_user_conditional_on_finalize_balance, pre_user_conditional_on_finalize_balance - amount);
-        require_eq!(post_user_conditional_on_revert_balance, pre_user_conditional_on_revert_balance - amount);
+        require_eq!(
+            post_user_conditional_on_finalize_balance,
+            pre_user_conditional_on_finalize_balance - amount
+        );
+        require_eq!(
+            post_user_conditional_on_revert_balance,
+            pre_user_conditional_on_revert_balance - amount
+        );
 
         // Check that the mint supplies have been reduced by the burned amounts
         require_eq!(post_finalize_mint_supply, pre_finalize_mint_supply - amount);
         require_eq!(post_revert_mint_supply, pre_revert_mint_supply - amount);
 
         // Check that the vault's underlying balance has been reduced by the transferred amount
-        require_eq!(post_vault_underlying_balance, pre_vault_underlying_balance - amount);
+        require_eq!(
+            post_vault_underlying_balance,
+            pre_vault_underlying_balance - amount
+        );
 
         Ok(())
     }
