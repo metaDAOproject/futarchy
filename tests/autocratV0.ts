@@ -1452,6 +1452,10 @@ async function initializeProposal(
     openbookTwap.programId
   );
 
+  const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+  const elevenDaysInSeconds = 11 * 24 * 60 * 60;
+  const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
+
   // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246
   let [openbookPassMarketIxs, openbookPassMarketSigners] =
     await openbook.createMarketIx(
@@ -1463,7 +1467,7 @@ async function initializeProposal(
       new BN(1e9),
       new BN(0),
       new BN(0),
-      new BN(0),
+      expiryTime,
       null,
       null,
       openbookTwapPassMarket,
@@ -1508,7 +1512,7 @@ async function initializeProposal(
       new BN(1e9),
       new BN(0),
       new BN(0),
-      new BN(0),
+      expiryTime,
       null,
       null,
       openbookTwapFailMarket,
