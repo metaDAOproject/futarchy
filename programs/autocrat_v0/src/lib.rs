@@ -29,7 +29,7 @@ declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
-pub const TEN_DAYS_IN_SECONDS: i64 = 10  * 24 * 60 * 60;
+pub const TEN_DAYS_IN_SECONDS: i64 = 10 * 24 * 60 * 60;
 
 // by default, the pass price needs to be 3% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 300;
@@ -236,11 +236,17 @@ pub mod autocrat_v0 {
             AutocratError::TWAPMarketTooOld
         );
         require!(
-            openbook_twap_pass_market.twap_oracle.max_observation_change_per_update_lots == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+            openbook_twap_pass_market
+                .twap_oracle
+                .max_observation_change_per_update_lots
+                == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
             AutocratError::TWAPOracleWrongChangeLots
         );
         require!(
-            openbook_twap_fail_market.twap_oracle.max_observation_change_per_update_lots == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+            openbook_twap_fail_market
+                .twap_oracle
+                .max_observation_change_per_update_lots
+                == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
             AutocratError::TWAPOracleWrongChangeLots
         );
         require!(
@@ -406,10 +412,7 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn update_dao(
-        ctx: Context<UpdateDao>,
-        dao_params: UpdateDaoParams,
-    ) -> Result<()> {
+    pub fn update_dao(ctx: Context<UpdateDao>, dao_params: UpdateDaoParams) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         if let Some(pass_threshold_bps) = dao_params.pass_threshold_bps {
