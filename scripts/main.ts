@@ -182,88 +182,51 @@ async function initializeDAO(META: any, USDC: any) {
     .rpc();
 }
 
-// async function finalizeProposal(proposal: anchor.web3.PublicKey) {
-//   const storedProposal = await autocratProgram.account.proposal.fetch(proposal);
-//   console.log(storedProposal)
-//   const treasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     META,
-//     daoTreasury,
-//     true
-//   );
+export async function finalizeProposal(proposal: anchor.web3.PublicKey) {
+  const storedProposal = await autocratProgram.account.proposal.fetch(proposal);
+  console.log(storedProposal)
+  console.log(storedProposal.slotEnqueued.toNumber());
+  console.log(storedProposal.slotEnqueued.toNumber() + 1_080_000);
 
-//   const treasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     USDC,
-//     daoTreasury,
-//     true
-//   );
+  const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ 
+    microLamports: 1000
+  });
 
-//   const newTreasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     META,
-//     newDaoTreasury,
-//     true
-//   );
+  const accounts = storedProposal.instruction.accounts
+  const program = storedProposal.instruction.programId
 
-//   const newTreasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     USDC,
-//     newDaoTreasury,
-//     true
-//   );
+  accounts[2].isSigner = false
 
-//   const ix = await migrator.methods
-//         .multiTransfer2()
-//         .accounts({
-//           authority: daoTreasury,
-//           from0: treasuryMetaAccount.address,
-//           to0: newTreasuryMetaAccount.address,
-//           from1: treasuryUsdcAccount.address,
-//           to1: newTreasuryUsdcAccount.address,
-//           lamportReceiver: newDaoTreasury,
-//         })
-//         .instruction();
+  const _program: anchor.web3.AccountMeta = {
+    pubkey: program,
+    isSigner: false,
+    isWritable: false,
+  }
 
-//   const instruction = {
-//     programId: ix.programId,
-//     accounts: ix.keys,
-//     data: ix.data,
-//   };
+  accounts.push(_program)
 
-//   let tx = await autocratProgram.methods
-//         .finalizeProposal()
-//         .accounts({
-//           proposal,
-//           openbookTwapPassMarket: storedProposal.openbookTwapPassMarket,
-//           openbookTwapFailMarket: storedProposal.openbookTwapFailMarket,
-//           dao,
-//           baseVault: storedProposal.baseVault,
-//           quoteVault: storedProposal.quoteVault,
-//           vaultProgram: vaultProgram.programId,
-//           daoTreasury,
-//         })
-//         .remainingAccounts(
-//           instruction.accounts
-//             .concat({
-//               pubkey: instruction.programId,
-//               isWritable: false,
-//               isSigner: false,
-//             })
-//             .map((meta) =>
-//               meta.pubkey.equals(daoTreasury)
-//                 ? { ...meta, isSigner: false }
-//                 : meta
-//             )
-//         )
-//         .rpc();
+  console.log(accounts)
 
-//     console.log("Proposal finalized", tx);
-// }
+  let tx = await autocratProgram.methods
+    .finalizeProposal()
+    .accounts({
+      proposal,
+      openbookTwapPassMarket: storedProposal.openbookTwapPassMarket,
+      openbookTwapFailMarket: storedProposal.openbookTwapFailMarket,
+      dao,
+      baseVault: storedProposal.baseVault,
+      quoteVault: storedProposal.quoteVault,
+      vaultProgram: vaultProgram.programId,
+      daoTreasury,
+    })
+    .remainingAccounts(accounts)
+    .preInstructions([
+      addPriorityFee
+    ])
+    .rpc()
+
+    console.log("Proposal finalized", tx);
+}
 
 export async function initializeProposal(
   instruction: any,
