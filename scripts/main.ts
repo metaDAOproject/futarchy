@@ -116,6 +116,11 @@ async function initializeVault(
   underlyingTokenMint: any,
   nonce: any
 ): Promise<any> {
+
+  const cuIx = ComputeBudgetProgram.setComputeUnitPrice({
+    microLamports: 10000
+  });
+
   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("conditional_vault"),
@@ -154,6 +159,7 @@ async function initializeVault(
       associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
     })
+    .preInstructions([cuIx])
     .signers([conditionalOnFinalizeKP, conditionalOnRevertKP])
     .rpc();
 
@@ -327,7 +333,7 @@ export async function initializeProposal(
   );
 
   const cuIx = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 100
+    microLamports: 10000
   });
 
   let tx1 = new Transaction();
