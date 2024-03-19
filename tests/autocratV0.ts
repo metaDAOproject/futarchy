@@ -39,6 +39,7 @@ import { AutocratMigrator } from "../target/types/autocrat_migrator";
 const { PublicKey, Keypair } = anchor.web3;
 
 import { OpenbookTwap } from "./fixtures/openbook_twap";
+import { burnEditionNftInstructionDiscriminator } from "@metaplex-foundation/mpl-token-metadata";
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
@@ -219,13 +220,20 @@ describe("autocrat_v0", async function () {
           isWritable: true,
         },
       ];
+
+      const [daoAddress] = PublicKey.findProgramAddressSync(
+        [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+        autocrat.programId
+      );
+      const daoAccount = await autocrat.account.dao.fetch(daoAddress);
+
       const data = autocrat.coder.instruction.encode("update_dao", {
         daoParams: {
           passThresholdBps: 500,
-          baseBurnLamports: null,
-          burnDecayPerSlotLamports: null,
-          slotsPerProposal: null,
-          marketTakerFee: null,
+          baseBurnLamports: daoAccount.baseBurnLamports,
+          burnDecayPerSlotLamports: daoAccount.burnDecayPerSlotLamports,
+          slotsPerProposal: daoAccount.slotsPerProposal,
+          marketTakerFee: dao.marketTakerFee,
         },
       });
       const instruction = {
@@ -246,6 +254,9 @@ describe("autocrat_v0", async function () {
         )
       );
 
+      let slotsPassed = new BN(currentClock.slot).sub(new BN(daoAccount.lastProposalSlot));
+      const expectedBurnAmount = new BN(daoAccount.baseBurnLamports).sub(new BN(daoAccount.burnDecayPerSlotLamports).mul(slotsPassed));
+
       let balanceBefore = await banksClient.getBalance(payer.publicKey);
 
       await initializeProposal(
@@ -256,10 +267,18 @@ describe("autocrat_v0", async function () {
         context,
         payer,
         openbook,
-        openbookTwap
+        openbookTwap,
+        expectedBurnAmount,
       );
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
+      let actualBurnAmount = balanceBefore.sub(balanceAfter);
+
+      assert.isAtMost(
+        actualBurnAmount.toNumber(),
+        expectedBurnAmount.toNumber(),
+        `Actual burn amount exceeds the expected burn amount. Expected: ${expectedBurnAmount.toString()}. Actual: ${actualBurnAmount.toString()}`
+      );
 
       // two days, so proposer should burn 5 SOL
       assert(balanceAfter < balanceBefore - 1_000_000_000n * 5n);
@@ -1380,7 +1399,8 @@ async function initializeProposal(
   context: ProgramTestContext,
   payer: Keypair,
   openbook: OpenBookV2Client,
-  openbookTwap: Program<OpenbookTwap>
+  openbookTwap: Program<OpenbookTwap>,
+  expectedLamportBurn: BN,
 ): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
