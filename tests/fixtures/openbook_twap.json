@@ -34,6 +34,10 @@
         {
           "name": "expectedValue",
           "type": "u64"
+        },
+        {
+          "name": "maxObservationChangePerUpdateLots",
+          "type": "u64"
         }
       ]
     },
@@ -289,6 +293,93 @@
       ]
     },
     {
+      "name": "pruneOrders",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "limit",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "closeMarket",
+      "accounts": [
+        {
+          "name": "closeMarketRentReceiver",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "placeTakeOrder",
       "accounts": [
         {
@@ -506,6 +597,10 @@
             "type": {
               "defined": "TWAPOracle"
             }
+          },
+          {
+            "name": "closeMarketRentReceiver",
+            "type": "publicKey"
           }
         ]
       }
@@ -540,6 +635,10 @@
           {
             "name": "observationAggregator",
             "type": "u128"
+          },
+          {
+            "name": "maxObservationChangePerUpdateLots",
+            "type": "u64"
           }
         ]
       }
@@ -698,8 +797,8 @@
     },
     {
       "code": 6002,
-      "name": "NonZeroExpiry",
-      "msg": "Market must not expire (have `time_expiry` == 0)"
+      "name": "InsufficentExpiryTime",
+      "msg": "Market must expire a minimum of 10 days from now"
     },
     {
       "code": 6003,
@@ -726,8 +825,5 @@
       "name": "InvalidConsumeEventsAdmin",
       "msg": "Consume events admin must be None"
     }
-  ],
-  "metadata": {
-    "address": "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
-  }
+  ]
 }

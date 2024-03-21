@@ -72,7 +72,7 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
 );
 
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
+  "twAP5sArq2vDS1mZCT7f4qRLwzTfHvf5Ay5R5Q5df1m"
 );
 
 const OPENBOOK_PROGRAM_ID = new PublicKey(
@@ -191,7 +191,7 @@ describe("autocrat_v0", async function () {
       assert(daoAcc.metaMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
       assert.equal(daoAcc.proposalCount, 2);
-      assert.equal(daoAcc.passThresholdBps, 500);
+      assert.equal(daoAcc.passThresholdBps, 300);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
       assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
 
@@ -867,7 +867,7 @@ describe("autocrat_v0", async function () {
       // alice should have gained 1 META & lost 0.11 USDC
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,
-        1_000_000_000n
+        100_000_000n
       );
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
@@ -1454,6 +1454,9 @@ async function initializeProposal(
 
   const currentTimeInSeconds = Math.floor(Date.now() / 1000);
   const elevenDaysInSeconds = 11 * 24 * 60 * 60;
+  const baseLotSize = new BN(1e8);
+  const quoteLotSize = new BN(100);
+  const maxObservationChangePerUpdateLots = new BN(50000);
   const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
 
   // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246
@@ -1463,8 +1466,8 @@ async function initializeProposal(
       "pMETA/pUSDC",
       passQuoteMint,
       passBaseMint,
-      new BN(100),
-      new BN(1e9),
+      quoteLotSize,
+      baseLotSize,
       new BN(0),
       new BN(0),
       expiryTime,
@@ -1482,7 +1485,10 @@ async function initializeProposal(
   );
 
   await openbookTwap.methods
-    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
+    .createTwapMarket(
+      new BN(daoBefore.twapExpectedValue),
+      maxObservationChangePerUpdateLots
+    )
     .accounts({
       market: passMarketPubkey,
       twapMarket: openbookTwapPassMarket,
@@ -1508,8 +1514,8 @@ async function initializeProposal(
       "fMETA/fUSDC",
       failQuoteMint,
       failBaseMint,
-      new BN(100),
-      new BN(1e9),
+      quoteLotSize,
+      baseLotSize,
       new BN(0),
       new BN(0),
       expiryTime,
@@ -1527,7 +1533,10 @@ async function initializeProposal(
   );
 
   await openbookTwap.methods
-    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
+    .createTwapMarket(
+      new BN(daoBefore.twapExpectedValue),
+      maxObservationChangePerUpdateLots
+    )
     .accounts({
       market: failMarketPubkey,
       twapMarket: openbookTwapFailMarket,
