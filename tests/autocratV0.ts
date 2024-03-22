@@ -1454,9 +1454,9 @@ async function initializeProposal(
 
   const currentTimeInSeconds = Math.floor(Date.now() / 1000);
   const elevenDaysInSeconds = 11 * 24 * 60 * 60;
-  const baseLotSize = new BN(1e8);
   const quoteLotSize = new BN(100);
-  const maxObservationChangePerUpdateLots = new BN(50000);
+  const baseLotSize = new BN(1e8);
+  const maxObservationChangePerUpdateLots = new BN(50_000);
   const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
 
   // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246

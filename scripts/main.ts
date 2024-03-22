@@ -44,7 +44,7 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
+  "twAP5sArq2vDS1mZCT7f4qRLwzTfHvf5Ay5R5Q5df1m"
 );
 export const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
@@ -385,6 +385,9 @@ export async function initializeProposal(
   const currentTimeInSeconds = Math.floor(Date.now() / 1000);
   const elevenDaysInSeconds = 11 * 24 * 60 * 60;
   const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
+  const quoteLotSize = new BN(100);
+  const baseLotSize = new BN(1e8);
+  const maxObservationChangePerUpdateLots = new BN(50_000);
 
   let [passMarketInstructions, passMarketSigners] =
     await openbook.createMarketIx(
@@ -392,8 +395,8 @@ export async function initializeProposal(
       `${baseNonce}pMETA/pUSDC`,
       passQuoteMint,
       passBaseMint,
-      new BN(100),
-      new BN(1e9),
+      quoteLotSize,
+      baseLotSize,
       new BN(0),
       new BN(0),
       expiryTime,
@@ -438,8 +441,8 @@ export async function initializeProposal(
     `${baseNonce}fMETA/fUSDC`,
     failQuoteMint,
     failBaseMint,
-    new BN(100),
-    new BN(1e9),
+    quoteLotSize,
+    baseLotSize,
     new BN(0),
     new BN(0),
     expiryTime,
@@ -471,14 +474,14 @@ export async function initializeProposal(
         1000
       ),
       await openbookTwap.methods
-        .createTwapMarket(new BN(10_000))
+        .createTwapMarket(new BN(10_000), maxObservationChangePerUpdateLots)
         .accounts({
           market: openbookPassMarketKP.publicKey,
           twapMarket: openbookTwapPassMarket,
         })
         .instruction(),
       await openbookTwap.methods
-        .createTwapMarket(new BN(10_000))
+        .createTwapMarket(new BN(10_000), maxObservationChangePerUpdateLots)
         .accounts({
           market: openbookFailMarketKP.publicKey,
           twapMarket: openbookTwapFailMarket,
