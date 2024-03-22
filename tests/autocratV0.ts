@@ -4,7 +4,6 @@ import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 import {
   OpenBookV2Client,
-  IDL,
   PlaceOrderArgs,
   Side,
   OrderType,
@@ -89,7 +88,6 @@ const getMarketFromOpenbookCreatMarketIx = (
 
 describe("autocrat_v0", async function () {
   let provider,
-    connection,
     autocrat,
     payer,
     context,
