@@ -797,31 +797,26 @@ export type OpenbookTwap = {
     },
     {
       "code": 6002,
-      "name": "InsufficentExpiryTime",
-      "msg": "Market must expire a minimum of 10 days from now"
-    },
-    {
-      "code": 6003,
       "name": "NoOracles",
       "msg": "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed"
     },
     {
-      "code": 6004,
+      "code": 6003,
       "name": "InvalidMakerFee",
       "msg": "Maker fee must be zero"
     },
     {
-      "code": 6005,
+      "code": 6004,
       "name": "InvalidTakerFee",
       "msg": "Taker fee must be zero"
     },
     {
-      "code": 6006,
+      "code": 6005,
       "name": "InvalidSeqNum",
       "msg": "Seq num must be zero"
     },
     {
-      "code": 6007,
+      "code": 6006,
       "name": "InvalidConsumeEventsAdmin",
       "msg": "Consume events admin must be None"
     }
@@ -1627,31 +1622,26 @@ export const IDL: OpenbookTwap = {
     },
     {
       "code": 6002,
-      "name": "InsufficentExpiryTime",
-      "msg": "Market must expire a minimum of 10 days from now"
-    },
-    {
-      "code": 6003,
       "name": "NoOracles",
       "msg": "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed"
     },
     {
-      "code": 6004,
+      "code": 6003,
       "name": "InvalidMakerFee",
       "msg": "Maker fee must be zero"
     },
     {
-      "code": 6005,
+      "code": 6004,
       "name": "InvalidTakerFee",
       "msg": "Taker fee must be zero"
     },
     {
-      "code": 6006,
+      "code": 6005,
       "name": "InvalidSeqNum",
       "msg": "Seq num must be zero"
     },
     {
-      "code": 6007,
+      "code": 6006,
       "name": "InvalidConsumeEventsAdmin",
       "msg": "Consume events admin must be None"
     }
