@@ -38,7 +38,7 @@ const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.j
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
+  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
 );
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"

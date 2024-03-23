@@ -19,6 +19,7 @@ either devnet, mainnet, or (recommended) an RPC URL.
 
 | program           | tag  | program ID                                  |
 | ----------------- | ---- | ------------------------------------------- |
+| autocrat_v0       | v0.2 | metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp |
 | conditional_vault | v0.2 | vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP |
 | autocrat_v0       | v0.1 | metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq |
 | autocrat_migrator | v0.1 | migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3 |
