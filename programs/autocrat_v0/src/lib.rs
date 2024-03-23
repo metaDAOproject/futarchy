@@ -41,7 +41,7 @@ pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 23_150;
 pub const MAX_BPS: u16 = 10_000;
 
 // TWAP can only move by $5 per slot
-pub const MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 50_000;
+pub const MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
 #[account]
 pub struct DAO {
@@ -152,7 +152,7 @@ pub mod autocrat_v0 {
 
         let current_time = Clock::get().unwrap().unix_timestamp as i64;
 
-        // The market expires a minimum of 7 days after the end of the proposal.
+        // The market expires a minimum of 7 days after the end of a 3 day proposal.
         // Make sure to do final TWAP crank after the proposal period has ended
         // and before the market expires, or else! Allows for rent retrieval from openbook
         require!(
