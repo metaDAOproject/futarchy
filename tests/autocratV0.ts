@@ -63,7 +63,7 @@ type ProposalInstruction = anchor.IdlTypes<AutocratV0>["ProposalInstruction"];
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
+  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
@@ -79,7 +79,7 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
 );
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
-  "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
+  "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
 describe("autocrat_v0", async function () {
