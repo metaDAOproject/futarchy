@@ -387,7 +387,7 @@ export async function initializeProposal(
   const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
   const quoteLotSize = new BN(100);
   const baseLotSize = new BN(1e8);
-  const maxObservationChangePerUpdateLots = new BN(50_000);
+  const maxObservationChangePerUpdateLots = new BN(5_000);
 
   let [passMarketInstructions, passMarketSigners] =
     await openbook.createMarketIx(
