@@ -79,7 +79,7 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
 );
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
-  "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
+  "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
 describe("autocrat_v0", async function () {

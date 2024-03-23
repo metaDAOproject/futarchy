@@ -10,7 +10,7 @@ import { assert } from "chai";
 import { startAnchor } from "solana-bankrun";
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
-  "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
+  "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
 import { AutocratMigrator } from "../target/types/autocrat_migrator";

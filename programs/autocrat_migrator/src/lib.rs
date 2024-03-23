@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 
-declare_id!("migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3");
+declare_id!("MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt");
 
 #[program]
 pub mod autocrat_migrator {
