@@ -4,7 +4,6 @@ import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 import {
   OpenBookV2Client,
-  IDL,
   PlaceOrderArgs,
   Side,
   OrderType,
@@ -64,11 +63,11 @@ type ProposalInstruction = anchor.IdlTypes<AutocratV0>["ProposalInstruction"];
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
+  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 );
 
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
@@ -80,16 +79,11 @@ const OPENBOOK_PROGRAM_ID = new PublicKey(
 );
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
-  "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
+  "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
-
-const getMarketFromOpenbookCreatMarketIx = (
-  instructions: Array<anchor.web3.TransactionInstruction>
-) => instructions[3].keys[0].pubkey;
 
 describe("autocrat_v0", async function () {
   let provider,
-    connection,
     autocrat,
     payer,
     context,
@@ -148,7 +142,7 @@ describe("autocrat_v0", async function () {
       provider
     );
 
-    payer = autocrat.provider.wallet.payer;
+    payer = provider.wallet.payer;
 
     USDC = await createMint(
       banksClient,
@@ -1443,6 +1437,7 @@ async function initializeProposal(
   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
   let openbookPassMarketKP = Keypair.generate();
+  let openbookPassMarket = openbookPassMarketKP.publicKey;
 
   let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
     [
@@ -1480,9 +1475,6 @@ async function initializeProposal(
       openbookPassMarketKP,
       daoTreasury
     );
-  const passMarketPubkey = getMarketFromOpenbookCreatMarketIx(
-    openbookPassMarketIxs
-  );
 
   await openbookTwap.methods
     .createTwapMarket(
@@ -1490,7 +1482,7 @@ async function initializeProposal(
       maxObservationChangePerUpdateLots
     )
     .accounts({
-      market: passMarketPubkey,
+      market: openbookPassMarketKP.publicKey,
       twapMarket: openbookTwapPassMarket,
     })
     .preInstructions(openbookPassMarketIxs)
@@ -1498,6 +1490,7 @@ async function initializeProposal(
     .rpc();
 
   let openbookFailMarketKP = Keypair.generate();
+  let openbookFailMarket = openbookFailMarketKP.publicKey;
 
   let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
     [
@@ -1528,9 +1521,6 @@ async function initializeProposal(
       openbookFailMarketKP,
       daoTreasury
     );
-  const failMarketPubkey = getMarketFromOpenbookCreatMarketIx(
-    openbookFailMarketIxs
-  );
 
   await openbookTwap.methods
     .createTwapMarket(
@@ -1538,7 +1528,7 @@ async function initializeProposal(
       maxObservationChangePerUpdateLots
     )
     .accounts({
-      market: failMarketPubkey,
+      market: openbookFailMarket,
       twapMarket: openbookTwapFailMarket,
     })
     .preInstructions(openbookFailMarketIxs)
@@ -1558,8 +1548,8 @@ async function initializeProposal(
       quoteVault,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
-      openbookPassMarket: passMarketPubkey,
-      openbookFailMarket: failMarketPubkey,
+      openbookPassMarket,
+      openbookFailMarket,
       proposer: payer.publicKey,
       systemProgram: anchor.web3.SystemProgram.programId,
     })

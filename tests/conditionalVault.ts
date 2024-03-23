@@ -42,7 +42,7 @@ export type Signer = anchor.web3.Signer;
 export type Keypair = anchor.web3.Keypair;
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 );
 
 const METADATA_URI =
@@ -552,9 +552,10 @@ describe("conditional_vault", async function () {
     });
   });
 
-  describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
+  describe("#redeem_and_merge_conditional_tokens_for_underlying_tokens", async function () {
     let bob: Keypair;
     let amount = 1000;
+    let mergeAmount = 10;
     let bobUnderlyingTokenAccount: PublicKey;
     let bobConditionalOnFinalizeTokenAccount: PublicKey;
     let bobConditionalOnRevertTokenAccount: PublicKey;
@@ -609,6 +610,54 @@ describe("conditional_vault", async function () {
         vault,
         banksClient
       );
+    });
+
+    it("successfully merges 10 tokens before the vault has been finalized", async function () {
+      // Assuming the vault has not yet been finalized
+
+      await mergeConditionalTokens(
+        vaultProgram,
+        mergeAmount,
+        bob,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        banksClient
+      );
+    });
+
+    it("prevents users from merging conditional tokens after the vault has been finalized", async function () {
+      await vaultProgram.methods
+        .settleConditionalVault({ finalized: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      const callbacks = expectError(
+        vaultProgram,
+        "VaultAlreadySettled",
+        "merge suceeded even though this vault was finalized"
+      );
+      await mergeConditionalTokens(
+        vaultProgram,
+        mergeAmount,
+        bob,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        banksClient
+      ).then(callbacks[0], callbacks[1]);
     });
 
     it("allows users to redeem conditional-on-finalize tokens for underlying tokens when a vault has been finalized", async function () {
@@ -764,7 +813,7 @@ async function generateRandomVault(
       commitment: "confirmed",
     }
   );
-  console.log(createMetadataResult);
+  //   console.log(createMetadataResult);
 
   const nonce = new BN(1003239);
 
@@ -973,6 +1022,88 @@ export async function mintConditionalTokens(
   assert.equal(
     userConditionalOnRevertTokenAccountAfter.amount,
     userConditionalOnRevertTokenAccountBefore.amount + BigInt(amount)
+  );
+}
+
+export async function mergeConditionalTokens(
+  vaultProgram: VaultProgram,
+  amount: number | bigint,
+  user: Signer,
+  userConditionalOnFinalizeTokenAccount: PublicKey,
+  userConditionalOnRevertTokenAccount: PublicKey,
+  conditionalOnFinalizeTokenMint: PublicKey,
+  conditionalOnRevertTokenMint: PublicKey,
+  userUnderlyingTokenAccount: PublicKey,
+  vaultUnderlyingTokenAccount: PublicKey,
+  vault: PublicKey,
+  banksClient: BanksClient
+) {
+  const vaultUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
+    vaultUnderlyingTokenAccount
+  );
+  const userUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
+    userUnderlyingTokenAccount
+  );
+  const userConditionalOnFinalizeTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
+  );
+
+  const bnAmount = new anchor.BN(amount.toString());
+  await vaultProgram.methods
+    .mergeConditionalTokensForUnderlyingTokens(bnAmount)
+    .accounts({
+      authority: user.publicKey,
+      userConditionalOnFinalizeTokenAccount,
+      userConditionalOnRevertTokenAccount,
+      userUnderlyingTokenAccount,
+      vaultUnderlyingTokenAccount,
+      vault,
+      conditionalOnFinalizeTokenMint,
+      conditionalOnRevertTokenMint,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+    })
+    .signers([user])
+    .rpc();
+
+  const vaultUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
+    vaultUnderlyingTokenAccount
+  );
+  const userUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
+    userUnderlyingTokenAccount
+  );
+  const userConditionalOnFinalizeTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
+  );
+
+  assert.equal(
+    vaultUnderlyingTokenAccountAfter.amount,
+    vaultUnderlyingTokenAccountBefore.amount - BigInt(amount)
+  );
+  assert.equal(
+    userUnderlyingTokenAccountAfter.amount,
+    userUnderlyingTokenAccountBefore.amount + BigInt(amount)
+  );
+  assert.equal(
+    userConditionalOnFinalizeTokenAccountAfter.amount,
+    userConditionalOnFinalizeTokenAccountBefore.amount - BigInt(amount)
+  );
+  assert.equal(
+    userConditionalOnRevertTokenAccountAfter.amount,
+    userConditionalOnRevertTokenAccountBefore.amount - BigInt(amount)
   );
 }
 

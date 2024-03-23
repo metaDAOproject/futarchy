@@ -38,10 +38,10 @@ const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.j
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
+  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
 );
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
   "twAP5sArq2vDS1mZCT7f4qRLwzTfHvf5Ay5R5Q5df1m"
@@ -63,7 +63,7 @@ export const PROPH3t_PUBKEY = new PublicKey(
   "65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg"
 );
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
-  "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
+  "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
 const MPL_TOKEN_METADATA_PROGRAM_ID = toWeb3JsPublicKey(
