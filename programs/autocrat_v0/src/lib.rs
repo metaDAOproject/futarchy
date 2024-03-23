@@ -41,7 +41,7 @@ pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 23_150;
 pub const MAX_BPS: u16 = 10_000;
 
 // TWAP can only move by $5 per slot
-pub const MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
+pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
 #[account]
 pub struct DAO {
@@ -64,6 +64,7 @@ pub struct DAO {
     pub slots_per_proposal: u64,
     pub market_taker_fee: i64,
     pub twap_expected_value: u64,
+    pub max_observation_change_per_update_lots: u64,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -121,6 +122,7 @@ pub mod autocrat_v0 {
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
         dao.twap_expected_value = 10_000; // 1 USDC per META
+        dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
 
         let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -235,18 +237,18 @@ pub mod autocrat_v0 {
             openbook_twap_fail_market.twap_oracle.initial_slot + 50 >= clock.slot,
             AutocratError::TWAPMarketTooOld
         );
-        require!(
+        require_eq!(
             openbook_twap_pass_market
                 .twap_oracle
-                .max_observation_change_per_update_lots
-                == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+                .max_observation_change_per_update_lots,
+            dao.max_observation_change_per_update_lots,
             AutocratError::TWAPOracleWrongChangeLots
         );
-        require!(
+        require_eq!(
             openbook_twap_fail_market
                 .twap_oracle
-                .max_observation_change_per_update_lots
-                == MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+                .max_observation_change_per_update_lots,
+            dao.max_observation_change_per_update_lots,
             AutocratError::TWAPOracleWrongChangeLots
         );
         require!(
@@ -439,6 +441,12 @@ pub mod autocrat_v0 {
             dao.twap_expected_value = twap_expected_value;
         }
 
+        if let Some(max_observation_change_per_update_lots) =
+            dao_params.max_observation_change_per_update_lots
+        {
+            dao.max_observation_change_per_update_lots = max_observation_change_per_update_lots;
+        }
+
         Ok(())
     }
 }
@@ -533,6 +541,7 @@ pub struct UpdateDaoParams {
     pub slots_per_proposal: Option<u64>,
     pub market_taker_fee: Option<i64>,
     pub twap_expected_value: Option<u64>,
+    pub max_observation_change_per_update_lots: Option<u64>,
 }
 
 #[derive(Accounts)]
@@ -575,7 +584,7 @@ pub enum AutocratError {
     InvalidMarket,
     #[msg("`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`")]
     TWAPMarketTooOld,
-    #[msg("`TWAPOracle` must have a max_observation_change_per_update_lots of $5 / 50_000")]
+    #[msg("`TWAPOracle` has an incorrect max_observation_change_per_update_lots value")]
     TWAPOracleWrongChangeLots,
     #[msg("`TWAPMarket` has the wrong `expected_value`")]
     TWAPMarketInvalidExpectedValue,
