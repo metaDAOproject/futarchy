@@ -50,8 +50,8 @@ RUN avm install ${ANCHOR_CLI} && avm use ${ANCHOR_CLI}
 # set up keypair
 RUN solana-keygen new --no-bip39-passphrase
 
-# install dependencies
-RUN yarn
-
 WORKDIR /workdir
 #be sure to add `/root/.avm/bin` to your PATH to be able to run the installed binaries
+
+# install dependencies
+RUN yarn
