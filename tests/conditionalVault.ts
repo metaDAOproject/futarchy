@@ -96,7 +96,6 @@ describe("conditional_vault", async function () {
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
 
-    console.log("anchor connection: ", anchor.AnchorProvider.env().connection);
     umi = createUmi(anchor.AnchorProvider.env().connection);
 
     vaultProgram = new Program<ConditionalVault>(
