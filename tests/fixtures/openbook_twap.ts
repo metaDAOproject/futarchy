@@ -334,6 +334,67 @@ export type OpenbookTwap = {
       ]
     },
     {
+      "name": "settleFundsExpired",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "closeMarket",
       "accounts": [
         {
@@ -1157,6 +1218,67 @@ export const IDL: OpenbookTwap = {
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "settleFundsExpired",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "closeMarket",
