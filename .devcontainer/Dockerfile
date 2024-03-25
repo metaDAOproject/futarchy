@@ -47,6 +47,7 @@ RUN sh -c "$(curl -sSfL https://release.solana.com/v${SOLANA_CLI}/install)"
 RUN cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
 RUN avm install ${ANCHOR_CLI} && avm use ${ANCHOR_CLI}
 
+RUN solana-keygen new --no-bip39-passphrase
 
 WORKDIR /workdir
 #be sure to add `/root/.avm/bin` to your PATH to be able to run the installed binaries
