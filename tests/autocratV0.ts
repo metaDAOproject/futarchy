@@ -679,7 +679,7 @@ describe("autocrat_v0", async function () {
       let takeBuyPassArgs: PlaceOrderArgs = {
         side: Side.Bid,
         priceLots: new BN(145_000), // $14.5 USDC for 0.1 META
-        maxBaseLots: new BN(1), // Buy 1 meta
+        maxBaseLots: new BN(10), // Buy 1 meta
         maxQuoteLotsIncludingFees: new BN(1_450_000),
         clientOrderId: new BN(1),
         orderType: OrderType.Market,
