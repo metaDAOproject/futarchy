@@ -1,5 +1,4 @@
 import * as anchor from "@coral-xyz/anchor";
-import * as token from "@solana/spl-token";
 const { PublicKey, Keypair, SystemProgram, ComputeBudgetProgram, Transaction } = anchor.web3;
 const { BN, Program } = anchor;
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";

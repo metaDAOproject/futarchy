@@ -11,42 +11,21 @@ anchor.setProvider(provider);
 
 const payer = provider.wallet["payer"];
 
-const PANTERA_PUBKEY = new PublicKey("BtNPTBX1XkFCwazDJ6ZkK3hcUsomm1RPcfmtUrP6wd2K");
-
 async function main() {
-  const senderAcc = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    META,
-    daoTreasury,
-    true
-  );
+  const memoText = "I, glorious autocrat of divine MetaDAO, " +
+    "delegate some of the power vested in me to Proph3t and Nallok " +
+    "and allow them to make additional use grants of MetaDAO LLC's codebase";
 
-  const receiverAcc = await token.getOrCreateAssociatedTokenAccount(
-    provider.connection,
-    payer,
-    META,
-    PANTERA_PUBKEY,
-    true
-  );
-
-  const transferIx = token.createTransferInstruction(
-    senderAcc.address,
-    receiverAcc.address,
-    daoTreasury,
-    1_000 * 1_000_000_000, // 1,000 META
-  );
+  console.log(memoText.length);
+  console.log(MEMO_PROGRAM_ID);
 
   const ix = {
-    programId: transferIx.programId,
-    accounts: transferIx.keys,
-    data: transferIx.data,
+    programId: new PublicKey(MEMO_PROGRAM_ID),
+    accounts: [],
+    data: Buffer.from(memoText),
   };
 
-  await initializeProposal(
-    ix,
-    "https://hackmd.io/@0xNallok/Hy2WJ46op"
-  );
+  await initializeProposal(ix, "https://hackmd.io/amOmo2ZSTBqpOmCGX-SXOw?view");
 }
 
 main();
