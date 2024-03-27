@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 // @ts-ignore
-import * as token from "@solana/spl-token-018";
+import * as token from "@solana/spl-token";
 const { BN, Program } = anchor;
 import { MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 
@@ -38,10 +38,10 @@ const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.j
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
+  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
 );
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
+  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
   "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
@@ -169,13 +169,13 @@ async function initializeVault(
   let conditionalOnFinalizeKP = Keypair.generate();
   let conditionalOnRevertKP = Keypair.generate();
 
-  const { key: underlyingTokenMetadataKey, metadata: underlyingTokenMetadata } =
-    await fetchOnchainMetadataForMint(underlyingTokenMint);
+  //   const { key: underlyingTokenMetadataKey, metadata: underlyingTokenMetadata } =
+  //     await fetchOnchainMetadataForMint(underlyingTokenMint);
 
-  console.log(
-    `metadata for token = ${underlyingTokenMint.toBase58()}`,
-    underlyingTokenMetadata
-  );
+  //   console.log(
+  //     `metadata for token = ${underlyingTokenMint.toBase58()}`,
+  //     underlyingTokenMetadata
+  //   );
 
   const conditionalOnFinalizeTokenMetadata = await findMetaplexMetadataPda(
     conditionalOnFinalizeKP.publicKey
@@ -188,29 +188,29 @@ async function initializeVault(
   const proposalCount = nonce.and(new BN(1).shln(32).sub(new BN(1)));
 
   // create new json, take that and pipe into the instruction
-  const { passTokenMetadataUri, faileTokenMetadataUri } =
-    await uploadOffchainMetadata(proposalCount, underlyingTokenMetadata.symbol);
+  //   const { passTokenMetadataUri, faileTokenMetadataUri } =
+  //     await uploadOffchainMetadata(proposalCount, underlyingTokenMetadata.symbol);
 
-  const addMetadataToConditionalTokensIx = await vaultProgram.methods
-    .addMetadataToConditionalTokens(
-      proposalCount,
-      passTokenMetadataUri,
-      faileTokenMetadataUri
-    )
-    .accounts({
-      payer: payer.publicKey,
-      vault,
-      underlyingTokenMint,
-      underlyingTokenMetadata: underlyingTokenMetadataKey,
-      conditionalOnFinalizeTokenMint: conditionalOnFinalizeKP.publicKey,
-      conditionalOnRevertTokenMint: conditionalOnRevertKP.publicKey,
-      conditionalOnFinalizeTokenMetadata,
-      conditionalOnRevertTokenMetadata,
-      tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-      rent: SYSVAR_RENT_PUBKEY,
-    })
-    .instruction();
+  //   const addMetadataToConditionalTokensIx = await vaultProgram.methods
+  //     .addMetadataToConditionalTokens(
+  //       proposalCount,
+  //       passTokenMetadataUri,
+  //       faileTokenMetadataUri
+  //     )
+  //     .accounts({
+  //       payer: payer.publicKey,
+  //       vault,
+  //       underlyingTokenMint,
+  //       underlyingTokenMetadata: underlyingTokenMetadataKey,
+  //       conditionalOnFinalizeTokenMint: conditionalOnFinalizeKP.publicKey,
+  //       conditionalOnRevertTokenMint: conditionalOnRevertKP.publicKey,
+  //       conditionalOnFinalizeTokenMetadata,
+  //       conditionalOnRevertTokenMetadata,
+  //       tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+  //       systemProgram: SystemProgram.programId,
+  //       rent: SYSVAR_RENT_PUBKEY,
+  //     })
+  //     .instruction();
 
   await vaultProgram.methods
     .initializeConditionalVault(settlementAuthority, nonce)
@@ -226,7 +226,7 @@ async function initializeVault(
       systemProgram: SystemProgram.programId,
     })
     .signers([conditionalOnFinalizeKP, conditionalOnRevertKP])
-    .postInstructions([addMetadataToConditionalTokensIx])
+    // .postInstructions([addMetadataToConditionalTokensIx])
     .rpc();
 
   //const storedVault = await vaultProgram.account.conditionalVault.fetch(
@@ -238,6 +238,20 @@ async function initializeVault(
 }
 
 export async function initializeDAO(META: any, USDC: any) {
+  //   console.log(autocratProgram);
+  //   if (
+  //     autocratProgram.provider.connection.rpcEndpoint ===
+  //     "https://api.devnet.solana.com"
+  //   ) {
+  //     USDC = DEVNET_USDC;
+  //   }
+  //   console.log(
+  //     (
+  //       await autocratProgram.account.dao.fetch(
+  //         new PublicKey("14YsfUtP6aZ5UHfwfbqe9MYEW4VaDwTHs9NZroAfV6Pi")
+  //       )
+  //     ).treasury
+  //   );
   await autocratProgram.methods
     .initializeDao()
     .accounts({
@@ -246,6 +260,7 @@ export async function initializeDAO(META: any, USDC: any) {
       usdcMint: USDC,
     })
     .rpc();
+  //   .rpc({ skipPreflight: true });
 }
 
 export async function fetchDao() {
