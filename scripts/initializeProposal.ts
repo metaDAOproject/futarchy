@@ -8,6 +8,7 @@ import {
 import * as anchor from "@coral-xyz/anchor";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import * as token from "@solana/spl-token";
+import { assert } from "console";
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
@@ -18,13 +19,37 @@ anchor.setProvider(provider);
 const payer = provider.wallet["payer"];
 
 // Sender
+const oldDaoProgramId = new PublicKey(
+  "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
+);
+const [oldDao] = PublicKey.findProgramAddressSync(
+  [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+  oldDaoProgramId
+);
+
+const [oldDaoTreasury] = PublicKey.findProgramAddressSync(
+  [oldDao.toBuffer()],
+  oldDaoProgramId
+);
 const oldTreasury = new PublicKey(
   "ADCCEAbH8eixGj5t73vb4sKecSKo7ndgDSuWGvER4Loy"
 );
 // Receiver
+const newDaoProgramId = new PublicKey(
+  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
+);
+const [newDao] = PublicKey.findProgramAddressSync(
+  [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+  newDaoProgramId
+);
+const [newDaoTreasury] = PublicKey.findProgramAddressSync(
+  [newDao.toBuffer()],
+  newDaoProgramId
+);
 const newTreasury = new PublicKey(
   "BC1jThSN7Cgy5LfBZdCKCfMnhKcq155gMjhd9HPWzsCN"
 );
+
 // Define the mints
 // const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
 const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
@@ -44,6 +69,20 @@ async function getOrCreateATAForMint(mint, owner) {
 }
 
 async function main() {
+  // It's dumb but double check anyway
+  if (
+    newTreasury.toString() !== newDaoTreasury.toString() ||
+    oldDaoTreasury.toString() !== oldTreasury.toString()
+  ) {
+    console.log(
+      newTreasury.toString(),
+      newDaoTreasury.toString(),
+      oldDaoTreasury.toString(),
+      oldTreasury.toString()
+    );
+    console.log("This should never happen, the treasury accounts don't match");
+    return;
+  }
   const oldTreasuryMetaATA = await getOrCreateATAForMint(META, oldTreasury);
   console.log("Old Treasury META ATA:", oldTreasuryMetaATA.address.toString());
   const oldTreasuryUsdcATA = await getOrCreateATAForMint(USDC, oldTreasury);
