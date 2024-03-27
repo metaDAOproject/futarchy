@@ -104,7 +104,7 @@ async function main() {
     data: migrateInstruction.data,
   };
 
-  await initializeProposal(ix, "https://hackmd.io/@0xNallok/Hy2WJ46op");
+  await initializeProposal(ix, "https://hackmd.io/@HenryE/Bkvk6eG10");
 }
 
 main();
