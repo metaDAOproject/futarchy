@@ -64,6 +64,11 @@ pub struct DAO {
     pub market_taker_fee: i64,
     pub twap_expected_value: u64,
     pub max_observation_change_per_update_lots: u64,
+    // amount of base tokens that constitute a lot. for example, if TOKEN has
+    // 9 decimals, then if lot size was 1_000_000_000 you could trade in increments
+    // of 1 TOKEN. ideally, you want to pick a lot size where each lot is worth $1 - $10.
+    // this balances spam-prevention with allowing users to trade small amounts.
+    pub base_lot_size: i64,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -107,7 +112,7 @@ pub struct ProposalAccount {
 pub mod autocrat_v0 {
     use super::*;
 
-    pub fn initialize_dao(ctx: Context<InitializeDAO>) -> Result<()> {
+    pub fn initialize_dao(ctx: Context<InitializeDAO>, base_lot_size: i64) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         dao.token_mint = ctx.accounts.token_mint.key();
@@ -122,6 +127,7 @@ pub mod autocrat_v0 {
         dao.market_taker_fee = 0;
         // 100_000 price lots * quote lot size of 100 = 10_000_000 or $10 per quote lot size of meta, which is 0.1 meta
         dao.twap_expected_value = 100_000; // $100 USDC per 1 META
+        dao.base_lot_size = base_lot_size;
         dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
 
         let (treasury_pubkey, treasury_bump) =
@@ -174,7 +180,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
+            openbook_pass_market.base_lot_size == dao.base_lot_size,
             AutocratError::InvalidMarket
         );
         require!(
@@ -441,6 +447,10 @@ pub mod autocrat_v0 {
             dao.twap_expected_value = twap_expected_value;
         }
 
+        if let Some(base_lot_size) = dao_params.base_lot_size {
+            dao.base_lot_size = base_lot_size;
+        }
+
         if let Some(max_observation_change_per_update_lots) =
             dao_params.max_observation_change_per_update_lots
         {
@@ -536,6 +546,7 @@ pub struct UpdateDaoParams {
     pub market_taker_fee: Option<i64>,
     pub twap_expected_value: Option<u64>,
     pub max_observation_change_per_update_lots: Option<u64>,
+    pub base_lot_size: Option<i64>,
 }
 
 #[derive(Accounts)]
