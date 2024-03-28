@@ -47,7 +47,7 @@ pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 pub struct DAO {
     pub treasury_pda_bump: u8,
     pub treasury: Pubkey,
-    pub meta_mint: Pubkey,
+    pub token_mint: Pubkey,
     pub usdc_mint: Pubkey,
     pub proposal_count: u32,
     pub last_proposal_slot: u64,
@@ -110,7 +110,7 @@ pub mod autocrat_v0 {
     pub fn initialize_dao(ctx: Context<InitializeDAO>) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        dao.meta_mint = ctx.accounts.meta_mint.key();
+        dao.token_mint = ctx.accounts.token_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
 
         dao.proposal_count = 2;
@@ -462,7 +462,7 @@ pub struct InitializeDAO<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
-    pub meta_mint: Account<'info, Mint>,
+    pub token_mint: Account<'info, Mint>,
     #[account(mint::decimals = 6)]
     pub usdc_mint: Account<'info, Mint>,
 }
@@ -486,7 +486,7 @@ pub struct InitializeProposal<'info> {
     )]
     pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_vault.underlying_token_mint == dao.meta_mint,
+        constraint = base_vault.underlying_token_mint == dao.token_mint,
         constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,

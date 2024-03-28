@@ -171,14 +171,14 @@ describe("autocrat_v0", async function () {
           dao,
           payer: payer.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
-          metaMint: META,
+          tokenMint: META,
           usdcMint: USDC,
         })
         .signers([daoKP])
         .rpc();
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
-      assert(daoAcc.metaMint.equals(META));
+      assert(daoAcc.tokenMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
       assert.equal(daoAcc.proposalCount, 2);
       assert.equal(daoAcc.passThresholdBps, 300);
@@ -215,7 +215,7 @@ describe("autocrat_v0", async function () {
         .accounts({
           dao: mertdDao,
           payer: payer.publicKey,
-          metaMint: MERTD,
+          tokenMint: MERTD,
           usdcMint: USDC,
         })
         .signers([mertdDaoKP])
@@ -1143,7 +1143,7 @@ async function initializeProposal(
   const baseVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    storedDAO.metaMint,
+    storedDAO.tokenMint,
     baseNonce,
     payer
   );
