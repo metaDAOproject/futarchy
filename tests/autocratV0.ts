@@ -157,10 +157,9 @@ describe("autocrat_v0", async function () {
 
   describe("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
-      [dao] = PublicKey.findProgramAddressSync(
-        [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-        autocrat.programId
-      );
+      const daoKP = Keypair.generate();
+      dao = daoKP.publicKey;
+
       [daoTreasury] = PublicKey.findProgramAddressSync(
         [dao.toBuffer()],
         autocrat.programId
@@ -175,6 +174,7 @@ describe("autocrat_v0", async function () {
           metaMint: META,
           usdcMint: USDC,
         })
+        .signers([daoKP])
         .rpc()
         .then(
           () => {},
