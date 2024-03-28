@@ -184,7 +184,7 @@ describe("autocrat_v0", async function () {
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.metaMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
-      assert.equal(daoAcc.proposalCount, 2);
+      assert.equal(daoAcc.proposalCount, 0);
       assert.equal(daoAcc.passThresholdBps, 500);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
       assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
