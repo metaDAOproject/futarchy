@@ -45,7 +45,6 @@ pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
 #[account]
 pub struct DAO {
-    // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
     pub treasury_pda_bump: u8,
     pub treasury: Pubkey,
     pub meta_mint: Pubkey,
@@ -457,12 +456,7 @@ pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + std::mem::size_of::<DAO>(),
-        // We will create a civilization of the Mind in Cyberspace. May it be
-        // more humane and fair than the world your governments have made before.
-        //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
-        seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], 
-        bump
+        space = 8 + std::mem::size_of::<DAO>()
     )]
     pub dao: Account<'info, DAO>,
     #[account(mut)]
