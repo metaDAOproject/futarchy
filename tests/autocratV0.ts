@@ -175,11 +175,7 @@ describe("autocrat_v0", async function () {
           usdcMint: USDC,
         })
         .signers([daoKP])
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.error(err)
-        );
+        .rpc();
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.metaMint.equals(META));
@@ -201,6 +197,29 @@ describe("autocrat_v0", async function () {
         USDC,
         daoTreasury
       );
+    });
+
+    it("initializes a second DAO", async function () {
+      const mertdDaoKP = Keypair.generate();
+      const mertdDao = mertdDaoKP.publicKey;
+
+      const MERTD = await createMint(banksClient, payer, payer.publicKey, payer.publicKey, 6);
+
+      const [mertdDaoTreasury] = PublicKey.findProgramAddressSync(
+        [mertdDao.toBuffer()],
+        autocrat.programId
+      );
+
+      await autocrat.methods
+        .initializeDao()
+        .accounts({
+          dao: mertdDao,
+          payer: payer.publicKey,
+          metaMint: MERTD,
+          usdcMint: USDC,
+        })
+        .signers([mertdDaoKP])
+        .rpc();
     });
   });
 
