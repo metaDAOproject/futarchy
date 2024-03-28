@@ -226,6 +226,14 @@ async function initializeVault(
       systemProgram: SystemProgram.programId,
     })
     .signers([conditionalOnFinalizeKP, conditionalOnRevertKP])
+    .preInstructions([
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 150_000
+      }),
+      ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 100
+      }),
+    ])
     .postInstructions([addMetadataToConditionalTokensIx])
     .rpc();
 
@@ -403,13 +411,17 @@ export async function initializeProposal(
       daoTreasury
     );
 
-  const cuIx = ComputeBudgetProgram.setComputeUnitPrice({
+  const cuPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
     microLamports: 100,
+  });
+  const cuLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 150_000
   });
 
   let tx1 = new Transaction();
   tx1.add(...passMarketInstructions);
-  tx1.add(cuIx);
+  tx1.add(cuPriceIx);
+  tx1.add(cuLimitIx);
 
   let blockhash = await provider.connection.getLatestBlockhash();
   tx1.recentBlockhash = blockhash.blockhash;
@@ -451,7 +463,8 @@ export async function initializeProposal(
 
   let tx = new Transaction();
   tx.add(...openbookFailMarketIx[0]);
-  tx.add(cuIx);
+  tx.add(cuPriceIx);
+  tx.add(cuLimitIx);
 
   blockhash = await provider.connection.getLatestBlockhash();
   tx.recentBlockhash = blockhash.blockhash;
@@ -480,6 +493,8 @@ export async function initializeProposal(
           twapMarket: openbookTwapFailMarket,
         })
         .instruction(),
+      cuPriceIx,
+      cuLimitIx,
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
