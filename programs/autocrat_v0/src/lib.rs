@@ -462,7 +462,6 @@ pub struct InitializeDAO<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
-    #[account(mint::decimals = 9)]
     pub meta_mint: Account<'info, Mint>,
     #[account(mint::decimals = 6)]
     pub usdc_mint: Account<'info, Mint>,
