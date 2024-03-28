@@ -57,6 +57,10 @@ pub struct DAO {
     pub burn_decay_per_slot_lamports: u64,
     pub slots_per_proposal: u64,
     pub market_taker_fee: i64,
+    // the TWAP can only move by a certain amount per update, so it needs to start at
+    // a value. that's `twap_expected_value`, and it's in base lots divided by quote lots.
+    // so if you expect your token to trade around $1, your token has 9 decimals and a base_lot_size
+    // of 1_000_000_000, your `twap_expected_value` could be 10_000 (10,000 hundredths of pennies = $1).
     pub twap_expected_value: u64,
     // amount of base tokens that constitute a lot. for example, if TOKEN has
     // 9 decimals, then if lot size was 1_000_000_000 you could trade in increments
@@ -106,7 +110,11 @@ pub struct ProposalAccount {
 pub mod autocrat_v0 {
     use super::*;
 
-    pub fn initialize_dao(ctx: Context<InitializeDAO>, base_lot_size: i64) -> Result<()> {
+    pub fn initialize_dao(
+        ctx: Context<InitializeDAO>,
+        base_lot_size: i64,
+        twap_expected_value: u64,
+    ) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         dao.token_mint = ctx.accounts.token_mint.key();
@@ -119,7 +127,7 @@ pub mod autocrat_v0 {
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
-        dao.twap_expected_value = 10_000; // 1 USDC per META
+        dao.twap_expected_value = twap_expected_value;
         dao.base_lot_size = base_lot_size;
 
         let (treasury_pubkey, treasury_bump) =
@@ -395,10 +403,7 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn update_dao(
-        ctx: Context<UpdateDao>,
-        dao_params: UpdateDaoParams,
-    ) -> Result<()> {
+    pub fn update_dao(ctx: Context<UpdateDao>, dao_params: UpdateDaoParams) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         if let Some(pass_threshold_bps) = dao_params.pass_threshold_bps {
