@@ -334,7 +334,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78f860599da1c2354e7234c768783049eb42e2f54509ecfc942d2e0076a2da7b"
 dependencies = [
  "anchor-lang 0.28.0",
- "mpl-token-metadata",
+ "mpl-token-metadata 1.13.2",
  "solana-program",
  "spl-associated-token-account 1.1.3",
  "spl-token 3.5.0",
@@ -348,6 +348,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c4fd6e43b2ca6220d2ef1641539e678bfc31b6cc393cf892b373b5997b6a39a"
 dependencies = [
  "anchor-lang 0.29.0",
+ "mpl-token-metadata 3.2.3",
  "solana-program",
  "spl-associated-token-account 2.2.0",
  "spl-token 4.0.0",
@@ -849,7 +850,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
- "mpl-token-metadata",
+ "mpl-token-metadata 1.13.2",
  "solana-program",
  "solana-security-txt",
 ]
@@ -1490,6 +1491,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "mpl-token-metadata"
+version = "3.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba8ee05284d79b367ae8966d558e1a305a781fc80c9df51f37775169117ba64f"
+dependencies = [
+ "borsh 0.10.3",
+ "num-derive 0.3.3",
+ "num-traits",
+ "solana-program",
+ "thiserror",
+]
+
+[[package]]
 name = "mpl-token-metadata-context-derive"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1696,7 +1710,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "openbook-twap"
 version = "1.0.0"
-source = "git+https://github.com/metaDAOproject/openbook-twap.git#bf8f4c2f1f136b32b155b8257d5320fe9cba4892"
+source = "git+https://github.com/metaDAOproject/openbook-twap.git#6ff11f6065ff122d0f2b7270bab92da06cd20da0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
@@ -1997,13 +2011,13 @@ dependencies = [
 [[package]]
 name = "raydium-amm-v3"
 version = "0.1.0"
-source = "git+https://github.com/raydium-io/raydium-clmm.git#cea4d49ef5acc643cb04fb4db96af6d73a5f0a1d"
+source = "git+https://github.com/raydium-io/raydium-clmm.git#da57b0b7409f5a4437feb8fd0551683b14b8a1f5"
 dependencies = [
- "anchor-lang 0.28.0",
- "anchor-spl 0.28.0",
+ "anchor-lang 0.29.0",
+ "anchor-spl 0.29.0",
  "arrayref",
  "bytemuck",
- "mpl-token-metadata",
+ "mpl-token-metadata 1.13.2",
  "solana-program",
  "spl-memo 4.0.0",
  "uint",

@@ -13,6 +13,11 @@
     "module": "commonjs",
     "target": "ES2020",
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@solana/spl-token": [
+        "./node_modules/@solana/spl-token"
+      ]
+    }
   }
 }

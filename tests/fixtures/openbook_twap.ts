@@ -1,1461 +1,1771 @@
 export type OpenbookTwap = {
-  version: "1.0.0";
-  name: "openbook_twap";
-  instructions: [
+  "version": "1.0.0",
+  "name": "openbook_twap",
+  "instructions": [
     {
-      name: "createTwapMarket";
-      docs: [
+      "name": "createTwapMarket",
+      "docs": [
         "`expected_value` will be the first observation of the TWAP, which is",
         "necessary for anti-manipulation"
-      ];
-      accounts: [
+      ],
+      "accounts": [
         {
-          name: "market";
-          isMut: false;
-          isSigner: false;
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "twapMarket";
-          isMut: true;
-          isSigner: false;
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "systemProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "payer";
-          isMut: true;
-          isSigner: true;
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         }
-      ];
-      args: [
+      ],
+      "args": [
         {
-          name: "expectedValue";
-          type: "u64";
+          "name": "expectedValue",
+          "type": "u64"
+        },
+        {
+          "name": "maxObservationChangePerUpdateLots",
+          "type": "u64"
         }
-      ];
+      ]
     },
     {
-      name: "placeOrder";
-      accounts: [
+      "name": "placeOrder",
+      "accounts": [
         {
-          name: "signer";
-          isMut: false;
-          isSigner: true;
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "openOrdersAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "twapMarket";
-          isMut: true;
-          isSigner: false;
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "userTokenAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market";
-          isMut: true;
-          isSigner: false;
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids";
-          isMut: true;
-          isSigner: false;
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks";
-          isMut: true;
-          isSigner: false;
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "eventHeap";
-          isMut: true;
-          isSigner: false;
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "marketVault";
-          isMut: true;
-          isSigner: false;
+          "name": "marketVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "openbookProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ];
-      args: [
+      ],
+      "args": [
         {
-          name: "placeOrderArgs";
-          type: {
-            defined: "PlaceOrderArgs";
-          };
+          "name": "placeOrderArgs",
+          "type": {
+            "defined": "PlaceOrderArgs"
+          }
         }
-      ];
-      returns: {
-        option: "u128";
-      };
+      ],
+      "returns": {
+        "option": "u128"
+      }
     },
     {
-      name: "editOrder";
-      accounts: [
+      "name": "editOrder",
+      "accounts": [
         {
-          name: "signer";
-          isMut: false;
-          isSigner: true;
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "openOrdersAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "twapMarket";
-          isMut: true;
-          isSigner: false;
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "userTokenAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market";
-          isMut: true;
-          isSigner: false;
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids";
-          isMut: true;
-          isSigner: false;
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks";
-          isMut: true;
-          isSigner: false;
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "eventHeap";
-          isMut: true;
-          isSigner: false;
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "marketVault";
-          isMut: true;
-          isSigner: false;
+          "name": "marketVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "openbookProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ];
-      args: [
+      ],
+      "args": [
         {
-          name: "clientOrderId";
-          type: "u64";
+          "name": "clientOrderId",
+          "type": "u64"
         },
         {
-          name: "expectedCancelSize";
-          type: "i64";
+          "name": "expectedCancelSize",
+          "type": "i64"
         },
         {
-          name: "placeOrder";
-          type: {
-            defined: "PlaceOrderArgs";
-          };
+          "name": "placeOrder",
+          "type": {
+            "defined": "PlaceOrderArgs"
+          }
         }
-      ];
-      returns: {
-        option: "u128";
-      };
+      ],
+      "returns": {
+        "option": "u128"
+      }
     },
     {
-      name: "cancelOrderByClientId";
-      accounts: [
+      "name": "cancelOrderByClientId",
+      "accounts": [
         {
-          name: "signer";
-          isMut: false;
-          isSigner: true;
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "twapMarket";
-          isMut: true;
-          isSigner: false;
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openOrdersAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market";
-          isMut: false;
-          isSigner: false;
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "bids";
-          isMut: true;
-          isSigner: false;
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks";
-          isMut: true;
-          isSigner: false;
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openbookProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ];
-      args: [
+      ],
+      "args": [
         {
-          name: "clientOrderId";
-          type: "u64";
+          "name": "clientOrderId",
+          "type": "u64"
         }
-      ];
-      returns: "i64";
+      ],
+      "returns": "i64"
     },
     {
-      name: "cancelAllOrders";
-      accounts: [
+      "name": "cancelAllOrders",
+      "accounts": [
         {
-          name: "signer";
-          isMut: false;
-          isSigner: true;
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "twapMarket";
-          isMut: true;
-          isSigner: false;
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openOrdersAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market";
-          isMut: false;
-          isSigner: false;
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "bids";
-          isMut: true;
-          isSigner: false;
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks";
-          isMut: true;
-          isSigner: false;
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openbookProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ];
-      args: [
+      ],
+      "args": [
         {
-          name: "sideOption";
-          type: {
-            option: {
-              defined: "Side";
-            };
-          };
+          "name": "sideOption",
+          "type": {
+            "option": {
+              "defined": "Side"
+            }
+          }
         },
         {
-          name: "limit";
-          type: "u8";
+          "name": "limit",
+          "type": "u8"
         }
-      ];
+      ]
     },
     {
-      name: "placeTakeOrder";
-      accounts: [
+      "name": "pruneOrders",
+      "accounts": [
         {
-          name: "twapMarket";
-          isMut: true;
-          isSigner: false;
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "signer";
-          isMut: true;
-          isSigner: true;
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market";
-          isMut: true;
-          isSigner: false;
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "marketAuthority";
-          isMut: false;
-          isSigner: false;
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids";
-          isMut: true;
-          isSigner: false;
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "marketBaseVault";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "marketQuoteVault";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "eventHeap";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "userBaseAccount";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "userQuoteAccount";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "openbookProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "systemProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ];
-      args: [
+      ],
+      "args": [
         {
-          name: "args";
-          type: {
-            defined: "PlaceTakeOrderArgs";
-          };
+          "name": "limit",
+          "type": "u8"
         }
-      ];
+      ]
     },
     {
-      name: "cancelAndPlaceOrders";
-      accounts: [
+      "name": "settleFundsExpired",
+      "accounts": [
         {
-          name: "signer";
-          isMut: false;
-          isSigner: true;
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "twapMarket";
-          isMut: true;
-          isSigner: false;
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openOrdersAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "userQuoteAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "userBaseAccount";
-          isMut: true;
-          isSigner: false;
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market";
-          isMut: true;
-          isSigner: false;
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids";
-          isMut: true;
-          isSigner: false;
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks";
-          isMut: true;
-          isSigner: false;
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "eventHeap";
-          isMut: true;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "marketQuoteVault";
-          isMut: true;
-          isSigner: false;
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "marketBaseVault";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "openbookProgram";
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ];
-      args: [
-        {
-          name: "cancelClientOrdersIds";
-          type: {
-            vec: "u64";
-          };
-        },
-        {
-          name: "placeOrders";
-          type: {
-            vec: {
-              defined: "PlaceOrderArgs";
-            };
-          };
-        }
-      ];
-      returns: {
-        vec: {
-          option: "u128";
-        };
-      };
+      ],
+      "args": []
     },
     {
-      name: "getBestBidAndAsk";
-      accounts: [
+      "name": "closeMarket",
+      "accounts": [
         {
-          name: "market";
-          isMut: false;
-          isSigner: false;
+          "name": "closeMarketRentReceiver",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids";
-          isMut: false;
-          isSigner: false;
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "asks";
-          isMut: false;
-          isSigner: false;
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ];
-      args: [];
-      returns: {
-        vec: "u64";
-      };
+      ],
+      "args": []
+    },
+    {
+      "name": "placeTakeOrder",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "PlaceTakeOrderArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancelAndPlaceOrders",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "cancelClientOrdersIds",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "placeOrders",
+          "type": {
+            "vec": {
+              "defined": "PlaceOrderArgs"
+            }
+          }
+        }
+      ],
+      "returns": {
+        "vec": {
+          "option": "u128"
+        }
+      }
+    },
+    {
+      "name": "getBestBidAndAsk",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "returns": {
+        "vec": "u64"
+      }
     }
-  ];
-  accounts: [
+  ],
+  "accounts": [
     {
-      name: "twapMarket";
-      type: {
-        kind: "struct";
-        fields: [
+      "name": "twapMarket",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "market";
-            type: "publicKey";
+            "name": "market",
+            "type": "publicKey"
           },
           {
-            name: "pdaBump";
-            type: "u8";
+            "name": "pdaBump",
+            "type": "u8"
           },
           {
-            name: "twapOracle";
-            type: {
-              defined: "TWAPOracle";
-            };
+            "name": "twapOracle",
+            "type": {
+              "defined": "TWAPOracle"
+            }
+          },
+          {
+            "name": "closeMarketRentReceiver",
+            "type": "publicKey"
           }
-        ];
-      };
+        ]
+      }
     }
-  ];
-  types: [
+  ],
+  "types": [
     {
-      name: "TWAPOracle";
-      type: {
-        kind: "struct";
-        fields: [
+      "name": "TWAPOracle",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "expectedValue";
-            type: "u64";
+            "name": "expectedValue",
+            "type": "u64"
           },
           {
-            name: "initialSlot";
-            type: "u64";
+            "name": "initialSlot",
+            "type": "u64"
           },
           {
-            name: "lastUpdatedSlot";
-            type: "u64";
+            "name": "lastUpdatedSlot",
+            "type": "u64"
           },
           {
-            name: "lastObservedSlot";
-            type: "u64";
+            "name": "lastObservedSlot",
+            "type": "u64"
           },
           {
-            name: "lastObservation";
-            type: "u64";
+            "name": "lastObservation",
+            "type": "u64"
           },
           {
-            name: "observationAggregator";
-            type: "u128";
+            "name": "observationAggregator",
+            "type": "u128"
+          },
+          {
+            "name": "maxObservationChangePerUpdateLots",
+            "type": "u64"
           }
-        ];
-      };
+        ]
+      }
     },
     {
-      name: "PlaceOrderArgs";
-      type: {
-        kind: "struct";
-        fields: [
+      "name": "PlaceOrderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "side";
-            type: {
-              defined: "Side";
-            };
+            "name": "side",
+            "type": {
+              "defined": "Side"
+            }
           },
           {
-            name: "priceLots";
-            type: "i64";
+            "name": "priceLots",
+            "type": "i64"
           },
           {
-            name: "maxBaseLots";
-            type: "i64";
+            "name": "maxBaseLots",
+            "type": "i64"
           },
           {
-            name: "maxQuoteLotsIncludingFees";
-            type: "i64";
+            "name": "maxQuoteLotsIncludingFees",
+            "type": "i64"
           },
           {
-            name: "clientOrderId";
-            type: "u64";
+            "name": "clientOrderId",
+            "type": "u64"
           },
           {
-            name: "orderType";
-            type: {
-              defined: "PlaceOrderType";
-            };
+            "name": "orderType",
+            "type": {
+              "defined": "PlaceOrderType"
+            }
           },
           {
-            name: "expiryTimestamp";
-            type: "u64";
+            "name": "expiryTimestamp",
+            "type": "u64"
           },
           {
-            name: "selfTradeBehavior";
-            type: {
-              defined: "SelfTradeBehavior";
-            };
+            "name": "selfTradeBehavior",
+            "type": {
+              "defined": "SelfTradeBehavior"
+            }
           },
           {
-            name: "limit";
-            type: "u8";
+            "name": "limit",
+            "type": "u8"
           }
-        ];
-      };
+        ]
+      }
     },
     {
-      name: "PlaceTakeOrderArgs";
-      type: {
-        kind: "struct";
-        fields: [
+      "name": "PlaceTakeOrderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "side";
-            type: {
-              defined: "Side";
-            };
+            "name": "side",
+            "type": {
+              "defined": "Side"
+            }
           },
           {
-            name: "priceLots";
-            type: "i64";
+            "name": "priceLots",
+            "type": "i64"
           },
           {
-            name: "maxBaseLots";
-            type: "i64";
+            "name": "maxBaseLots",
+            "type": "i64"
           },
           {
-            name: "maxQuoteLotsIncludingFees";
-            type: "i64";
+            "name": "maxQuoteLotsIncludingFees",
+            "type": "i64"
           },
           {
-            name: "orderType";
-            type: {
-              defined: "PlaceOrderType";
-            };
+            "name": "orderType",
+            "type": {
+              "defined": "PlaceOrderType"
+            }
           },
           {
-            name: "limit";
-            type: "u8";
+            "name": "limit",
+            "type": "u8"
           }
-        ];
-      };
+        ]
+      }
     },
     {
-      name: "SelfTradeBehavior";
-      type: {
-        kind: "enum";
-        variants: [
+      "name": "SelfTradeBehavior",
+      "type": {
+        "kind": "enum",
+        "variants": [
           {
-            name: "DecrementTake";
+            "name": "DecrementTake"
           },
           {
-            name: "CancelProvide";
+            "name": "CancelProvide"
           },
           {
-            name: "AbortTransaction";
+            "name": "AbortTransaction"
           }
-        ];
-      };
+        ]
+      }
     },
     {
-      name: "PlaceOrderType";
-      type: {
-        kind: "enum";
-        variants: [
+      "name": "PlaceOrderType",
+      "type": {
+        "kind": "enum",
+        "variants": [
           {
-            name: "Limit";
+            "name": "Limit"
           },
           {
-            name: "ImmediateOrCancel";
+            "name": "ImmediateOrCancel"
           },
           {
-            name: "PostOnly";
+            "name": "PostOnly"
           },
           {
-            name: "Market";
+            "name": "Market"
           },
           {
-            name: "PostOnlySlide";
+            "name": "PostOnlySlide"
           }
-        ];
-      };
+        ]
+      }
     },
     {
-      name: "Side";
-      type: {
-        kind: "enum";
-        variants: [
+      "name": "Side",
+      "type": {
+        "kind": "enum",
+        "variants": [
           {
-            name: "Bid";
+            "name": "Bid"
           },
           {
-            name: "Ask";
+            "name": "Ask"
           }
-        ];
-      };
+        ]
+      }
     }
-  ];
-  errors: [
+  ],
+  "errors": [
     {
-      code: 6000;
-      name: "InvalidOpenOrdersAdmin";
-      msg: "The `open_orders_admin` of the underlying market must be equal to the `TWAPMarket` PDA";
+      "code": 6000,
+      "name": "InvalidOpenOrdersAdmin",
+      "msg": "The `open_orders_admin` of the underlying market must be equal to the `TWAPMarket` PDA"
     },
     {
-      code: 6001;
-      name: "InvalidCloseMarketAdmin";
-      msg: "The `close_market_admin` of the underlying market must be equal to the `TWAPMarket` PDA";
+      "code": 6001,
+      "name": "InvalidCloseMarketAdmin",
+      "msg": "The `close_market_admin` of the underlying market must be equal to the `TWAPMarket` PDA"
     },
     {
-      code: 6002;
-      name: "NonZeroExpiry";
-      msg: "Market must not expire (have `time_expiry` == 0)";
+      "code": 6002,
+      "name": "NoOracles",
+      "msg": "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed"
     },
     {
-      code: 6003;
-      name: "NoOracles";
-      msg: "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed";
+      "code": 6003,
+      "name": "InvalidMakerFee",
+      "msg": "Maker fee must be zero"
     },
     {
-      code: 6004;
-      name: "InvalidMakerFee";
-      msg: "Maker fee must be zero";
+      "code": 6004,
+      "name": "InvalidTakerFee",
+      "msg": "Taker fee must be zero"
     },
     {
-      code: 6005;
-      name: "InvalidTakerFee";
-      msg: "Taker fee must be zero";
+      "code": 6005,
+      "name": "InvalidSeqNum",
+      "msg": "Seq num must be zero"
     },
     {
-      code: 6006;
-      name: "InvalidSeqNum";
-      msg: "Seq num must be zero";
-    },
-    {
-      code: 6007;
-      name: "InvalidConsumeEventsAdmin";
-      msg: "Consume events admin must be None";
+      "code": 6006,
+      "name": "InvalidConsumeEventsAdmin",
+      "msg": "Consume events admin must be None"
     }
-  ];
+  ]
 };
 
 export const IDL: OpenbookTwap = {
-  version: "1.0.0",
-  name: "openbook_twap",
-  instructions: [
+  "version": "1.0.0",
+  "name": "openbook_twap",
+  "instructions": [
     {
-      name: "createTwapMarket",
-      docs: [
+      "name": "createTwapMarket",
+      "docs": [
         "`expected_value` will be the first observation of the TWAP, which is",
-        "necessary for anti-manipulation",
+        "necessary for anti-manipulation"
       ],
-      accounts: [
+      "accounts": [
         {
-          name: "market",
-          isMut: false,
-          isSigner: false,
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "twapMarket",
-          isMut: true,
-          isSigner: false,
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "systemProgram",
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "payer",
-          isMut: true,
-          isSigner: true,
-        },
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        }
       ],
-      args: [
+      "args": [
         {
-          name: "expectedValue",
-          type: "u64",
+          "name": "expectedValue",
+          "type": "u64"
         },
-      ],
+        {
+          "name": "maxObservationChangePerUpdateLots",
+          "type": "u64"
+        }
+      ]
     },
     {
-      name: "placeOrder",
-      accounts: [
+      "name": "placeOrder",
+      "accounts": [
         {
-          name: "signer",
-          isMut: false,
-          isSigner: true,
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "openOrdersAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "twapMarket",
-          isMut: true,
-          isSigner: false,
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "userTokenAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market",
-          isMut: true,
-          isSigner: false,
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids",
-          isMut: true,
-          isSigner: false,
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks",
-          isMut: true,
-          isSigner: false,
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "eventHeap",
-          isMut: true,
-          isSigner: false,
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "marketVault",
-          isMut: true,
-          isSigner: false,
+          "name": "marketVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "openbookProgram",
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: "placeOrderArgs",
-          type: {
-            defined: "PlaceOrderArgs",
-          },
-        },
+          "name": "placeOrderArgs",
+          "type": {
+            "defined": "PlaceOrderArgs"
+          }
+        }
       ],
-      returns: {
-        option: "u128",
-      },
+      "returns": {
+        "option": "u128"
+      }
     },
     {
-      name: "editOrder",
-      accounts: [
+      "name": "editOrder",
+      "accounts": [
         {
-          name: "signer",
-          isMut: false,
-          isSigner: true,
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "openOrdersAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "twapMarket",
-          isMut: true,
-          isSigner: false,
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "userTokenAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market",
-          isMut: true,
-          isSigner: false,
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids",
-          isMut: true,
-          isSigner: false,
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks",
-          isMut: true,
-          isSigner: false,
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "eventHeap",
-          isMut: true,
-          isSigner: false,
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "marketVault",
-          isMut: true,
-          isSigner: false,
+          "name": "marketVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "openbookProgram",
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: "clientOrderId",
-          type: "u64",
+          "name": "clientOrderId",
+          "type": "u64"
         },
         {
-          name: "expectedCancelSize",
-          type: "i64",
+          "name": "expectedCancelSize",
+          "type": "i64"
         },
         {
-          name: "placeOrder",
-          type: {
-            defined: "PlaceOrderArgs",
-          },
-        },
+          "name": "placeOrder",
+          "type": {
+            "defined": "PlaceOrderArgs"
+          }
+        }
       ],
-      returns: {
-        option: "u128",
-      },
+      "returns": {
+        "option": "u128"
+      }
     },
     {
-      name: "cancelOrderByClientId",
-      accounts: [
+      "name": "cancelOrderByClientId",
+      "accounts": [
         {
-          name: "signer",
-          isMut: false,
-          isSigner: true,
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "twapMarket",
-          isMut: true,
-          isSigner: false,
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openOrdersAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market",
-          isMut: false,
-          isSigner: false,
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "bids",
-          isMut: true,
-          isSigner: false,
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks",
-          isMut: true,
-          isSigner: false,
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openbookProgram",
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: "clientOrderId",
-          type: "u64",
-        },
+          "name": "clientOrderId",
+          "type": "u64"
+        }
       ],
-      returns: "i64",
+      "returns": "i64"
     },
     {
-      name: "cancelAllOrders",
-      accounts: [
+      "name": "cancelAllOrders",
+      "accounts": [
         {
-          name: "signer",
-          isMut: false,
-          isSigner: true,
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: "twapMarket",
-          isMut: true,
-          isSigner: false,
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openOrdersAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market",
-          isMut: false,
-          isSigner: false,
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "bids",
-          isMut: true,
-          isSigner: false,
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks",
-          isMut: true,
-          isSigner: false,
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openbookProgram",
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: "sideOption",
-          type: {
-            option: {
-              defined: "Side",
-            },
-          },
+          "name": "sideOption",
+          "type": {
+            "option": {
+              "defined": "Side"
+            }
+          }
         },
         {
-          name: "limit",
-          type: "u8",
-        },
-      ],
+          "name": "limit",
+          "type": "u8"
+        }
+      ]
     },
     {
-      name: "placeTakeOrder",
-      accounts: [
+      "name": "pruneOrders",
+      "accounts": [
         {
-          name: "twapMarket",
-          isMut: true,
-          isSigner: false,
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "signer",
-          isMut: true,
-          isSigner: true,
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market",
-          isMut: true,
-          isSigner: false,
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "marketAuthority",
-          isMut: false,
-          isSigner: false,
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids",
-          isMut: true,
-          isSigner: false,
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "marketBaseVault",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "marketQuoteVault",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "eventHeap",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "userBaseAccount",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "userQuoteAccount",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "openbookProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "systemProgram",
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: "args",
-          type: {
-            defined: "PlaceTakeOrderArgs",
-          },
-        },
-      ],
+          "name": "limit",
+          "type": "u8"
+        }
+      ]
     },
     {
-      name: "cancelAndPlaceOrders",
-      accounts: [
+      "name": "settleFundsExpired",
+      "accounts": [
         {
-          name: "signer",
-          isMut: false,
-          isSigner: true,
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "twapMarket",
-          isMut: true,
-          isSigner: false,
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "openOrdersAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "userQuoteAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "userBaseAccount",
-          isMut: true,
-          isSigner: false,
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "market",
-          isMut: true,
-          isSigner: false,
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids",
-          isMut: true,
-          isSigner: false,
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "asks",
-          isMut: true,
-          isSigner: false,
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "eventHeap",
-          isMut: true,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "marketQuoteVault",
-          isMut: true,
-          isSigner: false,
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "marketBaseVault",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "openbookProgram",
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
-        {
-          name: "cancelClientOrdersIds",
-          type: {
-            vec: "u64",
-          },
-        },
-        {
-          name: "placeOrders",
-          type: {
-            vec: {
-              defined: "PlaceOrderArgs",
-            },
-          },
-        },
-      ],
-      returns: {
-        vec: {
-          option: "u128",
-        },
-      },
+      "args": []
     },
     {
-      name: "getBestBidAndAsk",
-      accounts: [
+      "name": "closeMarket",
+      "accounts": [
         {
-          name: "market",
-          isMut: false,
-          isSigner: false,
+          "name": "closeMarketRentReceiver",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: "bids",
-          isMut: false,
-          isSigner: false,
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: "asks",
-          isMut: false,
-          isSigner: false,
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
         },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [],
-      returns: {
-        vec: "u64",
-      },
+      "args": []
     },
+    {
+      "name": "placeTakeOrder",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "PlaceTakeOrderArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancelAndPlaceOrders",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "cancelClientOrdersIds",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "placeOrders",
+          "type": {
+            "vec": {
+              "defined": "PlaceOrderArgs"
+            }
+          }
+        }
+      ],
+      "returns": {
+        "vec": {
+          "option": "u128"
+        }
+      }
+    },
+    {
+      "name": "getBestBidAndAsk",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [],
+      "returns": {
+        "vec": "u64"
+      }
+    }
   ],
-  accounts: [
+  "accounts": [
     {
-      name: "twapMarket",
-      type: {
-        kind: "struct",
-        fields: [
+      "name": "twapMarket",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "market",
-            type: "publicKey",
+            "name": "market",
+            "type": "publicKey"
           },
           {
-            name: "pdaBump",
-            type: "u8",
+            "name": "pdaBump",
+            "type": "u8"
           },
           {
-            name: "twapOracle",
-            type: {
-              defined: "TWAPOracle",
-            },
+            "name": "twapOracle",
+            "type": {
+              "defined": "TWAPOracle"
+            }
           },
-        ],
-      },
-    },
+          {
+            "name": "closeMarketRentReceiver",
+            "type": "publicKey"
+          }
+        ]
+      }
+    }
   ],
-  types: [
+  "types": [
     {
-      name: "TWAPOracle",
-      type: {
-        kind: "struct",
-        fields: [
+      "name": "TWAPOracle",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "expectedValue",
-            type: "u64",
+            "name": "expectedValue",
+            "type": "u64"
           },
           {
-            name: "initialSlot",
-            type: "u64",
+            "name": "initialSlot",
+            "type": "u64"
           },
           {
-            name: "lastUpdatedSlot",
-            type: "u64",
+            "name": "lastUpdatedSlot",
+            "type": "u64"
           },
           {
-            name: "lastObservedSlot",
-            type: "u64",
+            "name": "lastObservedSlot",
+            "type": "u64"
           },
           {
-            name: "lastObservation",
-            type: "u64",
+            "name": "lastObservation",
+            "type": "u64"
           },
           {
-            name: "observationAggregator",
-            type: "u128",
+            "name": "observationAggregator",
+            "type": "u128"
           },
-        ],
-      },
+          {
+            "name": "maxObservationChangePerUpdateLots",
+            "type": "u64"
+          }
+        ]
+      }
     },
     {
-      name: "PlaceOrderArgs",
-      type: {
-        kind: "struct",
-        fields: [
+      "name": "PlaceOrderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "side",
-            type: {
-              defined: "Side",
-            },
+            "name": "side",
+            "type": {
+              "defined": "Side"
+            }
           },
           {
-            name: "priceLots",
-            type: "i64",
+            "name": "priceLots",
+            "type": "i64"
           },
           {
-            name: "maxBaseLots",
-            type: "i64",
+            "name": "maxBaseLots",
+            "type": "i64"
           },
           {
-            name: "maxQuoteLotsIncludingFees",
-            type: "i64",
+            "name": "maxQuoteLotsIncludingFees",
+            "type": "i64"
           },
           {
-            name: "clientOrderId",
-            type: "u64",
+            "name": "clientOrderId",
+            "type": "u64"
           },
           {
-            name: "orderType",
-            type: {
-              defined: "PlaceOrderType",
-            },
+            "name": "orderType",
+            "type": {
+              "defined": "PlaceOrderType"
+            }
           },
           {
-            name: "expiryTimestamp",
-            type: "u64",
+            "name": "expiryTimestamp",
+            "type": "u64"
           },
           {
-            name: "selfTradeBehavior",
-            type: {
-              defined: "SelfTradeBehavior",
-            },
+            "name": "selfTradeBehavior",
+            "type": {
+              "defined": "SelfTradeBehavior"
+            }
           },
           {
-            name: "limit",
-            type: "u8",
-          },
-        ],
-      },
+            "name": "limit",
+            "type": "u8"
+          }
+        ]
+      }
     },
     {
-      name: "PlaceTakeOrderArgs",
-      type: {
-        kind: "struct",
-        fields: [
+      "name": "PlaceTakeOrderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: "side",
-            type: {
-              defined: "Side",
-            },
+            "name": "side",
+            "type": {
+              "defined": "Side"
+            }
           },
           {
-            name: "priceLots",
-            type: "i64",
+            "name": "priceLots",
+            "type": "i64"
           },
           {
-            name: "maxBaseLots",
-            type: "i64",
+            "name": "maxBaseLots",
+            "type": "i64"
           },
           {
-            name: "maxQuoteLotsIncludingFees",
-            type: "i64",
+            "name": "maxQuoteLotsIncludingFees",
+            "type": "i64"
           },
           {
-            name: "orderType",
-            type: {
-              defined: "PlaceOrderType",
-            },
+            "name": "orderType",
+            "type": {
+              "defined": "PlaceOrderType"
+            }
           },
           {
-            name: "limit",
-            type: "u8",
-          },
-        ],
-      },
+            "name": "limit",
+            "type": "u8"
+          }
+        ]
+      }
     },
     {
-      name: "SelfTradeBehavior",
-      type: {
-        kind: "enum",
-        variants: [
+      "name": "SelfTradeBehavior",
+      "type": {
+        "kind": "enum",
+        "variants": [
           {
-            name: "DecrementTake",
+            "name": "DecrementTake"
           },
           {
-            name: "CancelProvide",
+            "name": "CancelProvide"
           },
           {
-            name: "AbortTransaction",
-          },
-        ],
-      },
+            "name": "AbortTransaction"
+          }
+        ]
+      }
     },
     {
-      name: "PlaceOrderType",
-      type: {
-        kind: "enum",
-        variants: [
+      "name": "PlaceOrderType",
+      "type": {
+        "kind": "enum",
+        "variants": [
           {
-            name: "Limit",
+            "name": "Limit"
           },
           {
-            name: "ImmediateOrCancel",
+            "name": "ImmediateOrCancel"
           },
           {
-            name: "PostOnly",
+            "name": "PostOnly"
           },
           {
-            name: "Market",
+            "name": "Market"
           },
           {
-            name: "PostOnlySlide",
-          },
-        ],
-      },
+            "name": "PostOnlySlide"
+          }
+        ]
+      }
     },
     {
-      name: "Side",
-      type: {
-        kind: "enum",
-        variants: [
+      "name": "Side",
+      "type": {
+        "kind": "enum",
+        "variants": [
           {
-            name: "Bid",
+            "name": "Bid"
           },
           {
-            name: "Ask",
-          },
-        ],
-      },
-    },
+            "name": "Ask"
+          }
+        ]
+      }
+    }
   ],
-  errors: [
+  "errors": [
     {
-      code: 6000,
-      name: "InvalidOpenOrdersAdmin",
-      msg: "The `open_orders_admin` of the underlying market must be equal to the `TWAPMarket` PDA",
+      "code": 6000,
+      "name": "InvalidOpenOrdersAdmin",
+      "msg": "The `open_orders_admin` of the underlying market must be equal to the `TWAPMarket` PDA"
     },
     {
-      code: 6001,
-      name: "InvalidCloseMarketAdmin",
-      msg: "The `close_market_admin` of the underlying market must be equal to the `TWAPMarket` PDA",
+      "code": 6001,
+      "name": "InvalidCloseMarketAdmin",
+      "msg": "The `close_market_admin` of the underlying market must be equal to the `TWAPMarket` PDA"
     },
     {
-      code: 6002,
-      name: "NonZeroExpiry",
-      msg: "Market must not expire (have `time_expiry` == 0)",
+      "code": 6002,
+      "name": "NoOracles",
+      "msg": "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed"
     },
     {
-      code: 6003,
-      name: "NoOracles",
-      msg: "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed",
+      "code": 6003,
+      "name": "InvalidMakerFee",
+      "msg": "Maker fee must be zero"
     },
     {
-      code: 6004,
-      name: "InvalidMakerFee",
-      msg: "Maker fee must be zero",
+      "code": 6004,
+      "name": "InvalidTakerFee",
+      "msg": "Taker fee must be zero"
     },
     {
-      code: 6005,
-      name: "InvalidTakerFee",
-      msg: "Taker fee must be zero",
+      "code": 6005,
+      "name": "InvalidSeqNum",
+      "msg": "Seq num must be zero"
     },
     {
-      code: 6006,
-      name: "InvalidSeqNum",
-      msg: "Seq num must be zero",
-    },
-    {
-      code: 6007,
-      name: "InvalidConsumeEventsAdmin",
-      msg: "Consume events admin must be None",
-    },
-  ],
+      "code": 6006,
+      "name": "InvalidConsumeEventsAdmin",
+      "msg": "Consume events admin must be None"
+    }
+  ]
 };

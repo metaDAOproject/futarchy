@@ -71,7 +71,7 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
 );
 
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
+  "twAP5sArq2vDS1mZCT7f4qRLwzTfHvf5Ay5R5Q5df1m"
 );
 
 const OPENBOOK_PROGRAM_ID = new PublicKey(
@@ -87,13 +87,13 @@ describe("autocrat_v0", async function () {
     autocrat,
     payer,
     context,
-    banksClient,
+    banksClient: BanksClient,
     dao,
     daoTreasury,
     META,
     USDC,
     vaultProgram,
-    openbook,
+    openbook: OpenBookV2Client,
     openbookTwap,
     migrator,
     treasuryMetaAccount,
@@ -185,7 +185,7 @@ describe("autocrat_v0", async function () {
       assert(daoAcc.metaMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
       assert.equal(daoAcc.proposalCount, 2);
-      assert.equal(daoAcc.passThresholdBps, 500);
+      assert.equal(daoAcc.passThresholdBps, 300);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
       assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
 
@@ -533,33 +533,33 @@ describe("autocrat_v0", async function () {
 
       let passBuyArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(10000), // 1 USDC for 1 META
+        priceLots: new BN(135_000), // $13.5 USDC for 0.1 META -> $135 per meta
         maxBaseLots: new BN(10),
-        maxQuoteLotsIncludingFees: new BN(10000),
+        maxQuoteLotsIncludingFees: new BN(1_350_000), // $135 dollars in quote lots
         clientOrderId: new BN(1),
         orderType: OrderType.Limit,
         expiryTimestamp: new BN(0),
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
-      let failBuyArgs: PlaceOrderArgs = {
-        side: Side.Bid,
-        priceLots: new BN(7000), // 0.7 USDC for 1 META
+      let passSellArgs: PlaceOrderArgs = {
+        side: Side.Ask,
+        priceLots: new BN(145_000), // $14.5 USDC for 0.1 META -> $145 per meta
         maxBaseLots: new BN(10),
-        maxQuoteLotsIncludingFees: new BN(10000),
-        clientOrderId: new BN(1),
+        maxQuoteLotsIncludingFees: new BN(1_450_000), // $145 dollars in quote lots
+        clientOrderId: new BN(2),
         orderType: OrderType.Limit,
         expiryTimestamp: new BN(0),
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
         limit: 255,
       };
 
-      let passSellArgs: PlaceOrderArgs = {
-        side: Side.Ask,
-        priceLots: new BN(11_000), // 1.1 USDC for 1 META
+      let failBuyArgs: PlaceOrderArgs = {
+        side: Side.Bid,
+        priceLots: new BN(7_000), // 0.7 USDC per 0.1 META -> $7 per meta
         maxBaseLots: new BN(10),
-        maxQuoteLotsIncludingFees: new BN(12000),
-        clientOrderId: new BN(2),
+        maxQuoteLotsIncludingFees: new BN(10000),
+        clientOrderId: new BN(1),
         orderType: OrderType.Limit,
         expiryTimestamp: new BN(0),
         selfTradeBehavior: SelfTradeBehavior.DecrementTake,
@@ -676,11 +676,11 @@ describe("autocrat_v0", async function () {
         )
       );
 
-      let takeBuyArgs: PlaceOrderArgs = {
+      let takeBuyPassArgs: PlaceOrderArgs = {
         side: Side.Bid,
-        priceLots: new BN(13000), // 13 USDC for 1 META
-        maxBaseLots: new BN(1),
-        maxQuoteLotsIncludingFees: new BN(20000),
+        priceLots: new BN(145_000), // $14.5 USDC for 0.1 META
+        maxBaseLots: new BN(10), // Buy 1 meta
+        maxQuoteLotsIncludingFees: new BN(1_450_000),
         clientOrderId: new BN(1),
         orderType: OrderType.Market,
         expiryTimestamp: new BN(0),
@@ -689,7 +689,7 @@ describe("autocrat_v0", async function () {
       };
 
       await openbookTwap.methods
-        .placeTakeOrder(takeBuyArgs)
+        .placeTakeOrder(takeBuyPassArgs)
         .accountsStrict({
           market: openbookPassMarket,
           asks: storedPassMarket.asks,
@@ -858,7 +858,7 @@ describe("autocrat_v0", async function () {
         banksClient
       );
 
-      // alice should have gained 1 META & lost 0.11 USDC
+      // alice should have gained 1 META & lost $145 USDC
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,
         1_000_000_000n
@@ -866,7 +866,14 @@ describe("autocrat_v0", async function () {
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
           .amount,
-        10_000n * 1_000_000n - 1_100_000n
+        10_000n * 1_000_000n - 145_000_000n
+      );
+      // And the TWAP on pass market should be $140 per meta / $14 per 0.1 meta
+      assert.equal(
+        (
+          await openbookTwap.account.twapMarket.fetch(openbookTwapPassMarket)
+        ).twapOracle.lastObservation.toNumber(),
+        140_000 //
       );
     });
 
@@ -1447,6 +1454,13 @@ async function initializeProposal(
     openbookTwap.programId
   );
 
+  const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+  const elevenDaysInSeconds = 11 * 24 * 60 * 60;
+  const quoteLotSize = new BN(100);
+  const baseLotSize = new BN(1e8);
+  const maxObservationChangePerUpdateLots = new BN(5_000);
+  const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
+
   // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246
   let [openbookPassMarketIxs, openbookPassMarketSigners] =
     await openbook.createMarketIx(
@@ -1454,11 +1468,11 @@ async function initializeProposal(
       "pMETA/pUSDC",
       passQuoteMint,
       passBaseMint,
-      new BN(100),
-      new BN(1e9),
+      quoteLotSize,
+      baseLotSize,
       new BN(0),
       new BN(0),
-      new BN(0),
+      expiryTime,
       null,
       null,
       openbookTwapPassMarket,
@@ -1470,7 +1484,10 @@ async function initializeProposal(
     );
 
   await openbookTwap.methods
-    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
+    .createTwapMarket(
+      new BN(daoBefore.twapExpectedValue),
+      maxObservationChangePerUpdateLots
+    )
     .accounts({
       market: openbookPassMarketKP.publicKey,
       twapMarket: openbookTwapPassMarket,
@@ -1497,11 +1514,11 @@ async function initializeProposal(
       "fMETA/fUSDC",
       failQuoteMint,
       failBaseMint,
-      new BN(100),
-      new BN(1e9),
+      quoteLotSize,
+      baseLotSize,
       new BN(0),
       new BN(0),
-      new BN(0),
+      expiryTime,
       null,
       null,
       openbookTwapFailMarket,
@@ -1513,7 +1530,10 @@ async function initializeProposal(
     );
 
   await openbookTwap.methods
-    .createTwapMarket(new BN(daoBefore.twapExpectedValue))
+    .createTwapMarket(
+      new BN(daoBefore.twapExpectedValue),
+      maxObservationChangePerUpdateLots
+    )
     .accounts({
       market: openbookFailMarket,
       twapMarket: openbookTwapFailMarket,
