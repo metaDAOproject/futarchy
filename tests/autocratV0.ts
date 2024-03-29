@@ -841,6 +841,920 @@ describe("autocrat_v0", async function () {
       );
     });
   });
+
+  // this is a terrible, ugly, hack
+  // we should abstract away the tests somehow so this
+  // isn't an issue
+  describe("mertd integration tests", async function () {
+    let proposal,
+      openbookPassMarket,
+      openbookFailMarket,
+      openbookTwapPassMarket,
+      openbookTwapFailMarket,
+      baseVault,
+      quoteVault,
+      basePassVaultUnderlyingTokenAccount,
+      basePassConditionalTokenMint,
+      baseFailConditionalTokenMint,
+      mm0,
+      mm0OpenOrdersAccount,
+      mm1OpenOrdersAccount,
+      alice,
+      aliceUnderlyingQuoteTokenAccount,
+      aliceUnderlyingBaseTokenAccount,
+      aliceBasePassConditionalTokenAccount,
+      aliceBaseFailConditionalTokenAccount,
+      aliceQuotePassConditionalTokenAccount,
+      aliceQuoteFailConditionalTokenAccount,
+      newPassThresholdBps,
+      instruction;
+
+    beforeEach(async function () {
+      await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
+      await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+
+      let receiver = Keypair.generate();
+      let to0 = await createAccount(
+        banksClient,
+        payer,
+        META,
+        receiver.publicKey
+      );
+      let to1 = await createAccount(
+        banksClient,
+        payer,
+        USDC,
+        receiver.publicKey
+      );
+
+      const ix = await migrator.methods
+        .multiTransfer2()
+        .accounts({
+          authority: daoTreasury,
+          from0: treasuryMetaAccount,
+          to0,
+          from1: treasuryUsdcAccount,
+          to1,
+          lamportReceiver: receiver.publicKey,
+        })
+        .instruction();
+
+      instruction = {
+        programId: ix.programId,
+        accounts: ix.keys,
+        data: ix.data,
+      };
+
+      proposal = await initializeProposal(
+        autocrat,
+        instruction,
+        vaultProgram,
+        dao,
+        context,
+        payer,
+        openbook,
+        openbookTwap
+      );
+
+      ({
+        openbookPassMarket,
+        openbookFailMarket,
+        openbookTwapPassMarket,
+        openbookTwapFailMarket,
+        baseVault,
+        quoteVault,
+      } = await autocrat.account.proposal.fetch(proposal));
+
+      mm0 = await generateMarketMaker(
+        openbook,
+        openbookTwap,
+        banksClient,
+        payer,
+        openbookPassMarket,
+        openbookFailMarket,
+        vaultProgram,
+        context
+      );
+
+      // alice wants to buy META if the proposal passes, so she locks up USDC
+      // and swaps her pUSDC for pMETA
+      alice = Keypair.generate();
+
+      // needed because of penalty fee on take
+      let ixs = [
+        anchor.web3.SystemProgram.transfer({
+          fromPubkey: payer.publicKey,
+          lamports: 1_000_000_000n,
+          toPubkey: alice.publicKey,
+        }),
+        anchor.web3.SystemProgram.transfer({
+          fromPubkey: payer.publicKey,
+          lamports: 1_000_000_000n,
+          toPubkey: daoTreasury,
+        }),
+      ];
+      let tx = new anchor.web3.Transaction().add(...ixs);
+      [tx.recentBlockhash] = await banksClient.getLatestBlockhash();
+      tx.feePayer = payer.publicKey;
+      tx.sign(payer);
+      await banksClient.processTransaction(tx);
+
+      const storedQuoteVault =
+        await vaultProgram.account.conditionalVault.fetch(quoteVault);
+      const quoteVaultUnderlyingTokenAccount =
+        storedQuoteVault.underlyingTokenAccount;
+      const quotePassConditionalTokenMint =
+        storedQuoteVault.conditionalOnFinalizeTokenMint;
+      const quoteFailConditionalTokenMint =
+        storedQuoteVault.conditionalOnRevertTokenMint;
+
+      const storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
+        baseVault
+      );
+      basePassConditionalTokenMint =
+        storedBaseVault.conditionalOnFinalizeTokenMint;
+      baseFailConditionalTokenMint =
+        storedBaseVault.conditionalOnRevertTokenMint;
+
+      aliceUnderlyingQuoteTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        USDC,
+        alice.publicKey
+      );
+      aliceUnderlyingBaseTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        META,
+        alice.publicKey
+      );
+
+      await mintToOverride(
+        context,
+        aliceUnderlyingQuoteTokenAccount,
+        10_000n * 1_000_000n
+      );
+
+      aliceQuotePassConditionalTokenAccount =
+        await createAssociatedTokenAccount(
+          banksClient,
+          payer,
+          quotePassConditionalTokenMint,
+          alice.publicKey
+        );
+      aliceQuoteFailConditionalTokenAccount =
+        await createAssociatedTokenAccount(
+          banksClient,
+          payer,
+          quoteFailConditionalTokenMint,
+          alice.publicKey
+        );
+
+      await mintConditionalTokens(
+        vaultProgram,
+        10_000n * 1_000_000n,
+        alice,
+        quoteVault,
+        banksClient
+      );
+
+      aliceBasePassConditionalTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        basePassConditionalTokenMint,
+        alice.publicKey
+      );
+
+      aliceBaseFailConditionalTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        baseFailConditionalTokenMint,
+        alice.publicKey
+      );
+    });
+
+    it("doesn't finalize proposals that are too young", async function () {
+      const callbacks = expectError(
+        autocrat,
+        "ProposalTooYoung",
+        "finalize succeeded despite proposal being too young"
+      );
+
+      await autocrat.methods
+        .finalizeProposal()
+        .accounts({
+          proposal,
+          openbookTwapPassMarket,
+          openbookTwapFailMarket,
+          dao,
+          baseVault,
+          quoteVault,
+          vaultProgram: vaultProgram.programId,
+          daoTreasury,
+        })
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
+      let storedProposal = await autocrat.account.proposal.fetch(proposal);
+
+      let passBuyArgs: PlaceOrderArgs = {
+        side: Side.Bid,
+        priceLots: new BN(135_000), // $13.5 USDC for 0.1 META -> $135 per meta
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(1_350_000), // $135 dollars in quote lots
+        clientOrderId: new BN(1),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+      let passSellArgs: PlaceOrderArgs = {
+        side: Side.Ask,
+        priceLots: new BN(145_000), // $14.5 USDC for 0.1 META -> $145 per meta
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(1_450_000), // $145 dollars in quote lots
+        clientOrderId: new BN(2),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+
+      let failBuyArgs: PlaceOrderArgs = {
+        side: Side.Bid,
+        priceLots: new BN(7_000), // 0.7 USDC per 0.1 META -> $7 per meta
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(10000),
+        clientOrderId: new BN(1),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+      let failSellArgs: PlaceOrderArgs = {
+        side: Side.Ask,
+        priceLots: new BN(8_000), // 8 USDC for 1 META
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(12000),
+        clientOrderId: new BN(2),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+      const storedPassMarket = await openbook.deserializeMarketAccount(
+        openbookPassMarket
+      );
+      const storedFailMarket = await openbook.deserializeMarketAccount(
+        openbookFailMarket
+      );
+
+      let currentClock;
+      for (let i = 0; i < 10; i++) {
+        await openbookTwap.methods
+          .placeOrder(passBuyArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookPassMarket,
+            asks: storedPassMarket.asks,
+            bids: storedPassMarket.bids,
+            marketVault: storedPassMarket.marketQuoteVault,
+            eventHeap: storedPassMarket.eventHeap,
+            openOrdersAccount: mm0.pOpenOrdersAccount,
+            userTokenAccount: mm0.pUsdcAcc,
+            twapMarket: openbookTwapPassMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        await openbookTwap.methods
+          .placeOrder(passSellArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookPassMarket,
+            asks: storedPassMarket.asks,
+            bids: storedPassMarket.bids,
+            marketVault: storedPassMarket.marketBaseVault,
+            eventHeap: storedPassMarket.eventHeap,
+            openOrdersAccount: mm0.pOpenOrdersAccount,
+            userTokenAccount: mm0.pMetaAcc,
+            twapMarket: openbookTwapPassMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        await openbookTwap.methods
+          .placeOrder(failBuyArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookFailMarket,
+            asks: storedFailMarket.asks,
+            bids: storedFailMarket.bids,
+            marketVault: storedFailMarket.marketQuoteVault,
+            eventHeap: storedFailMarket.eventHeap,
+            openOrdersAccount: mm0.fOpenOrdersAccount,
+            userTokenAccount: mm0.fUsdcAcc,
+            twapMarket: openbookTwapFailMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        await openbookTwap.methods
+          .placeOrder(failSellArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookFailMarket,
+            asks: storedFailMarket.asks,
+            bids: storedFailMarket.bids,
+            marketVault: storedFailMarket.marketBaseVault,
+            eventHeap: storedFailMarket.eventHeap,
+            openOrdersAccount: mm0.fOpenOrdersAccount,
+            userTokenAccount: mm0.fMetaAcc,
+            twapMarket: openbookTwapFailMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+        currentClock = await context.banksClient.getClock();
+        context.setClock(
+          new Clock(
+            currentClock.slot + 10_000n,
+            currentClock.epochStartTimestamp,
+            currentClock.epoch,
+            currentClock.leaderScheduleEpoch,
+            currentClock.unixTimestamp
+          )
+        );
+      }
+
+      // set the current clock slot to +10_000
+      currentClock = await context.banksClient.getClock();
+      context.setClock(
+        new Clock(
+          currentClock.slot + 10_000n,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
+
+      let takeBuyPassArgs: PlaceOrderArgs = {
+        side: Side.Bid,
+        priceLots: new BN(145_000), // $14.5 USDC for 0.1 META
+        maxBaseLots: new BN(10), // Buy 1 meta
+        maxQuoteLotsIncludingFees: new BN(1_450_000),
+        clientOrderId: new BN(1),
+        orderType: OrderType.Market,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+
+      await openbookTwap.methods
+        .placeTakeOrder(takeBuyPassArgs)
+        .accountsStrict({
+          market: openbookPassMarket,
+          asks: storedPassMarket.asks,
+          bids: storedPassMarket.bids,
+          eventHeap: storedPassMarket.eventHeap,
+          marketAuthority: storedPassMarket.marketAuthority,
+          marketBaseVault: storedPassMarket.marketBaseVault,
+          marketQuoteVault: storedPassMarket.marketQuoteVault,
+          userQuoteAccount: aliceQuotePassConditionalTokenAccount,
+          userBaseAccount: aliceBasePassConditionalTokenAccount,
+          referrerAccount: null,
+          twapMarket: openbookTwapPassMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          signer: alice.publicKey,
+        })
+        .signers([alice])
+        .rpc();
+
+      currentClock = await context.banksClient.getClock();
+      const newSlot = currentClock.slot + 10_000_000n;
+      context.setClock(
+        new Clock(
+          newSlot,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
+
+      await openbookTwap.methods
+        .placeOrder(passBuyArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookPassMarket,
+          asks: storedPassMarket.asks,
+          bids: storedPassMarket.bids,
+          marketVault: storedPassMarket.marketQuoteVault,
+          eventHeap: storedPassMarket.eventHeap,
+          openOrdersAccount: mm0.pOpenOrdersAccount,
+          userTokenAccount: mm0.pUsdcAcc,
+          twapMarket: openbookTwapPassMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      await openbookTwap.methods
+        .placeOrder(passSellArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookPassMarket,
+          asks: storedPassMarket.asks,
+          bids: storedPassMarket.bids,
+          marketVault: storedPassMarket.marketBaseVault,
+          eventHeap: storedPassMarket.eventHeap,
+          openOrdersAccount: mm0.pOpenOrdersAccount,
+          userTokenAccount: mm0.pMetaAcc,
+          twapMarket: openbookTwapPassMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      await openbookTwap.methods
+        .placeOrder(failBuyArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookFailMarket,
+          asks: storedFailMarket.asks,
+          bids: storedFailMarket.bids,
+          marketVault: storedFailMarket.marketQuoteVault,
+          eventHeap: storedFailMarket.eventHeap,
+          openOrdersAccount: mm0.fOpenOrdersAccount,
+          userTokenAccount: mm0.fUsdcAcc,
+          twapMarket: openbookTwapFailMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      await openbookTwap.methods
+        .placeOrder(failSellArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookFailMarket,
+          asks: storedFailMarket.asks,
+          bids: storedFailMarket.bids,
+          marketVault: storedFailMarket.marketBaseVault,
+          eventHeap: storedFailMarket.eventHeap,
+          openOrdersAccount: mm0.fOpenOrdersAccount,
+          userTokenAccount: mm0.fMetaAcc,
+          twapMarket: openbookTwapFailMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      let tx = await autocrat.methods
+        .finalizeProposal()
+        .accounts({
+          proposal,
+          openbookTwapPassMarket,
+          openbookTwapFailMarket,
+          dao,
+          baseVault,
+          quoteVault,
+          vaultProgram: vaultProgram.programId,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .rpc();
+
+      let storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
+        baseVault
+      );
+      let storedQuoteVault = await vaultProgram.account.conditionalVault.fetch(
+        quoteVault
+      );
+
+      assert.exists(storedBaseVault.status.finalized);
+      assert.exists(storedQuoteVault.status.finalized);
+
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+      assert.exists(storedProposal.state.passed);
+
+      assert((await getAccount(banksClient, treasuryMetaAccount)).amount == 0n);
+      assert((await getAccount(banksClient, treasuryUsdcAccount)).amount == 0n);
+
+      await redeemConditionalTokens(
+        vaultProgram,
+        alice,
+        aliceBasePassConditionalTokenAccount,
+        aliceBaseFailConditionalTokenAccount,
+        storedBaseVault.conditionalOnFinalizeTokenMint,
+        storedBaseVault.conditionalOnRevertTokenMint,
+        aliceUnderlyingBaseTokenAccount,
+        storedBaseVault.underlyingTokenAccount,
+        baseVault,
+        banksClient
+      );
+      await redeemConditionalTokens(
+        vaultProgram,
+        alice,
+        aliceQuotePassConditionalTokenAccount,
+        aliceQuoteFailConditionalTokenAccount,
+        storedQuoteVault.conditionalOnFinalizeTokenMint,
+        storedQuoteVault.conditionalOnRevertTokenMint,
+        aliceUnderlyingQuoteTokenAccount,
+        storedQuoteVault.underlyingTokenAccount,
+        quoteVault,
+        banksClient
+      );
+
+      // alice should have gained 1 META & lost $145 USDC
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,
+        1_000_000_000n
+      );
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
+          .amount,
+        10_000n * 1_000_000n - 145_000_000n
+      );
+      // And the TWAP on pass market should be $140 per meta / $14 per 0.1 meta
+      assert.equal(
+        (
+          await openbookTwap.account.twapMarket.fetch(openbookTwapPassMarket)
+        ).twapOracle.lastObservation.toNumber(),
+        140_000 //
+      );
+    });
+
+    it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
+      let storedProposal = await autocrat.account.proposal.fetch(proposal);
+
+      let passBuyArgs: PlaceOrderArgs = {
+        side: Side.Bid,
+        priceLots: new BN(1000), // 0.1 USDC for 1 META
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(10000),
+        clientOrderId: new BN(1),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+      let failBuyArgs: PlaceOrderArgs = {
+        side: Side.Bid,
+        priceLots: new BN(3000), // 0.3 USDC for 1 META
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(10000),
+        clientOrderId: new BN(1),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+
+      let passSellArgs: PlaceOrderArgs = {
+        side: Side.Ask,
+        priceLots: new BN(1100), // 0.11 USDC for 1 META
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(12000),
+        clientOrderId: new BN(2),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+
+      let failSellArgs: PlaceOrderArgs = {
+        side: Side.Ask,
+        priceLots: new BN(3200), // 0.32 USDC for 1 META
+        maxBaseLots: new BN(10),
+        maxQuoteLotsIncludingFees: new BN(12000),
+        clientOrderId: new BN(2),
+        orderType: OrderType.Limit,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+      const storedPassMarket = await openbook.deserializeMarketAccount(
+        openbookPassMarket
+      );
+      const storedFailMarket = await openbook.deserializeMarketAccount(
+        openbookFailMarket
+      );
+
+      let currentClock;
+      for (let i = 0; i < 10; i++) {
+        await openbookTwap.methods
+          .placeOrder(passBuyArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookPassMarket,
+            asks: storedPassMarket.asks,
+            bids: storedPassMarket.bids,
+            marketVault: storedPassMarket.marketQuoteVault,
+            eventHeap: storedPassMarket.eventHeap,
+            openOrdersAccount: mm0.pOpenOrdersAccount,
+            userTokenAccount: mm0.pUsdcAcc,
+            twapMarket: openbookTwapPassMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        await openbookTwap.methods
+          .placeOrder(passSellArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookPassMarket,
+            asks: storedPassMarket.asks,
+            bids: storedPassMarket.bids,
+            marketVault: storedPassMarket.marketBaseVault,
+            eventHeap: storedPassMarket.eventHeap,
+            openOrdersAccount: mm0.pOpenOrdersAccount,
+            userTokenAccount: mm0.pMetaAcc,
+            twapMarket: openbookTwapPassMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        await openbookTwap.methods
+          .placeOrder(failBuyArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookFailMarket,
+            asks: storedFailMarket.asks,
+            bids: storedFailMarket.bids,
+            marketVault: storedFailMarket.marketQuoteVault,
+            eventHeap: storedFailMarket.eventHeap,
+            openOrdersAccount: mm0.fOpenOrdersAccount,
+            userTokenAccount: mm0.fUsdcAcc,
+            twapMarket: openbookTwapFailMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+
+        await openbookTwap.methods
+          .placeOrder(failSellArgs)
+          .accounts({
+            signer: mm0.publicKey,
+            market: openbookFailMarket,
+            asks: storedFailMarket.asks,
+            bids: storedFailMarket.bids,
+            marketVault: storedFailMarket.marketBaseVault,
+            eventHeap: storedFailMarket.eventHeap,
+            openOrdersAccount: mm0.fOpenOrdersAccount,
+            userTokenAccount: mm0.fMetaAcc,
+            twapMarket: openbookTwapFailMarket,
+            openbookProgram: OPENBOOK_PROGRAM_ID,
+          })
+          .signers([mm0.keypair])
+          .rpc();
+        currentClock = await context.banksClient.getClock();
+        context.setClock(
+          new Clock(
+            currentClock.slot + 10_000n,
+            currentClock.epochStartTimestamp,
+            currentClock.epoch,
+            currentClock.leaderScheduleEpoch,
+            currentClock.unixTimestamp
+          )
+        );
+      }
+
+      // set the current clock slot to +10_000
+      currentClock = await context.banksClient.getClock();
+      context.setClock(
+        new Clock(
+          currentClock.slot + 10_000n,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
+
+      let takeBuyArgs: PlaceOrderArgs = {
+        side: Side.Bid,
+        priceLots: new BN(1_300), // 1.3 USDC for 1 META
+        maxBaseLots: new BN(1),
+        maxQuoteLotsIncludingFees: new BN(2000),
+        clientOrderId: new BN(1),
+        orderType: OrderType.Market,
+        expiryTimestamp: new BN(0),
+        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
+        limit: 255,
+      };
+
+      await openbookTwap.methods
+        .placeTakeOrder(takeBuyArgs)
+        .accountsStrict({
+          market: openbookPassMarket,
+          asks: storedPassMarket.asks,
+          bids: storedPassMarket.bids,
+          eventHeap: storedPassMarket.eventHeap,
+          marketAuthority: storedPassMarket.marketAuthority,
+          marketBaseVault: storedPassMarket.marketBaseVault,
+          marketQuoteVault: storedPassMarket.marketQuoteVault,
+          userQuoteAccount: aliceQuotePassConditionalTokenAccount,
+          userBaseAccount: aliceBasePassConditionalTokenAccount,
+          referrerAccount: null,
+          twapMarket: openbookTwapPassMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+          tokenProgram: token.TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          signer: alice.publicKey,
+        })
+        .signers([alice])
+        .rpc();
+
+      currentClock = await context.banksClient.getClock();
+      const newSlot = currentClock.slot + 10_000_000n;
+      context.setClock(
+        new Clock(
+          newSlot,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
+
+      await openbookTwap.methods
+        .placeOrder(passBuyArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookPassMarket,
+          asks: storedPassMarket.asks,
+          bids: storedPassMarket.bids,
+          marketVault: storedPassMarket.marketQuoteVault,
+          eventHeap: storedPassMarket.eventHeap,
+          openOrdersAccount: mm0.pOpenOrdersAccount,
+          userTokenAccount: mm0.pUsdcAcc,
+          twapMarket: openbookTwapPassMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      await openbookTwap.methods
+        .placeOrder(passSellArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookPassMarket,
+          asks: storedPassMarket.asks,
+          bids: storedPassMarket.bids,
+          marketVault: storedPassMarket.marketBaseVault,
+          eventHeap: storedPassMarket.eventHeap,
+          openOrdersAccount: mm0.pOpenOrdersAccount,
+          userTokenAccount: mm0.pMetaAcc,
+          twapMarket: openbookTwapPassMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      await openbookTwap.methods
+        .placeOrder(failBuyArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookFailMarket,
+          asks: storedFailMarket.asks,
+          bids: storedFailMarket.bids,
+          marketVault: storedFailMarket.marketQuoteVault,
+          eventHeap: storedFailMarket.eventHeap,
+          openOrdersAccount: mm0.fOpenOrdersAccount,
+          userTokenAccount: mm0.fUsdcAcc,
+          twapMarket: openbookTwapFailMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      await openbookTwap.methods
+        .placeOrder(failSellArgs)
+        .accounts({
+          signer: mm0.publicKey,
+          market: openbookFailMarket,
+          asks: storedFailMarket.asks,
+          bids: storedFailMarket.bids,
+          marketVault: storedFailMarket.marketBaseVault,
+          eventHeap: storedFailMarket.eventHeap,
+          openOrdersAccount: mm0.fOpenOrdersAccount,
+          userTokenAccount: mm0.fMetaAcc,
+          twapMarket: openbookTwapFailMarket,
+          openbookProgram: OPENBOOK_PROGRAM_ID,
+        })
+        .signers([mm0.keypair])
+        .rpc();
+
+      let storedDao = await autocrat.account.dao.fetch(dao);
+      const passThresholdBpsBefore = storedDao.passThresholdBps;
+
+      await autocrat.methods
+        .finalizeProposal()
+        .accounts({
+          proposal,
+          openbookTwapPassMarket,
+          openbookTwapFailMarket,
+          dao,
+          baseVault,
+          quoteVault,
+          vaultProgram: vaultProgram.programId,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          autocrat.instruction.updateDao
+            .accounts({
+              dao,
+              daoTreasury,
+            })
+            .concat({
+              pubkey: autocrat.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .rpc();
+
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+      assert.exists(storedProposal.state.failed);
+
+      let storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
+        baseVault
+      );
+      let storedQuoteVault = await vaultProgram.account.conditionalVault.fetch(
+        quoteVault
+      );
+
+      assert.exists(storedBaseVault.status.reverted);
+      assert.exists(storedQuoteVault.status.reverted);
+
+      storedDao = await autocrat.account.dao.fetch(dao);
+      assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
+
+      await redeemConditionalTokens(
+        vaultProgram,
+        alice,
+        aliceBasePassConditionalTokenAccount,
+        aliceBaseFailConditionalTokenAccount,
+        storedBaseVault.conditionalOnFinalizeTokenMint,
+        storedBaseVault.conditionalOnRevertTokenMint,
+        aliceUnderlyingBaseTokenAccount,
+        storedBaseVault.underlyingTokenAccount,
+        baseVault,
+        banksClient
+      );
+      await redeemConditionalTokens(
+        vaultProgram,
+        alice,
+        aliceQuotePassConditionalTokenAccount,
+        aliceQuoteFailConditionalTokenAccount,
+        storedQuoteVault.conditionalOnFinalizeTokenMint,
+        storedQuoteVault.conditionalOnRevertTokenMint,
+        aliceUnderlyingQuoteTokenAccount,
+        storedQuoteVault.underlyingTokenAccount,
+        quoteVault,
+        banksClient
+      );
+
+      // alice should have the same balance as she started with
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,
+        0n
+      );
+      assert.equal(
+        (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
+          .amount,
+        10_000n * 1_000_000n
+      );
+    });
+  });
 });
 
 async function generateMarketMaker(
