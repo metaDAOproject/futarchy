@@ -44,7 +44,7 @@ const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 );
 const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN"
+  "twAP5sArq2vDS1mZCT7f4qRLwzTfHvf5Ay5R5Q5df1m"
 );
 export const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
@@ -226,6 +226,14 @@ async function initializeVault(
       systemProgram: SystemProgram.programId,
     })
     .signers([conditionalOnFinalizeKP, conditionalOnRevertKP])
+    .preInstructions([
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 150_000
+      }),
+      ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 100
+      }),
+    ])
     .postInstructions([addMetadataToConditionalTokensIx])
     .rpc();
 
@@ -382,17 +390,24 @@ export async function initializeProposal(
     openbookTwap.programId
   );
 
+  const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+  const elevenDaysInSeconds = 11 * 24 * 60 * 60;
+  const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
+  const quoteLotSize = new BN(100);
+  const baseLotSize = new BN(1e8);
+  const maxObservationChangePerUpdateLots = new BN(5_000);
+
   let [passMarketInstructions, passMarketSigners] =
     await openbook.createMarketIx(
       payer.publicKey,
       `${baseNonce}pMETA/pUSDC`,
       passQuoteMint,
       passBaseMint,
-      new BN(100),
-      new BN(1e9),
+      quoteLotSize,
+      baseLotSize,
       new BN(0),
       new BN(0),
-      new BN(0),
+      expiryTime,
       null,
       null,
       openbookTwapPassMarket,
@@ -403,13 +418,17 @@ export async function initializeProposal(
       daoTreasury
     );
 
-  const cuIx = ComputeBudgetProgram.setComputeUnitPrice({
+  const cuPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
     microLamports: 100,
+  });
+  const cuLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 150_000
   });
 
   let tx1 = new Transaction();
   tx1.add(...passMarketInstructions);
-  tx1.add(cuIx);
+  tx1.add(cuPriceIx);
+  tx1.add(cuLimitIx);
 
   let blockhash = await provider.connection.getLatestBlockhash();
   tx1.recentBlockhash = blockhash.blockhash;
@@ -434,11 +453,11 @@ export async function initializeProposal(
     `${baseNonce}fMETA/fUSDC`,
     failQuoteMint,
     failBaseMint,
-    new BN(100),
-    new BN(1e9),
+    quoteLotSize,
+    baseLotSize,
     new BN(0),
     new BN(0),
-    new BN(0),
+    expiryTime,
     null,
     null,
     openbookTwapFailMarket,
@@ -451,7 +470,8 @@ export async function initializeProposal(
 
   let tx = new Transaction();
   tx.add(...openbookFailMarketIx[0]);
-  tx.add(cuIx);
+  tx.add(cuPriceIx);
+  tx.add(cuLimitIx);
 
   blockhash = await provider.connection.getLatestBlockhash();
   tx.recentBlockhash = blockhash.blockhash;
@@ -467,19 +487,21 @@ export async function initializeProposal(
         1000
       ),
       await openbookTwap.methods
-        .createTwapMarket(new BN(10_000))
+        .createTwapMarket(new BN(10_000), maxObservationChangePerUpdateLots)
         .accounts({
           market: openbookPassMarketKP.publicKey,
           twapMarket: openbookTwapPassMarket,
         })
         .instruction(),
       await openbookTwap.methods
-        .createTwapMarket(new BN(10_000))
+        .createTwapMarket(new BN(10_000), maxObservationChangePerUpdateLots)
         .accounts({
           market: openbookFailMarketKP.publicKey,
           twapMarket: openbookTwapFailMarket,
         })
         .instruction(),
+      cuPriceIx,
+      cuLimitIx,
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
