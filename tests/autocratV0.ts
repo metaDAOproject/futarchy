@@ -157,32 +157,28 @@ describe("autocrat_v0", async function () {
 
   describe("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
-      [dao] = PublicKey.findProgramAddressSync(
-        [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-        autocrat.programId
-      );
+      const daoKP = Keypair.generate();
+      dao = daoKP.publicKey;
+
       [daoTreasury] = PublicKey.findProgramAddressSync(
         [dao.toBuffer()],
         autocrat.programId
       );
 
       await autocrat.methods
-        .initializeDao()
+        .initializeDao(new BN(1_000_000_000), new BN(10_000))
         .accounts({
           dao,
           payer: payer.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
-          metaMint: META,
+          tokenMint: META,
           usdcMint: USDC,
         })
-        .rpc()
-        .then(
-          () => {},
-          (err) => console.error(err)
-        );
+        .signers([daoKP])
+        .rpc();
 
       const daoAcc = await autocrat.account.dao.fetch(dao);
-      assert(daoAcc.metaMint.equals(META));
+      assert(daoAcc.tokenMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
       assert.equal(daoAcc.proposalCount, 2);
       assert.equal(daoAcc.passThresholdBps, 300);
@@ -201,6 +197,29 @@ describe("autocrat_v0", async function () {
         USDC,
         daoTreasury
       );
+    });
+
+    it("initializes a second DAO", async function () {
+      const mertdDaoKP = Keypair.generate();
+      const mertdDao = mertdDaoKP.publicKey;
+
+      const MERTD = await createMint(banksClient, payer, payer.publicKey, payer.publicKey, 6);
+
+      const [mertdDaoTreasury] = PublicKey.findProgramAddressSync(
+        [mertdDao.toBuffer()],
+        autocrat.programId
+      );
+
+      await autocrat.methods
+        .initializeDao(new BN(1_000_000), new BN(1_000))
+        .accounts({
+          dao: mertdDao,
+          payer: payer.publicKey,
+          tokenMint: MERTD,
+          usdcMint: USDC,
+        })
+        .signers([mertdDaoKP])
+        .rpc();
     });
   });
 
@@ -1408,7 +1427,7 @@ async function initializeProposal(
   const baseVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
-    storedDAO.metaMint,
+    storedDAO.tokenMint,
     baseNonce,
     payer
   );
