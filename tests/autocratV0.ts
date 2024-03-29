@@ -874,8 +874,6 @@ describe("autocrat_v0", async function () {
       basePassConditionalTokenMint,
       baseFailConditionalTokenMint,
       mm0,
-      mm0OpenOrdersAccount,
-      mm1OpenOrdersAccount,
       alice,
       aliceUnderlyingQuoteTokenAccount,
       aliceUnderlyingBaseTokenAccount,
@@ -894,7 +892,7 @@ describe("autocrat_v0", async function () {
       let to0 = await createAccount(
         banksClient,
         payer,
-        META,
+        MERTD,
         receiver.publicKey
       );
       let to1 = await createAccount(
@@ -930,7 +928,7 @@ describe("autocrat_v0", async function () {
         context,
         payer,
         openbook,
-        openbookTwap
+        openbookTwap,
       );
 
       ({
@@ -1002,7 +1000,7 @@ describe("autocrat_v0", async function () {
       aliceUnderlyingBaseTokenAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
-        META,
+        MERTD,
         alice.publicKey
       );
 
@@ -1063,11 +1061,11 @@ describe("autocrat_v0", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
-          mertdDao,
+          dao: mertdDao,
           baseVault,
           quoteVault,
           vaultProgram: vaultProgram.programId,
-          mertdDaoTreasury,
+          daoTreasury: mertdDaoTreasury,
         })
         .rpc()
         .then(callbacks[0], callbacks[1]);
@@ -1335,17 +1333,18 @@ describe("autocrat_v0", async function () {
         .signers([mm0.keypair])
         .rpc();
 
+
       let tx = await autocrat.methods
         .finalizeProposal()
         .accounts({
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
-          dao,
+          dao: mertdDao,
           baseVault,
           quoteVault,
           vaultProgram: vaultProgram.programId,
-          daoTreasury,
+          daoTreasury: mertdDaoTreasury,
         })
         .remainingAccounts(
           instruction.accounts
@@ -1355,7 +1354,7 @@ describe("autocrat_v0", async function () {
               isSigner: false,
             })
             .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
+              meta.pubkey.equals(mertdDaoTreasury)
                 ? { ...meta, isSigner: false }
                 : meta
             )
@@ -1375,7 +1374,7 @@ describe("autocrat_v0", async function () {
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
-      assert((await getAccount(banksClient, mertdTreasuryMetaAccount)).amount == 0n);
+      assert((await getAccount(banksClient, mertdTreasuryMertdAccount)).amount == 0n);
       assert((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount == 0n);
 
       await redeemConditionalTokens(
@@ -1403,10 +1402,10 @@ describe("autocrat_v0", async function () {
         banksClient
       );
 
-      // alice should have gained 1 META & lost $145 USDC
+      // alice should have gained 10 MERTD & lost $145 USDC
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,
-        1_000_000_000n
+        10_000_000n
       );
       assert.equal(
         (await getAccount(banksClient, aliceUnderlyingQuoteTokenAccount))
@@ -1418,7 +1417,7 @@ describe("autocrat_v0", async function () {
         (
           await openbookTwap.account.twapMarket.fetch(openbookTwapPassMarket)
         ).twapOracle.lastObservation.toNumber(),
-        140_000 //
+        56_000 //
       );
     });
 
@@ -1685,7 +1684,7 @@ describe("autocrat_v0", async function () {
         .signers([mm0.keypair])
         .rpc();
 
-      let storedDao = await autocrat.account.dao.fetch(dao);
+      let storedDao = await autocrat.account.dao.fetch(mertdDao);
       const passThresholdBpsBefore = storedDao.passThresholdBps;
 
       await autocrat.methods
@@ -1694,17 +1693,17 @@ describe("autocrat_v0", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
-          dao,
+          dao: mertdDao,
           baseVault,
           quoteVault,
           vaultProgram: vaultProgram.programId,
-          daoTreasury,
+          daoTreasury: mertdDaoTreasury,
         })
         .remainingAccounts(
           autocrat.instruction.updateDao
             .accounts({
-              dao,
-              daoTreasury,
+              dao: mertdDao,
+              daoTreasury: mertdDaoTreasury,
             })
             .concat({
               pubkey: autocrat.programId,
@@ -1712,7 +1711,7 @@ describe("autocrat_v0", async function () {
               isSigner: false,
             })
             .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
+              meta.pubkey.equals(mertdDaoTreasury)
                 ? { ...meta, isSigner: false }
                 : meta
             )
@@ -1994,7 +1993,6 @@ async function initializeProposal(
   payer: Keypair,
   openbook: OpenBookV2Client,
   openbookTwap: Program<OpenbookTwap>,
-  daoToUse?: PublicKey
 ): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
@@ -2010,11 +2008,7 @@ async function initializeProposal(
     )
   );
 
-  if (daoToUse == undefined) {
-    daoToUse = dao;
-  }
-
-  const storedDAO = await autocrat.account.dao.fetch(daoToUse);
+  const storedDAO = await autocrat.account.dao.fetch(dao);
 
   // least signficant 32 bits of nonce are proposal number
   // most significant bit of nonce is 0 for pass and 1 for fail
@@ -2052,11 +2046,11 @@ async function initializeProposal(
   ).conditionalOnRevertTokenMint;
 
   const [daoTreasury] = PublicKey.findProgramAddressSync(
-    [daoToUse.toBuffer()],
+    [dao.toBuffer()],
     autocrat.programId
   );
 
-  const daoBefore = await autocrat.account.dao.fetch(daoToUse);
+  const daoBefore = await autocrat.account.dao.fetch(dao);
 
   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
@@ -2074,7 +2068,7 @@ async function initializeProposal(
   const currentTimeInSeconds = Math.floor(Date.now() / 1000);
   const elevenDaysInSeconds = 11 * 24 * 60 * 60;
   const quoteLotSize = new BN(100);
-  const baseLotSize = new BN(1e8);
+  const baseLotSize = new BN(storedDAO.baseLotSize);
   const maxObservationChangePerUpdateLots = new BN(5_000);
   const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
 
@@ -2166,7 +2160,7 @@ async function initializeProposal(
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
-      dao: daoToUse,
+      dao,
       daoTreasury,
       baseVault,
       quoteVault,
@@ -2184,7 +2178,7 @@ async function initializeProposal(
     proposalKeypair.publicKey
   );
 
-  const daoAfter = await autocrat.account.dao.fetch(daoToUse);
+  const daoAfter = await autocrat.account.dao.fetch(dao);
 
   assert.equal(daoAfter.proposalCount, daoBefore.proposalCount + 1);
 
