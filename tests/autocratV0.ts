@@ -294,7 +294,6 @@ describe("autocrat_v0", async function () {
       basePassConditionalTokenMint,
       baseFailConditionalTokenMint,
       mm0,
-      mm1,
       mm0OpenOrdersAccount,
       mm1OpenOrdersAccount,
       alice,
@@ -308,49 +307,6 @@ describe("autocrat_v0", async function () {
       instruction;
 
     beforeEach(async function () {
-      // just uncomment this and replace with another instruction that you wish to test
-      // const accounts = [
-      //   {
-      //     pubkey: dao,
-      //     isSigner: false,
-      //     isWritable: true,
-      //   },
-      //   {
-      //     pubkey: daoTreasury,
-      //     isSigner: true,
-      //     isWritable: false,
-      //   },
-      // ];
-      // newPassThresholdBps = Math.floor(Math.random() * 1000);
-      // const data = autocrat.coder.instruction.encode("update_dao", {
-      //   daoParams: {
-      //     passThresholdBps: newPassThresholdBps,
-      //     baseBurnLamports: null,
-      //     burnDecayPerSlotLamports: null,
-      //     slotsPerProposal: null,
-      //     marketTakerFee: null,
-      //     twapExpectedValue: null,
-      //   }
-      // });
-      // instruction = {
-      //   programId: autocrat.programId,
-      //   accounts,
-      //   data,
-      // };
-      // let lamportReceiver = Keypair.generate();
-
-      // let ix = anchor.web3.SystemProgram.transfer({
-      //   fromPubkey: daoTreasury,
-      //   toPubkey: lamportReceiver.publicKey,
-      //   lamports: 1_000_000,
-      // });
-
-      // instruction = {
-      //   programId: ix.programId,
-      //   accounts: ix.keys,
-      //   data: ix.data,
-      // };
-
       await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
       await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
 
@@ -407,17 +363,6 @@ describe("autocrat_v0", async function () {
       } = await autocrat.account.proposal.fetch(proposal));
 
       mm0 = await generateMarketMaker(
-        openbook,
-        openbookTwap,
-        banksClient,
-        payer,
-        openbookPassMarket,
-        openbookFailMarket,
-        vaultProgram,
-        context
-      );
-
-      mm1 = await generateMarketMaker(
         openbook,
         openbookTwap,
         banksClient,
