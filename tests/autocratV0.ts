@@ -166,7 +166,7 @@ describe("autocrat_v0", async function () {
       );
 
       await autocrat.methods
-        .initializeDao(new BN(1_000_000_000), new BN(10_000))
+        .initializeDao(new BN(100_000_000), new BN(10_000))
         .accounts({
           dao,
           payer: payer.publicKey,
@@ -1580,11 +1580,7 @@ async function initializeProposal(
       systemProgram: anchor.web3.SystemProgram.programId,
     })
     .signers([proposalKeypair])
-    .rpc()
-    .then(
-      () => {},
-      (err) => console.error(err)
-    );
+    .rpc();
 
   const storedProposal = await autocrat.account.proposal.fetch(
     proposalKeypair.publicKey
