@@ -100,7 +100,7 @@ describe("autocrat_v0", async function () {
     openbookTwap,
     migrator,
     treasuryMetaAccount,
-    treasuryUsdcAccount
+    treasuryUsdcAccount,
     mertdTreasuryMertdAccount,
     mertdTreasuryUsdcAccount;
 
