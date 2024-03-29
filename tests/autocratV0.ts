@@ -742,23 +742,6 @@ describe("autocrat_v0", async function () {
       );
 
       await openbookTwap.methods
-        .placeOrder(passBuyArgs)
-        .accounts({
-          signer: mm0.publicKey,
-          market: openbookPassMarket,
-          asks: storedPassMarket.asks,
-          bids: storedPassMarket.bids,
-          marketVault: storedPassMarket.marketQuoteVault,
-          eventHeap: storedPassMarket.eventHeap,
-          openOrdersAccount: mm0.pOpenOrdersAccount,
-          userTokenAccount: mm0.pUsdcAcc,
-          twapMarket: openbookTwapPassMarket,
-          openbookProgram: OPENBOOK_PROGRAM_ID,
-        })
-        .signers([mm0.keypair])
-        .rpc();
-
-      await openbookTwap.methods
         .placeOrder(passSellArgs)
         .accounts({
           signer: mm0.publicKey,
