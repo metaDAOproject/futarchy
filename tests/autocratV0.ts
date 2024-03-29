@@ -166,7 +166,7 @@ describe("autocrat_v0", async function () {
       );
 
       await autocrat.methods
-        .initializeDao(new BN(100_000_000), new BN(10_000))
+        .initializeDao(new BN(100_000_000), new BN(100_000))
         .accounts({
           dao,
           payer: payer.publicKey,
