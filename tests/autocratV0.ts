@@ -92,6 +92,7 @@ describe("autocrat_v0", async function () {
     daoTreasury,
     META,
     USDC,
+    MERTD,
     vaultProgram,
     openbook: OpenBookV2Client,
     openbookTwap,
@@ -153,6 +154,8 @@ describe("autocrat_v0", async function () {
     );
 
     META = await createMint(banksClient, payer, dao, dao, 9);
+
+    MERTD = await createMint(banksClient, payer, payer.publicKey, payer.publicKey, 6);
   });
 
   describe("#initialize_dao", async function () {
@@ -202,8 +205,6 @@ describe("autocrat_v0", async function () {
     it("initializes a second DAO", async function () {
       const mertdDaoKP = Keypair.generate();
       const mertdDao = mertdDaoKP.publicKey;
-
-      const MERTD = await createMint(banksClient, payer, payer.publicKey, payer.publicKey, 6);
 
       const [mertdDaoTreasury] = PublicKey.findProgramAddressSync(
         [mertdDao.toBuffer()],
