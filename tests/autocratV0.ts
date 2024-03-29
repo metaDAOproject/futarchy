@@ -1993,7 +1993,8 @@ async function initializeProposal(
   context: ProgramTestContext,
   payer: Keypair,
   openbook: OpenBookV2Client,
-  openbookTwap: Program<OpenbookTwap>
+  openbookTwap: Program<OpenbookTwap>,
+  daoToUse?: PublicKey
 ): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
@@ -2009,7 +2010,11 @@ async function initializeProposal(
     )
   );
 
-  const storedDAO = await autocrat.account.dao.fetch(dao);
+  if (daoToUse == undefined) {
+    daoToUse = dao;
+  }
+
+  const storedDAO = await autocrat.account.dao.fetch(daoToUse);
 
   // least signficant 32 bits of nonce are proposal number
   // most significant bit of nonce is 0 for pass and 1 for fail
@@ -2047,11 +2052,11 @@ async function initializeProposal(
   ).conditionalOnRevertTokenMint;
 
   const [daoTreasury] = PublicKey.findProgramAddressSync(
-    [dao.toBuffer()],
+    [daoToUse.toBuffer()],
     autocrat.programId
   );
 
-  const daoBefore = await autocrat.account.dao.fetch(dao);
+  const daoBefore = await autocrat.account.dao.fetch(daoToUse);
 
   const dummyURL = "https://www.eff.org/cyberspace-independence";
 
@@ -2161,7 +2166,7 @@ async function initializeProposal(
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
-      dao,
+      dao: daoToUse,
       daoTreasury,
       baseVault,
       quoteVault,
@@ -2179,7 +2184,7 @@ async function initializeProposal(
     proposalKeypair.publicKey
   );
 
-  const daoAfter = await autocrat.account.dao.fetch(dao);
+  const daoAfter = await autocrat.account.dao.fetch(daoToUse);
 
   assert.equal(daoAfter.proposalCount, daoBefore.proposalCount + 1);
 
