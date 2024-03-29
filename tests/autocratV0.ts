@@ -89,7 +89,9 @@ describe("autocrat_v0", async function () {
     context,
     banksClient: BanksClient,
     dao,
+    mertdDao,
     daoTreasury,
+    mertdDaoTreasury,
     META,
     USDC,
     MERTD,
@@ -98,7 +100,9 @@ describe("autocrat_v0", async function () {
     openbookTwap,
     migrator,
     treasuryMetaAccount,
-    treasuryUsdcAccount;
+    treasuryUsdcAccount
+    mertdTreasuryMertdAccount,
+    mertdTreasuryUsdcAccount;
 
   before(async function () {
     context = await startAnchor(
@@ -204,9 +208,9 @@ describe("autocrat_v0", async function () {
 
     it("initializes a second DAO", async function () {
       const mertdDaoKP = Keypair.generate();
-      const mertdDao = mertdDaoKP.publicKey;
+      mertdDao = mertdDaoKP.publicKey;
 
-      const [mertdDaoTreasury] = PublicKey.findProgramAddressSync(
+      [mertdDaoTreasury] = PublicKey.findProgramAddressSync(
         [mertdDao.toBuffer()],
         autocrat.programId
       );
@@ -221,6 +225,19 @@ describe("autocrat_v0", async function () {
         })
         .signers([mertdDaoKP])
         .rpc();
+
+      mertdTreasuryMertdAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        MERTD,
+        mertdDaoTreasury
+      );
+      mertdTreasuryUsdcAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        USDC,
+        mertdDaoTreasury
+      );
     });
   });
 
@@ -870,8 +887,8 @@ describe("autocrat_v0", async function () {
       instruction;
 
     beforeEach(async function () {
-      await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
-      await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+      await mintToOverride(context, mertdTreasuryMertdAccount, 1_000_000_000n);
+      await mintToOverride(context, mertdTreasuryUsdcAccount, 1_000_000n);
 
       let receiver = Keypair.generate();
       let to0 = await createAccount(
@@ -890,10 +907,10 @@ describe("autocrat_v0", async function () {
       const ix = await migrator.methods
         .multiTransfer2()
         .accounts({
-          authority: daoTreasury,
-          from0: treasuryMetaAccount,
+          authority: mertdDaoTreasury,
+          from0: mertdTreasuryMertdAccount,
           to0,
-          from1: treasuryUsdcAccount,
+          from1: mertdTreasuryUsdcAccount,
           to1,
           lamportReceiver: receiver.publicKey,
         })
@@ -909,7 +926,7 @@ describe("autocrat_v0", async function () {
         autocrat,
         instruction,
         vaultProgram,
-        dao,
+        mertdDao,
         context,
         payer,
         openbook,
@@ -936,7 +953,7 @@ describe("autocrat_v0", async function () {
         context
       );
 
-      // alice wants to buy META if the proposal passes, so she locks up USDC
+      // alice wants to buy MERTD if the proposal passes, so she locks up USDC
       // and swaps her pUSDC for pMETA
       alice = Keypair.generate();
 
@@ -950,7 +967,7 @@ describe("autocrat_v0", async function () {
         anchor.web3.SystemProgram.transfer({
           fromPubkey: payer.publicKey,
           lamports: 1_000_000_000n,
-          toPubkey: daoTreasury,
+          toPubkey: mertdDaoTreasury,
         }),
       ];
       let tx = new anchor.web3.Transaction().add(...ixs);
@@ -1046,11 +1063,11 @@ describe("autocrat_v0", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
-          dao,
+          mertdDao,
           baseVault,
           quoteVault,
           vaultProgram: vaultProgram.programId,
-          daoTreasury,
+          mertdDaoTreasury,
         })
         .rpc()
         .then(callbacks[0], callbacks[1]);
@@ -1358,8 +1375,8 @@ describe("autocrat_v0", async function () {
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
-      assert((await getAccount(banksClient, treasuryMetaAccount)).amount == 0n);
-      assert((await getAccount(banksClient, treasuryUsdcAccount)).amount == 0n);
+      assert((await getAccount(banksClient, mertdTreasuryMetaAccount)).amount == 0n);
+      assert((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount == 0n);
 
       await redeemConditionalTokens(
         vaultProgram,
