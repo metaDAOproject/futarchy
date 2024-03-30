@@ -9,7 +9,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: ./.github/actions/setup/
     - uses: metadaoproject/setup-anchor@v2
       with:
         anchor-version: '0.28.0'
