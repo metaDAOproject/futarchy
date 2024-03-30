@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/generate-verified/
+      - uses: metadaoproject/anchor-verifiable-build@v1
         id: generate-verified
         with:
           program: autocrat_v0
