@@ -6,17 +6,28 @@ on:
       - develop
 
 jobs:
-  generate-verifiable-builds:
+  generate-verifiable-autocrat:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: metadaoproject/anchor-verifiable-build@v1
-        id: generate-verified
         with:
           program: autocrat_v0
           anchor-version: '0.29.0'
           solana-cli-version: '1.17.16'
       - run: cp target/deploy/autocrat_v0.so ./verifiable-builds
+      - uses: metadaoproject/anchor-verifiable-build@v1
+        with:
+          program: conditional_vault
+          anchor-version: '0.29.0'
+          solana-cli-version: '1.17.16'
+      - run: cp target/deploy/conditional_vault.so ./verifiable-builds
+      - uses: metadaoproject/anchor-verifiable-build@v1
+        with:
+          program: autocrat_migrator
+          anchor-version: '0.29.0'
+          solana-cli-version: '1.17.16'
+      - run: cp target/deploy/autocrat_migrator.so ./verifiable-builds
       - name: Commit verifiable build back to mainline
         uses: EndBug/add-and-commit@v9.1.4
         with:
