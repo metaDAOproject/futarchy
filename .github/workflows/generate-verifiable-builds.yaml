@@ -21,6 +21,7 @@ jobs:
         with:
           default_author: github_actions
           message: 'Update autocrat_v0 verifiable build'
+          pull: '--rebase'
   generate-verifiable-vault:
     runs-on: ubuntu-20.04
     steps:
@@ -36,6 +37,7 @@ jobs:
         with:
           default_author: github_actions
           message: 'Update conditional_vault verifiable build'
+          pull: '--rebase'
   generate-verifiable-migrator:
     runs-on: ubuntu-20.04
     steps:
@@ -51,3 +53,4 @@ jobs:
         with:
           default_author: github_actions
           message: 'Update autocrat_migrator verifiable build'
+          pull: '--rebase'
