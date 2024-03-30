@@ -38,7 +38,7 @@ runs:
     - run: cargo install solana-verify
       if: steps.cache-solana-verify.outputs.cache-hit != 'true'
       shell: bash
-    - run: ~/.cargo/bin/solana-verify build --library-name $PROGRAM
+    - run: ~/.cargo/bin/solana-verify build --library-name $PROGRAM --base-image ellipsislabs/${{ inputs.solana-cli-version }}
       shell: bash
       env:
         PROGRAM: ${{ inputs.program }}
