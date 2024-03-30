@@ -1,0 +1,16 @@
+name: generate-verifiable-builds
+on:
+  push:
+    branches:
+      - production
+      - develop
+
+jobs:
+  generate-verifiable-builds:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/generate-verified/
+        id: generate-verified
+        with:
+          program: autocrat_v0
