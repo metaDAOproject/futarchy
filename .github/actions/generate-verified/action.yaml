@@ -3,7 +3,13 @@ name: "Generate Verified"
 description: "Generate a verified bytecode blob"
 inputs:
   program:
-    description: "The program to build and upload"
+    description: "The program name (e.g. 'autocrat_v0')"
+    required: true
+  anchor-version:
+    description: "Version of Anchor to use"
+    required: true
+  solana-cli-version:
+    description: "Version of Solana to use"
     required: true
 
 runs:
@@ -11,8 +17,8 @@ runs:
   steps:
     - uses: metadaoproject/setup-anchor@v2
       with:
-        anchor-version: '0.28.0'
-        solana-cli-version: '1.16.0'
+        anchor-version: ${{ inputs.anchor-version }}
+        solana-cli-version: ${{ inputs.solana-cli-version }}
     - name: Cache Cargo registry + index
       uses: actions/cache@v2
       id: cache-cargo-registry
