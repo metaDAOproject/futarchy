@@ -43,6 +43,9 @@ pub const MAX_BPS: u16 = 10_000;
 // TWAP can only move by $5 per slot
 pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
+pub const BASE_LOT_SIZE: i64 = 1_000 * 1_000_000_000; // trade in increments of 1000 $MERTD
+pub const QUOTE_LOT_SIZE: i64 = 100; // trade in hundredths of pennies
+
 #[account]
 pub struct DAO {
     // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
@@ -114,15 +117,14 @@ pub mod autocrat_v0 {
         dao.meta_mint = ctx.accounts.meta_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
 
-        dao.proposal_count = 2;
+        dao.proposal_count = 0;
 
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
-        // 100_000 price lots * quote lot size of 100 = 10_000_000 or $10 per quote lot size of meta, which is 0.1 meta
-        dao.twap_expected_value = 100_000; // $100 USDC per 1 META
+        dao.twap_expected_value = 10_000; // $1 USDC for 1,000 FUTURE, or $0.001 USDC per FUTURE
         dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
 
         let (treasury_pubkey, treasury_bump) =
@@ -175,11 +177,11 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
+            openbook_pass_market.base_lot_size == BASE_LOT_SIZE,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
+            openbook_pass_market.quote_lot_size == QUOTE_LOT_SIZE,
             AutocratError::InvalidMarket
         );
         require!(
@@ -214,11 +216,11 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
+            openbook_fail_market.base_lot_size == BASE_LOT_SIZE,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.quote_lot_size == 100,
+            openbook_fail_market.quote_lot_size == QUOTE_LOT_SIZE,
             AutocratError::InvalidMarket
         );
         require!(
