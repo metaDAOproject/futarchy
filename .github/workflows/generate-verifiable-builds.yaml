@@ -5,6 +5,7 @@ on:
       - production
       - develop
       - feat/mertd
+      - feat/future
 
 jobs:
   generate-verifiable-autocrat:
