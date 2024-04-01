@@ -117,7 +117,7 @@ pub mod autocrat_v0 {
         dao.meta_mint = ctx.accounts.meta_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
 
-        dao.proposal_count = 0;
+        dao.proposal_count = 1;
 
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
