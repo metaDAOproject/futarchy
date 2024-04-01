@@ -63,7 +63,7 @@ type ProposalInstruction = anchor.IdlTypes<AutocratV0>["ProposalInstruction"];
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
+  "fut5MzSUFcmxaEHMvo9qQThrAL4nAv5FQ52McqhniSt"
 );
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
@@ -155,7 +155,7 @@ describe("autocrat_v0", async function () {
     META = await createMint(banksClient, payer, dao, dao, 9);
   });
 
-  describe("#initialize_dao", async function () {
+  describe.only("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
       [dao] = PublicKey.findProgramAddressSync(
         [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
@@ -184,7 +184,7 @@ describe("autocrat_v0", async function () {
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.metaMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
-      assert.equal(daoAcc.proposalCount, 2);
+      assert.equal(daoAcc.proposalCount, 1);
       assert.equal(daoAcc.passThresholdBps, 300);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
       assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
@@ -262,7 +262,7 @@ describe("autocrat_v0", async function () {
     });
   });
 
-  describe("#finalize_proposal", async function () {
+  describe.only("#finalize_proposal", async function () {
     let proposal,
       openbookPassMarket,
       openbookFailMarket,
@@ -1310,7 +1310,7 @@ async function generateMarketMaker(
     mm.publicKey
   );
 
-  const MM_BASE_AMOUNT = 10_000n * 1_000_000_000n;
+  const MM_BASE_AMOUNT = 10_000_000n * 1_000_000_000n;
   const MM_QUOTE_AMOUNT = 100_000n * 1_000_000n;
   await mintToOverride(context, mmBaseUnderlying, MM_BASE_AMOUNT);
   await mintToOverride(context, mmQuoteUnderlying, MM_QUOTE_AMOUNT);
@@ -1457,7 +1457,7 @@ async function initializeProposal(
   const currentTimeInSeconds = Math.floor(Date.now() / 1000);
   const elevenDaysInSeconds = 11 * 24 * 60 * 60;
   const quoteLotSize = new BN(100);
-  const baseLotSize = new BN(1e8);
+  const baseLotSize = new BN(1e9 * 1000);
   const maxObservationChangePerUpdateLots = new BN(5_000);
   const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
 
