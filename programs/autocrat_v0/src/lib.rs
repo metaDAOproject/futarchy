@@ -24,7 +24,7 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp");
+declare_id!("FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
@@ -226,7 +226,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
+            openbook_fail_market.base_lot_size == dao.base_lot_size,
             AutocratError::InvalidMarket
         );
         require!(
