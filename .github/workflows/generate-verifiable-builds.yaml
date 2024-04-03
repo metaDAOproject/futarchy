@@ -1,5 +1,6 @@
 name: generate-verifiable-builds
 on:
+  workflow_dispatch:
   push:
     branches:
       - production
