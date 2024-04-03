@@ -641,9 +641,37 @@ describe("autocrat_v0", async function () {
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
+      assert.isFalse(storedProposal.isExecuted);
 
-      assert((await getAccount(banksClient, treasuryMetaAccount)).amount == 0n);
-      assert((await getAccount(banksClient, treasuryUsdcAccount)).amount == 0n);
+      assert.equal((await getAccount(banksClient, treasuryMetaAccount)).amount, 1_000_000_000n);
+      assert.equal((await getAccount(banksClient, treasuryUsdcAccount)).amount, 1_000_000n);
+
+      await autocrat.methods.executeProposal()
+        .accounts({
+          proposal,
+          dao,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false } : meta
+            )
+        )
+        .rpc();
+
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+
+      assert.isTrue(storedProposal.isExecuted);
+
+      assert.equal((await getAccount(banksClient, treasuryMetaAccount)).amount, 0n);
+      assert.equal((await getAccount(banksClient, treasuryUsdcAccount)).amount, 0n);
 
       await redeemConditionalTokens(
         vaultProgram,
@@ -1202,9 +1230,37 @@ describe("autocrat_v0", async function () {
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
+      assert.isFalse(storedProposal.isExecuted);
 
-      assert((await getAccount(banksClient, mertdTreasuryMertdAccount)).amount == 0n);
-      assert((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount == 0n);
+      assert.equal((await getAccount(banksClient, mertdTreasuryMertdAccount)).amount, 1_000_000_000n);
+      assert.equal((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount, 1_000_000n);
+
+      await autocrat.methods.executeProposal()
+        .accounts({
+          proposal,
+          dao: mertdDao,
+          daoTreasury: mertdDaoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(mertdDaoTreasury)
+                ? { ...meta, isSigner: false } : meta
+            )
+        )
+        .rpc();
+
+      storedProposal = await autocrat.account.proposal.fetch(proposal);
+
+      assert.isTrue(storedProposal.isExecuted);
+
+      assert.equal((await getAccount(banksClient, mertdTreasuryMertdAccount)).amount, 0n);
+      assert.equal((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount, 0n);
 
       await redeemConditionalTokens(
         vaultProgram,

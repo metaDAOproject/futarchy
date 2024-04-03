@@ -96,6 +96,7 @@ pub struct Proposal {
     pub openbook_fail_market: Pubkey,
     pub base_vault: Pubkey,
     pub quote_vault: Pubkey,
+    pub is_executed: bool,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -323,6 +324,7 @@ pub mod autocrat_v0 {
         proposal.slot_enqueued = clock.slot;
         proposal.state = ProposalState::Pending;
         proposal.instruction = instruction;
+        proposal.is_executed = false;
 
         Ok(())
     }
@@ -382,19 +384,6 @@ pub mod autocrat_v0 {
         if pass_market_twap > threshold {
             proposal.state = ProposalState::Passed;
 
-            let mut svm_instruction: Instruction = proposal.instruction.borrow().into();
-            for acc in svm_instruction.accounts.iter_mut() {
-                if &acc.pubkey == ctx.accounts.dao_treasury.key {
-                    acc.is_signer = true;
-                }
-            }
-
-            solana_program::program::invoke_signed(
-                &svm_instruction,
-                ctx.remaining_accounts,
-                signer,
-            )?;
-
             for vault in [
                 ctx.accounts.base_vault.to_account_info(),
                 ctx.accounts.quote_vault.to_account_info(),
@@ -423,6 +412,31 @@ pub mod autocrat_v0 {
                 conditional_vault::cpi::settle_conditional_vault(cpi_ctx, VaultStatus::Reverted)?;
             }
         }
+
+        Ok(())
+    }
+
+    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+        let proposal = &mut ctx.accounts.proposal;
+
+        proposal.is_executed = true;
+
+        let dao_key = ctx.accounts.dao.key();
+        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
+        let signer = &[&treasury_seeds[..]];
+
+        let mut svm_instruction: Instruction = proposal.instruction.borrow().into();
+        for acc in svm_instruction.accounts.iter_mut() {
+            if &acc.pubkey == ctx.accounts.dao_treasury.key {
+                acc.is_signer = true;
+            }
+        }
+
+        solana_program::program::invoke_signed(
+            &svm_instruction,
+            ctx.remaining_accounts,
+            signer,
+        )?;
 
         Ok(())
     }
@@ -544,6 +558,24 @@ pub struct FinalizeProposal<'info> {
     pub dao_treasury: UncheckedAccount<'info>,
 }
 
+#[derive(Accounts)]
+pub struct ExecuteProposal<'info> {
+    #[account(
+        mut,
+        constraint = proposal.state == ProposalState::Passed @ AutocratError::ProposalHasntPassed,
+        constraint = proposal.is_executed == false @ AutocratError::ProposalAlreadyExecuted,
+    )]
+    pub proposal: Account<'info, Proposal>,
+    pub dao: Box<Account<'info, DAO>>,
+    /// CHECK: never read
+    #[account(
+        seeds = [dao.key().as_ref()],
+        bump = dao.treasury_pda_bump,
+        mut
+    )]
+    pub dao_treasury: UncheckedAccount<'info>,
+}
+
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct UpdateDaoParams {
     pub pass_threshold_bps: Option<u16>,
@@ -606,10 +638,12 @@ pub enum AutocratError {
     ProposalTooYoung,
     #[msg("Markets too young for proposal to be finalized")]
     MarketsTooYoung,
-    #[msg("The market dictates that this proposal cannot pass")]
-    ProposalCannotPass,
     #[msg("This proposal has already been finalized")]
     ProposalAlreadyFinalized,
     #[msg("A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits")]
     InvalidVaultNonce,
+    #[msg("This proposal hasn't passed to be executed")]
+    ProposalHasntPassed,
+    #[msg("This proposal has already been executed")]
+    ProposalAlreadyExecuted,
 }
