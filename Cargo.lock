@@ -1452,6 +1452,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "metadata"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang 0.28.0",
+]
+
+[[package]]
 name = "mpl-token-auth-rules"
 version = "1.4.3-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
