@@ -159,7 +159,13 @@ describe("autocrat_v0", async function () {
 
     META = await createMint(banksClient, payer, dao, dao, 9);
 
-    MERTD = await createMint(banksClient, payer, payer.publicKey, payer.publicKey, 6);
+    MERTD = await createMint(
+      banksClient,
+      payer,
+      payer.publicKey,
+      payer.publicKey,
+      6
+    );
   });
 
   describe("#initialize_dao", async function () {
@@ -928,7 +934,7 @@ describe("autocrat_v0", async function () {
         context,
         payer,
         openbook,
-        openbookTwap,
+        openbookTwap
       );
 
       ({
@@ -1333,7 +1339,6 @@ describe("autocrat_v0", async function () {
         .signers([mm0.keypair])
         .rpc();
 
-
       let tx = await autocrat.methods
         .finalizeProposal()
         .accounts({
@@ -1374,8 +1379,12 @@ describe("autocrat_v0", async function () {
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
-      assert((await getAccount(banksClient, mertdTreasuryMertdAccount)).amount == 0n);
-      assert((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount == 0n);
+      assert(
+        (await getAccount(banksClient, mertdTreasuryMertdAccount)).amount == 0n
+      );
+      assert(
+        (await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount == 0n
+      );
 
       await redeemConditionalTokens(
         vaultProgram,
@@ -1992,7 +2001,7 @@ async function initializeProposal(
   context: ProgramTestContext,
   payer: Keypair,
   openbook: OpenBookV2Client,
-  openbookTwap: Program<OpenbookTwap>,
+  openbookTwap: Program<OpenbookTwap>
 ): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
