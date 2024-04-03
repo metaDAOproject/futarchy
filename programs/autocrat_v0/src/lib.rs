@@ -488,7 +488,10 @@ pub struct InitializeDAO<'info> {
 pub struct InitializeProposal<'info> {
     #[account(zero, signer)]
     pub proposal: Box<Account<'info, Proposal>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = dao.treasury == dao_treasury.key() @ AutocratError::DaoTreasuryMismatch
+    )]
     pub dao: Account<'info, DAO>,
     /// CHECK: never read
     #[account(
@@ -529,6 +532,9 @@ pub struct FinalizeProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
+    #[account(
+        constraint = dao.treasury == dao_treasury.key() @ AutocratError::DaoTreasuryMismatch
+    )]
     pub dao: Box<Account<'info, DAO>>,
     #[account(mut)]
     pub base_vault: Box<Account<'info, ConditionalVaultAccount>>,
@@ -558,7 +564,10 @@ pub struct UpdateDaoParams {
 
 #[derive(Accounts)]
 pub struct UpdateDao<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = dao.treasury == dao_treasury.key() @ AutocratError::DaoTreasuryMismatch
+    )]
     pub dao: Account<'info, DAO>,
     /// CHECK: never read
     #[account(
@@ -612,4 +621,6 @@ pub enum AutocratError {
     ProposalAlreadyFinalized,
     #[msg("A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits")]
     InvalidVaultNonce,
+    #[msg("Mismatch between DAO treasury and PDA signer")]
+    DaoTreasuryMismatch,
 }
