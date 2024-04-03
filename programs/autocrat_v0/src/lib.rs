@@ -133,12 +133,7 @@ pub mod autocrat_v0 {
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
-<<<<<<< HEAD
-        // 100_000 price lots * quote lot size of 100 = 10_000_000 or $10 per quote lot size of meta, which is 0.1 meta
-        dao.twap_expected_value = 100_000; // $100 USDC per 1 META
-=======
         dao.twap_expected_value = twap_expected_value;
->>>>>>> e6cb2bb (Require TWAP expected value to be passed at instantiation time)
         dao.base_lot_size = base_lot_size;
         dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
 
