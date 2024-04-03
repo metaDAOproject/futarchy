@@ -24,19 +24,24 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq");
+declare_id!("metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
-pub const THREE_DAYS_IN_SLOTS: u64 = 5 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
+pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
 
-// by default, the pass price needs to be 5% higher than the fail price
-pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 500;
+pub const TEN_DAYS_IN_SECONDS: i64 = 10 * 24 * 60 * 60;
+
+// by default, the pass price needs to be 3% higher than the fail price
+pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 300;
 
 // start at 10 SOL ($600 at current prices), decay by ~5 SOL per day
 pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 10 * solana_program::native_token::LAMPORTS_PER_SOL;
 pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 23_150;
 
 pub const MAX_BPS: u16 = 10_000;
+
+// TWAP can only move by $5 per slot
+pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
 #[account]
 pub struct DAO {
@@ -59,6 +64,7 @@ pub struct DAO {
     pub slots_per_proposal: u64,
     pub market_taker_fee: i64,
     pub twap_expected_value: u64,
+    pub max_observation_change_per_update_lots: u64,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -115,7 +121,9 @@ pub mod autocrat_v0 {
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
-        dao.twap_expected_value = 10_000; // 1 USDC per META
+        // 100_000 price lots * quote lot size of 100 = 10_000_000 or $10 per quote lot size of meta, which is 0.1 meta
+        dao.twap_expected_value = 100_000; // $100 USDC per 1 META
+        dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
 
         let (treasury_pubkey, treasury_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
@@ -145,10 +153,13 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
 
-        // this should also be checked by `openbook_twap`, but why not take the
-        // precaution?
+        let current_time = Clock::get().unwrap().unix_timestamp as i64;
+
+        // The market expires a minimum of 7 days after the end of a 3 day proposal.
+        // Make sure to do final TWAP crank after the proposal period has ended
+        // and before the market expires, or else! Allows for rent retrieval from openbook
         require!(
-            openbook_pass_market.time_expiry == 0,
+            openbook_pass_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
             AutocratError::InvalidMarket
         );
         require!(
@@ -164,7 +175,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.base_lot_size == 1_000_000_000, // minimum tradeable = 1 META
+            openbook_pass_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
             AutocratError::InvalidMarket
         );
         require!(
@@ -187,7 +198,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.time_expiry == 0,
+            openbook_fail_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
             AutocratError::InvalidMarket
         );
         require!(
@@ -203,11 +214,11 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.base_lot_size == 1_000_000_000,
+            openbook_fail_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_lot_size == 100,
+            openbook_fail_market.quote_lot_size == 100,
             AutocratError::InvalidMarket
         );
         require!(
@@ -226,6 +237,20 @@ pub mod autocrat_v0 {
         require!(
             openbook_twap_fail_market.twap_oracle.initial_slot + 50 >= clock.slot,
             AutocratError::TWAPMarketTooOld
+        );
+        require_eq!(
+            openbook_twap_pass_market
+                .twap_oracle
+                .max_observation_change_per_update_lots,
+            dao.max_observation_change_per_update_lots,
+            AutocratError::TWAPOracleWrongChangeLots
+        );
+        require_eq!(
+            openbook_twap_fail_market
+                .twap_oracle
+                .max_observation_change_per_update_lots,
+            dao.max_observation_change_per_update_lots,
+            AutocratError::TWAPOracleWrongChangeLots
         );
         require!(
             openbook_twap_pass_market.twap_oracle.expected_value == dao.twap_expected_value,
@@ -390,10 +415,7 @@ pub mod autocrat_v0 {
         Ok(())
     }
 
-    pub fn update_dao(
-        ctx: Context<UpdateDao>,
-        dao_params: UpdateDaoParams,
-    ) -> Result<()> {
+    pub fn update_dao(ctx: Context<UpdateDao>, dao_params: UpdateDaoParams) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         if let Some(pass_threshold_bps) = dao_params.pass_threshold_bps {
@@ -418,6 +440,12 @@ pub mod autocrat_v0 {
 
         if let Some(twap_expected_value) = dao_params.twap_expected_value {
             dao.twap_expected_value = twap_expected_value;
+        }
+
+        if let Some(max_observation_change_per_update_lots) =
+            dao_params.max_observation_change_per_update_lots
+        {
+            dao.max_observation_change_per_update_lots = max_observation_change_per_update_lots;
         }
 
         Ok(())
@@ -514,6 +542,7 @@ pub struct UpdateDaoParams {
     pub slots_per_proposal: Option<u64>,
     pub market_taker_fee: Option<i64>,
     pub twap_expected_value: Option<u64>,
+    pub max_observation_change_per_update_lots: Option<u64>,
 }
 
 #[derive(Accounts)]
@@ -556,6 +585,8 @@ pub enum AutocratError {
     InvalidMarket,
     #[msg("`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`")]
     TWAPMarketTooOld,
+    #[msg("`TWAPOracle` has an incorrect max_observation_change_per_update_lots value")]
+    TWAPOracleWrongChangeLots,
     #[msg("`TWAPMarket` has the wrong `expected_value`")]
     TWAPMarketInvalidExpectedValue,
     #[msg("One of the vaults has an invalid `settlement_authority`")]

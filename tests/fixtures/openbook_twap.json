@@ -34,6 +34,10 @@
         {
           "name": "expectedValue",
           "type": "u64"
+        },
+        {
+          "name": "maxObservationChangePerUpdateLots",
+          "type": "u64"
         }
       ]
     },
@@ -289,6 +293,154 @@
       ]
     },
     {
+      "name": "pruneOrders",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "limit",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "settleFundsExpired",
+      "accounts": [
+        {
+          "name": "twapMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketBaseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBaseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userQuoteAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closeMarket",
+      "accounts": [
+        {
+          "name": "closeMarketRentReceiver",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "twapMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventHeap",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openbookProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "placeTakeOrder",
       "accounts": [
         {
@@ -506,6 +658,10 @@
             "type": {
               "defined": "TWAPOracle"
             }
+          },
+          {
+            "name": "closeMarketRentReceiver",
+            "type": "publicKey"
           }
         ]
       }
@@ -540,6 +696,10 @@
           {
             "name": "observationAggregator",
             "type": "u128"
+          },
+          {
+            "name": "maxObservationChangePerUpdateLots",
+            "type": "u64"
           }
         ]
       }
@@ -698,36 +858,28 @@
     },
     {
       "code": 6002,
-      "name": "NonZeroExpiry",
-      "msg": "Market must not expire (have `time_expiry` == 0)"
-    },
-    {
-      "code": 6003,
       "name": "NoOracles",
       "msg": "Oracle-pegged trades mess up the TWAP so oracles and oracle-pegged trades aren't allowed"
     },
     {
-      "code": 6004,
+      "code": 6003,
       "name": "InvalidMakerFee",
       "msg": "Maker fee must be zero"
     },
     {
-      "code": 6005,
+      "code": 6004,
       "name": "InvalidTakerFee",
       "msg": "Taker fee must be zero"
     },
     {
-      "code": 6006,
+      "code": 6005,
       "name": "InvalidSeqNum",
       "msg": "Seq num must be zero"
     },
     {
-      "code": 6007,
+      "code": 6006,
       "name": "InvalidConsumeEventsAdmin",
       "msg": "Consume events admin must be None"
     }
-  ],
-  "metadata": {
-    "address": "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
-  }
+  ]
 }

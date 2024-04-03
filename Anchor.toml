@@ -5,9 +5,9 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-autocrat_migrator = "migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3"
-autocrat_v0 = "metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"
-conditional_vault = "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
+autocrat_v0 = "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
+conditional_vault = "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 
 [registry]
 url = "https://api.apr.dev"
@@ -17,13 +17,17 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
+initialize_dao = "yarn run ts-node scripts/initializeDao.ts"
+crank_twap = "yarn run ts-node scripts/crankTwap.ts"
 airdrop = "yarn run ts-node scripts/airdrop.ts"
 autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
 clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && node scripts/clob.js && rm scripts/clob.js"
 crank = "yarn run ts-node scripts/crank.ts"
 main = "yarn run ts-node scripts/main.ts"
+propose = "yarn run ts-node scripts/initializeProposal.ts"
 initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
 place_order = "yarn run ts-node scripts/placeOrder.ts"
+multisig = "yarn run tsx scripts/multisig.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]
@@ -38,3 +42,7 @@ program = "./tests/fixtures/openbook_v2.so"
 [[test.genesis]]
 address = "TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3"
 program = "./tests/fixtures/openbook_twap.so"
+
+[[test.genesis]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+program = "./tests/fixtures/mpl_token_metadata.so"

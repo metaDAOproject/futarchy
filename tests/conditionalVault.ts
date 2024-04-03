@@ -1,26 +1,40 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN, Program, web3 } from "@coral-xyz/anchor";
-const { PublicKey, Keypair } = web3;
-import * as token from "@solana/spl-token";
-import { BankrunProvider } from "anchor-bankrun";
-
-import { assert } from "chai";
-
-import { BanksClient, startAnchor } from "solana-bankrun";
-
-import { expectError } from "./utils/utils";
-
-import { ConditionalVault } from "../target/types/conditional_vault";
-
-const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
-
 import {
-  createMint,
+  MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
+  createMetadataAccountV3,
+} from "@metaplex-foundation/mpl-token-metadata";
+import {
+  Umi,
+  createSignerFromKeypair,
+  keypairIdentity,
+  none,
+} from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
+  fromWeb3JsKeypair,
+  fromWeb3JsPublicKey,
+  toWeb3JsLegacyTransaction,
+  toWeb3JsPublicKey,
+} from "@metaplex-foundation/umi-web3js-adapters";
+import * as token from "@solana/spl-token";
+import { SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { BankrunProvider } from "anchor-bankrun";
+import { assert } from "chai";
+import { BanksClient, ProgramTestContext, startAnchor } from "solana-bankrun";
+import {
   createAccount,
   createAssociatedTokenAccount,
-  mintTo,
+  createMint,
   getAccount,
+  mintTo,
 } from "spl-token-bankrun";
+
+const { PublicKey, Keypair } = web3;
+
+import { ConditionalVault } from "../target/types/conditional_vault";
+import { expectError } from "./utils/utils";
+const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;
 export type PublicKey = anchor.web3.PublicKey;
@@ -28,7 +42,13 @@ export type Signer = anchor.web3.Signer;
 export type Keypair = anchor.web3.Keypair;
 
 const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe"
+  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
+);
+
+const METADATA_URI =
+  "https://ftgnmxferax7tpgqyzdo76sisk5fhpsjv34omvgz33m7udvnsfba.arweave.net/LMzWXKSIL_m80MZG7_pIkrpTvkmu-OZU2d7Z-g6tkUI";
+const MPL_TOKEN_METADATA_PROGRAM_ID = toWeb3JsPublicKey(
+  UMI_MPL_TOKEN_METADATA_PROGRAM_ID
 );
 
 export enum VaultStatus {
@@ -40,42 +60,59 @@ export enum VaultStatus {
 // this test file isn't 'clean' or DRY or whatever; sorry!
 
 describe("conditional_vault", async function () {
-  let provider,
-    connection,
-    vaultProgram,
-    payer,
-    context,
-    banksClient,
-    underlyingMintAuthority,
-    settlementAuthority,
-    nonce,
-    alice,
-    underlyingTokenMint,
-    vault,
-    vaultUnderlyingTokenAccount,
-    conditionalOnFinalizeMint,
-    conditionalOnRevertMint;
+  let provider: anchor.Provider;
+
+  let vault: PublicKey;
+  let vaultUnderlyingTokenAccount: anchor.web3.PublicKey;
+  let underlyingTokenMint: anchor.web3.PublicKey;
+  let conditionalOnFinalizeMint: anchor.web3.PublicKey;
+  let conditionalOnRevertMint: anchor.web3.PublicKey;
+  let nonce: BN;
+  let settlementAuthority: anchor.web3.Keypair;
+  let underlyingMintAuthority: anchor.web3.Keypair;
+  let alice: anchor.web3.Keypair;
+  let context: ProgramTestContext;
+  let banksClient: BanksClient;
+  let umi: Umi;
+
+  // note: adding types to these creates a slew of type errors below
+  let payer;
+  let vaultProgram;
 
   before(async function () {
-    context = await startAnchor("./", [], []);
+    context = await startAnchor(
+      "./",
+      [
+        // even though the program is loaded into the test validator, we need
+        // to tell banks test client to load it as well
+        {
+          name: "mpl_token_metadata",
+          programId: MPL_TOKEN_METADATA_PROGRAM_ID,
+        },
+      ],
+      []
+    );
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
+
+    umi = createUmi(anchor.AnchorProvider.env().connection);
 
     vaultProgram = new Program<ConditionalVault>(
       ConditionalVaultIDL,
       CONDITIONAL_VAULT_PROGRAM_ID,
       provider
     );
-    //vaultProgram = anchor.workspace.ConditionalVault as VaultProgram;
+
     payer = vaultProgram.provider.wallet.payer;
     alice = anchor.web3.Keypair.generate();
     settlementAuthority = anchor.web3.Keypair.generate();
     underlyingMintAuthority = anchor.web3.Keypair.generate();
+    umi.use(keypairIdentity(fromWeb3JsKeypair(payer)));
 
     underlyingTokenMint = await createMint(
       banksClient,
-      payer,
+      payer as anchor.web3.Keypair,
       underlyingMintAuthority.publicKey,
       null,
       8
@@ -168,7 +205,7 @@ describe("conditional_vault", async function () {
       bob = anchor.web3.Keypair.generate();
 
       bobUnderlyingTokenAccount = await createAssociatedTokenAccount(
-        /* bobUnderlyingTokenAccount = await token.createAccount( */
+        /* bobUnderlyingTokenAccount = await createAccount( */
         banksClient,
         payer,
         underlyingTokenMint,
@@ -447,7 +484,8 @@ describe("conditional_vault", async function () {
       let [vault, _, settlementAuthority] = await generateRandomVault(
         vaultProgram,
         payer,
-        banksClient
+        banksClient,
+        umi
       );
 
       await vaultProgram.methods
@@ -464,7 +502,8 @@ describe("conditional_vault", async function () {
       let [vault, _, settlementAuthority] = await generateRandomVault(
         vaultProgram,
         payer,
-        banksClient
+        banksClient,
+        umi
       );
 
       await vaultProgram.methods
@@ -481,7 +520,8 @@ describe("conditional_vault", async function () {
       let [vault, _, settlementAuthority] = await generateRandomVault(
         vaultProgram,
         payer,
-        banksClient
+        banksClient,
+        umi
       );
 
       await vaultProgram.methods
@@ -511,16 +551,17 @@ describe("conditional_vault", async function () {
     });
   });
 
-  describe("#redeem_conditional_tokens_for_underlying_tokens", async function () {
+  describe("#redeem_and_merge_conditional_tokens_for_underlying_tokens", async function () {
     let bob: Keypair;
     let amount = 1000;
+    let mergeAmount = 10;
     let bobUnderlyingTokenAccount: PublicKey;
     let bobConditionalOnFinalizeTokenAccount: PublicKey;
     let bobConditionalOnRevertTokenAccount: PublicKey;
 
     beforeEach(async function () {
       [vault, underlyingMintAuthority, settlementAuthority] =
-        await generateRandomVault(vaultProgram, payer, banksClient);
+        await generateRandomVault(vaultProgram, payer, banksClient, umi);
       let storedVault = await vaultProgram.account.conditionalVault.fetch(
         vault
       );
@@ -568,6 +609,54 @@ describe("conditional_vault", async function () {
         vault,
         banksClient
       );
+    });
+
+    it("successfully merges 10 tokens before the vault has been finalized", async function () {
+      // Assuming the vault has not yet been finalized
+
+      await mergeConditionalTokens(
+        vaultProgram,
+        mergeAmount,
+        bob,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        banksClient
+      );
+    });
+
+    it("prevents users from merging conditional tokens after the vault has been finalized", async function () {
+      await vaultProgram.methods
+        .settleConditionalVault({ finalized: {} })
+        .accounts({
+          settlementAuthority: settlementAuthority.publicKey,
+          vault,
+        })
+        .signers([settlementAuthority])
+        .rpc();
+
+      const callbacks = expectError(
+        vaultProgram,
+        "VaultAlreadySettled",
+        "merge suceeded even though this vault was finalized"
+      );
+      await mergeConditionalTokens(
+        vaultProgram,
+        mergeAmount,
+        bob,
+        bobConditionalOnFinalizeTokenAccount,
+        bobConditionalOnRevertTokenAccount,
+        conditionalOnFinalizeMint,
+        conditionalOnRevertMint,
+        bobUnderlyingTokenAccount,
+        vaultUnderlyingTokenAccount,
+        vault,
+        banksClient
+      ).then(callbacks[0], callbacks[1]);
     });
 
     it("allows users to redeem conditional-on-finalize tokens for underlying tokens when a vault has been finalized", async function () {
@@ -679,6 +768,7 @@ async function generateRandomVault(
   vaultProgram: VaultProgram,
   payer: Keypair,
   banksClient: BanksClient,
+  umi: Umi,
   settlementAuthority: Keypair = anchor.web3.Keypair.generate()
 ): Promise<[PublicKey, Keypair, Keypair]> {
   const underlyingMintAuthority = anchor.web3.Keypair.generate();
@@ -690,6 +780,39 @@ async function generateRandomVault(
     null,
     8
   );
+
+  const tokenMint = fromWeb3JsPublicKey(underlyingTokenMint);
+  let builder = createMetadataAccountV3(umi, {
+    mint: tokenMint,
+    mintAuthority: createSignerFromKeypair(
+      umi,
+      fromWeb3JsKeypair(underlyingMintAuthority)
+    ),
+    data: {
+      name: "TOKE",
+      symbol: "TOKE",
+      uri: "METADATA_URI",
+      sellerFeeBasisPoints: 0,
+      creators: none(),
+      collection: none(),
+      uses: none(),
+    },
+    isMutable: false,
+    collectionDetails: none(),
+  });
+  builder = builder.setBlockhash(
+    (await umi.rpc.getLatestBlockhash()).blockhash
+  );
+
+  const createMetadataResult = await vaultProgram.provider.sendAndConfirm(
+    toWeb3JsLegacyTransaction(builder.build(umi)),
+    [underlyingMintAuthority],
+    {
+      skipPreflight: true,
+      commitment: "confirmed",
+    }
+  );
+  //   console.log(createMetadataResult);
 
   const nonce = new BN(1003239);
 
@@ -711,7 +834,61 @@ async function generateRandomVault(
   let conditionalOnFinalizeTokenMintKeypair = anchor.web3.Keypair.generate();
   let conditionalOnRevertTokenMintKeypair = anchor.web3.Keypair.generate();
 
-  let result = await vaultProgram.methods
+  // when we have a ts lib, we can consolidate this logic there
+  const [conditionalOnFinalizeTokenMetadata] =
+    anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("metadata"),
+        MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        conditionalOnFinalizeTokenMintKeypair.publicKey.toBuffer(),
+      ],
+      MPL_TOKEN_METADATA_PROGRAM_ID
+    );
+
+  const [conditionalOnRevertTokenMetadata] =
+    anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("metadata"),
+        MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        conditionalOnRevertTokenMintKeypair.publicKey.toBuffer(),
+      ],
+      MPL_TOKEN_METADATA_PROGRAM_ID
+    );
+
+  const [underlyingTokenMetadata] =
+    anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("metadata"),
+        MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        underlyingTokenMint.toBuffer(),
+      ],
+      MPL_TOKEN_METADATA_PROGRAM_ID
+    );
+
+  const addMetadataToConditionalTokensIx = await vaultProgram.methods
+    .addMetadataToConditionalTokens(
+      new BN(0), // nonce,
+      METADATA_URI,
+      METADATA_URI
+    )
+    .accounts({
+      payer: payer.publicKey,
+      vault,
+      underlyingTokenMint,
+      underlyingTokenMetadata,
+      conditionalOnFinalizeTokenMint:
+        conditionalOnFinalizeTokenMintKeypair.publicKey,
+      conditionalOnRevertTokenMint:
+        conditionalOnRevertTokenMintKeypair.publicKey,
+      conditionalOnFinalizeTokenMetadata,
+      conditionalOnRevertTokenMetadata,
+      tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+      systemProgram: anchor.web3.SystemProgram.programId,
+      rent: SYSVAR_RENT_PUBKEY,
+    })
+    .instruction();
+
+  await vaultProgram.methods
     .initializeConditionalVault(settlementAuthority.publicKey, nonce)
     .accounts({
       vault,
@@ -730,6 +907,7 @@ async function generateRandomVault(
       conditionalOnFinalizeTokenMintKeypair,
       conditionalOnRevertTokenMintKeypair,
     ])
+    .postInstructions([addMetadataToConditionalTokensIx])
     .rpc();
 
   return [vault, underlyingMintAuthority, settlementAuthority];
@@ -749,21 +927,25 @@ export async function mintConditionalTokens(
 ) {
   const storedVault = await program.account.conditionalVault.fetch(vault);
   if (!userUnderlyingTokenAccount) {
-    userUnderlyingTokenAccount = token.getAssociatedTokenAddressSync(
+    userUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
       storedVault.underlyingTokenMint,
-      user.publicKey
+      user.publicKey,
+      true
     );
   }
   if (!userConditionalOnFinalizeTokenAccount) {
-    userConditionalOnFinalizeTokenAccount = token.getAssociatedTokenAddressSync(
-      storedVault.conditionalOnFinalizeTokenMint,
-      user.publicKey
-    );
+    userConditionalOnFinalizeTokenAccount =
+      await token.getAssociatedTokenAddress(
+        storedVault.conditionalOnFinalizeTokenMint,
+        user.publicKey,
+        true
+      );
   }
   if (!userConditionalOnRevertTokenAccount) {
-    userConditionalOnRevertTokenAccount = token.getAssociatedTokenAddressSync(
+    userConditionalOnRevertTokenAccount = await token.getAssociatedTokenAddress(
       storedVault.conditionalOnRevertTokenMint,
-      user.publicKey
+      user.publicKey,
+      true
     );
   }
   if (!vaultUnderlyingTokenAccount) {
@@ -839,6 +1021,88 @@ export async function mintConditionalTokens(
   assert.equal(
     userConditionalOnRevertTokenAccountAfter.amount,
     userConditionalOnRevertTokenAccountBefore.amount + BigInt(amount)
+  );
+}
+
+export async function mergeConditionalTokens(
+  vaultProgram: VaultProgram,
+  amount: number | bigint,
+  user: Signer,
+  userConditionalOnFinalizeTokenAccount: PublicKey,
+  userConditionalOnRevertTokenAccount: PublicKey,
+  conditionalOnFinalizeTokenMint: PublicKey,
+  conditionalOnRevertTokenMint: PublicKey,
+  userUnderlyingTokenAccount: PublicKey,
+  vaultUnderlyingTokenAccount: PublicKey,
+  vault: PublicKey,
+  banksClient: BanksClient
+) {
+  const vaultUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
+    vaultUnderlyingTokenAccount
+  );
+  const userUnderlyingTokenAccountBefore = await getAccount(
+    banksClient,
+    userUnderlyingTokenAccount
+  );
+  const userConditionalOnFinalizeTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountBefore = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
+  );
+
+  const bnAmount = new anchor.BN(amount.toString());
+  await vaultProgram.methods
+    .mergeConditionalTokensForUnderlyingTokens(bnAmount)
+    .accounts({
+      authority: user.publicKey,
+      userConditionalOnFinalizeTokenAccount,
+      userConditionalOnRevertTokenAccount,
+      userUnderlyingTokenAccount,
+      vaultUnderlyingTokenAccount,
+      vault,
+      conditionalOnFinalizeTokenMint,
+      conditionalOnRevertTokenMint,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+    })
+    .signers([user])
+    .rpc();
+
+  const vaultUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
+    vaultUnderlyingTokenAccount
+  );
+  const userUnderlyingTokenAccountAfter = await getAccount(
+    banksClient,
+    userUnderlyingTokenAccount
+  );
+  const userConditionalOnFinalizeTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnFinalizeTokenAccount
+  );
+  const userConditionalOnRevertTokenAccountAfter = await getAccount(
+    banksClient,
+    userConditionalOnRevertTokenAccount
+  );
+
+  assert.equal(
+    vaultUnderlyingTokenAccountAfter.amount,
+    vaultUnderlyingTokenAccountBefore.amount - BigInt(amount)
+  );
+  assert.equal(
+    userUnderlyingTokenAccountAfter.amount,
+    userUnderlyingTokenAccountBefore.amount + BigInt(amount)
+  );
+  assert.equal(
+    userConditionalOnFinalizeTokenAccountAfter.amount,
+    userConditionalOnFinalizeTokenAccountBefore.amount - BigInt(amount)
+  );
+  assert.equal(
+    userConditionalOnRevertTokenAccountAfter.amount,
+    userConditionalOnRevertTokenAccountBefore.amount - BigInt(amount)
   );
 }
 

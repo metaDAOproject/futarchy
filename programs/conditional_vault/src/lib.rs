@@ -1,8 +1,13 @@
 use anchor_lang::prelude::*;
+use anchor_spl::metadata::{
+    create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata, MetadataAccount,
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
+use mpl_token_metadata::state::DataV2;
+
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
@@ -18,7 +23,7 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe");
+declare_id!("vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP");
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum VaultStatus {
@@ -84,12 +89,178 @@ pub mod conditional_vault {
         Ok(())
     }
 
+    pub fn add_metadata_to_conditional_tokens(
+        ctx: Context<AddMetadataToConditionalTokens>,
+        proposal_number: u64,
+        on_finalize_uri: String,
+        on_revert_uri: String,
+    ) -> Result<()> {
+        let seeds = generate_vault_seeds!(ctx.accounts.vault);
+        let signer_seeds = &[&seeds[..]];
+
+        // there are null bytes we must trim from string, otherwise string value is longer than we want
+        let underlying_token_symbol_raw =
+            ctx.accounts.underlying_token_metadata.data.symbol.clone();
+        let underlying_token_symbol = underlying_token_symbol_raw.trim_matches(char::from(0));
+
+        let on_finalize_token_symbol = format!("p{}", underlying_token_symbol);
+        let on_revert_token_symbol = format!("f{}", underlying_token_symbol);
+
+        create_metadata_accounts_v3(
+            ctx.accounts
+                .into_create_on_finalize_token_metadata_context()
+                .with_signer(signer_seeds),
+            DataV2 {
+                name: format!("Proposal {}: {}", proposal_number, on_finalize_token_symbol),
+                symbol: on_finalize_token_symbol,
+                uri: on_finalize_uri,
+                seller_fee_basis_points: 0,
+                creators: None,
+                collection: None,
+                uses: None,
+            },
+            false,
+            true,
+            None,
+        )?;
+
+        create_metadata_accounts_v3(
+            ctx.accounts
+                .into_create_on_revert_token_metadata_context()
+                .with_signer(signer_seeds),
+            DataV2 {
+                name: format!("Proposal {}: {}", proposal_number, on_revert_token_symbol),
+                symbol: on_revert_token_symbol,
+                uri: on_revert_uri,
+                seller_fee_basis_points: 0,
+                creators: None,
+                collection: None,
+                uses: None,
+            },
+            false,
+            true,
+            None,
+        )?;
+
+        Ok(())
+    }
+
     pub fn settle_conditional_vault(
         ctx: Context<SettleConditionalVault>,
         new_status: VaultStatus,
     ) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
         vault.status = new_status;
+
+        Ok(())
+    }
+
+    pub fn merge_conditional_tokens_for_underlying_tokens(
+        ctx: Context<MergeConditionalTokensForUnderlyingTokens>,
+        amount: u64,
+    ) -> Result<()> {
+        let accs = &ctx.accounts;
+
+        let vault = &accs.vault;
+
+        // Store Pre-operation Balances
+        let pre_user_conditional_on_finalize_balance = ctx
+            .accounts
+            .user_conditional_on_finalize_token_account
+            .amount;
+        let pre_user_conditional_on_revert_balance =
+            ctx.accounts.user_conditional_on_revert_token_account.amount;
+        let pre_vault_underlying_balance = ctx.accounts.vault_underlying_token_account.amount;
+        let pre_finalize_mint_supply = ctx.accounts.conditional_on_finalize_token_mint.supply;
+        let pre_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
+
+        let seeds = generate_vault_seeds!(vault);
+        let signer = &[&seeds[..]];
+
+        // burn `amount` from both token accounts
+        token::burn(
+            CpiContext::new(
+                accs.token_program.to_account_info(),
+                Burn {
+                    mint: accs.conditional_on_finalize_token_mint.to_account_info(),
+                    from: accs
+                        .user_conditional_on_finalize_token_account
+                        .to_account_info(),
+                    authority: accs.authority.to_account_info(),
+                },
+            ),
+            amount,
+        )?;
+
+        token::burn(
+            CpiContext::new(
+                accs.token_program.to_account_info(),
+                Burn {
+                    mint: accs.conditional_on_revert_token_mint.to_account_info(),
+                    from: accs
+                        .user_conditional_on_revert_token_account
+                        .to_account_info(),
+                    authority: accs.authority.to_account_info(),
+                },
+            ),
+            amount,
+        )?;
+
+        // Transfer `amount` from vault to user
+        token::transfer(
+            CpiContext::new_with_signer(
+                accs.token_program.to_account_info(),
+                Transfer {
+                    from: accs.vault_underlying_token_account.to_account_info(),
+                    to: accs.user_underlying_token_account.to_account_info(),
+                    authority: accs.vault.to_account_info(),
+                },
+                signer,
+            ),
+            amount,
+        )?;
+
+        // Reload Accounts to Reflect Changes
+        ctx.accounts
+            .user_conditional_on_finalize_token_account
+            .reload()?;
+        ctx.accounts
+            .user_conditional_on_revert_token_account
+            .reload()?;
+        ctx.accounts.vault_underlying_token_account.reload()?;
+        ctx.accounts.conditional_on_finalize_token_mint.reload()?;
+        ctx.accounts.conditional_on_revert_token_mint.reload()?;
+
+        // Check post-operation balances
+        let post_user_conditional_on_finalize_balance = ctx
+            .accounts
+            .user_conditional_on_finalize_token_account
+            .amount;
+        let post_user_conditional_on_revert_balance =
+            ctx.accounts.user_conditional_on_revert_token_account.amount;
+        let post_vault_underlying_balance = ctx.accounts.vault_underlying_token_account.amount;
+        let post_finalize_mint_supply = ctx.accounts.conditional_on_finalize_token_mint.supply;
+        let post_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
+
+        // Check that the user's conditional token balances are unchanged (since we're not necessarily burning all tokens)
+        require_eq!(
+            post_user_conditional_on_finalize_balance,
+            pre_user_conditional_on_finalize_balance - amount
+        );
+        require_eq!(
+            post_user_conditional_on_revert_balance,
+            pre_user_conditional_on_revert_balance - amount
+        );
+
+        // Check that the mint supplies have been reduced by the burned amounts
+        require_eq!(post_finalize_mint_supply, pre_finalize_mint_supply - amount);
+        require_eq!(post_revert_mint_supply, pre_revert_mint_supply - amount);
+
+        // Check that the vault's underlying balance has been reduced by the transferred amount
+        require_eq!(
+            post_vault_underlying_balance,
+            pre_vault_underlying_balance - amount
+        );
 
         Ok(())
     }
@@ -356,6 +527,84 @@ pub struct InitializeConditionalVault<'info> {
 }
 
 #[derive(Accounts)]
+pub struct AddMetadataToConditionalTokens<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        mut,
+        has_one = underlying_token_mint,
+        constraint = vault.status == VaultStatus::Active @ ErrorCode::VaultAlreadySettled
+    )]
+    pub vault: Account<'info, ConditionalVault>,
+    #[account(mut)]
+    pub underlying_token_mint: Account<'info, Mint>,
+    pub underlying_token_metadata: Account<'info, MetadataAccount>,
+    #[account(
+        mut,
+        mint::authority = vault,
+        mint::freeze_authority = vault,
+        mint::decimals = underlying_token_mint.decimals
+    )]
+    pub conditional_on_finalize_token_mint: Account<'info, Mint>,
+    #[account(
+        mut,
+        mint::authority = vault,
+        mint::freeze_authority = vault,
+        mint::decimals = underlying_token_mint.decimals
+    )]
+    pub conditional_on_revert_token_mint: Account<'info, Mint>,
+    /// CHECK: verified via cpi into token metadata
+    #[account(mut)]
+    pub conditional_on_finalize_token_metadata: AccountInfo<'info>,
+    /// CHECK: verified via cpi into token metadata
+    #[account(mut)]
+    pub conditional_on_revert_token_metadata: AccountInfo<'info>,
+    pub token_metadata_program: Program<'info, Metadata>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+impl<'info> AddMetadataToConditionalTokens<'info> {
+    pub fn into_create_on_finalize_token_metadata_context(
+        &self,
+    ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
+        let cpi_program = self.token_metadata_program.to_account_info();
+
+        let cpi_accounts = CreateMetadataAccountsV3 {
+            metadata: self
+                .conditional_on_finalize_token_metadata
+                .to_account_info(),
+            mint: self.conditional_on_finalize_token_mint.to_account_info(),
+            mint_authority: self.vault.to_account_info(),
+            payer: self.payer.to_account_info(),
+            update_authority: self.vault.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+            rent: self.rent.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    pub fn into_create_on_revert_token_metadata_context(
+        &self,
+    ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
+        let cpi_program = self.token_metadata_program.to_account_info();
+
+        let cpi_accounts = CreateMetadataAccountsV3 {
+            metadata: self.conditional_on_revert_token_metadata.to_account_info(),
+            mint: self.conditional_on_revert_token_mint.to_account_info(),
+            mint_authority: self.vault.to_account_info(),
+            payer: self.payer.to_account_info(),
+            update_authority: self.vault.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+            rent: self.rent.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
+
+#[derive(Accounts)]
 pub struct SettleConditionalVault<'info> {
     pub settlement_authority: Signer<'info>,
     #[account(
@@ -403,6 +652,45 @@ pub struct MintConditionalTokens<'info> {
         token::mint = conditional_on_revert_token_mint
     )]
     pub user_conditional_on_revert_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct MergeConditionalTokensForUnderlyingTokens<'info> {
+    #[account(
+        has_one = conditional_on_finalize_token_mint @ ErrorCode::InvalidConditionalTokenMint,
+        has_one = conditional_on_revert_token_mint @ ErrorCode::InvalidConditionalTokenMint,
+        constraint = vault.status == VaultStatus::Active @ ErrorCode::VaultAlreadySettled
+    )]
+    pub vault: Account<'info, ConditionalVault>,
+    #[account(mut)]
+    pub conditional_on_finalize_token_mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub conditional_on_revert_token_mint: Account<'info, Mint>,
+    #[account(
+        mut,
+        constraint = vault_underlying_token_account.key() == vault.underlying_token_account @ ErrorCode::InvalidVaultUnderlyingTokenAccount
+    )]
+    pub vault_underlying_token_account: Account<'info, TokenAccount>,
+    pub authority: Signer<'info>,
+    #[account(
+        mut,
+        token::authority = authority,
+        token::mint = conditional_on_finalize_token_mint
+    )]
+    pub user_conditional_on_finalize_token_account: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        token::authority = authority,
+        token::mint = conditional_on_revert_token_mint
+    )]
+    pub user_conditional_on_revert_token_account: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        token::authority = authority,
+        token::mint = vault.underlying_token_mint
+    )]
+    pub user_underlying_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
 }
 
