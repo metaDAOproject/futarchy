@@ -24,7 +24,7 @@ security_txt! {
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp");
+declare_id!("FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
@@ -45,10 +45,9 @@ pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
 #[account]
 pub struct DAO {
-    // treasury needed even though DAO is PDA for this reason: https://solana.stackexchange.com/questions/7667/a-peculiar-problem-with-cpis
     pub treasury_pda_bump: u8,
     pub treasury: Pubkey,
-    pub meta_mint: Pubkey,
+    pub token_mint: Pubkey,
     pub usdc_mint: Pubkey,
     pub proposal_count: u32,
     pub last_proposal_slot: u64,
@@ -63,8 +62,17 @@ pub struct DAO {
     pub burn_decay_per_slot_lamports: u64,
     pub slots_per_proposal: u64,
     pub market_taker_fee: i64,
+    // the TWAP can only move by a certain amount per update, so it needs to start at
+    // a value. that's `twap_expected_value`, and it's in base lots divided by quote lots.
+    // so if you expect your token to trade around $1, your token has 9 decimals and a base_lot_size
+    // of 1_000_000_000, your `twap_expected_value` could be 10_000 (10,000 hundredths of pennies = $1).
     pub twap_expected_value: u64,
     pub max_observation_change_per_update_lots: u64,
+    // amount of base tokens that constitute a lot. for example, if TOKEN has
+    // 9 decimals, then if lot size was 1_000_000_000 you could trade in increments
+    // of 1 TOKEN. ideally, you want to pick a lot size where each lot is worth $1 - $10.
+    // this balances spam-prevention with allowing users to trade small amounts.
+    pub base_lot_size: i64,
 }
 
 #[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -108,21 +116,25 @@ pub struct ProposalAccount {
 pub mod autocrat_v0 {
     use super::*;
 
-    pub fn initialize_dao(ctx: Context<InitializeDAO>) -> Result<()> {
+    pub fn initialize_dao(
+        ctx: Context<InitializeDAO>,
+        base_lot_size: i64,
+        twap_expected_value: u64,
+    ) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        dao.meta_mint = ctx.accounts.meta_mint.key();
+        dao.token_mint = ctx.accounts.token_mint.key();
         dao.usdc_mint = ctx.accounts.usdc_mint.key();
 
-        dao.proposal_count = 2;
+        dao.proposal_count = 1;
 
         dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
         dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
         dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
         dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
         dao.market_taker_fee = 0;
-        // 100_000 price lots * quote lot size of 100 = 10_000_000 or $10 per quote lot size of meta, which is 0.1 meta
-        dao.twap_expected_value = 100_000; // $100 USDC per 1 META
+        dao.twap_expected_value = twap_expected_value;
+        dao.base_lot_size = base_lot_size;
         dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
 
         let (treasury_pubkey, treasury_bump) =
@@ -175,7 +187,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
+            openbook_pass_market.base_lot_size == dao.base_lot_size,
             AutocratError::InvalidMarket
         );
         require!(
@@ -214,7 +226,7 @@ pub mod autocrat_v0 {
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.base_lot_size == 100_000_000, // minimum tradeable = 0.1 META
+            openbook_fail_market.base_lot_size == dao.base_lot_size,
             AutocratError::InvalidMarket
         );
         require!(
@@ -442,6 +454,10 @@ pub mod autocrat_v0 {
             dao.twap_expected_value = twap_expected_value;
         }
 
+        if let Some(base_lot_size) = dao_params.base_lot_size {
+            dao.base_lot_size = base_lot_size;
+        }
+
         if let Some(max_observation_change_per_update_lots) =
             dao_params.max_observation_change_per_update_lots
         {
@@ -457,19 +473,13 @@ pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + std::mem::size_of::<DAO>(),
-        // We will create a civilization of the Mind in Cyberspace. May it be
-        // more humane and fair than the world your governments have made before.
-        //  - John Perry Barlow, A Declaration of the Independence of Cyberspace
-        seeds = [b"WWCACOTMICMIBMHAFTTWYGHMB"], 
-        bump
+        space = 8 + std::mem::size_of::<DAO>()
     )]
     pub dao: Account<'info, DAO>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
-    #[account(mint::decimals = 9)]
-    pub meta_mint: Account<'info, Mint>,
+    pub token_mint: Account<'info, Mint>,
     #[account(mint::decimals = 6)]
     pub usdc_mint: Account<'info, Mint>,
 }
@@ -493,7 +503,7 @@ pub struct InitializeProposal<'info> {
     )]
     pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = base_vault.underlying_token_mint == dao.meta_mint,
+        constraint = base_vault.underlying_token_mint == dao.token_mint,
         constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,
@@ -543,6 +553,7 @@ pub struct UpdateDaoParams {
     pub market_taker_fee: Option<i64>,
     pub twap_expected_value: Option<u64>,
     pub max_observation_change_per_update_lots: Option<u64>,
+    pub base_lot_size: Option<i64>,
 }
 
 #[derive(Accounts)]
