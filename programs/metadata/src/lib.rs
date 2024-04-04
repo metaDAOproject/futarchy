@@ -5,7 +5,6 @@ declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 const DEFAULT_SPACE: usize = 1000;
 const INCREASE_IN_SPACE: usize = 100;
 
-
 #[account]
 pub struct Metadata {
     dao_treasury: Pubkey,
@@ -27,23 +26,25 @@ pub struct MetadataItem {
 pub mod metadata {
     use super::*;
     // Instruction to create a new Metadata object
-    pub fn create_metadata(ctx: Context<CreateMetadata>, delegate: Pubkey) -> Result<()> {
+    pub fn create_metadata(ctx: Context<CreateMetadata>) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
-        metadata.dao_treasury = *ctx.accounts.dao_treasury.key;
-        metadata.delegate = delegate;
+        metadata.dao_treasury = ctx.accounts.dao_treasury.key();
+        metadata.delegate = ctx.accounts.delegate.key();
         metadata.creation_slot = Clock::get()?.slot;
         metadata.last_updated_slot = Clock::get()?.slot;
         metadata.items = Vec::new();
         Ok(())
     }
 
-    pub fn increase_metadata_account_size(_ctx: Context<IncreaseMetadataAccountSize>) -> Result<()> {
+    pub fn increase_metadata_account_size(
+        _ctx: Context<IncreaseMetadataAccountSize>,
+    ) -> Result<()> {
         Ok(())
     }
 
-    pub fn set_delegate(ctx: Context<SetDelegate>, new_delegate: Pubkey) -> Result<()> {
+    pub fn set_delegate(ctx: Context<SetDelegate>) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
-        metadata.delegate = new_delegate;
+        metadata.delegate = ctx.accounts.new_delegate.key();
         metadata.last_updated_slot = Clock::get()?.slot;
         Ok(())
     }
@@ -55,7 +56,10 @@ pub mod metadata {
         value: Vec<u8>,
     ) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
-        require!(metadata.items.iter().all(|item| item.key != key), ErrorCode::DuplicateKey);
+        require!(
+            metadata.items.iter().all(|item| item.key != key),
+            ErrorCode::DuplicateKey
+        );
         let item = MetadataItem {
             update_authority: metadata.delegate,
             last_updated_slot: Clock::get()?.slot,
@@ -72,7 +76,11 @@ pub mod metadata {
         let metadata = &mut ctx.accounts.metadata;
         let current_slot = Clock::get()?.slot;
         if let Some(item) = metadata.items.iter_mut().find(|item| item.key == key) {
-            require_gt!(current_slot, item.last_updated_slot, ErrorCode::InvalidOperationInCurrentSlot);
+            require_gt!(
+                current_slot,
+                item.last_updated_slot,
+                ErrorCode::InvalidOperationInCurrentSlot
+            );
             metadata.items.retain(|item| item.key != key);
             metadata.last_updated_slot = Clock::get()?.slot;
         } else {
@@ -91,7 +99,11 @@ pub mod metadata {
         let metadata = &mut ctx.accounts.metadata;
         let current_slot = Clock::get()?.slot;
         if let Some(item) = metadata.items.iter_mut().find(|item| item.key == key) {
-            require_gt!(current_slot, item.last_updated_slot, ErrorCode::InvalidOperationInCurrentSlot);
+            require_gt!(
+                current_slot,
+                item.last_updated_slot,
+                ErrorCode::InvalidOperationInCurrentSlot
+            );
             item.value = new_value;
             item.last_updated_slot = current_slot;
             metadata.last_updated_slot = current_slot;
@@ -111,7 +123,11 @@ pub mod metadata {
         let metadata = &mut ctx.accounts.metadata;
         let current_slot = Clock::get()?.slot;
         if let Some(item) = metadata.items.iter_mut().find(|item| item.key == key) {
-            require_gt!(current_slot, item.last_updated_slot, ErrorCode::InvalidOperationInCurrentSlot);
+            require_gt!(
+                current_slot,
+                item.last_updated_slot,
+                ErrorCode::InvalidOperationInCurrentSlot
+            );
             item.value.extend(additional_value);
             item.last_updated_slot = current_slot;
             metadata.last_updated_slot = current_slot;
@@ -148,9 +164,8 @@ pub struct IncreaseMetadataAccountSize<'info> {
     pub delegate: Signer<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
-    pub system_program: Program<'info, System>
+    pub system_program: Program<'info, System>,
 }
-
 
 #[derive(Accounts)]
 pub struct SetDelegate<'info> {
@@ -158,7 +173,7 @@ pub struct SetDelegate<'info> {
     pub metadata: Account<'info, Metadata>,
     pub dao_treasury: Signer<'info>,
     /// CHECK: This is the metadata delegate account, it only ever signs
-    pub delegate: UncheckedAccount<'info>,
+    pub new_delegate: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]

@@ -5,6 +5,7 @@ use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use conditional_vault::VaultStatus;
+use metadata::program::Metadata;
 use openbook_twap::TWAPMarket;
 use openbook_v2::state::Market;
 use solana_program::instruction::Instruction;
@@ -129,6 +130,23 @@ pub mod autocrat_v0 {
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
         dao.treasury_pda_bump = treasury_bump;
         dao.treasury = treasury_pubkey;
+
+        // Create metadata account
+        let dao_key = dao.key();
+        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
+        let signer_seeds = &[&treasury_seeds[..]];
+
+        metadata::cpi::create_metadata(CpiContext::new_with_signer(
+            ctx.accounts.metadata.to_account_info(),
+            metadata::cpi::accounts::CreateMetadata {
+                dao_treasury: ctx.accounts.dao_treasury.to_account_info(),
+                delegate: ctx.accounts.metadata_delegate.to_account_info(),
+                metadata: ctx.accounts.metadata.to_account_info(),
+                payer: ctx.accounts.payer.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+            },
+            signer_seeds,
+        ))?;
 
         Ok(())
     }
@@ -465,6 +483,17 @@ pub struct InitializeDAO<'info> {
         bump
     )]
     pub dao: Account<'info, DAO>,
+    /// CHECK: never read
+    #[account(
+        seeds = [dao.key().as_ref()],
+        bump = dao.treasury_pda_bump,
+        mut
+    )]
+    pub dao_treasury: UncheckedAccount<'info>,
+    /// CHECK: Only signs for the metadata updates
+    pub metadata_delegate: UncheckedAccount<'info>,
+    /// CHECK: Verified by CPI call into Metadata program
+    pub metadata: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
