@@ -2,10 +2,13 @@ use anchor_lang::prelude::*;
 
 declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 
+const DEFAULT_SPACE: usize = 1000;
+const INCREASE_IN_SPACE: usize = 100;
+
+
 #[account]
 pub struct Metadata {
     dao_treasury: Pubkey,
-    // TODO: dao_treasury_bump probably
     delegate: Pubkey,
     items: Vec<MetadataItem>,
     creation_slot: u64,
@@ -18,7 +21,6 @@ pub struct MetadataItem {
     last_updated_slot: u64,
     key: String,
     value: Vec<u8>,
-    // Additional UI-relevant fields can be added here, e.g. a content_field enum
 }
 
 #[program]
@@ -35,6 +37,10 @@ pub mod metadata {
         Ok(())
     }
 
+    pub fn increase_metadata_account_size(_ctx: Context<IncreaseMetadataAccountSize>) -> Result<()> {
+        Ok(())
+    }
+
     pub fn set_delegate(ctx: Context<SetDelegate>, new_delegate: Pubkey) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
         metadata.delegate = new_delegate;
@@ -43,13 +49,13 @@ pub mod metadata {
     }
 
     // Instruction to add a new MetadataItem
-    pub fn add_metadata_item(
+    pub fn create_metadata_item(
         ctx: Context<ModifyMetadata>,
         key: String,
         value: Vec<u8>,
     ) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
-        require!(!metadata.items.iter().any(|item| item.key == key), ErrorCode::DuplicateKey);
+        require!(metadata.items.iter().all(|item| item.key != key), ErrorCode::DuplicateKey);
         let item = MetadataItem {
             update_authority: metadata.delegate,
             last_updated_slot: Clock::get()?.slot,
@@ -64,23 +70,34 @@ pub mod metadata {
     // Instruction to delete a MetadataItem
     pub fn delete_metadata_item(ctx: Context<ModifyMetadata>, key: String) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
-        metadata.items.retain(|item| item.key != key);
-        metadata.last_updated_slot = Clock::get()?.slot;
+        let current_slot = Clock::get()?.slot;
+        if let Some(item) = metadata.items.iter_mut().find(|item| item.key == key) {
+            require_gt!(current_slot, item.last_updated_slot, ErrorCode::InvalidOperationInCurrentSlot);
+            metadata.items.retain(|item| item.key != key);
+            metadata.last_updated_slot = Clock::get()?.slot;
+        } else {
+            msg!("Key: {}", key);
+            return Err(error!(ErrorCode::KeyNotFound));
+        }
         Ok(())
     }
 
-    // Instruction to write data to an existing MetadataItem
-    // Assumes the existence of a helper method to find the item by key
+    // Instruction to overwrite data on an existing MetadataItem
     pub fn write_metadata_item(
         ctx: Context<ModifyMetadata>,
         key: String,
         new_value: Vec<u8>,
     ) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
+        let current_slot = Clock::get()?.slot;
         if let Some(item) = metadata.items.iter_mut().find(|item| item.key == key) {
+            require_gt!(current_slot, item.last_updated_slot, ErrorCode::InvalidOperationInCurrentSlot);
             item.value = new_value;
-            item.last_updated_slot = Clock::get()?.slot;
-            metadata.last_updated_slot = Clock::get()?.slot;
+            item.last_updated_slot = current_slot;
+            metadata.last_updated_slot = current_slot;
+        } else {
+            msg!("Key: {}", key);
+            return Err(error!(ErrorCode::KeyNotFound));
         }
         Ok(())
     }
@@ -92,10 +109,15 @@ pub mod metadata {
         additional_value: Vec<u8>,
     ) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
+        let current_slot = Clock::get()?.slot;
         if let Some(item) = metadata.items.iter_mut().find(|item| item.key == key) {
+            require_gt!(current_slot, item.last_updated_slot, ErrorCode::InvalidOperationInCurrentSlot);
             item.value.extend(additional_value);
-            item.last_updated_slot = Clock::get()?.slot;
-            metadata.last_updated_slot = Clock::get()?.slot;
+            item.last_updated_slot = current_slot;
+            metadata.last_updated_slot = current_slot;
+        } else {
+            msg!("Key: {}", key);
+            return Err(error!(ErrorCode::KeyNotFound));
         }
         Ok(())
     }
@@ -103,7 +125,7 @@ pub mod metadata {
 
 #[derive(Accounts)]
 pub struct CreateMetadata<'info> {
-    #[account(init, payer = payer, seeds = [dao_treasury.key().as_ref()], bump, space = 8 + 8000)]
+    #[account(init, payer = payer, seeds = [dao_treasury.key().as_ref()], bump, space = 8 + DEFAULT_SPACE)]
     pub metadata: Account<'info, Metadata>,
     pub dao_treasury: Signer<'info>,
     #[account(mut)]
@@ -112,6 +134,23 @@ pub struct CreateMetadata<'info> {
     pub delegate: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
+
+#[derive(Accounts)]
+pub struct IncreaseMetadataAccountSize<'info> {
+    #[account(
+        mut,
+        has_one = delegate,
+        realloc = metadata.to_account_info().data_len() + INCREASE_IN_SPACE,
+        realloc::payer = payer,
+        realloc::zero = false,
+    )]
+    pub metadata: Account<'info, Metadata>,
+    pub delegate: Signer<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>
+}
+
 
 #[derive(Accounts)]
 pub struct SetDelegate<'info> {
@@ -133,4 +172,8 @@ pub struct ModifyMetadata<'info> {
 pub enum ErrorCode {
     #[msg("The provided metadata key already exists.")]
     DuplicateKey,
+    #[msg("Operation cannot be performed on an item updated in the current slot.")]
+    InvalidOperationInCurrentSlot,
+    #[msg("The specified key was not found.")]
+    KeyNotFound,
 }
