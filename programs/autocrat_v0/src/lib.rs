@@ -380,36 +380,28 @@ pub mod autocrat_v0 {
             * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
             / MAX_BPS as u128;
 
-        if pass_market_twap > threshold {
+        let new_vault_state = if pass_market_twap > threshold {
             proposal.state = ProposalState::Passed;
 
-            for vault in [
-                ctx.accounts.base_vault.to_account_info(),
-                ctx.accounts.quote_vault.to_account_info(),
-            ] {
-                let vault_program = ctx.accounts.vault_program.to_account_info();
-                let cpi_accounts = SettleConditionalVault {
-                    settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
-                    vault,
-                };
-                let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
-                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, VaultStatus::Finalized)?;
-            }
+            VaultStatus::Finalized
+
         } else {
             proposal.state = ProposalState::Failed;
 
-            for vault in [
-                ctx.accounts.base_vault.to_account_info(),
-                ctx.accounts.quote_vault.to_account_info(),
-            ] {
-                let vault_program = ctx.accounts.vault_program.to_account_info();
-                let cpi_accounts = SettleConditionalVault {
-                    settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
-                    vault,
-                };
-                let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
-                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, VaultStatus::Reverted)?;
-            }
+            VaultStatus::Reverted
+        };
+
+        for vault in [
+            ctx.accounts.base_vault.to_account_info(),
+            ctx.accounts.quote_vault.to_account_info(),
+        ] {
+            let vault_program = ctx.accounts.vault_program.to_account_info();
+            let cpi_accounts = SettleConditionalVault {
+                settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
+                vault,
+            };
+            let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
+            conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_vault_state)?;
         }
 
         Ok(())
