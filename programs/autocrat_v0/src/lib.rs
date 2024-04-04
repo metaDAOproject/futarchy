@@ -80,6 +80,7 @@ pub enum ProposalState {
     Pending,
     Passed,
     Failed,
+    Executed,
 }
 
 #[account]
@@ -379,50 +380,51 @@ pub mod autocrat_v0 {
             * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
             / MAX_BPS as u128;
 
-        if pass_market_twap > threshold {
-            proposal.state = ProposalState::Passed;
-
-            let mut svm_instruction: Instruction = proposal.instruction.borrow().into();
-            for acc in svm_instruction.accounts.iter_mut() {
-                if &acc.pubkey == ctx.accounts.dao_treasury.key {
-                    acc.is_signer = true;
-                }
-            }
-
-            solana_program::program::invoke_signed(
-                &svm_instruction,
-                ctx.remaining_accounts,
-                signer,
-            )?;
-
-            for vault in [
-                ctx.accounts.base_vault.to_account_info(),
-                ctx.accounts.quote_vault.to_account_info(),
-            ] {
-                let vault_program = ctx.accounts.vault_program.to_account_info();
-                let cpi_accounts = SettleConditionalVault {
-                    settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
-                    vault,
-                };
-                let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
-                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, VaultStatus::Finalized)?;
-            }
+        let (new_proposal_state, new_vault_state) = if pass_market_twap > threshold {
+            (ProposalState::Passed, VaultStatus::Finalized)
         } else {
-            proposal.state = ProposalState::Failed;
+            (ProposalState::Failed, VaultStatus::Reverted)
+        };
 
-            for vault in [
-                ctx.accounts.base_vault.to_account_info(),
-                ctx.accounts.quote_vault.to_account_info(),
-            ] {
-                let vault_program = ctx.accounts.vault_program.to_account_info();
-                let cpi_accounts = SettleConditionalVault {
-                    settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
-                    vault,
-                };
-                let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
-                conditional_vault::cpi::settle_conditional_vault(cpi_ctx, VaultStatus::Reverted)?;
+        proposal.state = new_proposal_state;
+
+        for vault in [
+            ctx.accounts.base_vault.to_account_info(),
+            ctx.accounts.quote_vault.to_account_info(),
+        ] {
+            let vault_program = ctx.accounts.vault_program.to_account_info();
+            let cpi_accounts = SettleConditionalVault {
+                settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
+                vault,
+            };
+            let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
+            conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_vault_state)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
+        let proposal = &mut ctx.accounts.proposal;
+
+        proposal.state = ProposalState::Executed;
+
+        let dao_key = ctx.accounts.dao.key();
+        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
+        let signer = &[&treasury_seeds[..]];
+
+        let mut svm_instruction: Instruction = proposal.instruction.borrow().into();
+        for acc in svm_instruction.accounts.iter_mut() {
+            if &acc.pubkey == ctx.accounts.dao_treasury.key {
+                acc.is_signer = true;
             }
         }
+
+        solana_program::program::invoke_signed(
+            &svm_instruction,
+            ctx.remaining_accounts,
+            signer,
+        )?;
 
         Ok(())
     }
@@ -544,6 +546,23 @@ pub struct FinalizeProposal<'info> {
     pub dao_treasury: UncheckedAccount<'info>,
 }
 
+#[derive(Accounts)]
+pub struct ExecuteProposal<'info> {
+    #[account(
+        mut,
+        constraint = proposal.state == ProposalState::Passed @ AutocratError::ProposalNotPassed,
+    )]
+    pub proposal: Account<'info, Proposal>,
+    pub dao: Box<Account<'info, DAO>>,
+    /// CHECK: never read
+    #[account(
+        seeds = [dao.key().as_ref()],
+        bump = dao.treasury_pda_bump,
+        mut
+    )]
+    pub dao_treasury: UncheckedAccount<'info>,
+}
+
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct UpdateDaoParams {
     pub pass_threshold_bps: Option<u16>,
@@ -606,10 +625,10 @@ pub enum AutocratError {
     ProposalTooYoung,
     #[msg("Markets too young for proposal to be finalized")]
     MarketsTooYoung,
-    #[msg("The market dictates that this proposal cannot pass")]
-    ProposalCannotPass,
     #[msg("This proposal has already been finalized")]
     ProposalAlreadyFinalized,
     #[msg("A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits")]
     InvalidVaultNonce,
+    #[msg("This proposal can't be executed because it isn't in the passed state")]
+    ProposalNotPassed,
 }
