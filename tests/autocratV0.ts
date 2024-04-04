@@ -641,7 +641,6 @@ describe("autocrat_v0", async function () {
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
-      assert.isFalse(storedProposal.isExecuted);
 
       assert.equal((await getAccount(banksClient, treasuryMetaAccount)).amount, 1_000_000_000n);
       assert.equal((await getAccount(banksClient, treasuryUsdcAccount)).amount, 1_000_000n);
@@ -668,7 +667,7 @@ describe("autocrat_v0", async function () {
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
 
-      assert.isTrue(storedProposal.isExecuted);
+      assert.exists(storedProposal.state.executed);
 
       assert.equal((await getAccount(banksClient, treasuryMetaAccount)).amount, 0n);
       assert.equal((await getAccount(banksClient, treasuryUsdcAccount)).amount, 0n);
@@ -1230,7 +1229,6 @@ describe("autocrat_v0", async function () {
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
-      assert.isFalse(storedProposal.isExecuted);
 
       assert.equal((await getAccount(banksClient, mertdTreasuryMertdAccount)).amount, 1_000_000_000n);
       assert.equal((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount, 1_000_000n);
@@ -1257,7 +1255,7 @@ describe("autocrat_v0", async function () {
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
 
-      assert.isTrue(storedProposal.isExecuted);
+      assert.exists(storedProposal.state.executed);
 
       assert.equal((await getAccount(banksClient, mertdTreasuryMertdAccount)).amount, 0n);
       assert.equal((await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount, 0n);

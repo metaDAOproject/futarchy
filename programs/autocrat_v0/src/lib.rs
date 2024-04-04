@@ -80,6 +80,7 @@ pub enum ProposalState {
     Pending,
     Passed,
     Failed,
+    Executed,
 }
 
 #[account]
@@ -96,7 +97,6 @@ pub struct Proposal {
     pub openbook_fail_market: Pubkey,
     pub base_vault: Pubkey,
     pub quote_vault: Pubkey,
-    pub is_executed: bool,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -324,7 +324,6 @@ pub mod autocrat_v0 {
         proposal.slot_enqueued = clock.slot;
         proposal.state = ProposalState::Pending;
         proposal.instruction = instruction;
-        proposal.is_executed = false;
 
         Ok(())
     }
@@ -419,7 +418,7 @@ pub mod autocrat_v0 {
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
 
-        proposal.is_executed = true;
+        proposal.state = ProposalState::Executed;
 
         let dao_key = ctx.accounts.dao.key();
         let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
@@ -563,7 +562,6 @@ pub struct ExecuteProposal<'info> {
     #[account(
         mut,
         constraint = proposal.state == ProposalState::Passed @ AutocratError::ProposalHasntPassed,
-        constraint = proposal.is_executed == false @ AutocratError::ProposalAlreadyExecuted,
     )]
     pub proposal: Account<'info, Proposal>,
     pub dao: Box<Account<'info, DAO>>,
