@@ -550,7 +550,7 @@ pub struct FinalizeProposal<'info> {
 pub struct ExecuteProposal<'info> {
     #[account(
         mut,
-        constraint = proposal.state == ProposalState::Passed @ AutocratError::ProposalHasntPassed,
+        constraint = proposal.state == ProposalState::Passed @ AutocratError::ProposalNotPassed,
     )]
     pub proposal: Account<'info, Proposal>,
     pub dao: Box<Account<'info, DAO>>,
@@ -629,8 +629,6 @@ pub enum AutocratError {
     ProposalAlreadyFinalized,
     #[msg("A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits")]
     InvalidVaultNonce,
-    #[msg("This proposal hasn't passed to be executed")]
-    ProposalHasntPassed,
-    #[msg("This proposal has already been executed")]
-    ProposalAlreadyExecuted,
+    #[msg("This proposal can't be executed because it isn't in the passed state")]
+    ProposalNotPassed,
 }
