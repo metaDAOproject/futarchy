@@ -380,16 +380,13 @@ pub mod autocrat_v0 {
             * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
             / MAX_BPS as u128;
 
-        let new_vault_state = if pass_market_twap > threshold {
-            proposal.state = ProposalState::Passed;
-
-            VaultStatus::Finalized
-
+        let (new_proposal_state, new_vault_state) = if pass_market_twap > threshold {
+            (ProposalState::Passed, VaultStatus::Finalized)
         } else {
-            proposal.state = ProposalState::Failed;
-
-            VaultStatus::Reverted
+            (ProposalState::Failed, VaultStatus::Reverted)
         };
+
+        proposal.state = new_proposal_state;
 
         for vault in [
             ctx.accounts.base_vault.to_account_info(),
