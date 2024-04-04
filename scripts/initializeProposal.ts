@@ -18,6 +18,7 @@ const PANTERA_PUBKEY = new PublicKey(
 
 const COST_DEPLOY = 4 * LAMPORTS_PER_SOL
 
+// Transfer
 const transferToAccount = async (
   daoTreasury: anchor.web3.PublicKey,
   destinationAccount: anchor.web3.PublicKey,
@@ -74,6 +75,7 @@ const transferToAccount = async (
   return transferIx;
 }
 
+// Memo
 const createMemo = async (memoText: string) => {
   console.log('Memo text');
   console.log(memoText);
@@ -98,7 +100,8 @@ const createMemo = async (memoText: string) => {
   return createMemoIx;
 }
 
-const burnSupply = async (tokenMint: anchor.web3.PublicKey, amount: number) => {
+// Burn
+const burnSupply = async (daoTreasury: anchor.web3.PublicKey, tokenMint: anchor.web3.PublicKey, amount: number) => {
   console.log(`Burn token ${tokenMint.toString()}`);
   // This gets the origin account with the token intended for burn
   const originAcc = await token.getOrCreateAssociatedTokenAccount(
@@ -137,6 +140,7 @@ const burnSupply = async (tokenMint: anchor.web3.PublicKey, amount: number) => {
   return burnIx;
 }
 
+// Migrate
 const migrateProgram = async () => {}
 
 async function main() {
@@ -156,7 +160,7 @@ async function main() {
 
   console.log('Account has enough SOL (4) to continue');
 
-  // const proposalIx = await burnSupply(META, 1337);
+  // const proposalIx = await burnSupply(daoTreasury, META, 1337);
 
   // const proposalIx = await transferToAccount(daoTreasury, PANTERA_PUBKEY, META, 342)
 
