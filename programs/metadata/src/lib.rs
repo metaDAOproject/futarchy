@@ -4,6 +4,7 @@ declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 
 const DEFAULT_SPACE: usize = 1000;
 const INCREASE_IN_SPACE: usize = 100;
+const MAX_SPACE: usize = 2000; // Something like this so we don't hit into the 32kb heap limit
 
 #[account]
 pub struct Metadata {
@@ -16,7 +17,7 @@ pub struct Metadata {
 
 #[account]
 pub struct MetadataItem {
-    update_authority: Pubkey,
+    // update_authority: Pubkey,
     last_updated_slot: u64,
     key: String,
     value: Vec<u8>,
@@ -61,7 +62,7 @@ pub mod metadata {
             ErrorCode::DuplicateKey
         );
         let item = MetadataItem {
-            update_authority: metadata.delegate,
+            // update_authority: metadata.delegate,
             last_updated_slot: Clock::get()?.slot,
             key,
             value,
@@ -156,7 +157,7 @@ pub struct IncreaseMetadataAccountSize<'info> {
     #[account(
         mut,
         has_one = delegate,
-        realloc = metadata.to_account_info().data_len() + INCREASE_IN_SPACE,
+        realloc = metadata.to_account_info().data_len() + INCREASE_IN_SPACE, // TODO: Set the max size, after which heap memory breaks
         realloc::payer = payer,
         realloc::zero = false,
     )]
