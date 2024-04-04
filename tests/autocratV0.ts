@@ -87,7 +87,7 @@ describe("autocrat_v0", async function () {
   let provider,
     autocrat,
     payer,
-    context,
+    context: ProgramTestContext,
     banksClient: BanksClient,
     dao,
     mertdDao,
@@ -953,111 +953,335 @@ describe("autocrat_v0", async function () {
         10_000n * 1_000_000n
       );
     });
+  });
 
-    describe("#execute_proposal", async function () {
-      let proposal,
+  describe("#execute_proposal", async function () {
+    let proposal,
+      openbookPassMarket,
+      openbookFailMarket,
+      openbookTwapPassMarket,
+      openbookTwapFailMarket,
+      baseVault,
+      quoteVault,
+      mm0,
+      instruction;
+
+    beforeEach(async function () {
+      await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
+      await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+
+      instruction = {
+        programId: MEMO_PROGRAM_ID,
+        accounts: [],
+        data: Buffer.from("hello, world"),
+      };
+
+      proposal = await initializeProposal(
+        autocrat,
+        instruction,
+        vaultProgram,
+        dao,
+        context,
+        payer,
+        openbook,
+        openbookTwap
+      );
+
+      ({
         openbookPassMarket,
         openbookFailMarket,
         openbookTwapPassMarket,
         openbookTwapFailMarket,
-        mm0,
-        instruction;
+        baseVault,
+        quoteVault,
+      } = await autocrat.account.proposal.fetch(proposal));
 
-      beforeEach(async function () {
-        await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
-        await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+      mm0 = await generateMarketMaker(
+        openbook,
+        openbookTwap,
+        banksClient,
+        payer,
+        openbookPassMarket,
+        openbookFailMarket,
+        vaultProgram,
+        context
+      );
+    });
 
-        instruction = {
-          programId: MEMO_PROGRAM_ID,
-          accounts: [],
-          data: Buffer.from("hello, world"),
-        };
+    it("doesn't allow pending proposals to be executed", async function () {
+      const callbacks = expectError(
+        autocrat,
+        "ProposalNotPassed",
+        "executed despite proposal still pending"
+      );
 
-        proposal = await initializeProposal(
-          autocrat,
-          instruction,
-          vaultProgram,
+      await autocrat.methods
+        .executeProposal()
+        .accounts({
+          proposal,
           dao,
-          context,
-          payer,
-          openbook,
-          openbookTwap
-        );
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+    });
 
-        ({
-          openbookPassMarket,
-          openbookFailMarket,
+    it("doesn't allow failed proposals to be executed", async function () {
+      await placeOrdersAroundMid(
+        openbookTwap,
+        openbook,
+        openbookTwapPassMarket,
+        mm0,
+        1050
+      );
+      await placeOrdersAroundMid(
+        openbookTwap,
+        openbook,
+        openbookTwapFailMarket,
+        mm0,
+        3000
+      );
+
+      let currentClock = await context.banksClient.getClock();
+      const newSlot = currentClock.slot + 10_000_000n;
+      context.setClock(
+        new Clock(
+          newSlot,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
+
+      await placeOrdersAroundMid(
+        openbookTwap,
+        openbook,
+        openbookTwapPassMarket,
+        mm0,
+        1050
+      );
+      await placeOrdersAroundMid(
+        openbookTwap,
+        openbook,
+        openbookTwapFailMarket,
+        mm0,
+        3000
+      );
+
+      await autocrat.methods
+        .finalizeProposal()
+        .accounts({
+          proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
+          dao,
           baseVault,
           quoteVault,
-        } = await autocrat.account.proposal.fetch(proposal));
+          vaultProgram: vaultProgram.programId,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(mertdDaoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .rpc();
 
-        mm0 = await generateMarketMaker(
-          openbook,
+      assert.exists(
+        (await autocrat.account.proposal.fetch(proposal)).state.failed
+      );
+
+      const callbacks = expectError(
+        autocrat,
+        "ProposalNotPassed",
+        "executed despite proposal proposal failed"
+      );
+
+      await autocrat.methods
+        .executeProposal()
+        .accounts({
+          proposal,
+          dao,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+    });
+
+    it("doesn't allow proposals to be executed twice", async function () {
+      let currentClock = await context.banksClient.getClock();
+      for (let i = 0; i < 10; i++) {
+        await placeOrdersAroundMid(
           openbookTwap,
-          banksClient,
-          payer,
-          openbookPassMarket,
-          openbookFailMarket,
-          vaultProgram,
-          context
+          openbook,
+          openbookTwapPassMarket,
+          mm0,
+          140_000
         );
-      });
-
-      it("doesn't allow pending proposals to be executed", async function () {
-        const callbacks = expectError(
-          autocrat,
-          "ProposalNotPassed",
-          "executed despite proposal still pending"
+        await placeOrdersAroundMid(
+          openbookTwap,
+          openbook,
+          openbookTwapFailMarket,
+          mm0,
+          1050
         );
-
-        await autocrat.methods
-          .executeProposal()
-          .accounts({
-            proposal,
-            dao,
-            daoTreasury,
-          })
-          .remainingAccounts(
-            instruction.accounts
-              .concat({
-                pubkey: instruction.programId,
-                isWritable: false,
-                isSigner: false,
-              })
-              .map((meta) =>
-                meta.pubkey.equals(daoTreasury)
-                  ? { ...meta, isSigner: false }
-                  : meta
-              )
-          )
-          .rpc()
-          .then(callbacks[0], callbacks[1]);
-      });
-
-      it("doesn't allow failed proposals to be executed", async function () {
-        await placeOrdersAroundMid(openbookTwap, openbook, openbookTwapPassMarket, mm0, 1050);
-        await placeOrdersAroundMid(openbookTwap, openbook, openbookTwapFailMarket, mm0, 3000);
-
-        let currentClock = await context.banksClient.getClock();
-        const newSlot = currentClock.slot + 10_000_000n;
         context.setClock(
           new Clock(
-            newSlot,
+            currentClock.slot + 1_000n * BigInt(i),
             currentClock.epochStartTimestamp,
             currentClock.epoch,
             currentClock.leaderScheduleEpoch,
             currentClock.unixTimestamp
           )
         );
+      }
 
-        await placeOrdersAroundMid(openbookTwap, openbook, openbookTwapPassMarket, mm0, 1050);
-        await placeOrdersAroundMid(openbookTwap, openbook, openbookTwapFailMarket, mm0, 3000);
+      context.setClock(
+        new Clock(
+          currentClock.slot + 10_000_000n,
+          currentClock.epochStartTimestamp,
+          currentClock.epoch,
+          currentClock.leaderScheduleEpoch,
+          currentClock.unixTimestamp
+        )
+      );
 
-      });
+      await placeOrdersAroundMid(
+        openbookTwap,
+        openbook,
+        openbookTwapPassMarket,
+        mm0,
+        3000
+      );
+      await placeOrdersAroundMid(
+        openbookTwap,
+        openbook,
+        openbookTwapFailMarket,
+        mm0,
+        1050
+      );
 
-      it("doesn't allow proposals to be executed twice", async function () {});
+      await autocrat.methods
+        .finalizeProposal()
+        .accounts({
+          proposal,
+          openbookTwapPassMarket,
+          openbookTwapFailMarket,
+          dao,
+          baseVault,
+          quoteVault,
+          vaultProgram: vaultProgram.programId,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(mertdDaoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .rpc();
+
+      const storedProposal = await autocrat.account.proposal.fetch(proposal);
+      assert.exists(storedProposal.state.passed);
+
+      await autocrat.methods
+        .executeProposal()
+        .accounts({
+          proposal,
+          dao,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .rpc();
+
+      const callbacks = expectError(
+        autocrat,
+        "ProposalNotPassed",
+        "executed despite already being executed"
+      );
+
+      await autocrat.methods
+        .executeProposal()
+        .accounts({
+          proposal,
+          dao,
+          daoTreasury,
+        })
+        .remainingAccounts(
+          instruction.accounts
+            .concat({
+              pubkey: instruction.programId,
+              isWritable: false,
+              isSigner: false,
+            })
+            .map((meta) =>
+              meta.pubkey.equals(daoTreasury)
+                ? { ...meta, isSigner: false }
+                : meta
+            )
+        )
+        .preInstructions([
+          // add a pre-instruction so it doesn't think it's already processed it
+          anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+            units: 100_000,
+          }),
+        ])
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
     });
   });
 
