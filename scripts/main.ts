@@ -1,6 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-// @ts-ignore
-import * as token from "@solana/spl-token-018";
+import * as token from "@solana/spl-token";
 const { BN, Program } = anchor;
 import { MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 
@@ -19,6 +18,7 @@ import {
   SYSVAR_RENT_PUBKEY,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
 
 import {
@@ -139,6 +139,80 @@ async function createMint(
   );
 }
 
+/**
+ * note: we will skip attempting to upload off-chain metadata for tokens
+ * - without associated metaplex metadata
+ * - a symbol that is not USDC or META
+ *
+ * this is done so that the script will not fail when using localnet or devnet
+ */
+async function generateAddMetadataToConditionalTokensIx(
+  mint: PublicKey,
+  onFinalizeMint: PublicKey,
+  onRevertMint: PublicKey,
+  vault: PublicKey,
+  nonce: anchor.BN
+): Promise<TransactionInstruction | undefined> {
+  const tokenMetadata = await fetchOnchainMetadataForMint(mint);
+  if (!tokenMetadata) {
+    console.warn(
+      `no metadata found for token = ${mint.toBase58()}, conditional tokens will not have metadata`
+    );
+    return undefined;
+  }
+
+  const { metadata, key: metadataKey } = tokenMetadata;
+  const conditionalOnFinalizeTokenMetadataKey = await findMetaplexMetadataPda(
+    onFinalizeMint
+  );
+  const conditionalOnRevertTokenMetadataKey = await findMetaplexMetadataPda(
+    onRevertMint
+  );
+
+  // pull off the least significant 32 bits representing the proposal count
+  const proposalCount = nonce.and(new BN(1).shln(32).sub(new BN(1)));
+
+  // create new json, take that and pipe into the instruction
+  const uploadResult = await uploadOffchainMetadata(
+    proposalCount,
+    metadata.symbol
+  );
+
+  if (!uploadResult) return undefined;
+  const { passTokenMetadataUri, failTokenMetadataUri } = uploadResult;
+  if (!passTokenMetadataUri || !failTokenMetadataUri) {
+    // an error here is likely transient, so we want to fail the script so that the caller can try again. otherwise, we will end up with a token with no linkable off-chain metadata.
+    throw new Error(
+      `required metadata is undefined, pass = ${passTokenMetadataUri}, fail = ${failTokenMetadataUri}. Please try again.`
+    );
+  }
+
+  console.log(
+    `[proposal = ${proposalCount.toNumber()}] pass token metadata uri: ${passTokenMetadataUri}, fail token metadata uri: ${failTokenMetadataUri}`
+  );
+
+  return vaultProgram.methods
+    .addMetadataToConditionalTokens(
+      proposalCount,
+      passTokenMetadataUri,
+      failTokenMetadataUri
+    )
+    .accounts({
+      payer: payer.publicKey,
+      vault,
+      underlyingTokenMint: mint,
+      underlyingTokenMetadata: metadataKey,
+      conditionalOnFinalizeTokenMint: onFinalizeMint,
+      conditionalOnRevertTokenMint: onRevertMint,
+      conditionalOnFinalizeTokenMetadata: conditionalOnFinalizeTokenMetadataKey,
+      conditionalOnRevertTokenMetadata: conditionalOnRevertTokenMetadataKey,
+      tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+      rent: SYSVAR_RENT_PUBKEY,
+    })
+    .instruction();
+}
+
 async function initializeVault(
   settlementAuthority: any,
   underlyingTokenMint: any,
@@ -169,50 +243,16 @@ async function initializeVault(
   let conditionalOnFinalizeKP = Keypair.generate();
   let conditionalOnRevertKP = Keypair.generate();
 
-  const { key: underlyingTokenMetadataKey, metadata: underlyingTokenMetadata } =
-    await fetchOnchainMetadataForMint(underlyingTokenMint);
-
-  console.log(
-    `metadata for token = ${underlyingTokenMint.toBase58()}`,
-    underlyingTokenMetadata
-  );
-
-  const conditionalOnFinalizeTokenMetadata = await findMetaplexMetadataPda(
-    conditionalOnFinalizeKP.publicKey
-  );
-  const conditionalOnRevertTokenMetadata = await findMetaplexMetadataPda(
-    conditionalOnRevertKP.publicKey
-  );
-
-  // pull off the least significant 32 bits representing the proposal count
-  const proposalCount = nonce.and(new BN(1).shln(32).sub(new BN(1)));
-
-  // create new json, take that and pipe into the instruction
-  const { passTokenMetadataUri, faileTokenMetadataUri } =
-    await uploadOffchainMetadata(proposalCount, underlyingTokenMetadata.symbol);
-
-  const addMetadataToConditionalTokensIx = await vaultProgram.methods
-    .addMetadataToConditionalTokens(
-      proposalCount,
-      passTokenMetadataUri,
-      faileTokenMetadataUri
-    )
-    .accounts({
-      payer: payer.publicKey,
-      vault,
+  const addMetadataToConditionalTokensIx =
+    await generateAddMetadataToConditionalTokensIx(
       underlyingTokenMint,
-      underlyingTokenMetadata: underlyingTokenMetadataKey,
-      conditionalOnFinalizeTokenMint: conditionalOnFinalizeKP.publicKey,
-      conditionalOnRevertTokenMint: conditionalOnRevertKP.publicKey,
-      conditionalOnFinalizeTokenMetadata,
-      conditionalOnRevertTokenMetadata,
-      tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-      rent: SYSVAR_RENT_PUBKEY,
-    })
-    .instruction();
+      conditionalOnFinalizeKP.publicKey,
+      conditionalOnRevertKP.publicKey,
+      vault,
+      nonce
+    );
 
-  await vaultProgram.methods
+  const initializeConditionalVaultBuilder = vaultProgram.methods
     .initializeConditionalVault(settlementAuthority, nonce)
     .accounts({
       vault,
@@ -228,14 +268,27 @@ async function initializeVault(
     .signers([conditionalOnFinalizeKP, conditionalOnRevertKP])
     .preInstructions([
       ComputeBudgetProgram.setComputeUnitLimit({
-        units: 150_000
+        units: 150_000,
       }),
       ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: 100
+        microLamports: 100,
       }),
-    ])
-    .postInstructions([addMetadataToConditionalTokensIx])
-    .rpc();
+    ]);
+
+  if (addMetadataToConditionalTokensIx) {
+    console.log(
+      "appending add metadata instruction for initialize vault transaction..."
+    );
+    initializeConditionalVaultBuilder.postInstructions([
+      addMetadataToConditionalTokensIx,
+    ]);
+  } else {
+    console.log(
+      "skipping add metadata instruction for initialize vault transaction..."
+    );
+  }
+
+  await initializeConditionalVaultBuilder.rpc();
 
   //const storedVault = await vaultProgram.account.conditionalVault.fetch(
   //  vault
@@ -245,16 +298,17 @@ async function initializeVault(
   return vault;
 }
 
-export async function initializeDAO(META: any, USDC: any) {
-  await autocratProgram.methods
-    .initializeDao()
-    .accounts({
-      dao,
-      metaMint: META,
-      usdcMint: USDC,
-    })
-    .rpc();
-}
+// todo: need to fix after contract updates, otherwise we get a typescript compiler error
+// export async function initializeDAO(META: any, USDC: any) {
+//   await autocratProgram.methods
+//     .initializeDao()
+//     .accounts({
+//       dao,
+//       metaMint: META,
+//       usdcMint: USDC,
+//     })
+//     .rpc();
+// }
 
 export async function fetchDao() {
   return autocratProgram.account.dao.fetch(dao);
