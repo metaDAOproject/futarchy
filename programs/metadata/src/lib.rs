@@ -4,7 +4,7 @@ declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 
 const DEFAULT_SPACE: usize = 1000;
 const INCREASE_IN_SPACE: usize = 100;
-const MAX_SPACE: usize = 2000; // Something like this so we don't hit into the 32kb heap limit
+const _MAX_SPACE: usize = 2000; // Something like this so we don't hit into the 32kb heap limit, 8kb is probably the account size limit
 
 #[account]
 pub struct Metadata {
@@ -43,7 +43,15 @@ pub mod metadata {
         Ok(())
     }
 
-    pub fn set_delegate(ctx: Context<SetDelegate>) -> Result<()> {
+    pub fn dao_set_delegate(ctx: Context<DaoSetDelegate>) -> Result<()> {
+        let metadata = &mut ctx.accounts.metadata;
+        metadata.delegate = ctx.accounts.new_delegate.key();
+        metadata.last_updated_slot = Clock::get()?.slot;
+        Ok(())
+    }
+
+    // Let the delegate update who the delegate is
+    pub fn delegate_set_delegate(ctx: Context<DelegateSetDelegate>) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
         metadata.delegate = ctx.accounts.new_delegate.key();
         metadata.last_updated_slot = Clock::get()?.slot;
@@ -169,10 +177,19 @@ pub struct IncreaseMetadataAccountSize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct SetDelegate<'info> {
+pub struct DaoSetDelegate<'info> {
     #[account(mut, has_one = dao_treasury)]
     pub metadata: Account<'info, Metadata>,
     pub dao_treasury: Signer<'info>,
+    /// CHECK: This is the metadata delegate account, it only ever signs
+    pub new_delegate: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+pub struct DelegateSetDelegate<'info> {
+    #[account(mut, has_one = delegate)]
+    pub metadata: Account<'info, Metadata>,
+    pub delegate: Signer<'info>,
     /// CHECK: This is the metadata delegate account, it only ever signs
     pub new_delegate: UncheckedAccount<'info>,
 }
