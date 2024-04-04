@@ -2,6 +2,7 @@ import { initializeProposal, daoTreasury, META } from "./main";
 import * as anchor from "@coral-xyz/anchor";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import * as token from "@solana/spl-token";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
@@ -15,37 +16,166 @@ const PANTERA_PUBKEY = new PublicKey(
   "BtNPTBX1XkFCwazDJ6ZkK3hcUsomm1RPcfmtUrP6wd2K"
 );
 
-async function main() {
-  const senderAcc = await token.getOrCreateAssociatedTokenAccount(
+const COST_DEPLOY = 4 * LAMPORTS_PER_SOL
+
+const transferToAccount = async (
+  daoTreasury: anchor.web3.PublicKey,
+  destinationAccount: anchor.web3.PublicKey,
+  tokenMint: anchor.web3.PublicKey,
+  amount: number,
+) => {
+  console.log(`Transfer token ${tokenMint.toString()}`);
+  // This gets the origin account with the token intended for transfer
+  const originAcc = await token.getOrCreateAssociatedTokenAccount(
     provider.connection,
     payer,
-    META,
+    tokenMint,
     daoTreasury,
     true
   );
+  console.log('Origin account');
+  console.log(originAcc.address.toString());
+  console.log('Origin balance of token');
+  const accountBalance = (await provider.connection.getTokenAccountBalance(originAcc.address)).value;
+  console.log(accountBalance.uiAmountString);
 
-  const receiverAcc = await token.getOrCreateAssociatedTokenAccount(
+  const transferAmount = amount * (10 ** accountBalance.decimals);
+
+  if (transferAmount > Number(accountBalance.amount)){
+    console.error(`Account does not have enough balance to transfer ${transferAmount}`);
+    console.error(`Account's balance is ${accountBalance.amount}`);
+    return;
+  }
+
+  console.log(`Transfer amount ${transferAmount / (10 ** accountBalance.decimals)}`);
+
+  // Sets up the destination account with the token and address provided
+  const destinationAcc = await token.getOrCreateAssociatedTokenAccount(
     provider.connection,
     payer,
-    META,
-    PANTERA_PUBKEY,
+    tokenMint,
+    destinationAccount,
     true
   );
+
+  console.log('Destination account');
+  console.log(destinationAcc.address.toString());
 
   const transferIx = token.createTransferInstruction(
-    senderAcc.address,
-    receiverAcc.address,
+    originAcc.address,
+    destinationAcc.address,
     daoTreasury,
-    1_000 * 1_000_000_000 // 1,000 META
+    transferAmount
   );
 
+  console.log('Transfer instructions');
+  console.log(transferIx);
+
+  return transferIx;
+}
+
+const createMemo = async (memoText: string) => {
+  console.log('Memo text');
+  console.log(memoText);
+  console.log('Memo text length');
+  console.log(memoText.length);
+  const byteLengthOfMemo = Buffer.byteLength(memoText)
+  if (byteLengthOfMemo >= 566) {
+    throw Error('Memo text is too big')
+  }
+  console.log('Memo program PublicKey');
+  console.log(MEMO_PROGRAM_ID);
+
+  const createMemoIx = {
+    programId: new PublicKey(MEMO_PROGRAM_ID),
+    keys: [],
+    data: Buffer.from(memoText),
+  }
+
+  console.log('Memo instructions');
+  console.log(createMemoIx);
+
+  return createMemoIx;
+}
+
+const burnSupply = async (tokenMint: anchor.web3.PublicKey, amount: number) => {
+  console.log(`Burn token ${tokenMint.toString()}`);
+  // This gets the origin account with the token intended for burn
+  const originAcc = await token.getOrCreateAssociatedTokenAccount(
+    provider.connection,
+    payer,
+    tokenMint,
+    daoTreasury,
+    true
+  );
+  console.log('Origin account');
+  console.log(originAcc.address.toString());
+  console.log('Origin balance of token');
+  const accountBalance = (await provider.connection.getTokenAccountBalance(originAcc.address)).value;
+  console.log(accountBalance.uiAmountString);
+
+  const burnAmount = amount * (10 ** accountBalance.decimals);
+
+  if (burnAmount > Number(accountBalance.amount)){
+    console.error(`Account does not have enough balance to burn ${burnAmount}`);
+    console.error(`Account's balance is ${accountBalance.amount}`);
+    return;
+  }
+
+  console.log(`Burn amount ${burnAmount / (10 ** accountBalance.decimals)}`);
+
+  const burnIx = token.createBurnInstruction(
+    originAcc.address,
+    tokenMint,
+    daoTreasury,
+    burnAmount
+  );
+
+  console.log('Burn instructions');
+  console.log(burnIx);
+
+  return burnIx;
+}
+
+const migrateProgram = async () => {}
+
+async function main() {
+  console.log('Initializing with PublicKey');
+  console.log(payer.publicKey.toString());
+  const payerBalance = await provider.connection.getBalance(payer.publicKey);
+  console.log('PublicKey SOL balance');
+  console.log(payerBalance / LAMPORTS_PER_SOL);
+
+  // Check to ensure the payer has enough SOL to actually execute the proposal creation
+  if (payerBalance < COST_DEPLOY) {
+    const diff = COST_DEPLOY - payerBalance;
+    console.error(`PublicKey doesn't have enough balance ${payerBalance / LAMPORTS_PER_SOL} to initialize proposal ${COST_DEPLOY / LAMPORTS_PER_SOL}`);
+    console.error(`Add ${diff / LAMPORTS_PER_SOL} more SOL`);
+    return
+  }
+
+  console.log('Account has enough SOL (4) to continue');
+
+  // const proposalIx = await burnSupply(META, 1337);
+
+  // const proposalIx = await transferToAccount(daoTreasury, PANTERA_PUBKEY, META, 342)
+
+  const proposalIx = await createMemo("TESTING DEVNET");
+
   const ix = {
-    programId: transferIx.programId,
-    accounts: transferIx.keys,
-    data: transferIx.data,
+    programId: proposalIx.programId,
+    accounts: proposalIx.keys,
+    data: proposalIx.data,
   };
 
-  await initializeProposal(ix, "https://hackmd.io/@0xNallok/Hy2WJ46op");
+  console.log('Proposal instruction');
+  console.log(ix);
+
+  // Sleep for review
+  console.log('Sleeping for 60s, press ctrl + c to cancel');
+  await new Promise(f => setTimeout(f, 60000));
+
+  await initializeProposal(ix, "https://google.com");
 }
 
 main();
