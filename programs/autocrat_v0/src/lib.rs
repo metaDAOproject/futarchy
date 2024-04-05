@@ -151,17 +151,17 @@ pub mod autocrat_v0 {
         description_url: String,
         instruction: ProposalInstruction,
     ) -> Result<()> {
-        let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
-        let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
+        let pass_market = ctx.accounts.openbook_pass_market.load()?;
+        let fail_market = ctx.accounts.openbook_fail_market.load()?;
         let dao = &mut ctx.accounts.dao;
 
         require!(
-            openbook_pass_market.base_mint
+            pass_market.base_mint
                 == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_mint
+            pass_market.quote_mint
                 == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
@@ -172,105 +172,105 @@ pub mod autocrat_v0 {
         // Make sure to do final TWAP crank after the proposal period has ended
         // and before the market expires, or else! Allows for rent retrieval from openbook
         require!(
-            openbook_pass_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
+            pass_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.seq_num == 0,
+            pass_market.seq_num == 0,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.taker_fee == dao.market_taker_fee,
+            pass_market.taker_fee == dao.market_taker_fee,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.maker_fee == 0,
+            pass_market.maker_fee == 0,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.base_lot_size == dao.base_lot_size,
+            pass_market.base_lot_size == dao.base_lot_size,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
+            pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_pass_market.collect_fee_admin == dao.treasury,
+            pass_market.collect_fee_admin == dao.treasury,
             AutocratError::InvalidMarket
         );
 
         require!(
-            openbook_fail_market.base_mint
+            fail_market.base_mint
                 == ctx.accounts.base_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.quote_mint
+            fail_market.quote_mint
                 == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
+            fail_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.seq_num == 0,
+            fail_market.seq_num == 0,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.taker_fee == dao.market_taker_fee,
+            fail_market.taker_fee == dao.market_taker_fee,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.maker_fee == 0,
+            fail_market.maker_fee == 0,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.base_lot_size == dao.base_lot_size,
+            fail_market.base_lot_size == dao.base_lot_size,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.quote_lot_size == 100,
+            fail_market.quote_lot_size == 100,
             AutocratError::InvalidMarket
         );
         require!(
-            openbook_fail_market.collect_fee_admin == dao.treasury,
+            fail_market.collect_fee_admin == dao.treasury,
             AutocratError::InvalidMarket
         );
         let clock = Clock::get()?;
 
-        let openbook_twap_pass_market = &ctx.accounts.openbook_twap_pass_market;
-        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
+        let pass_twap_market = &ctx.accounts.openbook_twap_pass_market;
+        let fail_twap_market = &ctx.accounts.openbook_twap_fail_market;
 
         require!(
-            openbook_twap_pass_market.twap_oracle.initial_slot + 50 >= clock.slot,
+            pass_twap_market.twap_oracle.initial_slot + 50 >= clock.slot,
             AutocratError::TWAPMarketTooOld
         );
         require!(
-            openbook_twap_fail_market.twap_oracle.initial_slot + 50 >= clock.slot,
+            fail_twap_market.twap_oracle.initial_slot + 50 >= clock.slot,
             AutocratError::TWAPMarketTooOld
         );
         require_eq!(
-            openbook_twap_pass_market
+            pass_twap_market
                 .twap_oracle
                 .max_observation_change_per_update_lots,
             dao.max_observation_change_per_update_lots,
             AutocratError::TWAPOracleWrongChangeLots
         );
         require_eq!(
-            openbook_twap_fail_market
+            fail_twap_market
                 .twap_oracle
                 .max_observation_change_per_update_lots,
             dao.max_observation_change_per_update_lots,
             AutocratError::TWAPOracleWrongChangeLots
         );
         require!(
-            openbook_twap_pass_market.twap_oracle.expected_value == dao.twap_expected_value,
+            pass_twap_market.twap_oracle.expected_value == dao.twap_expected_value,
             AutocratError::TWAPMarketInvalidExpectedValue
         );
         require!(
-            openbook_twap_fail_market.twap_oracle.expected_value == dao.twap_expected_value,
+            fail_twap_market.twap_oracle.expected_value == dao.twap_expected_value,
             AutocratError::TWAPMarketInvalidExpectedValue
         );
 
@@ -329,8 +329,8 @@ pub mod autocrat_v0 {
     }
 
     pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
-        let openbook_twap_pass_market = &ctx.accounts.openbook_twap_pass_market;
-        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
+        let pass_twap_market = &ctx.accounts.openbook_twap_pass_market;
+        let fail_twap_market = &ctx.accounts.openbook_twap_fail_market;
 
         let proposal = &mut ctx.accounts.proposal;
         let clock = Clock::get()?;
@@ -349,17 +349,17 @@ pub mod autocrat_v0 {
         let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
         let signer = &[&treasury_seeds[..]];
 
-        let pass_market_aggregator = openbook_twap_pass_market.twap_oracle.observation_aggregator;
-        let fail_market_aggregator = openbook_twap_fail_market.twap_oracle.observation_aggregator;
+        let pass_market_aggregator = pass_twap_market.twap_oracle.observation_aggregator;
+        let fail_market_aggregator = fail_twap_market.twap_oracle.observation_aggregator;
 
         assert!(pass_market_aggregator != 0);
         assert!(fail_market_aggregator != 0);
 
         // should only overflow in a situation where we want a revert anyways
         let pass_market_slots_passed =
-            openbook_twap_pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+            pass_twap_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
         let fail_market_slots_passed =
-            openbook_twap_fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+            fail_twap_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
 
         require!(
             pass_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
