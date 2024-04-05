@@ -203,7 +203,7 @@ pub mod autocrat_v0 {
             );
 
             require!(
-                pass_market.collect_fee_admin == dao.treasury,
+                market.collect_fee_admin == dao.treasury,
                 AutocratError::InvalidMarket
             );
         }
