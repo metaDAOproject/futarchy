@@ -159,20 +159,24 @@ pub mod autocrat_v0 {
         let dao = &mut ctx.accounts.dao;
         let clock = Clock::get()?;
 
-        require!(
-            pass_market.base_mint == base_vault.conditional_on_finalize_token_mint,
+        require_eq!(
+            pass_market.base_mint,
+            base_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
-        require!(
-            pass_market.quote_mint == quote_vault.conditional_on_finalize_token_mint,
+        require_eq!(
+            pass_market.quote_mint,
+            quote_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
-        require!(
-            fail_market.base_mint == base_vault.conditional_on_revert_token_mint,
+        require_eq!(
+            fail_market.base_mint,
+            base_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
-        require!(
-            fail_market.quote_mint == quote_vault.conditional_on_revert_token_mint,
+        require_eq!(
+            fail_market.quote_mint,
+            quote_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
 
@@ -185,25 +189,26 @@ pub mod autocrat_v0 {
                 AutocratError::InvalidMarket
             );
 
-            require!(
-                market.taker_fee == dao.market_taker_fee,
+            require_eq!(
+                market.taker_fee,
+                dao.market_taker_fee,
                 AutocratError::InvalidMarket
             );
 
-            require!(market.maker_fee == 0, AutocratError::InvalidMarket);
+            require_eq!(market.maker_fee, 0, AutocratError::InvalidMarket);
 
-            require!(
-                market.base_lot_size == dao.base_lot_size,
+            require_eq!(
+                market.base_lot_size, dao.base_lot_size,
                 AutocratError::InvalidMarket
             );
 
-            require!(
-                market.quote_lot_size == 100, // you can quote in increments of a hundredth of a penny
+            require_eq!(
+                market.quote_lot_size, 100, // you can quote in increments of a hundredth of a penny
                 AutocratError::InvalidMarket
             );
 
-            require!(
-                market.collect_fee_admin == dao.treasury,
+            require_eq!(
+                market.collect_fee_admin, dao.treasury,
                 AutocratError::InvalidMarket
             );
         }
@@ -225,8 +230,8 @@ pub mod autocrat_v0 {
                 AutocratError::TWAPOracleWrongChangeLots
             );
 
-            require!(
-                twap_market.twap_oracle.expected_value == dao.twap_expected_value,
+            require_eq!(
+                twap_market.twap_oracle.expected_value, dao.twap_expected_value,
                 AutocratError::TWAPMarketInvalidExpectedValue
             );
         }
@@ -273,12 +278,14 @@ pub mod autocrat_v0 {
 
         // least signficant 32 bits of nonce are proposal number
         // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
-        require!(
-            base_vault.nonce == proposal.number as u64,
+        require_eq!(
+            base_vault.nonce,
+            proposal.number as u64,
             AutocratError::InvalidVaultNonce
         );
-        require!(
-            quote_vault.nonce == (proposal.number as u64 | (1 << 63)),
+        require_eq!(
+            quote_vault.nonce,
+            (proposal.number as u64 | (1 << 63)),
             AutocratError::InvalidVaultNonce
         );
 
