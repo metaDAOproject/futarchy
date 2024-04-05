@@ -157,26 +157,22 @@ pub mod autocrat_v0 {
         let clock = Clock::get()?;
 
         require!(
-            pass_market.base_mint
-                == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
+            pass_market.base_mint == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            pass_market.quote_mint
-                == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
+            pass_market.quote_mint == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            fail_market.base_mint
-                == ctx.accounts.base_vault.conditional_on_revert_token_mint,
+            fail_market.base_mint == ctx.accounts.base_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            fail_market.quote_mint
-                == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
+            fail_market.quote_mint == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
-        
+
         for market in [&pass_market, &fail_market] {
             // The market expires a minimum of 7 days after the end of a 3 day proposal.
             // Make sure to do final TWAP crank after the proposal period has ended
@@ -186,20 +182,14 @@ pub mod autocrat_v0 {
                 AutocratError::InvalidMarket
             );
 
-            require!(
-                market.seq_num == 0,
-                AutocratError::InvalidMarket
-            );
+            require!(market.seq_num == 0, AutocratError::InvalidMarket);
 
             require!(
                 market.taker_fee == dao.market_taker_fee,
                 AutocratError::InvalidMarket
             );
 
-            require!(
-                market.maker_fee == 0,
-                AutocratError::InvalidMarket
-            );
+            require!(market.maker_fee == 0, AutocratError::InvalidMarket);
 
             require!(
                 market.base_lot_size == dao.base_lot_size,
@@ -210,7 +200,7 @@ pub mod autocrat_v0 {
                 market.quote_lot_size == 100, // you can quote in increments of a hundredth of a penny
                 AutocratError::InvalidMarket
             );
-            
+
             require!(
                 pass_market.collect_fee_admin == dao.treasury,
                 AutocratError::InvalidMarket
@@ -386,11 +376,7 @@ pub mod autocrat_v0 {
             }
         }
 
-        solana_program::program::invoke_signed(
-            &svm_instruction,
-            ctx.remaining_accounts,
-            signer,
-        )?;
+        solana_program::program::invoke_signed(&svm_instruction, ctx.remaining_accounts, signer)?;
 
         Ok(())
     }
