@@ -182,8 +182,6 @@ pub mod autocrat_v0 {
                 AutocratError::InvalidMarket
             );
 
-            require!(market.seq_num == 0, AutocratError::InvalidMarket);
-
             require!(
                 market.taker_fee == dao.market_taker_fee,
                 AutocratError::InvalidMarket
