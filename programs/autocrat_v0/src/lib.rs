@@ -124,24 +124,25 @@ pub mod autocrat_v0 {
     ) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        dao.token_mint = ctx.accounts.token_mint.key();
-        dao.usdc_mint = ctx.accounts.usdc_mint.key();
-
-        dao.proposal_count = 1;
-
-        dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
-        dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
-        dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
-        dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
-        dao.market_taker_fee = 0;
-        dao.twap_expected_value = twap_expected_value;
-        dao.base_lot_size = base_lot_size;
-        dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
-
-        let (treasury_pubkey, treasury_bump) =
+        let (treasury, treasury_pda_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
-        dao.treasury_pda_bump = treasury_bump;
-        dao.treasury = treasury_pubkey;
+
+        dao.set_inner(DAO {
+            token_mint: ctx.accounts.token_mint.key(),
+            usdc_mint: ctx.accounts.usdc_mint.key(),
+            treasury_pda_bump,
+            treasury,
+            proposal_count: 1,
+            last_proposal_slot: 0,
+            pass_threshold_bps: DEFAULT_PASS_THRESHOLD_BPS,
+            base_burn_lamports: DEFAULT_BASE_BURN_LAMPORTS,
+            burn_decay_per_slot_lamports: DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS,
+            slots_per_proposal: THREE_DAYS_IN_SLOTS,
+            market_taker_fee: 0,
+            twap_expected_value,
+            max_observation_change_per_update_lots: DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+            base_lot_size,
+        });
 
         Ok(())
     }
@@ -153,23 +154,25 @@ pub mod autocrat_v0 {
     ) -> Result<()> {
         let pass_market = ctx.accounts.openbook_pass_market.load()?;
         let fail_market = ctx.accounts.openbook_fail_market.load()?;
+        let base_vault = &ctx.accounts.base_vault;
+        let quote_vault = &ctx.accounts.quote_vault;
         let dao = &mut ctx.accounts.dao;
         let clock = Clock::get()?;
 
         require!(
-            pass_market.base_mint == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
+            pass_market.base_mint == base_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            pass_market.quote_mint == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
+            pass_market.quote_mint == quote_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            fail_market.base_mint == ctx.accounts.base_vault.conditional_on_revert_token_mint,
+            fail_market.base_mint == base_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
         require!(
-            fail_market.quote_mint == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
+            fail_market.quote_mint == quote_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
 
@@ -228,25 +231,6 @@ pub mod autocrat_v0 {
             );
         }
 
-        let proposal = &mut ctx.accounts.proposal;
-
-        proposal.number = dao.proposal_count;
-        dao.proposal_count += 1;
-
-        // least signficant 32 bits of nonce are proposal number
-        // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
-        require!(
-            ctx.accounts.base_vault.nonce == proposal.number as u64,
-            AutocratError::InvalidVaultNonce
-        );
-        require!(
-            ctx.accounts.quote_vault.nonce == (proposal.number as u64 | (1 << 63)),
-            AutocratError::InvalidVaultNonce
-        );
-
-        proposal.quote_vault = ctx.accounts.quote_vault.key();
-        proposal.base_vault = ctx.accounts.base_vault.key();
-
         let slots_passed = clock.slot - dao.last_proposal_slot;
         let burn_amount = dao.base_burn_lamports.saturating_sub(
             dao.burn_decay_per_slot_lamports
@@ -268,16 +252,35 @@ pub mod autocrat_v0 {
             ],
         )?;
 
-        proposal.openbook_twap_pass_market = ctx.accounts.openbook_twap_pass_market.key();
-        proposal.openbook_twap_fail_market = ctx.accounts.openbook_twap_fail_market.key();
-        proposal.openbook_pass_market = ctx.accounts.openbook_pass_market.key();
-        proposal.openbook_fail_market = ctx.accounts.openbook_fail_market.key();
+        let proposal = &mut ctx.accounts.proposal;
 
-        proposal.proposer = ctx.accounts.proposer.key();
-        proposal.description_url = description_url;
-        proposal.slot_enqueued = clock.slot;
-        proposal.state = ProposalState::Pending;
-        proposal.instruction = instruction;
+        proposal.set_inner(Proposal {
+            number: dao.proposal_count,
+            proposer: ctx.accounts.proposer.key(),
+            description_url,
+            slot_enqueued: clock.slot,
+            state: ProposalState::Pending,
+            instruction,
+            openbook_twap_pass_market: pass_twap_market.key(),
+            openbook_twap_fail_market: fail_twap_market.key(),
+            openbook_pass_market: ctx.accounts.openbook_pass_market.key(),
+            openbook_fail_market: ctx.accounts.openbook_fail_market.key(),
+            base_vault: base_vault.key(),
+            quote_vault: quote_vault.key(),
+        });
+
+        dao.proposal_count += 1;
+
+        // least signficant 32 bits of nonce are proposal number
+        // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
+        require!(
+            base_vault.nonce == proposal.number as u64,
+            AutocratError::InvalidVaultNonce
+        );
+        require!(
+            quote_vault.nonce == (proposal.number as u64 | (1 << 63)),
+            AutocratError::InvalidVaultNonce
+        );
 
         Ok(())
     }
