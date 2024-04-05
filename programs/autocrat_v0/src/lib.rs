@@ -154,6 +154,7 @@ pub mod autocrat_v0 {
         let pass_market = ctx.accounts.openbook_pass_market.load()?;
         let fail_market = ctx.accounts.openbook_fail_market.load()?;
         let dao = &mut ctx.accounts.dao;
+        let clock = Clock::get()?;
 
         require!(
             pass_market.base_mint
@@ -165,41 +166,6 @@ pub mod autocrat_v0 {
                 == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
             AutocratError::InvalidMarket
         );
-
-        let current_time = Clock::get().unwrap().unix_timestamp as i64;
-
-        // The market expires a minimum of 7 days after the end of a 3 day proposal.
-        // Make sure to do final TWAP crank after the proposal period has ended
-        // and before the market expires, or else! Allows for rent retrieval from openbook
-        require!(
-            pass_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            pass_market.seq_num == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            pass_market.taker_fee == dao.market_taker_fee,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            pass_market.maker_fee == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            pass_market.base_lot_size == dao.base_lot_size,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
-            AutocratError::InvalidMarket
-        );
-        require!(
-            pass_market.collect_fee_admin == dao.treasury,
-            AutocratError::InvalidMarket
-        );
-
         require!(
             fail_market.base_mint
                 == ctx.accounts.base_vault.conditional_on_revert_token_mint,
@@ -210,69 +176,69 @@ pub mod autocrat_v0 {
                 == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
             AutocratError::InvalidMarket
         );
-        require!(
-            fail_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            fail_market.seq_num == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            fail_market.taker_fee == dao.market_taker_fee,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            fail_market.maker_fee == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            fail_market.base_lot_size == dao.base_lot_size,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            fail_market.quote_lot_size == 100,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            fail_market.collect_fee_admin == dao.treasury,
-            AutocratError::InvalidMarket
-        );
-        let clock = Clock::get()?;
+        
+        for market in [&pass_market, &fail_market] {
+            // The market expires a minimum of 7 days after the end of a 3 day proposal.
+            // Make sure to do final TWAP crank after the proposal period has ended
+            // and before the market expires, or else! Allows for rent retrieval from openbook
+            require!(
+                market.time_expiry > clock.unix_timestamp as i64 + TEN_DAYS_IN_SECONDS,
+                AutocratError::InvalidMarket
+            );
+
+            require!(
+                market.seq_num == 0,
+                AutocratError::InvalidMarket
+            );
+
+            require!(
+                market.taker_fee == dao.market_taker_fee,
+                AutocratError::InvalidMarket
+            );
+
+            require!(
+                market.maker_fee == 0,
+                AutocratError::InvalidMarket
+            );
+
+            require!(
+                market.base_lot_size == dao.base_lot_size,
+                AutocratError::InvalidMarket
+            );
+
+            require!(
+                market.quote_lot_size == 100, // you can quote in increments of a hundredth of a penny
+                AutocratError::InvalidMarket
+            );
+            
+            require!(
+                pass_market.collect_fee_admin == dao.treasury,
+                AutocratError::InvalidMarket
+            );
+        }
 
         let pass_twap_market = &ctx.accounts.openbook_twap_pass_market;
         let fail_twap_market = &ctx.accounts.openbook_twap_fail_market;
 
-        require!(
-            pass_twap_market.twap_oracle.initial_slot + 50 >= clock.slot,
-            AutocratError::TWAPMarketTooOld
-        );
-        require!(
-            fail_twap_market.twap_oracle.initial_slot + 50 >= clock.slot,
-            AutocratError::TWAPMarketTooOld
-        );
-        require_eq!(
-            pass_twap_market
-                .twap_oracle
-                .max_observation_change_per_update_lots,
-            dao.max_observation_change_per_update_lots,
-            AutocratError::TWAPOracleWrongChangeLots
-        );
-        require_eq!(
-            fail_twap_market
-                .twap_oracle
-                .max_observation_change_per_update_lots,
-            dao.max_observation_change_per_update_lots,
-            AutocratError::TWAPOracleWrongChangeLots
-        );
-        require!(
-            pass_twap_market.twap_oracle.expected_value == dao.twap_expected_value,
-            AutocratError::TWAPMarketInvalidExpectedValue
-        );
-        require!(
-            fail_twap_market.twap_oracle.expected_value == dao.twap_expected_value,
-            AutocratError::TWAPMarketInvalidExpectedValue
-        );
+        for twap_market in [pass_twap_market, fail_twap_market] {
+            require!(
+                twap_market.twap_oracle.initial_slot + 50 >= clock.slot,
+                AutocratError::TWAPMarketTooOld
+            );
+
+            require_eq!(
+                twap_market
+                    .twap_oracle
+                    .max_observation_change_per_update_lots,
+                dao.max_observation_change_per_update_lots,
+                AutocratError::TWAPOracleWrongChangeLots
+            );
+
+            require!(
+                twap_market.twap_oracle.expected_value == dao.twap_expected_value,
+                AutocratError::TWAPMarketInvalidExpectedValue
+            );
+        }
 
         let proposal = &mut ctx.accounts.proposal;
 
