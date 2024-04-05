@@ -288,12 +288,13 @@ pub mod autocrat_v0 {
     pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
         let pass_twap_market = &ctx.accounts.openbook_twap_pass_market;
         let fail_twap_market = &ctx.accounts.openbook_twap_fail_market;
+        let dao = &ctx.accounts.dao;
 
         let proposal = &mut ctx.accounts.proposal;
         let clock = Clock::get()?;
 
         require!(
-            clock.slot >= proposal.slot_enqueued + ctx.accounts.dao.slots_per_proposal,
+            clock.slot >= proposal.slot_enqueued + dao.slots_per_proposal,
             AutocratError::ProposalTooYoung
         );
 
@@ -302,39 +303,33 @@ pub mod autocrat_v0 {
             AutocratError::ProposalAlreadyFinalized
         );
 
-        let dao_key = ctx.accounts.dao.key();
-        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
+        let dao_key = dao.key();
+        let treasury_seeds = &[dao_key.as_ref(), &[dao.treasury_pda_bump]];
         let signer = &[&treasury_seeds[..]];
 
-        let pass_market_aggregator = pass_twap_market.twap_oracle.observation_aggregator;
-        let fail_market_aggregator = fail_twap_market.twap_oracle.observation_aggregator;
+        let calculate_twap = |twap_market: &TWAPMarket| -> Result<u128> {
+            let oracle = &twap_market.twap_oracle;
+            let aggregator = oracle.observation_aggregator;
+            assert!(aggregator != 0);
 
-        assert!(pass_market_aggregator != 0);
-        assert!(fail_market_aggregator != 0);
+            let slots_passed = oracle.last_updated_slot - proposal.slot_enqueued;
 
-        // should only overflow in a situation where we want a revert anyways
-        let pass_market_slots_passed =
-            pass_twap_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
-        let fail_market_slots_passed =
-            fail_twap_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+            require!(
+                slots_passed >= dao.slots_per_proposal,
+                AutocratError::MarketsTooYoung
+            );
 
-        require!(
-            pass_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
-            AutocratError::MarketsTooYoung
-        );
-        require!(
-            fail_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
-            AutocratError::MarketsTooYoung
-        );
+            let twap = aggregator / slots_passed as u128;
+            assert!(twap != 0);
 
-        let pass_market_twap = pass_market_aggregator / pass_market_slots_passed as u128;
-        let fail_market_twap = fail_market_aggregator / fail_market_slots_passed as u128;
+            Ok(twap)
+        };
 
-        assert!(pass_market_twap != 0);
-        assert!(fail_market_twap != 0);
+        let fail_market_twap = calculate_twap(&fail_twap_market)?;
+        let pass_market_twap = calculate_twap(&pass_twap_market)?;
 
         let threshold = (fail_market_twap
-            * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
+            * (MAX_BPS + dao.pass_threshold_bps) as u128)
             / MAX_BPS as u128;
 
         let (new_proposal_state, new_vault_state) = if pass_market_twap > threshold {
@@ -576,7 +571,7 @@ pub enum AutocratError {
     InvalidSettlementAuthority,
     #[msg("Proposal is too young to be executed or rejected")]
     ProposalTooYoung,
-    #[msg("Markets too young for proposal to be finalized")]
+    #[msg("Markets too young for proposal to be finalized. TWAP might need to be cranked")]
     MarketsTooYoung,
     #[msg("This proposal has already been finalized")]
     ProposalAlreadyFinalized,
