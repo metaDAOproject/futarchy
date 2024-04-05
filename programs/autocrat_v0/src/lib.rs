@@ -198,17 +198,20 @@ pub mod autocrat_v0 {
             require_eq!(market.maker_fee, 0, AutocratError::InvalidMarket);
 
             require_eq!(
-                market.base_lot_size, dao.base_lot_size,
+                market.base_lot_size,
+                dao.base_lot_size,
                 AutocratError::InvalidMarket
             );
 
             require_eq!(
-                market.quote_lot_size, 100, // you can quote in increments of a hundredth of a penny
+                market.quote_lot_size,
+                100, // you can quote in increments of a hundredth of a penny
                 AutocratError::InvalidMarket
             );
 
             require_eq!(
-                market.collect_fee_admin, dao.treasury,
+                market.collect_fee_admin,
+                dao.treasury,
                 AutocratError::InvalidMarket
             );
         }
@@ -217,21 +220,22 @@ pub mod autocrat_v0 {
         let fail_twap_market = &ctx.accounts.openbook_twap_fail_market;
 
         for twap_market in [pass_twap_market, fail_twap_market] {
+            let oracle = &twap_market.twap_oracle;
+
             require!(
-                twap_market.twap_oracle.initial_slot + 50 >= clock.slot,
+                oracle.initial_slot + 50 >= clock.slot,
                 AutocratError::TWAPMarketTooOld
             );
 
             require_eq!(
-                twap_market
-                    .twap_oracle
-                    .max_observation_change_per_update_lots,
+                oracle.max_observation_change_per_update_lots,
                 dao.max_observation_change_per_update_lots,
                 AutocratError::TWAPOracleWrongChangeLots
             );
 
             require_eq!(
-                twap_market.twap_oracle.expected_value, dao.twap_expected_value,
+                oracle.expected_value,
+                dao.twap_expected_value,
                 AutocratError::TWAPMarketInvalidExpectedValue
             );
         }
@@ -335,9 +339,8 @@ pub mod autocrat_v0 {
         let fail_market_twap = calculate_twap(&fail_twap_market)?;
         let pass_market_twap = calculate_twap(&pass_twap_market)?;
 
-        let threshold = (fail_market_twap
-            * (MAX_BPS + dao.pass_threshold_bps) as u128)
-            / MAX_BPS as u128;
+        let threshold =
+            (fail_market_twap * (MAX_BPS + dao.pass_threshold_bps) as u128) / MAX_BPS as u128;
 
         let (new_proposal_state, new_vault_state) = if pass_market_twap > threshold {
             (ProposalState::Passed, VaultStatus::Finalized)
