@@ -124,24 +124,25 @@ pub mod autocrat_v0 {
     ) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        dao.token_mint = ctx.accounts.token_mint.key();
-        dao.usdc_mint = ctx.accounts.usdc_mint.key();
-
-        dao.proposal_count = 1;
-
-        dao.pass_threshold_bps = DEFAULT_PASS_THRESHOLD_BPS;
-        dao.base_burn_lamports = DEFAULT_BASE_BURN_LAMPORTS;
-        dao.burn_decay_per_slot_lamports = DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS;
-        dao.slots_per_proposal = THREE_DAYS_IN_SLOTS;
-        dao.market_taker_fee = 0;
-        dao.twap_expected_value = twap_expected_value;
-        dao.base_lot_size = base_lot_size;
-        dao.max_observation_change_per_update_lots = DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS;
-
-        let (treasury_pubkey, treasury_bump) =
+        let (treasury, treasury_pda_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
-        dao.treasury_pda_bump = treasury_bump;
-        dao.treasury = treasury_pubkey;
+
+        dao.set_inner(DAO {
+            token_mint: ctx.accounts.token_mint.key(),
+            usdc_mint: ctx.accounts.usdc_mint.key(),
+            treasury_pda_bump,
+            treasury,
+            proposal_count: 1,
+            last_proposal_slot: 0,
+            pass_threshold_bps: DEFAULT_PASS_THRESHOLD_BPS,
+            base_burn_lamports: DEFAULT_BASE_BURN_LAMPORTS,
+            burn_decay_per_slot_lamports: DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS,
+            slots_per_proposal: THREE_DAYS_IN_SLOTS,
+            market_taker_fee: 0,
+            twap_expected_value,
+            max_observation_change_per_update_lots: DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+            base_lot_size,
+        });
 
         Ok(())
     }
@@ -151,147 +152,93 @@ pub mod autocrat_v0 {
         description_url: String,
         instruction: ProposalInstruction,
     ) -> Result<()> {
-        let openbook_pass_market = ctx.accounts.openbook_pass_market.load()?;
-        let openbook_fail_market = ctx.accounts.openbook_fail_market.load()?;
+        let pass_market = ctx.accounts.openbook_pass_market.load()?;
+        let fail_market = ctx.accounts.openbook_fail_market.load()?;
+        let base_vault = &ctx.accounts.base_vault;
+        let quote_vault = &ctx.accounts.quote_vault;
         let dao = &mut ctx.accounts.dao;
-
-        require!(
-            openbook_pass_market.base_mint
-                == ctx.accounts.base_vault.conditional_on_finalize_token_mint,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_pass_market.quote_mint
-                == ctx.accounts.quote_vault.conditional_on_finalize_token_mint,
-            AutocratError::InvalidMarket
-        );
-
-        let current_time = Clock::get().unwrap().unix_timestamp as i64;
-
-        // The market expires a minimum of 7 days after the end of a 3 day proposal.
-        // Make sure to do final TWAP crank after the proposal period has ended
-        // and before the market expires, or else! Allows for rent retrieval from openbook
-        require!(
-            openbook_pass_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_pass_market.seq_num == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_pass_market.taker_fee == dao.market_taker_fee,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_pass_market.maker_fee == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_pass_market.base_lot_size == dao.base_lot_size,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_pass_market.quote_lot_size == 100, // you can quote META in increments of a hundredth of a penny
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_pass_market.collect_fee_admin == dao.treasury,
-            AutocratError::InvalidMarket
-        );
-
-        require!(
-            openbook_fail_market.base_mint
-                == ctx.accounts.base_vault.conditional_on_revert_token_mint,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.quote_mint
-                == ctx.accounts.quote_vault.conditional_on_revert_token_mint,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.time_expiry > current_time + TEN_DAYS_IN_SECONDS,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.seq_num == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.taker_fee == dao.market_taker_fee,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.maker_fee == 0,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.base_lot_size == dao.base_lot_size,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.quote_lot_size == 100,
-            AutocratError::InvalidMarket
-        );
-        require!(
-            openbook_fail_market.collect_fee_admin == dao.treasury,
-            AutocratError::InvalidMarket
-        );
         let clock = Clock::get()?;
 
-        let openbook_twap_pass_market = &ctx.accounts.openbook_twap_pass_market;
-        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
-
-        require!(
-            openbook_twap_pass_market.twap_oracle.initial_slot + 50 >= clock.slot,
-            AutocratError::TWAPMarketTooOld
-        );
-        require!(
-            openbook_twap_fail_market.twap_oracle.initial_slot + 50 >= clock.slot,
-            AutocratError::TWAPMarketTooOld
+        require_eq!(
+            pass_market.base_mint,
+            base_vault.conditional_on_finalize_token_mint,
+            AutocratError::InvalidMarket
         );
         require_eq!(
-            openbook_twap_pass_market
-                .twap_oracle
-                .max_observation_change_per_update_lots,
-            dao.max_observation_change_per_update_lots,
-            AutocratError::TWAPOracleWrongChangeLots
+            pass_market.quote_mint,
+            quote_vault.conditional_on_finalize_token_mint,
+            AutocratError::InvalidMarket
         );
         require_eq!(
-            openbook_twap_fail_market
-                .twap_oracle
-                .max_observation_change_per_update_lots,
-            dao.max_observation_change_per_update_lots,
-            AutocratError::TWAPOracleWrongChangeLots
+            fail_market.base_mint,
+            base_vault.conditional_on_revert_token_mint,
+            AutocratError::InvalidMarket
         );
-        require!(
-            openbook_twap_pass_market.twap_oracle.expected_value == dao.twap_expected_value,
-            AutocratError::TWAPMarketInvalidExpectedValue
-        );
-        require!(
-            openbook_twap_fail_market.twap_oracle.expected_value == dao.twap_expected_value,
-            AutocratError::TWAPMarketInvalidExpectedValue
+        require_eq!(
+            fail_market.quote_mint,
+            quote_vault.conditional_on_revert_token_mint,
+            AutocratError::InvalidMarket
         );
 
-        let proposal = &mut ctx.accounts.proposal;
+        for market in [&pass_market, &fail_market] {
+            // The market expires a minimum of 7 days after the end of a 3 day proposal.
+            // Make sure to do final TWAP crank after the proposal period has ended
+            // and before the market expires, or else! Allows for rent retrieval from openbook
+            require!(
+                market.time_expiry > clock.unix_timestamp as i64 + TEN_DAYS_IN_SECONDS,
+                AutocratError::InvalidMarket
+            );
 
-        proposal.number = dao.proposal_count;
-        dao.proposal_count += 1;
+            require_eq!(
+                market.taker_fee,
+                dao.market_taker_fee,
+                AutocratError::InvalidMarket
+            );
 
-        // least signficant 32 bits of nonce are proposal number
-        // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
-        require!(
-            ctx.accounts.base_vault.nonce == proposal.number as u64,
-            AutocratError::InvalidVaultNonce
-        );
-        require!(
-            ctx.accounts.quote_vault.nonce == (proposal.number as u64 | (1 << 63)),
-            AutocratError::InvalidVaultNonce
-        );
+            require_eq!(market.maker_fee, 0, AutocratError::InvalidMarket);
 
-        proposal.quote_vault = ctx.accounts.quote_vault.key();
-        proposal.base_vault = ctx.accounts.base_vault.key();
+            require_eq!(
+                market.base_lot_size,
+                dao.base_lot_size,
+                AutocratError::InvalidMarket
+            );
+
+            require_eq!(
+                market.quote_lot_size,
+                100, // you can quote in increments of a hundredth of a penny
+                AutocratError::InvalidMarket
+            );
+
+            require_eq!(
+                market.collect_fee_admin,
+                dao.treasury,
+                AutocratError::InvalidMarket
+            );
+        }
+
+        let pass_twap_market = &ctx.accounts.openbook_twap_pass_market;
+        let fail_twap_market = &ctx.accounts.openbook_twap_fail_market;
+
+        for twap_market in [pass_twap_market, fail_twap_market] {
+            let oracle = &twap_market.twap_oracle;
+
+            require!(
+                clock.slot <= oracle.initial_slot + 50,
+                AutocratError::TWAPMarketTooOld
+            );
+
+            require_eq!(
+                oracle.max_observation_change_per_update_lots,
+                dao.max_observation_change_per_update_lots,
+                AutocratError::TWAPOracleWrongChangeLots
+            );
+
+            require_eq!(
+                oracle.expected_value,
+                dao.twap_expected_value,
+                AutocratError::TWAPMarketInvalidExpectedValue
+            );
+        }
 
         let slots_passed = clock.slot - dao.last_proposal_slot;
         let burn_amount = dao.base_burn_lamports.saturating_sub(
@@ -314,29 +261,51 @@ pub mod autocrat_v0 {
             ],
         )?;
 
-        proposal.openbook_twap_pass_market = ctx.accounts.openbook_twap_pass_market.key();
-        proposal.openbook_twap_fail_market = ctx.accounts.openbook_twap_fail_market.key();
-        proposal.openbook_pass_market = ctx.accounts.openbook_pass_market.key();
-        proposal.openbook_fail_market = ctx.accounts.openbook_fail_market.key();
+        let proposal = &mut ctx.accounts.proposal;
 
-        proposal.proposer = ctx.accounts.proposer.key();
-        proposal.description_url = description_url;
-        proposal.slot_enqueued = clock.slot;
-        proposal.state = ProposalState::Pending;
-        proposal.instruction = instruction;
+        proposal.set_inner(Proposal {
+            number: dao.proposal_count,
+            proposer: ctx.accounts.proposer.key(),
+            description_url,
+            slot_enqueued: clock.slot,
+            state: ProposalState::Pending,
+            instruction,
+            openbook_twap_pass_market: pass_twap_market.key(),
+            openbook_twap_fail_market: fail_twap_market.key(),
+            openbook_pass_market: ctx.accounts.openbook_pass_market.key(),
+            openbook_fail_market: ctx.accounts.openbook_fail_market.key(),
+            base_vault: base_vault.key(),
+            quote_vault: quote_vault.key(),
+        });
+
+        dao.proposal_count += 1;
+
+        // least signficant 32 bits of nonce are proposal number
+        // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
+        require_eq!(
+            base_vault.nonce,
+            proposal.number as u64,
+            AutocratError::InvalidVaultNonce
+        );
+        require_eq!(
+            quote_vault.nonce,
+            (proposal.number as u64 | (1 << 63)),
+            AutocratError::InvalidVaultNonce
+        );
 
         Ok(())
     }
 
     pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
-        let openbook_twap_pass_market = &ctx.accounts.openbook_twap_pass_market;
-        let openbook_twap_fail_market = &ctx.accounts.openbook_twap_fail_market;
+        let pass_twap_market = &ctx.accounts.openbook_twap_pass_market;
+        let fail_twap_market = &ctx.accounts.openbook_twap_fail_market;
+        let dao = &ctx.accounts.dao;
 
         let proposal = &mut ctx.accounts.proposal;
         let clock = Clock::get()?;
 
         require!(
-            clock.slot >= proposal.slot_enqueued + ctx.accounts.dao.slots_per_proposal,
+            clock.slot >= proposal.slot_enqueued + dao.slots_per_proposal,
             AutocratError::ProposalTooYoung
         );
 
@@ -345,40 +314,33 @@ pub mod autocrat_v0 {
             AutocratError::ProposalAlreadyFinalized
         );
 
-        let dao_key = ctx.accounts.dao.key();
-        let treasury_seeds = &[dao_key.as_ref(), &[ctx.accounts.dao.treasury_pda_bump]];
+        let dao_key = dao.key();
+        let treasury_seeds = &[dao_key.as_ref(), &[dao.treasury_pda_bump]];
         let signer = &[&treasury_seeds[..]];
 
-        let pass_market_aggregator = openbook_twap_pass_market.twap_oracle.observation_aggregator;
-        let fail_market_aggregator = openbook_twap_fail_market.twap_oracle.observation_aggregator;
+        let calculate_twap = |twap_market: &TWAPMarket| -> Result<u128> {
+            let oracle = &twap_market.twap_oracle;
+            let aggregator = oracle.observation_aggregator;
+            assert!(aggregator != 0);
 
-        assert!(pass_market_aggregator != 0);
-        assert!(fail_market_aggregator != 0);
+            let slots_passed = oracle.last_updated_slot - proposal.slot_enqueued;
 
-        // should only overflow in a situation where we want a revert anyways
-        let pass_market_slots_passed =
-            openbook_twap_pass_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
-        let fail_market_slots_passed =
-            openbook_twap_fail_market.twap_oracle.last_updated_slot - proposal.slot_enqueued;
+            require!(
+                slots_passed >= dao.slots_per_proposal,
+                AutocratError::MarketsTooYoung
+            );
 
-        require!(
-            pass_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
-            AutocratError::MarketsTooYoung
-        );
-        require!(
-            fail_market_slots_passed >= ctx.accounts.dao.slots_per_proposal,
-            AutocratError::MarketsTooYoung
-        );
+            let twap = aggregator / slots_passed as u128;
+            assert!(twap != 0);
 
-        let pass_market_twap = pass_market_aggregator / pass_market_slots_passed as u128;
-        let fail_market_twap = fail_market_aggregator / fail_market_slots_passed as u128;
+            Ok(twap)
+        };
 
-        assert!(pass_market_twap != 0);
-        assert!(fail_market_twap != 0);
+        let fail_market_twap = calculate_twap(&fail_twap_market)?;
+        let pass_market_twap = calculate_twap(&pass_twap_market)?;
 
-        let threshold = (fail_market_twap
-            * (MAX_BPS + ctx.accounts.dao.pass_threshold_bps) as u128)
-            / MAX_BPS as u128;
+        let threshold =
+            (fail_market_twap * (MAX_BPS + dao.pass_threshold_bps) as u128) / MAX_BPS as u128;
 
         let (new_proposal_state, new_vault_state) = if pass_market_twap > threshold {
             (ProposalState::Passed, VaultStatus::Finalized)
@@ -420,11 +382,7 @@ pub mod autocrat_v0 {
             }
         }
 
-        solana_program::program::invoke_signed(
-            &svm_instruction,
-            ctx.remaining_accounts,
-            signer,
-        )?;
+        solana_program::program::invoke_signed(&svm_instruction, ctx.remaining_accounts, signer)?;
 
         Ok(())
     }
@@ -623,7 +581,7 @@ pub enum AutocratError {
     InvalidSettlementAuthority,
     #[msg("Proposal is too young to be executed or rejected")]
     ProposalTooYoung,
-    #[msg("Markets too young for proposal to be finalized")]
+    #[msg("Markets too young for proposal to be finalized. TWAP might need to be cranked")]
     MarketsTooYoung,
     #[msg("This proposal has already been finalized")]
     ProposalAlreadyFinalized,
