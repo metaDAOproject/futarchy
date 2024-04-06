@@ -223,7 +223,7 @@ pub mod autocrat_v0 {
             let oracle = &twap_market.twap_oracle;
 
             require!(
-                oracle.initial_slot + 50 >= clock.slot,
+                clock.slot <= oracle.initial_slot + 50,
                 AutocratError::TWAPMarketTooOld
             );
 
