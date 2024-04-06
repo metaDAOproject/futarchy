@@ -75,16 +75,19 @@ pub mod conditional_vault {
     ) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
 
-        vault.status = VaultStatus::Active;
-        vault.settlement_authority = settlement_authority;
-        vault.underlying_token_mint = ctx.accounts.underlying_token_mint.key();
-        vault.nonce = nonce;
-        vault.underlying_token_account = ctx.accounts.vault_underlying_token_account.key();
-        vault.conditional_on_finalize_token_mint =
-            ctx.accounts.conditional_on_finalize_token_mint.key();
-        vault.conditional_on_revert_token_mint =
-            ctx.accounts.conditional_on_revert_token_mint.key();
-        vault.pda_bump = *ctx.bumps.get("vault").unwrap();
+        vault.set_inner(ConditionalVault {
+            status: VaultStatus::Active,
+            settlement_authority,
+            underlying_token_mint: ctx.accounts.underlying_token_mint.key(),
+            nonce,
+            underlying_token_account: ctx.accounts.vault_underlying_token_account.key(),
+            conditional_on_finalize_token_mint: ctx
+                .accounts
+                .conditional_on_finalize_token_mint
+                .key(),
+            conditional_on_revert_token_mint: ctx.accounts.conditional_on_revert_token_mint.key(),
+            pda_bump: *ctx.bumps.get("vault").unwrap(),
+        });
 
         Ok(())
     }
