@@ -109,41 +109,48 @@ pub mod conditional_vault {
         let on_finalize_token_symbol = format!("p{}", underlying_token_symbol);
         let on_revert_token_symbol = format!("f{}", underlying_token_symbol);
 
-        create_metadata_accounts_v3(
-            ctx.accounts
-                .into_create_on_finalize_token_metadata_context()
-                .with_signer(signer_seeds),
-            DataV2 {
-                name: format!("Proposal {}: {}", proposal_number, on_finalize_token_symbol),
-                symbol: on_finalize_token_symbol,
-                uri: on_finalize_uri,
-                seller_fee_basis_points: 0,
-                creators: None,
-                collection: None,
-                uses: None,
-            },
-            false,
-            true,
-            None,
-        )?;
+        for (symbol, uri, metadata, mint) in [
+            (
+                on_finalize_token_symbol,
+                on_finalize_uri,
+                &ctx.accounts.conditional_on_finalize_token_metadata,
+                &ctx.accounts.conditional_on_finalize_token_mint,
+            ),
+            (
+                on_revert_token_symbol,
+                on_revert_uri,
+                &ctx.accounts.conditional_on_revert_token_metadata,
+                &ctx.accounts.conditional_on_revert_token_mint,
+            ),
+        ] {
+            let cpi_program = ctx.accounts.token_metadata_program.to_account_info();
 
-        create_metadata_accounts_v3(
-            ctx.accounts
-                .into_create_on_revert_token_metadata_context()
-                .with_signer(signer_seeds),
-            DataV2 {
-                name: format!("Proposal {}: {}", proposal_number, on_revert_token_symbol),
-                symbol: on_revert_token_symbol,
-                uri: on_revert_uri,
-                seller_fee_basis_points: 0,
-                creators: None,
-                collection: None,
-                uses: None,
-            },
-            false,
-            true,
-            None,
-        )?;
+            let cpi_accounts = CreateMetadataAccountsV3 {
+                metadata: metadata.to_account_info(),
+                mint: mint.to_account_info(),
+                mint_authority: ctx.accounts.vault.to_account_info(),
+                payer: ctx.accounts.payer.to_account_info(),
+                update_authority: ctx.accounts.vault.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+            };
+
+            create_metadata_accounts_v3(
+                CpiContext::new(cpi_program, cpi_accounts).with_signer(signer_seeds),
+                DataV2 {
+                    name: format!("Proposal {}: {}", proposal_number, symbol),
+                    symbol,
+                    uri,
+                    seller_fee_basis_points: 0,
+                    creators: None,
+                    collection: None,
+                    uses: None,
+                },
+                false,
+                true,
+                None,
+            )?;
+        }
 
         Ok(())
     }
@@ -565,46 +572,6 @@ pub struct AddMetadataToConditionalTokens<'info> {
     pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
-}
-
-impl<'info> AddMetadataToConditionalTokens<'info> {
-    pub fn into_create_on_finalize_token_metadata_context(
-        &self,
-    ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
-        let cpi_program = self.token_metadata_program.to_account_info();
-
-        let cpi_accounts = CreateMetadataAccountsV3 {
-            metadata: self
-                .conditional_on_finalize_token_metadata
-                .to_account_info(),
-            mint: self.conditional_on_finalize_token_mint.to_account_info(),
-            mint_authority: self.vault.to_account_info(),
-            payer: self.payer.to_account_info(),
-            update_authority: self.vault.to_account_info(),
-            system_program: self.system_program.to_account_info(),
-            rent: self.rent.to_account_info(),
-        };
-
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
-
-    pub fn into_create_on_revert_token_metadata_context(
-        &self,
-    ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
-        let cpi_program = self.token_metadata_program.to_account_info();
-
-        let cpi_accounts = CreateMetadataAccountsV3 {
-            metadata: self.conditional_on_revert_token_metadata.to_account_info(),
-            mint: self.conditional_on_revert_token_mint.to_account_info(),
-            mint_authority: self.vault.to_account_info(),
-            payer: self.payer.to_account_info(),
-            update_authority: self.vault.to_account_info(),
-            system_program: self.system_program.to_account_info(),
-            rent: self.rent.to_account_info(),
-        };
-
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
 }
 
 #[derive(Accounts)]
