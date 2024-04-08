@@ -166,12 +166,17 @@ pub mod conditional_vault {
     }
 
     pub fn merge_conditional_tokens_for_underlying_tokens(
-        ctx: Context<MergeConditionalTokensForUnderlyingTokens>,
+        ctx: Context<InteractWithVault>,
         amount: u64,
     ) -> Result<()> {
         let accs = &ctx.accounts;
 
         let vault = &accs.vault;
+
+        require!(
+            vault.status == VaultStatus::Active,
+            ErrorCode::VaultAlreadySettled
+        );
 
         // Store Pre-operation Balances
         let pre_user_conditional_on_finalize_balance = ctx
@@ -270,7 +275,7 @@ pub mod conditional_vault {
         Ok(())
     }
 
-    pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
+    pub fn mint_conditional_tokens(ctx: Context<InteractWithVault>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
 
         let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
@@ -280,6 +285,11 @@ pub mod conditional_vault {
             accs.user_conditional_on_revert_token_account.amount;
         let pre_finalize_mint_supply = accs.conditional_on_finalize_token_mint.supply;
         let pre_revert_mint_supply = accs.conditional_on_revert_token_mint.supply;
+
+        require!(
+            accs.user_underlying_token_account.amount >= amount,
+            ErrorCode::InsufficientUnderlyingTokens
+        );
 
         let vault = &accs.vault;
 
@@ -359,7 +369,7 @@ pub mod conditional_vault {
     }
 
     pub fn redeem_conditional_tokens_for_underlying_tokens(
-        ctx: Context<RedeemConditionalTokensForUnderlyingTokens>,
+        ctx: Context<InteractWithVault>,
     ) -> Result<()> {
         let accs = &ctx.accounts;
 
@@ -375,6 +385,11 @@ pub mod conditional_vault {
 
         let vault = &accs.vault;
         let vault_status = vault.status;
+
+        require!(
+            vault_status != VaultStatus::Active,
+            ErrorCode::CantRedeemConditionalTokens
+        );
 
         let seeds = generate_vault_seeds!(vault);
         let signer = &[&seeds[..]];
@@ -565,90 +580,10 @@ pub struct SettleConditionalVault<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(amount: u64)]
-pub struct MintConditionalTokens<'info> {
+pub struct InteractWithVault<'info> {
     #[account(
         has_one = conditional_on_finalize_token_mint @ ErrorCode::InvalidConditionalTokenMint,
         has_one = conditional_on_revert_token_mint @ ErrorCode::InvalidConditionalTokenMint,
-    )]
-    pub vault: Account<'info, ConditionalVault>,
-    #[account(mut)]
-    pub conditional_on_finalize_token_mint: Account<'info, Mint>,
-    #[account(mut)]
-    pub conditional_on_revert_token_mint: Account<'info, Mint>,
-    #[account(
-        mut,
-        constraint = vault_underlying_token_account.key() == vault.underlying_token_account @  ErrorCode::InvalidVaultUnderlyingTokenAccount
-    )]
-    pub vault_underlying_token_account: Account<'info, TokenAccount>,
-    pub authority: Signer<'info>,
-    #[account(
-        mut,
-        token::authority = authority,
-        token::mint = vault.underlying_token_mint,
-        constraint = user_underlying_token_account.amount >= amount @ ErrorCode::InsufficientUnderlyingTokens
-    )]
-    pub user_underlying_token_account: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        token::authority = authority,
-        token::mint = conditional_on_finalize_token_mint
-    )]
-    pub user_conditional_on_finalize_token_account: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        token::authority = authority,
-        token::mint = conditional_on_revert_token_mint
-    )]
-    pub user_conditional_on_revert_token_account: Account<'info, TokenAccount>,
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-pub struct MergeConditionalTokensForUnderlyingTokens<'info> {
-    #[account(
-        has_one = conditional_on_finalize_token_mint @ ErrorCode::InvalidConditionalTokenMint,
-        has_one = conditional_on_revert_token_mint @ ErrorCode::InvalidConditionalTokenMint,
-        constraint = vault.status == VaultStatus::Active @ ErrorCode::VaultAlreadySettled
-    )]
-    pub vault: Account<'info, ConditionalVault>,
-    #[account(mut)]
-    pub conditional_on_finalize_token_mint: Account<'info, Mint>,
-    #[account(mut)]
-    pub conditional_on_revert_token_mint: Account<'info, Mint>,
-    #[account(
-        mut,
-        constraint = vault_underlying_token_account.key() == vault.underlying_token_account @ ErrorCode::InvalidVaultUnderlyingTokenAccount
-    )]
-    pub vault_underlying_token_account: Account<'info, TokenAccount>,
-    pub authority: Signer<'info>,
-    #[account(
-        mut,
-        token::authority = authority,
-        token::mint = conditional_on_finalize_token_mint
-    )]
-    pub user_conditional_on_finalize_token_account: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        token::authority = authority,
-        token::mint = conditional_on_revert_token_mint
-    )]
-    pub user_conditional_on_revert_token_account: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        token::authority = authority,
-        token::mint = vault.underlying_token_mint
-    )]
-    pub user_underlying_token_account: Account<'info, TokenAccount>,
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-pub struct RedeemConditionalTokensForUnderlyingTokens<'info> {
-    #[account(
-        has_one = conditional_on_finalize_token_mint @ ErrorCode::InvalidConditionalTokenMint,
-        has_one = conditional_on_revert_token_mint @ ErrorCode::InvalidConditionalTokenMint,
-        constraint = vault.status != VaultStatus::Active @ ErrorCode::CantRedeemConditionalTokens
     )]
     pub vault: Account<'info, ConditionalVault>,
     #[account(mut)]
