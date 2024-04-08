@@ -278,11 +278,11 @@ pub mod conditional_vault {
     pub fn mint_conditional_tokens(ctx: Context<MintConditionalTokens>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
 
+        let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
         let pre_user_conditional_on_finalize_balance =
             accs.user_conditional_on_finalize_token_account.amount;
         let pre_user_conditional_on_revert_balance =
             accs.user_conditional_on_revert_token_account.amount;
-        let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
         let pre_finalize_mint_supply = accs.conditional_on_finalize_token_mint.supply;
         let pre_revert_mint_supply = accs.conditional_on_revert_token_mint.supply;
 
@@ -303,35 +303,29 @@ pub mod conditional_vault {
             amount,
         )?;
 
-        token::mint_to(
-            CpiContext::new_with_signer(
-                accs.token_program.to_account_info(),
-                MintTo {
-                    mint: accs.conditional_on_finalize_token_mint.to_account_info(),
-                    to: accs
-                        .user_conditional_on_finalize_token_account
-                        .to_account_info(),
-                    authority: accs.vault.to_account_info(),
-                },
-                signer,
+        for (conditional_mint, user_conditional_token_account) in [
+            (
+                &accs.conditional_on_finalize_token_mint,
+                &accs.user_conditional_on_finalize_token_account,
             ),
-            amount,
-        )?;
-
-        token::mint_to(
-            CpiContext::new_with_signer(
-                accs.token_program.to_account_info(),
-                MintTo {
-                    mint: accs.conditional_on_revert_token_mint.to_account_info(),
-                    to: accs
-                        .user_conditional_on_revert_token_account
-                        .to_account_info(),
-                    authority: accs.vault.to_account_info(),
-                },
-                signer,
+            (
+                &accs.conditional_on_revert_token_mint,
+                &accs.user_conditional_on_revert_token_account,
             ),
-            amount,
-        )?;
+        ] {
+            token::mint_to(
+                CpiContext::new_with_signer(
+                    accs.token_program.to_account_info(),
+                    MintTo {
+                        mint: conditional_mint.to_account_info(),
+                        to: user_conditional_token_account.to_account_info(),
+                        authority: accs.vault.to_account_info(),
+                    },
+                    signer,
+                ),
+                amount,
+            )?;
+        }
 
         ctx.accounts
             .user_conditional_on_finalize_token_account

@@ -245,6 +245,24 @@ describe("conditional_vault", async function () {
       );
     });
 
+    it("mints conditional tokens twice", async function () {
+      await mintConditionalTokens(
+        vaultProgram,
+        amount / 2,
+        bob,
+        vault,
+        banksClient
+      );
+
+      await mintConditionalTokens(
+        vaultProgram,
+        amount / 2,
+        bob,
+        vault,
+        banksClient
+      );
+    });
+
     it("blocks mints when the user doesn't have enough underlying tokens", async function () {
       const callbacks = expectError(
         vaultProgram,
