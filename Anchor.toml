@@ -47,3 +47,7 @@ program = "./tests/fixtures/openbook_twap.so"
 [[test.genesis]]
 address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 program = "./tests/fixtures/mpl_token_metadata.so"
+
+[[test.genesis]]
+address = "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK"
+program = "./tests/fixtures/raydium_amm_v3.so"

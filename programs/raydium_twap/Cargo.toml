@@ -17,4 +17,4 @@ default = []
 
 [dependencies]
 anchor-lang = "0.29.0"
-raydium-amm-v3 = { git = "https://github.com/raydium-io/raydium-clmm", rev = "da57b0b7409f5a4437feb8fd0551683b14b8a1f5" }
+raydium-amm-v3 = { git = "https://github.com/raydium-io/raydium-clmm", rev = "da57b0b7409f5a4437feb8fd0551683b14b8a1f5", features = ["cpi"] }
