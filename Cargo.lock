@@ -2024,6 +2024,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "raydium_twap"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang 0.29.0",
+]
+
+[[package]]
 name = "rayon"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
