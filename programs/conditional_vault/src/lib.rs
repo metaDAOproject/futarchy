@@ -374,38 +374,32 @@ pub mod conditional_vault {
         let seeds = generate_vault_seeds!(vault);
         let signer = &[&seeds[..]];
 
+        for (conditional_mint, user_conditional_token_account) in [
+            (
+                &accs.conditional_on_finalize_token_mint,
+                &accs.user_conditional_on_finalize_token_account,
+            ),
+            (
+                &accs.conditional_on_revert_token_mint,
+                &accs.user_conditional_on_revert_token_account,
+            ),
+        ] {
+            token::burn(
+                CpiContext::new(
+                    accs.token_program.to_account_info(),
+                    Burn {
+                        mint: conditional_mint.to_account_info(),
+                        from: user_conditional_token_account.to_account_info(),
+                        authority: accs.authority.to_account_info(),
+                    },
+                ),
+                user_conditional_token_account.amount,
+            )?;
+        }
+
         let conditional_on_finalize_balance =
             accs.user_conditional_on_finalize_token_account.amount;
         let conditional_on_revert_balance = accs.user_conditional_on_revert_token_account.amount;
-
-        // burn everything for good measure
-        token::burn(
-            CpiContext::new(
-                accs.token_program.to_account_info(),
-                Burn {
-                    mint: accs.conditional_on_finalize_token_mint.to_account_info(),
-                    from: accs
-                        .user_conditional_on_finalize_token_account
-                        .to_account_info(),
-                    authority: accs.authority.to_account_info(),
-                },
-            ),
-            conditional_on_finalize_balance,
-        )?;
-
-        token::burn(
-            CpiContext::new(
-                accs.token_program.to_account_info(),
-                Burn {
-                    mint: accs.conditional_on_revert_token_mint.to_account_info(),
-                    from: accs
-                        .user_conditional_on_revert_token_account
-                        .to_account_info(),
-                    authority: accs.authority.to_account_info(),
-                },
-            ),
-            conditional_on_revert_balance,
-        )?;
 
         if vault_status == VaultStatus::Finalized {
             token::transfer(
