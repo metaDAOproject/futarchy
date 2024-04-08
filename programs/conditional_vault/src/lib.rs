@@ -368,12 +368,18 @@ pub mod conditional_vault {
         let pre_finalize_mint_supply = accs.conditional_on_finalize_token_mint.supply;
         let pre_revert_mint_supply = accs.conditional_on_revert_token_mint.supply;
 
+        let pre_conditional_on_finalize_balance =
+            accs.user_conditional_on_finalize_token_account.amount;
+        let pre_conditional_on_revert_balance =
+            accs.user_conditional_on_revert_token_account.amount;
+
         let vault = &accs.vault;
         let vault_status = vault.status;
 
         let seeds = generate_vault_seeds!(vault);
         let signer = &[&seeds[..]];
 
+        // burn from both accounts even though we technically only need to burn from one
         for (conditional_mint, user_conditional_token_account) in [
             (
                 &accs.conditional_on_finalize_token_mint,
@@ -397,37 +403,24 @@ pub mod conditional_vault {
             )?;
         }
 
-        let conditional_on_finalize_balance =
-            accs.user_conditional_on_finalize_token_account.amount;
-        let conditional_on_revert_balance = accs.user_conditional_on_revert_token_account.amount;
-
-        if vault_status == VaultStatus::Finalized {
-            token::transfer(
-                CpiContext::new_with_signer(
-                    accs.token_program.to_account_info(),
-                    Transfer {
-                        from: accs.vault_underlying_token_account.to_account_info(),
-                        to: accs.user_underlying_token_account.to_account_info(),
-                        authority: accs.vault.to_account_info(),
-                    },
-                    signer,
-                ),
-                conditional_on_finalize_balance,
-            )?;
+        let redeemable = if vault_status == VaultStatus::Finalized {
+            pre_conditional_on_finalize_balance
         } else {
-            token::transfer(
-                CpiContext::new_with_signer(
-                    accs.token_program.to_account_info(),
-                    Transfer {
-                        from: accs.vault_underlying_token_account.to_account_info(),
-                        to: accs.user_underlying_token_account.to_account_info(),
-                        authority: accs.vault.to_account_info(),
-                    },
-                    signer,
-                ),
-                conditional_on_revert_balance,
-            )?;
-        }
+            pre_conditional_on_revert_balance
+        };
+
+        token::transfer(
+            CpiContext::new_with_signer(
+                accs.token_program.to_account_info(),
+                Transfer {
+                    from: accs.vault_underlying_token_account.to_account_info(),
+                    to: accs.user_underlying_token_account.to_account_info(),
+                    authority: accs.vault.to_account_info(),
+                },
+                signer,
+            ),
+            redeemable,
+        )?;
 
         ctx.accounts
             .user_conditional_on_finalize_token_account
@@ -452,19 +445,22 @@ pub mod conditional_vault {
         assert!(post_user_conditional_on_finalize_balance == 0);
         assert!(post_user_conditional_on_revert_balance == 0);
         assert!(
-            post_finalize_mint_supply == pre_finalize_mint_supply - conditional_on_finalize_balance
+            post_finalize_mint_supply
+                == pre_finalize_mint_supply - pre_conditional_on_finalize_balance
         );
-        assert!(post_revert_mint_supply == pre_revert_mint_supply - conditional_on_revert_balance);
+        assert!(
+            post_revert_mint_supply == pre_revert_mint_supply - pre_conditional_on_revert_balance
+        );
         if vault_status == VaultStatus::Finalized {
             assert!(
                 post_vault_underlying_balance
-                    == pre_vault_underlying_balance - conditional_on_finalize_balance
+                    == pre_vault_underlying_balance - pre_conditional_on_finalize_balance
             );
         } else {
             assert!(vault_status == VaultStatus::Reverted);
             assert!(
                 post_vault_underlying_balance
-                    == pre_vault_underlying_balance - conditional_on_revert_balance
+                    == pre_vault_underlying_balance - pre_conditional_on_revert_balance
             );
         }
 
