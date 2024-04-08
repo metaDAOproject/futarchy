@@ -188,33 +188,28 @@ pub mod conditional_vault {
         let signer = &[&seeds[..]];
 
         // burn `amount` from both token accounts
-        token::burn(
-            CpiContext::new(
-                accs.token_program.to_account_info(),
-                Burn {
-                    mint: accs.conditional_on_finalize_token_mint.to_account_info(),
-                    from: accs
-                        .user_conditional_on_finalize_token_account
-                        .to_account_info(),
-                    authority: accs.authority.to_account_info(),
-                },
+        for (conditional_mint, user_conditional_token_account) in [
+            (
+                &accs.conditional_on_finalize_token_mint,
+                &accs.user_conditional_on_finalize_token_account,
             ),
-            amount,
-        )?;
-
-        token::burn(
-            CpiContext::new(
-                accs.token_program.to_account_info(),
-                Burn {
-                    mint: accs.conditional_on_revert_token_mint.to_account_info(),
-                    from: accs
-                        .user_conditional_on_revert_token_account
-                        .to_account_info(),
-                    authority: accs.authority.to_account_info(),
-                },
+            (
+                &accs.conditional_on_revert_token_mint,
+                &accs.user_conditional_on_revert_token_account,
             ),
-            amount,
-        )?;
+        ] {
+            token::burn(
+                CpiContext::new(
+                    accs.token_program.to_account_info(),
+                    Burn {
+                        mint: conditional_mint.to_account_info(),
+                        from: user_conditional_token_account.to_account_info(),
+                        authority: accs.authority.to_account_info(),
+                    },
+                ),
+                amount,
+            )?;
+        }
 
         // Transfer `amount` from vault to user
         token::transfer(
