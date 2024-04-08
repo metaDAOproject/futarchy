@@ -1735,7 +1735,7 @@ dependencies = [
  "itertools",
  "num_enum 0.5.11",
  "pyth-sdk-solana",
- "raydium-amm-v3",
+ "raydium-amm-v3 0.1.0 (git+https://github.com/raydium-io/raydium-clmm.git)",
  "solana-program",
  "static_assertions",
  "switchboard-program",
@@ -1756,7 +1756,7 @@ dependencies = [
  "itertools",
  "num_enum 0.5.11",
  "pyth-sdk-solana",
- "raydium-amm-v3",
+ "raydium-amm-v3 0.1.0 (git+https://github.com/raydium-io/raydium-clmm.git)",
  "solana-program",
  "static_assertions",
  "switchboard-program",
@@ -2011,6 +2011,21 @@ dependencies = [
 [[package]]
 name = "raydium-amm-v3"
 version = "0.1.0"
+source = "git+https://github.com/raydium-io/raydium-clmm?rev=da57b0b7409f5a4437feb8fd0551683b14b8a1f5#da57b0b7409f5a4437feb8fd0551683b14b8a1f5"
+dependencies = [
+ "anchor-lang 0.29.0",
+ "anchor-spl 0.29.0",
+ "arrayref",
+ "bytemuck",
+ "mpl-token-metadata 1.13.2",
+ "solana-program",
+ "spl-memo 4.0.0",
+ "uint",
+]
+
+[[package]]
+name = "raydium-amm-v3"
+version = "0.1.0"
 source = "git+https://github.com/raydium-io/raydium-clmm.git#da57b0b7409f5a4437feb8fd0551683b14b8a1f5"
 dependencies = [
  "anchor-lang 0.29.0",
@@ -2028,6 +2043,7 @@ name = "raydium_twap"
 version = "0.1.0"
 dependencies = [
  "anchor-lang 0.29.0",
+ "raydium-amm-v3 0.1.0 (git+https://github.com/raydium-io/raydium-clmm?rev=da57b0b7409f5a4437feb8fd0551683b14b8a1f5)",
 ]
 
 [[package]]
