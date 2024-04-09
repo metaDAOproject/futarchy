@@ -390,28 +390,22 @@ pub mod autocrat_v0 {
     pub fn update_dao(ctx: Context<UpdateDao>, dao_params: UpdateDaoParams) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        macro_rules! update_fields_if_some {
-            ($dao:expr, $dao_params:expr, $( $field:ident ),+ ) => {
-                $(
-                    if let Some(value) = $dao_params.$field {
-                        $dao.$field = value;
-                    }
-                )+
+        macro_rules! update_dao_if_passed {
+            ($field:ident) => {
+                if let Some(value) = dao_params.$field {
+                    dao.$field = value;
+                }
             }
         }
 
-        update_fields_if_some!(
-            dao,
-            dao_params,
-            pass_threshold_bps,
-            base_burn_lamports,
-            burn_decay_per_slot_lamports,
-            slots_per_proposal,
-            market_taker_fee,
-            twap_expected_value,
-            base_lot_size,
-            max_observation_change_per_update_lots
-        );
+        update_dao_if_passed!(pass_threshold_bps);
+        update_dao_if_passed!(base_burn_lamports);
+        update_dao_if_passed!(burn_decay_per_slot_lamports);
+        update_dao_if_passed!(slots_per_proposal);
+        update_dao_if_passed!(market_taker_fee);
+        update_dao_if_passed!(twap_expected_value);
+        update_dao_if_passed!(base_lot_size);
+        update_dao_if_passed!(max_observation_change_per_update_lots);
 
         Ok(())
     }
