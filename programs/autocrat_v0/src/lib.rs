@@ -291,7 +291,7 @@ pub mod autocrat_v0 {
         );
         require_eq!(
             quote_vault.nonce,
-            (proposal.number as u64 | (1 << 63)),
+            proposal.number as u64,
             AutocratError::InvalidVaultNonce
         );
 
@@ -570,7 +570,7 @@ pub enum AutocratError {
     MarketsTooYoung,
     #[msg("This proposal has already been finalized")]
     ProposalAlreadyFinalized,
-    #[msg("A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits")]
+    #[msg("A conditional vault has an invalid nonce. A nonce should encode the proposal number")]
     InvalidVaultNonce,
     #[msg("This proposal can't be executed because it isn't in the passed state")]
     ProposalNotPassed,
