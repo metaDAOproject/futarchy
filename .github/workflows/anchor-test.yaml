@@ -2,7 +2,8 @@ name: anchor-test
 on:
   push:
     branches:
-      - main
+      - develop
+      - production
   pull_request:
 
 jobs:
