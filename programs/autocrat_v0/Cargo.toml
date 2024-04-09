@@ -23,4 +23,3 @@ openbook-v2 = { git = "https://github.com/openbook-dex/openbook-v2.git", feature
 openbook-twap = { git = "https://github.com/metaDAOproject/openbook-twap.git", features = ["cpi"] }
 solana-program = "~1.16.1"
 conditional_vault = { path = "../conditional_vault", features = ["cpi"] }
-metadata = { path = "../metadata", features = ["cpi"] }
