@@ -407,6 +407,7 @@ pub mod autocrat_v0 {
             base_burn_lamports,
             burn_decay_per_slot_lamports,
             slots_per_proposal,
+            market_taker_fee,
             twap_expected_value,
             base_lot_size,
             max_observation_change_per_update_lots
