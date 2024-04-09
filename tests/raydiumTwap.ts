@@ -3,7 +3,7 @@ import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import { BankrunProvider } from "anchor-bankrun";
-import { Clmm, TxVersion } from "@raydium-io/raydium-sdk";
+import { Clmm, TxVersion, SqrtPriceMath, MIN_SQRT_PRICE_X64 } from "@raydium-io/raydium-sdk";
 import { assert } from "chai";
 import {
   startAnchor,
@@ -105,6 +105,57 @@ describe("raydium_twap", async function () {
           owner: payer.publicKey,
           ammConfig,
         })
+        .rpc();
+
+      const [poolState] = PublicKey.findProgramAddressSync([
+        anchor.utils.bytes.utf8.encode("pool"),
+        ammConfig.toBuffer(),
+        USDC.toBuffer(),
+        META.toBuffer(),
+      ],
+      RAYDIUM_PROGRAM_ID)
+
+      const [tokenVault0] = PublicKey.findProgramAddressSync([
+        anchor.utils.bytes.utf8.encode("pool_vault"),
+        poolState.toBuffer(),
+        USDC.toBuffer()
+      ],
+      RAYDIUM_PROGRAM_ID);
+
+      const [tokenVault1] = PublicKey.findProgramAddressSync([
+        anchor.utils.bytes.utf8.encode("pool_vault"),
+        poolState.toBuffer(),
+        META.toBuffer()
+      ],
+      RAYDIUM_PROGRAM_ID);
+
+      const [tickArrayBitmap] = PublicKey.findProgramAddressSync([
+        anchor.utils.bytes.utf8.encode("pool_tick_array_bitmap_extension"),
+        poolState.toBuffer()
+      ],
+      RAYDIUM_PROGRAM_ID);
+
+    // const initialPriceX64 = SqrtPriceMath.priceToSqrtPriceX64(initPrice, mintA.decimals, mintB.decimals)
+      const observationStateKeypair = Keypair.generate();
+
+      await amm.methods.createPool(MIN_SQRT_PRICE_X64, new BN(1))
+        .accounts({
+          poolCreator: payer.publicKey,
+          ammConfig,
+          poolState,
+          tokenMint0: USDC,
+          tokenMint1: META,
+          tokenVault0,
+          tokenVault1,
+          observationState: observationStateKeypair.publicKey,
+          tickArrayBitmap,
+          tokenProgram0: token.TOKEN_PROGRAM_ID,
+          tokenProgram1: token.TOKEN_PROGRAM_ID,
+        })
+        .preInstructions([
+          await amm.account.observationState.createInstruction(observationStateKeypair, 52121)
+        ])
+        .signers([observationStateKeypair])
         .rpc();
       // Clmm.makeCreatePoolInstructionSimple({
       //   connection: provider.connection as anchor.web3.Connection,
