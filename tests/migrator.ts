@@ -28,7 +28,16 @@ import {
 } from "spl-token-bankrun";
 
 describe("autocrat_migrator", async function () {
-  let provider, connection, migrator, payer, context, banksClient, META, USDC, MNDE, BOL;
+  let provider,
+    connection,
+    migrator,
+    payer,
+    context,
+    banksClient,
+    META,
+    USDC,
+    MNDE,
+    BOL;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -143,7 +152,7 @@ describe("autocrat_migrator", async function () {
       );
     });
   });
-  
+
   describe("#multi_transfer4", async function () {
     it("does transfer", async function () {
       let sender = Keypair.generate();
@@ -171,8 +180,22 @@ describe("autocrat_migrator", async function () {
 
       await mintTo(banksClient, payer, META, accounts[0][0], payer, 1_000_000);
       await mintTo(banksClient, payer, USDC, accounts[1][0], payer, 10_000);
-      await mintTo(banksClient, payer, BOL, accounts[2][0], payer, 5_000_000_000_000);
-      await mintTo(banksClient, payer, MNDE, accounts[3][0], payer, 10_000_000_000_000);
+      await mintTo(
+        banksClient,
+        payer,
+        BOL,
+        accounts[2][0],
+        payer,
+        5_000_000_000_000
+      );
+      await mintTo(
+        banksClient,
+        payer,
+        MNDE,
+        accounts[3][0],
+        payer,
+        10_000_000_000_000
+      );
 
       await migrator.methods
         .multiTransfer4()
@@ -202,10 +225,18 @@ describe("autocrat_migrator", async function () {
         assert((await getAccount(banksClient, tokenAccounts[0])).amount == 0n);
       }
 
-      assert((await getAccount(banksClient, accounts[0][1])).amount == 1_000_000n);
+      assert(
+        (await getAccount(banksClient, accounts[0][1])).amount == 1_000_000n
+      );
       assert((await getAccount(banksClient, accounts[1][1])).amount == 10_000n);
-      assert((await getAccount(banksClient, accounts[2][1])).amount == 5_000_000_000_000n);
-      assert((await getAccount(banksClient, accounts[3][1])).amount == 10_000_000_000_000n);
+      assert(
+        (await getAccount(banksClient, accounts[2][1])).amount ==
+          5_000_000_000_000n
+      );
+      assert(
+        (await getAccount(banksClient, accounts[3][1])).amount ==
+          10_000_000_000_000n
+      );
 
       assert(
         (await banksClient.getAccount(receiver.publicKey)).lamports >
