@@ -1,18 +1,20 @@
 use anchor_lang::prelude::*;
+use autocrat_v0::DAO;
 
 declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 
 const DEFAULT_SPACE: usize = 1000;
 const INCREASE_IN_SPACE: usize = 100;
-const _MAX_SPACE: usize = 2000; // Something like this so we don't hit into the 32kb heap limit, 8kb is probably the account size limit
+const MAX_SPACE: usize = 4000; // 8kb is probably the true account size limit, but 4kb is more reasonable for now
 
 #[account]
 pub struct Metadata {
-    dao_treasury: Pubkey,
+    dao: Pubkey,
+    treasury: Pubkey,
     delegate: Pubkey,
-    items: Vec<MetadataItem>,
     creation_slot: u64,
     last_updated_slot: u64,
+    items: Vec<MetadataItem>,
 }
 
 #[account]
@@ -26,14 +28,18 @@ pub struct MetadataItem {
 #[program]
 pub mod metadata {
     use super::*;
-    // Instruction to create a new Metadata object
-    pub fn create_metadata(ctx: Context<CreateMetadata>) -> Result<()> {
+    // Instruction to initialize a new Metadata object
+    pub fn initialize_metadata(ctx: Context<InitializeMetadata>) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
-        metadata.dao_treasury = ctx.accounts.dao_treasury.key();
-        metadata.delegate = ctx.accounts.delegate.key();
-        metadata.creation_slot = Clock::get()?.slot;
-        metadata.last_updated_slot = Clock::get()?.slot;
-        metadata.items = Vec::new();
+        let current_slot = Clock::get()?.slot;
+        metadata.set_inner(Metadata {
+            dao: ctx.accounts.dao.key(),
+            treasury: ctx.accounts.treasury.key(),
+            delegate: ctx.accounts.delegate.key(),
+            creation_slot: current_slot,
+            last_updated_slot: current_slot,
+            items: Vec::new()
+        });
         Ok(())
     }
 
@@ -50,7 +56,6 @@ pub mod metadata {
         Ok(())
     }
 
-    // Let the delegate update who the delegate is
     pub fn delegate_set_delegate(ctx: Context<DelegateSetDelegate>) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
         metadata.delegate = ctx.accounts.new_delegate.key();
@@ -58,9 +63,8 @@ pub mod metadata {
         Ok(())
     }
 
-    // Instruction to add a new MetadataItem
-    pub fn create_metadata_item(
-        ctx: Context<ModifyMetadata>,
+    pub fn initialize_metadata_item(
+        ctx: Context<UpdateMetadata>,
         key: String,
         value: Vec<u8>,
     ) -> Result<()> {
@@ -80,8 +84,7 @@ pub mod metadata {
         Ok(())
     }
 
-    // Instruction to delete a MetadataItem
-    pub fn delete_metadata_item(ctx: Context<ModifyMetadata>, key: String) -> Result<()> {
+    pub fn delete_metadata_item(ctx: Context<UpdateMetadata>, key: String) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
         let current_slot = Clock::get()?.slot;
         if let Some(item) = metadata.items.iter_mut().find(|item| item.key == key) {
@@ -99,9 +102,8 @@ pub mod metadata {
         Ok(())
     }
 
-    // Instruction to overwrite data on an existing MetadataItem
     pub fn write_metadata_item(
-        ctx: Context<ModifyMetadata>,
+        ctx: Context<UpdateMetadata>,
         key: String,
         new_value: Vec<u8>,
     ) -> Result<()> {
@@ -123,9 +125,8 @@ pub mod metadata {
         Ok(())
     }
 
-    // Instruction to append data to an existing MetadataItem
     pub fn append_metadata_item(
-        ctx: Context<ModifyMetadata>,
+        ctx: Context<UpdateMetadata>,
         key: String,
         additional_value: Vec<u8>,
     ) -> Result<()> {
@@ -149,10 +150,14 @@ pub mod metadata {
 }
 
 #[derive(Accounts)]
-pub struct CreateMetadata<'info> {
-    #[account(init, payer = payer, seeds = [dao_treasury.key().as_ref()], bump, space = 8 + DEFAULT_SPACE)]
+pub struct InitializeMetadata<'info> {
+    // PDA restricts metadata accounts to one per DAO
+    #[account(init, payer = payer, seeds = [dao.key().as_ref()], bump, space = 8 + DEFAULT_SPACE)]
     pub metadata: Account<'info, Metadata>,
-    pub dao_treasury: Signer<'info>,
+    pub treasury: SystemAccount<'info>,
+    // Requires the DAO to exist, so InitializeMetadata needs to be called in the same transaction as InitializeDAO
+    #[account(has_one = treasury)]
+    pub dao: Account<'info, DAO>,
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK: This is the metadata delegate account, it only ever signs
@@ -165,7 +170,7 @@ pub struct IncreaseMetadataAccountSize<'info> {
     #[account(
         mut,
         has_one = delegate,
-        realloc = metadata.to_account_info().data_len() + INCREASE_IN_SPACE, // TODO: Set the max size, after which heap memory breaks
+        realloc = min(metadata.to_account_info().data_len() + INCREASE_IN_SPACE, MAX_SPACE)
         realloc::payer = payer,
         realloc::zero = false,
     )]
@@ -178,9 +183,9 @@ pub struct IncreaseMetadataAccountSize<'info> {
 
 #[derive(Accounts)]
 pub struct DaoSetDelegate<'info> {
-    #[account(mut, has_one = dao_treasury)]
+    #[account(mut, has_one = treasury)]
     pub metadata: Account<'info, Metadata>,
-    pub dao_treasury: Signer<'info>,
+    pub treasury: Signer<'info>,
     /// CHECK: This is the metadata delegate account, it only ever signs
     pub new_delegate: UncheckedAccount<'info>,
 }
@@ -195,7 +200,7 @@ pub struct DelegateSetDelegate<'info> {
 }
 
 #[derive(Accounts)]
-pub struct ModifyMetadata<'info> {
+pub struct UpdateMetadata<'info> {
     #[account(mut, has_one = delegate)]
     pub metadata: Account<'info, Metadata>,
     pub delegate: Signer<'info>,

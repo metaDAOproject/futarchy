@@ -1456,6 +1456,7 @@ name = "metadata"
 version = "0.1.0"
 dependencies = [
  "anchor-lang 0.28.0",
+ "autocrat_v0",
 ]
 
 [[package]]
