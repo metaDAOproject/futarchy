@@ -36,10 +36,7 @@ export const expectError = (
   return [
     () => assert.fail(message),
     (e) => {
-      assert(
-        e.error != undefined,
-        `problem retrieving program error: ${e}`
-      );
+      assert(e.error != undefined, `problem retrieving program error: ${e}`);
       assert(
         e.error.errorCode != undefined,
         "problem retrieving program error code"

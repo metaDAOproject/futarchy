@@ -2349,12 +2349,6 @@ async function initializeProposal(
   assert.equal(storedProposal.number, daoBefore.proposalCount);
   assert.ok(storedProposal.proposer.equals(payer.publicKey));
   assert.equal(storedProposal.descriptionUrl, dummyURL);
-  assert.ok(
-    storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket)
-  );
-  assert.ok(
-    storedProposal.openbookTwapPassMarket.equals(openbookTwapPassMarket)
-  );
   assert.equal(
     storedProposal.slotEnqueued.toString(),
     new BN(slot.toString()).toString()
@@ -2365,6 +2359,18 @@ async function initializeProposal(
   assert.ok(storedIx.programId.equals(ix.programId));
   assert.deepEqual(storedIx.accounts, ix.accounts);
   assert.deepEqual(storedIx.data, ix.data);
+
+  assert.ok(
+    storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket)
+  );
+  assert.ok(
+    storedProposal.openbookTwapPassMarket.equals(openbookTwapPassMarket)
+  );
+  assert.ok(storedProposal.openbookPassMarket.equals(openbookPassMarket));
+  assert.ok(storedProposal.openbookFailMarket.equals(openbookFailMarket));
+  assert.ok(storedProposal.baseVault.equals(baseVault));
+  assert.ok(storedProposal.quoteVault.equals(quoteVault));
+  assert.ok(storedProposal.dao.equals(dao));
 
   return proposalKeypair.publicKey;
 }

@@ -97,6 +97,7 @@ pub struct Proposal {
     pub openbook_fail_market: Pubkey,
     pub base_vault: Pubkey,
     pub quote_vault: Pubkey,
+    pub dao: Pubkey,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -276,6 +277,7 @@ pub mod autocrat_v0 {
             openbook_fail_market: ctx.accounts.openbook_fail_market.key(),
             base_vault: base_vault.key(),
             quote_vault: quote_vault.key(),
+            dao: dao.key(),
         });
 
         dao.proposal_count += 1;
@@ -395,7 +397,7 @@ pub mod autocrat_v0 {
                 if let Some(value) = dao_params.$field {
                     dao.$field = value;
                 }
-            }
+            };
         }
 
         update_dao_if_passed!(pass_threshold_bps);
