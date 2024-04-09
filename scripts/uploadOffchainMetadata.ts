@@ -124,115 +124,59 @@ export const uploadImageJson = async (
   const market = conditionalToken.toLowerCase().startsWith("p")
     ? "pass"
     : "fail";
-  return umi.uploader.uploadJson(
-    {
-      name: `Proposal ${proposal.toNumber()}: ${conditionalToken}`,
-      image,
-      symbol: conditionalToken,
-      description: `Native token in the MetaDAO's conditional ${market} market for proposal ${proposal.toNumber()}`,
-    },
-    {
-      onProgress: (percent: number, ...args: any) => {
-        console.log(
-          `percent metadata upload progress for ${conditionalToken} = ${percent}`
-        );
-        console.log("progress args: ", args);
-      },
-    }
-  );
+  return umi.uploader.uploadJson({
+    name: `Proposal ${proposal.toNumber()}: ${conditionalToken}`,
+    image,
+    symbol: conditionalToken,
+    description: `Native token in the MetaDAO's conditional ${market} market for proposal ${proposal.toNumber()}`,
+  });
 };
 
 export const uploadOffchainMetadata = async (
   proposal: anchor.BN,
   symbol: string
-):
-  | Promise<{
-      symbol: string;
-      passTokenMetadataUri: string | undefined;
-      failTokenMetadataUri: string | undefined;
-    }>
-  | undefined => {
-  const isOverrideDefined = (value: string) =>
-    value && value.trim().length > 0 && value.includes("https://");
-
-  const getValueOrUndefined = <T>(
-    result: PromiseSettledResult<T>,
-    action?: string
-  ): T | undefined => {
-    if (result.status === "rejected") {
-      console.error(
-        `${action ? `[${action}] ` : "request failed: "}`,
-        result.reason
-      );
-      return undefined;
-    }
-
-    return result.value;
-  };
-
+) => {
   // use bundlr, targeting arweave
   umi.use(bundlrUploader());
 
   if (!isAcceptedVaultToken(symbol)) {
-    console.warn(
-      `unrecognized symbol provided. Skipping upload since we do not have conditional images for token: ${symbol}...`
-    );
-    return undefined;
+    throw new Error(`Unrecognized symbol provided: ${symbol}`);
   }
 
-  console.log(`uploading metadata for conditional ${symbol} tokens...`);
-  const [passUploadResult, failUploadResult] = await Promise.allSettled(
-    [
-      {
-        symbol: `p${symbol}`,
-        override: process.env[`PASS_${symbol}_METADATA_URI`],
-      },
-      {
-        symbol: `f${symbol}`,
-        override: process.env[`FAIL_${symbol}_METADATA_URI`],
-      },
-    ].map((o) => {
-      if (isOverrideDefined(o.override)) return o.override.trim();
+  console.log(`uploading metadata for token ${symbol}...`);
+  const [passUri, failUri] = await Promise.all(
+    [`p${symbol}`, `f${symbol}`].map((symbol) => {
       return uploadImageJson(
         proposal,
-        o.symbol as ConditionalToken,
-        uploadedAssetMap[o.symbol]
+        symbol as ConditionalToken,
+        uploadedAssetMap[symbol]
       );
     })
   );
 
   return {
     symbol,
-    passTokenMetadataUri: getValueOrUndefined(
-      passUploadResult,
-      "upload pass token metadata"
-    ),
-    failTokenMetadataUri: getValueOrUndefined(
-      failUploadResult,
-      "upload fail token metadata"
-    ),
+    passTokenMetadataUri: passUri,
+    faileTokenMetadataUri: failUri,
   };
 };
 
-/**
- * todo: when we support other metadata implementations (e.g. metaplex, token22),
- * this method needs to check for those implementations
- */
 export const fetchOnchainMetadataForMint = async (
   address: PublicKey
-): Promise<
-  | {
+):
+  | Promise<{
       key: PublicKey;
       metadata: Metadata;
-    }
-  | undefined
-> => {
+    }>
+  | undefined => {
   const pda = findMetadataPda(umi, {
     mint: fromWeb3JsPublicKey(address),
   });
 
   const acct = await umi.rpc.getAccount(pda[0]);
-  if (!acct.exists) return undefined;
+  if (!acct.exists) {
+    throw new Error(`Unable to find metaplex metdata for mint = ${address}`);
+  }
 
   return {
     key: toWeb3JsPublicKey(pda[0]),
