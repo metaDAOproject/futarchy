@@ -2192,7 +2192,7 @@ async function initializeProposal(
     vaultProgram,
     storedDAO.treasury,
     storedDAO.usdcMint,
-    baseNonce.or(new BN(1).shln(63)),
+    baseNonce,
     payer
   );
 
