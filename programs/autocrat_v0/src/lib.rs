@@ -390,39 +390,22 @@ pub mod autocrat_v0 {
     pub fn update_dao(ctx: Context<UpdateDao>, dao_params: UpdateDaoParams) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
-        if let Some(pass_threshold_bps) = dao_params.pass_threshold_bps {
-            dao.pass_threshold_bps = pass_threshold_bps;
+        macro_rules! update_dao_if_passed {
+            ($field:ident) => {
+                if let Some(value) = dao_params.$field {
+                    dao.$field = value;
+                }
+            }
         }
 
-        if let Some(base_burn_lamports) = dao_params.base_burn_lamports {
-            dao.base_burn_lamports = base_burn_lamports;
-        }
-
-        if let Some(burn_decay_per_slot_lamports) = dao_params.burn_decay_per_slot_lamports {
-            dao.burn_decay_per_slot_lamports = burn_decay_per_slot_lamports;
-        }
-
-        if let Some(slots_per_proposal) = dao_params.slots_per_proposal {
-            dao.slots_per_proposal = slots_per_proposal;
-        }
-
-        if let Some(market_taker_fee) = dao_params.market_taker_fee {
-            dao.market_taker_fee = market_taker_fee;
-        }
-
-        if let Some(twap_expected_value) = dao_params.twap_expected_value {
-            dao.twap_expected_value = twap_expected_value;
-        }
-
-        if let Some(base_lot_size) = dao_params.base_lot_size {
-            dao.base_lot_size = base_lot_size;
-        }
-
-        if let Some(max_observation_change_per_update_lots) =
-            dao_params.max_observation_change_per_update_lots
-        {
-            dao.max_observation_change_per_update_lots = max_observation_change_per_update_lots;
-        }
+        update_dao_if_passed!(pass_threshold_bps);
+        update_dao_if_passed!(base_burn_lamports);
+        update_dao_if_passed!(burn_decay_per_slot_lamports);
+        update_dao_if_passed!(slots_per_proposal);
+        update_dao_if_passed!(market_taker_fee);
+        update_dao_if_passed!(twap_expected_value);
+        update_dao_if_passed!(base_lot_size);
+        update_dao_if_passed!(max_observation_change_per_update_lots);
 
         Ok(())
     }

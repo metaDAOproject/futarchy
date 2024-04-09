@@ -1311,39 +1311,34 @@ describe("autocrat_v0", async function () {
       instruction;
 
     beforeEach(async function () {
-      await mintToOverride(context, mertdTreasuryMertdAccount, 1_000_000_000n);
-      await mintToOverride(context, mertdTreasuryUsdcAccount, 1_000_000n);
-
-      let receiver = Keypair.generate();
-      let to0 = await createAccount(
-        banksClient,
-        payer,
-        MERTD,
-        receiver.publicKey
-      );
-      let to1 = await createAccount(
-        banksClient,
-        payer,
-        USDC,
-        receiver.publicKey
-      );
-
-      const ix = await migrator.methods
-        .multiTransfer2()
-        .accounts({
-          authority: mertdDaoTreasury,
-          from0: mertdTreasuryMertdAccount,
-          to0,
-          from1: mertdTreasuryUsdcAccount,
-          to1,
-          lamportReceiver: receiver.publicKey,
-        })
-        .instruction();
-
+      const accounts = [
+        {
+          pubkey: mertdDao,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: mertdDaoTreasury,
+          isSigner: true,
+          isWritable: false,
+        },
+      ];
+      const data = autocrat.coder.instruction.encode("update_dao", {
+        daoParams: {
+          passThresholdBps: 500,
+          baseBurnLamports: null,
+          burnDecayPerSlotLamports: null,
+          slotsPerProposal: null,
+          marketTakerFee: null,
+          twapExpectedValue: null,
+          maxObservationChangePerUpdateLots: null,
+          baseLotSize: null,
+        },
+      });
       instruction = {
-        programId: ix.programId,
-        accounts: ix.keys,
-        data: ix.data,
+        programId: autocrat.programId,
+        accounts,
+        data,
       };
 
       proposal = await initializeProposal(
@@ -1647,13 +1642,10 @@ describe("autocrat_v0", async function () {
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
+      // pass threshold hasn't changed yet
       assert.equal(
-        (await getAccount(banksClient, mertdTreasuryMertdAccount)).amount,
-        1_000_000_000n
-      );
-      assert.equal(
-        (await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount,
-        1_000_000n
+        (await autocrat.account.dao.fetch(mertdDao)).passThresholdBps,
+        300
       );
 
       await autocrat.methods
@@ -1682,13 +1674,10 @@ describe("autocrat_v0", async function () {
 
       assert.exists(storedProposal.state.executed);
 
+      // pass threshold should have now changed
       assert.equal(
-        (await getAccount(banksClient, mertdTreasuryMertdAccount)).amount,
-        0n
-      );
-      assert.equal(
-        (await getAccount(banksClient, mertdTreasuryUsdcAccount)).amount,
-        0n
+        (await autocrat.account.dao.fetch(mertdDao)).passThresholdBps,
+        500
       );
 
       await redeemConditionalTokens(
@@ -1893,7 +1882,7 @@ describe("autocrat_v0", async function () {
       assert.exists(storedBaseVault.status.reverted);
       assert.exists(storedQuoteVault.status.reverted);
 
-      storedDao = await autocrat.account.dao.fetch(dao);
+      storedDao = await autocrat.account.dao.fetch(mertdDao);
       assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
 
       await redeemConditionalTokens(
