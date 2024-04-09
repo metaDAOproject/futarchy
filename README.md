@@ -15,20 +15,6 @@ SVM instruction that you want to use in your proposal.
 Then, run `anchor run propose --provider.cluster CLUSTER`, where `CLUSTER` is replaced with
 either devnet, mainnet, or (recommended) an RPC URL.
 
-### Initialize Proposal
-
-The initialize proposal script initializes conditional vaults, which also attempts to upload metadata for conditional tokens. If a previous attempt to call this script failed part way through and off-chain metadata has already been uploaded, you can use this metadata and bypass another attempt to upload off-chain metadata.
-
-Simply prepend the script with the following environment variable structure: `[PASS|FAIL]_[TOKEN]_METADATA_URI`. For example, to override pass and fail META metadata uploads, include `PASS_META_METADATA_URI` and `FAIL_META_METADATA_URI`.
-
-The actual script invocation might look something like this:
-
-```bash
-PASS_META_METADATA_URI=\"<P_URI>\" FAIL_META_METADATA_URI=\"<F_URI>\" anchor run propose
-```
-
-where `P_URI` and `F_URI` are replaced with their respective values.
-
 ## Deployments
 
 | program           | tag  | program ID                                  |
