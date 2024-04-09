@@ -3,6 +3,7 @@ import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import { BankrunProvider } from "anchor-bankrun";
+import { Clmm, TxVersion } from "@raydium-io/raydium-sdk";
 import { assert } from "chai";
 import {
   startAnchor,
@@ -18,12 +19,15 @@ import {
   getMint,
   getAccount,
 } from "spl-token-bankrun";
+import Decimal from 'decimal.js';
 
 import { RaydiumTwap } from "../target/types/raydium_twap";
+import { AmmV3 } from "./fixtures/amm_v3";
 
 const { PublicKey, Keypair } = anchor.web3;
 
 const RaydiumTwapIDL: RaydiumTwap = require("../target/idl/raydium_twap.json");
+const AmmV3IDL: AmmV3 = require("./fixtures/amm_v3.json");
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
@@ -40,6 +44,7 @@ const RAYDIUM_PROGRAM_ID = new PublicKey(
 describe("raydium_twap", async function () {
   let provider,
     raydiumTwap,
+    amm,
     payer,
     context: ProgramTestContext,
     banksClient: BanksClient,
@@ -67,6 +72,12 @@ describe("raydium_twap", async function () {
       provider
     );
 
+    amm = new anchor.Program<AmmV3>(
+      AmmV3IDL,
+      RAYDIUM_PROGRAM_ID,
+      provider
+    );
+
     payer = provider.wallet.payer;
 
     USDC = await createMint(
@@ -81,7 +92,50 @@ describe("raydium_twap", async function () {
   });
 
   describe("#initialize_pool_twap", async function () {
-    it("initializes pool TWAPs");
+    it("initializes pool TWAPs", async function () {
+      const ammConfigIndex = 3;
+      const [ammConfig] = PublicKey.findProgramAddressSync([
+        anchor.utils.bytes.utf8.encode("amm_config"),
+        new BN(0).toBuffer("be", 2)
+      ],
+      RAYDIUM_PROGRAM_ID)
+      // console.log(provider.connection);
+      await amm.methods.createAmmConfig(0, 100, 100, 0, 0)
+        .accounts({
+          owner: payer.publicKey,
+          ammConfig,
+        })
+        .rpc();
+      // Clmm.makeCreatePoolInstructionSimple({
+      //   connection: provider.connection as anchor.web3.Connection,
+      //   ammConfig: RAYDIUM_PROGRAM_ID,
+      //   programId: RAYDIUM_PROGRAM_ID,
+      //   owner: payer.publicKey,
+      //   mint1: USDC,
+      //   mint2: META,
+      //   initialPrice: Decimal(1),
+      //   startTime: new BN(Math.floor(new Date().getTime() / 1000)),
+      //   makeTxVersion: TxVersion.V0,
+      //   payer: payer.publicKey,
+      // })
+      //  const _ammConfig = (await formatClmmConfigs(PROGRAMIDS.CLMM.toString()))[input.clmmConfigId]
+      //  const ammConfig: ClmmConfigInfo = { ..._ammConfig, id: new PublicKey(_ammConfig.id) }
+
+      //  // -------- step 1: make create pool instructions --------
+      //  const makeCreatePoolInstruction = await Clmm.makeCreatePoolInstructionSimple({
+      //    connection,
+      //    programId: PROGRAMIDS.CLMM,
+      //    owner: input.wallet.publicKey,
+      //    mint1: input.baseToken,
+      //    mint2: input.quoteToken,
+      //    ammConfig,
+      //    initialPrice: input.startPoolPrice,
+      //    startTime: input.startTime,
+      //    makeTxVersion,
+      //    payer: wallet.publicKey,
+      //  })
+      // Clmm.makeCreatePoolInstructionSimple()
+    });
   });
 
   describe("#crank", async function () {
