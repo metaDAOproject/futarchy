@@ -133,7 +133,7 @@ pub mod autocrat_v0 {
             usdc_mint: ctx.accounts.usdc_mint.key(),
             treasury_pda_bump,
             treasury,
-            proposal_count: 1,
+            proposal_count: 0,
             last_proposal_slot: 0,
             pass_threshold_bps: DEFAULT_PASS_THRESHOLD_BPS,
             base_burn_lamports: DEFAULT_BASE_BURN_LAMPORTS,
@@ -262,8 +262,9 @@ pub mod autocrat_v0 {
             ],
         )?;
 
-        let proposal = &mut ctx.accounts.proposal;
+        dao.proposal_count += 1;
 
+        let proposal = &mut ctx.accounts.proposal;
         proposal.set_inner(Proposal {
             number: dao.proposal_count,
             proposer: ctx.accounts.proposer.key(),
@@ -279,8 +280,6 @@ pub mod autocrat_v0 {
             quote_vault: quote_vault.key(),
             dao: dao.key(),
         });
-
-        dao.proposal_count += 1;
 
         // least signficant 32 bits of nonce are proposal number
         // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)

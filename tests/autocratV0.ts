@@ -194,7 +194,7 @@ describe("autocrat_v0", async function () {
       const daoAcc = await autocrat.account.dao.fetch(dao);
       assert(daoAcc.tokenMint.equals(META));
       assert(daoAcc.usdcMint.equals(USDC));
-      assert.equal(daoAcc.proposalCount, 1);
+      assert.equal(daoAcc.proposalCount, 0);
       assert.equal(daoAcc.passThresholdBps, 300);
       assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
       assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
@@ -2178,7 +2178,7 @@ async function initializeProposal(
   // most significant bit of nonce is 0 for pass and 1 for fail
   // second most significant bit of nonce is 0 for base and 1 for quote
 
-  let baseNonce = new BN(storedDAO.proposalCount);
+  let baseNonce = new BN(storedDAO.proposalCount + 1);
 
   const baseVault = await initializeVault(
     vaultProgram,
@@ -2346,7 +2346,7 @@ async function initializeProposal(
 
   assert.equal(daoAfter.proposalCount, daoBefore.proposalCount + 1);
 
-  assert.equal(storedProposal.number, daoBefore.proposalCount);
+  assert.equal(storedProposal.number, daoBefore.proposalCount + 1);
   assert.ok(storedProposal.proposer.equals(payer.publicKey));
   assert.equal(storedProposal.descriptionUrl, dummyURL);
   assert.equal(
