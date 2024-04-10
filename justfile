@@ -29,6 +29,9 @@ bankrun-vault-logs:
 test-twap:
     find programs/raydium_twap tests | entr -csr 'anchor build -p raydium_twap && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/raydiumTwap.ts'
 
+test-twap-logs:
+    find programs/raydium_twap tests | entr -csr 'anchor build -p raydium_twap && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/raydiumTwap.ts'
+
 bankrun-logs:
     (find programs && find tests) | entr -csr 'anchor build -p autocrat_v0 && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts'
 

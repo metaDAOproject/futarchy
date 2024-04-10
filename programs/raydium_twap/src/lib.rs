@@ -1,3 +1,11 @@
+//! Raydium TWAP oracle
+//! 
+//! Raydium stores prices as token1 / token0. So if token1 is USDC and token0
+//! is META, price could be 1000 (1000 USDC / 1 META, or 2000 USDC / 2 META).
+//! If token0 is USDC and token1 is META, then price could be 0.001 
+//! (1 META / 1000 USDC).
+//! 
+//! However, you need to account for decimals. 
 use anchor_lang::prelude::*;
 use raydium_amm_v3::states::PoolState;
 
