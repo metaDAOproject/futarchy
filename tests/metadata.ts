@@ -38,7 +38,7 @@ const AUTOCRAT_PROGRAM_ID = new PublicKey(
 );
 
 const METADATA_PROGRAM_ID = new PublicKey(
-  "AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE"
+  "DATAwTH3mTx43ekTTYoNXL2Z8EAMTGwENkJab7tKXHok"
 );
 
 async function skipToNextSlot(context: ProgramTestContext): Promise<void> {

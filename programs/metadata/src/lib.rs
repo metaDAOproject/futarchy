@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use autocrat_v0::DAO;
 
-declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
+declare_id!("DATAwTH3mTx43ekTTYoNXL2Z8EAMTGwENkJab7tKXHok");
 
 const DEFAULT_SPACE: usize = 1_000;
 const INCREASE_IN_SPACE: usize = 500;
