@@ -1,10 +1,11 @@
 use anchor_lang::prelude::*;
 use autocrat_v0::DAO;
+use std::cmp::min;
 
 declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 
 const DEFAULT_SPACE: usize = 1000;
-const INCREASE_IN_SPACE: usize = 100;
+const INCREASE_IN_SPACE: usize = 500;
 const MAX_SPACE: usize = 4000; // 8kb is probably the true account size limit, but 4kb is more reasonable for now
 
 #[account]
@@ -17,7 +18,7 @@ pub struct Metadata {
     items: Vec<MetadataItem>,
 }
 
-#[account]
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct MetadataItem {
     // update_authority: Pubkey,
     last_updated_slot: u64,
@@ -38,7 +39,7 @@ pub mod metadata {
             delegate: ctx.accounts.delegate.key(),
             creation_slot: current_slot,
             last_updated_slot: current_slot,
-            items: Vec::new()
+            items: Vec::new(),
         });
         Ok(())
     }
@@ -158,10 +159,10 @@ pub struct InitializeMetadata<'info> {
     // Requires the DAO to exist, so InitializeMetadata needs to be called in the same transaction as InitializeDAO
     #[account(has_one = treasury)]
     pub dao: Account<'info, DAO>,
-    #[account(mut)]
-    pub payer: Signer<'info>,
     /// CHECK: This is the metadata delegate account, it only ever signs
     pub delegate: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -170,7 +171,7 @@ pub struct IncreaseMetadataAccountSize<'info> {
     #[account(
         mut,
         has_one = delegate,
-        realloc = min(metadata.to_account_info().data_len() + INCREASE_IN_SPACE, MAX_SPACE)
+        realloc = min(metadata.to_account_info().data_len() + INCREASE_IN_SPACE, MAX_SPACE),
         realloc::payer = payer,
         realloc::zero = false,
     )]

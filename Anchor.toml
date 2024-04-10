@@ -8,6 +8,7 @@ skip-lint = false
 autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 autocrat_v0 = "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
 conditional_vault = "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
+metadata = "AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE"
 
 [registry]
 url = "https://api.apr.dev"

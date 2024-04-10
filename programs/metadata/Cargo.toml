@@ -17,4 +17,4 @@ default = []
 
 [dependencies]
 anchor-lang = "0.28.0"
-autocrat_v0 = { path = "../autocrat_v0" }
+autocrat_v0 = { path = "../autocrat_v0", features = ["no-entrypoint"] }
