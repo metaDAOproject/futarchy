@@ -3,7 +3,12 @@ import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import { BankrunProvider } from "anchor-bankrun";
-import { Clmm, TxVersion, SqrtPriceMath, MIN_SQRT_PRICE_X64 } from "@raydium-io/raydium-sdk";
+import {
+  Clmm,
+  TxVersion,
+  SqrtPriceMath,
+  MIN_SQRT_PRICE_X64,
+} from "@raydium-io/raydium-sdk";
 import { assert } from "chai";
 import {
   startAnchor,
@@ -19,7 +24,7 @@ import {
   getMint,
   getAccount,
 } from "spl-token-bankrun";
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 
 import { RaydiumTwap } from "../target/types/raydium_twap";
 import { AmmV3 } from "./fixtures/amm_v3";
@@ -72,11 +77,7 @@ describe("raydium_twap", async function () {
       provider
     );
 
-    amm = new anchor.Program<AmmV3>(
-      AmmV3IDL,
-      RAYDIUM_PROGRAM_ID,
-      provider
-    );
+    amm = new anchor.Program<AmmV3>(AmmV3IDL, RAYDIUM_PROGRAM_ID, provider);
 
     payer = provider.wallet.payer;
 
@@ -88,57 +89,75 @@ describe("raydium_twap", async function () {
       6
     );
 
-    META = await createMint(banksClient, payer, payer.publicKey, payer.publicKey, 9);
+    META = await createMint(
+      banksClient,
+      payer,
+      payer.publicKey,
+      payer.publicKey,
+      9
+    );
   });
 
   describe("#initialize_pool_twap", async function () {
     it("initializes pool TWAPs", async function () {
       const ammConfigIndex = 3;
-      const [ammConfig] = PublicKey.findProgramAddressSync([
-        anchor.utils.bytes.utf8.encode("amm_config"),
-        new BN(0).toBuffer("be", 2)
-      ],
-      RAYDIUM_PROGRAM_ID)
+      const [ammConfig] = PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode("amm_config"),
+          new BN(0).toBuffer("be", 2),
+        ],
+        RAYDIUM_PROGRAM_ID
+      );
       // console.log(provider.connection);
-      await amm.methods.createAmmConfig(0, 100, 100, 0, 0)
+      await amm.methods
+        .createAmmConfig(0, 100, 100, 0, 0)
         .accounts({
           owner: payer.publicKey,
           ammConfig,
         })
         .rpc();
 
-      const [poolState] = PublicKey.findProgramAddressSync([
-        anchor.utils.bytes.utf8.encode("pool"),
-        ammConfig.toBuffer(),
-        USDC.toBuffer(),
-        META.toBuffer(),
-      ],
-      RAYDIUM_PROGRAM_ID)
+      const [poolState] = PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode("pool"),
+          ammConfig.toBuffer(),
+          USDC.toBuffer(),
+          META.toBuffer(),
+        ],
+        RAYDIUM_PROGRAM_ID
+      );
 
-      const [tokenVault0] = PublicKey.findProgramAddressSync([
-        anchor.utils.bytes.utf8.encode("pool_vault"),
-        poolState.toBuffer(),
-        USDC.toBuffer()
-      ],
-      RAYDIUM_PROGRAM_ID);
+      const [tokenVault0] = PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode("pool_vault"),
+          poolState.toBuffer(),
+          USDC.toBuffer(),
+        ],
+        RAYDIUM_PROGRAM_ID
+      );
 
-      const [tokenVault1] = PublicKey.findProgramAddressSync([
-        anchor.utils.bytes.utf8.encode("pool_vault"),
-        poolState.toBuffer(),
-        META.toBuffer()
-      ],
-      RAYDIUM_PROGRAM_ID);
+      const [tokenVault1] = PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode("pool_vault"),
+          poolState.toBuffer(),
+          META.toBuffer(),
+        ],
+        RAYDIUM_PROGRAM_ID
+      );
 
-      const [tickArrayBitmap] = PublicKey.findProgramAddressSync([
-        anchor.utils.bytes.utf8.encode("pool_tick_array_bitmap_extension"),
-        poolState.toBuffer()
-      ],
-      RAYDIUM_PROGRAM_ID);
+      const [tickArrayBitmap] = PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode("pool_tick_array_bitmap_extension"),
+          poolState.toBuffer(),
+        ],
+        RAYDIUM_PROGRAM_ID
+      );
 
-    // const initialPriceX64 = SqrtPriceMath.priceToSqrtPriceX64(initPrice, mintA.decimals, mintB.decimals)
+      // const initialPriceX64 = SqrtPriceMath.priceToSqrtPriceX64(initPrice, mintA.decimals, mintB.decimals)
       const observationStateKeypair = Keypair.generate();
 
-      await amm.methods.createPool(MIN_SQRT_PRICE_X64, new BN(1))
+      await amm.methods
+        .createPool(MIN_SQRT_PRICE_X64, new BN(1))
         .accounts({
           poolCreator: payer.publicKey,
           ammConfig,
@@ -153,7 +172,10 @@ describe("raydium_twap", async function () {
           tokenProgram1: token.TOKEN_PROGRAM_ID,
         })
         .preInstructions([
-          await amm.account.observationState.createInstruction(observationStateKeypair, 52121)
+          await amm.account.observationState.createInstruction(
+            observationStateKeypair,
+            52121
+          ),
         ])
         .signers([observationStateKeypair])
         .rpc();
@@ -197,4 +219,3 @@ describe("raydium_twap", async function () {
     it("cranks - test #3");
   });
 });
- 
