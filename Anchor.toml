@@ -26,6 +26,7 @@ clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && no
 crank = "yarn run ts-node scripts/crank.ts"
 main = "yarn run ts-node scripts/main.ts"
 propose = "yarn run ts-node scripts/initializeProposal.ts"
+metadata_devnet = "yarn run ts-node scripts/metadata-devnet.ts"
 initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
 place_order = "yarn run ts-node scripts/placeOrder.ts"
 multisig = "yarn run tsx scripts/multisig.ts"
