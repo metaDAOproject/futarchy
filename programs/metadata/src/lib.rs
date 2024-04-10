@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use autocrat_v0::DAO;
-use std::cmp::min;
 
 declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 
@@ -16,6 +15,14 @@ pub struct Metadata {
     creation_slot: u64,
     last_updated_slot: u64,
     items: Vec<MetadataItem>,
+}
+
+impl Metadata {
+    fn update_delegate(&mut self, new_delegate: Pubkey) -> Result<()> {
+        self.delegate = new_delegate;
+        self.last_updated_slot = Clock::get()?.slot;
+         Ok(())
+    }
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
@@ -54,18 +61,15 @@ pub mod metadata {
         Ok(())
     }
 
-    pub fn dao_set_delegate(ctx: Context<DaoSetDelegate>) -> Result<()> {
+    pub fn dao_update_delegate(ctx: Context<DaoUpdateDelegate>) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
         metadata.delegate = ctx.accounts.new_delegate.key();
-        metadata.last_updated_slot = Clock::get()?.slot;
-        Ok(())
+        metadata.update_delegate(ctx.accounts.new_delegate.key())
     }
 
-    pub fn delegate_set_delegate(ctx: Context<DelegateSetDelegate>) -> Result<()> {
+    pub fn delegate_update_delegate(ctx: Context<DelegateUpdateDelegate>) -> Result<()> {
         let metadata = &mut ctx.accounts.metadata;
-        metadata.delegate = ctx.accounts.new_delegate.key();
-        metadata.last_updated_slot = Clock::get()?.slot;
-        Ok(())
+        metadata.update_delegate(ctx.accounts.new_delegate.key())
     }
 
     pub fn initialize_metadata_item(
@@ -187,7 +191,7 @@ pub struct IncreaseMetadataAccountSize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct DaoSetDelegate<'info> {
+pub struct DaoUpdateDelegate<'info> {
     #[account(mut, has_one = treasury)]
     pub metadata: Account<'info, Metadata>,
     pub treasury: Signer<'info>,
@@ -196,7 +200,7 @@ pub struct DaoSetDelegate<'info> {
 }
 
 #[derive(Accounts)]
-pub struct DelegateSetDelegate<'info> {
+pub struct DelegateUpdateDelegate<'info> {
     #[account(mut, has_one = delegate)]
     pub metadata: Account<'info, Metadata>,
     pub delegate: Signer<'info>,

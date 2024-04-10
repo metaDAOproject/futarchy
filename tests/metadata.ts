@@ -494,12 +494,69 @@ describe("metadata", async function () {
       }
     });
 
+    it("Delegate cannot use daoUpdateDelegate to change the delegate", async function () {
+      const newDelegate = anchor.web3.Keypair.generate();
+
+      try {
+        // Delegate attempts to change the delegate using daoUpdateDelegate
+        await metadata.methods
+          .daoUpdateDelegate()
+          .accounts({
+            metadata: daoMetadata,
+            treasury: payer.publicKey,
+            newDelegate: newDelegate.publicKey, // The new delegate account
+          })
+          .rpc();
+        assert.fail(
+          "The operation should have failed, as the delegate should not be authorized to use daoUpdateDelegate"
+        );
+      } catch (err) {
+        // Check for the specific ConstraintHasOne error
+        assert.isTrue(
+          err.error.errorCode.code === "ConstraintHasOne",
+          "Error code should be 'ConstraintHasOne'"
+        );
+        assert.isTrue(
+          err.error.origin === "metadata",
+          "Error should originate from the metadata account"
+        );
+      }
+    });
+
+    it("Cannot use daoUpdateDelegate to change the delegate without a signature", async function () {
+      const newDelegate = anchor.web3.Keypair.generate();
+
+      try {
+        // Delegate attempts to change the delegate using daoUpdateDelegate
+        await metadata.methods
+          .daoUpdateDelegate()
+          .accounts({
+            metadata: daoMetadata,
+            treasury: daoTreasury,
+            newDelegate: newDelegate.publicKey, // The new delegate account
+          })
+          .rpc();
+        assert.fail(
+          "The operation should have failed, as the DAO did not sign"
+        );
+      } catch (err) {
+        // Parse the error message and assert it contains the expected signature failure message
+        const expectedPublicKey = daoTreasury;
+        const expectedError = `Missing signature for public key \[\`${expectedPublicKey}\`\]`;
+        assert.include(
+          err.toString(),
+          expectedError,
+          "The error should indicate a missing signature for the expected public key"
+        );
+      }
+    });
+
     it("Delegate successfully sets a new delegate", async function () {
       const newDelegate = anchor.web3.Keypair.generate(); // New delegate account
 
       // Perform the delegate change operation
       await metadata.methods
-        .delegateSetDelegate()
+        .delegateUpdateDelegate()
         .accounts({
           metadata: daoMetadata,
           delegate: payer.publicKey,
@@ -522,7 +579,7 @@ describe("metadata", async function () {
 
       try {
         await metadata.methods
-          .delegateSetDelegate()
+          .delegateUpdateDelegate()
           .accounts({
             metadata: daoMetadata,
             delegate: unauthorizedAccount.publicKey, // Attempt to use an unauthorized account
