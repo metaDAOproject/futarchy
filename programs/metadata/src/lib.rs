@@ -4,9 +4,9 @@ use std::cmp::min;
 
 declare_id!("AfRdKx58cmVzSHFKM7AjiEbxeidMrFs1KWghtwGJSSsE");
 
-const DEFAULT_SPACE: usize = 1000;
+const DEFAULT_SPACE: usize = 1_000;
 const INCREASE_IN_SPACE: usize = 500;
-const MAX_SPACE: usize = 4000; // 8kb is probably the true account size limit, but 4kb is more reasonable for now
+const MAX_SPACE: usize = 4_000; // 8kb is probably the true account size limit, but 4kb is more reasonable for now
 
 #[account]
 pub struct Metadata {
@@ -45,8 +45,12 @@ pub mod metadata {
     }
 
     pub fn increase_metadata_account_size(
-        _ctx: Context<IncreaseMetadataAccountSize>,
+        ctx: Context<IncreaseMetadataAccountSize>,
     ) -> Result<()> {
+        let metadata = &ctx.accounts.metadata;
+        let current_size = metadata.to_account_info().data_len();
+        // require(current size <= Max_space)
+        require_gte!(MAX_SPACE, current_size, MetadataError::MaxSizeExceeded);
         Ok(())
     }
 
@@ -72,7 +76,7 @@ pub mod metadata {
         let metadata = &mut ctx.accounts.metadata;
         require!(
             metadata.items.iter().all(|item| item.key != key),
-            ErrorCode::DuplicateKey
+            MetadataError::DuplicateKey
         );
         let item = MetadataItem {
             // update_authority: metadata.delegate,
@@ -92,13 +96,13 @@ pub mod metadata {
             require_gt!(
                 current_slot,
                 item.last_updated_slot,
-                ErrorCode::InvalidOperationInCurrentSlot
+                MetadataError::InvalidOperationInCurrentSlot
             );
             metadata.items.retain(|item| item.key != key);
             metadata.last_updated_slot = Clock::get()?.slot;
         } else {
             msg!("Key: {}", key);
-            return Err(error!(ErrorCode::KeyNotFound));
+            return Err(error!(MetadataError::KeyNotFound));
         }
         Ok(())
     }
@@ -114,14 +118,14 @@ pub mod metadata {
             require_gt!(
                 current_slot,
                 item.last_updated_slot,
-                ErrorCode::InvalidOperationInCurrentSlot
+                MetadataError::InvalidOperationInCurrentSlot
             );
             item.value = new_value;
             item.last_updated_slot = current_slot;
             metadata.last_updated_slot = current_slot;
         } else {
             msg!("Key: {}", key);
-            return Err(error!(ErrorCode::KeyNotFound));
+            return Err(error!(MetadataError::KeyNotFound));
         }
         Ok(())
     }
@@ -137,14 +141,14 @@ pub mod metadata {
             require_gt!(
                 current_slot,
                 item.last_updated_slot,
-                ErrorCode::InvalidOperationInCurrentSlot
+                MetadataError::InvalidOperationInCurrentSlot
             );
             item.value.extend(additional_value);
             item.last_updated_slot = current_slot;
             metadata.last_updated_slot = current_slot;
         } else {
             msg!("Key: {}", key);
-            return Err(error!(ErrorCode::KeyNotFound));
+            return Err(error!(MetadataError::KeyNotFound));
         }
         Ok(())
     }
@@ -153,7 +157,7 @@ pub mod metadata {
 #[derive(Accounts)]
 pub struct InitializeMetadata<'info> {
     // PDA restricts metadata accounts to one per DAO
-    #[account(init, payer = payer, seeds = [dao.key().as_ref()], bump, space = 8 + DEFAULT_SPACE)]
+    #[account(init, payer = payer, seeds = [dao.key().as_ref()], bump, space = DEFAULT_SPACE)]
     pub metadata: Account<'info, Metadata>,
     pub treasury: SystemAccount<'info>,
     // Requires the DAO to exist, so InitializeMetadata needs to be called in the same transaction as InitializeDAO
@@ -171,7 +175,7 @@ pub struct IncreaseMetadataAccountSize<'info> {
     #[account(
         mut,
         has_one = delegate,
-        realloc = min(metadata.to_account_info().data_len() + INCREASE_IN_SPACE, MAX_SPACE),
+        realloc = metadata.to_account_info().data_len() + INCREASE_IN_SPACE,
         realloc::payer = payer,
         realloc::zero = false,
     )]
@@ -208,11 +212,13 @@ pub struct UpdateMetadata<'info> {
 }
 
 #[error_code]
-pub enum ErrorCode {
+pub enum MetadataError {
     #[msg("The provided metadata key already exists.")]
     DuplicateKey,
     #[msg("Operation cannot be performed on an item updated in the current slot.")]
     InvalidOperationInCurrentSlot,
     #[msg("The specified key was not found.")]
     KeyNotFound,
+    #[msg("The requested size exceeds the maximum allowed size.")]
+    MaxSizeExceeded,   
 }

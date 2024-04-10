@@ -442,5 +442,108 @@ describe("metadata", async function () {
         );
       }
     });
+
+    it("Successfully increases metadata account size", async function () {
+      let currentSize = 1_000; // Start at 1000 bytes
+      const INCREASE_IN_SPACE = 500;
+      const MAX_SPACE = 4_000;
+
+      while (currentSize + INCREASE_IN_SPACE <= MAX_SPACE) {
+        await metadata.methods
+          .increaseMetadataAccountSize()
+          .accounts({
+            metadata: daoMetadata,
+            delegate: payer.publicKey,
+          })
+          .rpc();
+
+        // Fetch the updated account to check its size
+        let accountInfo = await provider.connection.getAccountInfo(daoMetadata);
+        assert.isDefined(accountInfo, "Metadata account not found");
+
+        currentSize += INCREASE_IN_SPACE;
+        assert.strictEqual(
+          accountInfo.data.length,
+          currentSize,
+          `Account size should be ${currentSize} bytes after increase`
+        );
+      }
+    });
+
+    it("Fails to increase metadata account size beyond the maximum limit", async function () {
+      // Attempt to increase the size once it's already at the maximum
+      try {
+        await metadata.methods
+          .increaseMetadataAccountSize()
+          .accounts({
+            metadata: daoMetadata,
+            delegate: payer.publicKey,
+          })
+          .rpc();
+
+        assert.fail(
+          "The instruction should have failed due to exceeding the maximum size"
+        );
+      } catch (err) {
+        const errorCode = "MaxSizeExceeded";
+        assert.include(
+          err.toString(),
+          errorCode,
+          `Error should be '${errorCode}'`
+        );
+      }
+    });
+
+    it("Delegate successfully sets a new delegate", async function () {
+      const newDelegate = anchor.web3.Keypair.generate(); // New delegate account
+
+      // Perform the delegate change operation
+      await metadata.methods
+        .delegateSetDelegate()
+        .accounts({
+          metadata: daoMetadata,
+          delegate: payer.publicKey,
+          newDelegate: newDelegate.publicKey,
+        })
+        .rpc();
+
+      // Fetch the updated metadata account to verify delegate change
+      let metadataAccount = await metadata.account.metadata.fetch(daoMetadata);
+      assert.strictEqual(
+        metadataAccount.delegate.toString(),
+        newDelegate.publicKey.toString(),
+        "The delegate should be updated to the new delegate"
+      );
+    });
+
+    it("Unauthorized account fails to set a new delegate", async function () {
+      const unauthorizedAccount = anchor.web3.Keypair.generate(); // An unauthorized account attempting to change delegate
+      const newDelegate = anchor.web3.Keypair.generate(); // The intended new delegate
+
+      try {
+        await metadata.methods
+          .delegateSetDelegate()
+          .accounts({
+            metadata: daoMetadata,
+            delegate: unauthorizedAccount.publicKey, // Attempt to use an unauthorized account
+            newDelegate: newDelegate.publicKey,
+          })
+          .signers([unauthorizedAccount]) // Attempt to sign with the unauthorized account
+          .rpc();
+        assert.fail(
+          "The transaction should have failed due to unauthorized account attempting to set a new delegate"
+        );
+      } catch (err) {
+        // Check for the specific ConstraintHasOne error
+        assert.isTrue(
+          err.error.errorCode.code === "ConstraintHasOne",
+          "Error code should be 'ConstraintHasOne'"
+        );
+        assert.isTrue(
+          err.error.origin === "metadata",
+          "Error should originate from the metadata account"
+        );
+      }
+    });
   });
 });
