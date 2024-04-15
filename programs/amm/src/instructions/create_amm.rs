@@ -22,7 +22,6 @@ pub struct CreateAmm<'info> {
             base_mint.key().as_ref(),
             quote_mint.key().as_ref(),
             create_amm_params.swap_fee_bps.to_le_bytes().as_ref(),
-            create_amm_params.permissioned_caller.as_ref()
         ],
         bump
     )]
@@ -48,17 +47,10 @@ pub struct CreateAmm<'info> {
     #[account(address = token::ID)]
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
-    #[account(
-        seeds = [AMM_AUTH_SEED_PREFIX],
-        bump,
-        seeds::program = create_amm_params.permissioned_caller
-    )]
-    pub auth_pda: Option<Signer<'info>>,
 }
 
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct CreateAmmParams {
-    pub permissioned_caller: Pubkey,
     pub swap_fee_bps: u64,
     pub ltwap_decimals: u8,
 }
@@ -74,16 +66,7 @@ pub fn handler(ctx: Context<CreateAmm>, create_amm_params: CreateAmmParams) -> R
         associated_token_program: _,
         token_program: _,
         system_program: _,
-        auth_pda: _,
     } = ctx.accounts;
-
-    if create_amm_params.permissioned_caller == Pubkey::default() {
-        amm.permissioned = false;
-    } else {
-        amm.permissioned = true;
-        amm.auth_program = create_amm_params.permissioned_caller;
-        amm.auth_pda_bump = *ctx.bumps.get("auth_pda").unwrap();
-    }
 
     amm.created_at_slot = Clock::get()?.slot;
 

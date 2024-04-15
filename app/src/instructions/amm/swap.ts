@@ -28,7 +28,6 @@ export const swapHandler = async (
             userAtaQuote: getATA(amm.quoteMint, client.provider.publicKey)[0],
             vaultAtaBase: getATA(amm.baseMint, ammAddr)[0],
             vaultAtaQuote: getATA(amm.quoteMint, ammAddr)[0],
-            authPda: null,
         })
         .instruction()
 

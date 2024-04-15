@@ -13,7 +13,6 @@ export const createAmmPositionHandler = async (
             user: client.provider.publicKey,
             amm,
             ammPosition: getAmmPositionAddr(client.program.programId, amm, client.provider.publicKey)[0],
-            authPda: null,
         })
         .instruction()
 

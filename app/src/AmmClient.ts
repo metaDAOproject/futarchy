@@ -56,7 +56,6 @@ export class AmmClient {
             baseMint,
             quoteMint,
             swapFeeBps,
-            permissionedCaller,
             ltwapDecimals
         )
     }

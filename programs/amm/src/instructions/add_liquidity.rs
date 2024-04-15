@@ -62,12 +62,6 @@ pub struct AddLiquidity<'info> {
     #[account(address = token::ID)]
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
-    #[account(
-        seeds = [AMM_AUTH_SEED_PREFIX],
-        bump = amm.auth_pda_bump,
-        seeds::program = amm.auth_program
-    )]
-    pub auth_pda: Option<Signer<'info>>,
 }
 
 pub fn handler(
@@ -90,15 +84,10 @@ pub fn handler(
         associated_token_program: _,
         token_program,
         system_program: _,
-        auth_pda,
     } = ctx.accounts;
 
     assert!(max_base_amount > 0);
     assert!(max_quote_amount > 0);
-
-    if amm.permissioned {
-        assert!(auth_pda.is_some());
-    }
 
     amm.update_ltwap(None)?;
 

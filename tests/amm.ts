@@ -121,7 +121,6 @@ describe("amm", async function () {
       assert.equal(permissionlessAmmAcc.baseMintDecimals, 9);
       assert.equal(permissionlessAmmAcc.quoteMintDecimals, 6);
       assert.equal(permissionlessAmmAcc.swapFeeBps, 1);
-      assert.equal(permissionlessAmmAcc.authProgram.toBase58(), PublicKey.default.toBase58());
     });
   });
 

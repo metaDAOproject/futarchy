@@ -57,10 +57,9 @@ export const getAmmAddr = (
     baseMint: PublicKey,
     quoteMint: PublicKey,
     swapFeeBps: number,
-    permissionedCaller: PublicKey
 ): [PublicKey, number] => {
     return PublicKey.findProgramAddressSync(
-        [utils.bytes.utf8.encode("amm__"), baseMint.toBuffer(), quoteMint.toBuffer(), numToBytes64LE(swapFeeBps), permissionedCaller.toBuffer()],
+        [utils.bytes.utf8.encode("amm__"), baseMint.toBuffer(), quoteMint.toBuffer(), numToBytes64LE(swapFeeBps)],
         programId,
     );
 };

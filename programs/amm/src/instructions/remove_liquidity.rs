@@ -63,12 +63,6 @@ pub struct RemoveLiquidity<'info> {
     #[account(address = token::ID)]
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
-    #[account(
-        seeds = [AMM_AUTH_SEED_PREFIX],
-        bump = amm.auth_pda_bump,
-        seeds::program = amm.auth_program
-    )]
-    pub auth_pda: Option<Signer<'info>>,
 }
 
 pub fn handler(ctx: Context<RemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
@@ -85,16 +79,11 @@ pub fn handler(ctx: Context<RemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
         associated_token_program: _,
         token_program,
         system_program: _,
-        auth_pda,
     } = ctx.accounts;
 
     assert!(amm_position.ownership > 0);
     assert!(withdraw_bps > 0);
     assert!(withdraw_bps <= BPS_SCALE);
-
-    if amm.permissioned {
-        assert!(auth_pda.is_some());
-    }
 
     amm.update_ltwap(None)?;
 
@@ -142,13 +131,11 @@ pub fn handler(ctx: Context<RemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
     let base_mint_key = base_mint.key();
     let quote_mint_key = quote_mint.key();
     let swap_fee_bps_bytes = amm.swap_fee_bps.to_le_bytes();
-    let permissioned_caller = amm.auth_program;
 
     let seeds = generate_vault_seeds!(
         base_mint_key,
         quote_mint_key,
         swap_fee_bps_bytes,
-        permissioned_caller,
         amm.bump
     );
 

@@ -9,7 +9,6 @@ export const createAmmHandler = async (
     baseMint: PublicKey,
     quoteMint: PublicKey,
     swapFeeBps: number,
-    permissionedCaller: PublicKey,
     ltwapDecimals: number,
 ): Promise<InstructionHandler<typeof client.program, AmmClient>> => {
     let [ammAddr] = getAmmAddr(
@@ -17,7 +16,6 @@ export const createAmmHandler = async (
         baseMint,
         quoteMint,
         swapFeeBps,
-        permissionedCaller
     )
 
     let [vaultAtaBase] = getATA(baseMint, ammAddr)
@@ -25,7 +23,6 @@ export const createAmmHandler = async (
 
     let ix = await client.program.methods
         .createAmm({
-            permissionedCaller,
             swapFeeBps: new BN(swapFeeBps),
             ltwapDecimals
         })
@@ -36,7 +33,6 @@ export const createAmmHandler = async (
             quoteMint,
             vaultAtaBase,
             vaultAtaQuote,
-            authPda: null
         })
         .instruction()
 

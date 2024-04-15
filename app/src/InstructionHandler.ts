@@ -10,7 +10,6 @@ import {
     VersionedTransaction,
 } from "@solana/web3.js";
 import { BanksClient } from "solana-bankrun";
-import { AutocratClient } from "./AutocratClient";
 import { addComputeUnits, addPriorityFee } from "./utils";
 import { AmmClient } from "./AmmClient";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";

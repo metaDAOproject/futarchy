@@ -21,12 +21,6 @@ pub struct CreatePosition<'info> {
     )]
     pub amm_position: Account<'info, AmmPosition>,
     pub system_program: Program<'info, System>,
-    #[account(
-        seeds = [AMM_AUTH_SEED_PREFIX],
-        bump = amm.auth_pda_bump,
-        seeds::program = amm.auth_program
-    )]
-    pub auth_pda: Option<Signer<'info>>,
 }
 
 pub fn handler(ctx: Context<CreatePosition>) -> Result<()> {
@@ -35,12 +29,7 @@ pub fn handler(ctx: Context<CreatePosition>) -> Result<()> {
         amm,
         amm_position,
         system_program: _,
-        auth_pda,
     } = ctx.accounts;
-
-    if amm.permissioned {
-        assert!(auth_pda.is_some());
-    }
 
     amm_position.user = user.key();
     amm_position.amm = amm.key();
