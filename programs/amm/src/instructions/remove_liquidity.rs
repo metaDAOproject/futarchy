@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token;
 use anchor_spl::token::*;
 use num_traits::ToPrimitive;
 
@@ -57,9 +55,7 @@ pub struct RemoveLiquidity<'info> {
         associated_token::authority = amm,
     )]
     pub vault_ata_quote: Account<'info, TokenAccount>,
-    #[account(address = associated_token::ID)]
     pub associated_token_program: Program<'info, AssociatedToken>,
-    #[account(address = token::ID)]
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }

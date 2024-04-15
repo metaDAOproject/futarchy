@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token;
 use anchor_spl::token::*;
 
 use crate::state::*;
@@ -41,9 +39,7 @@ pub struct CreateAmm<'info> {
         associated_token::mint = quote_mint
     )]
     pub vault_ata_quote: Account<'info, TokenAccount>,
-    #[account(address = associated_token::ID)]
     pub associated_token_program: Program<'info, AssociatedToken>,
-    #[account(address = token::ID)]
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
