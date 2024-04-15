@@ -3,7 +3,6 @@ use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::*;
 
 use crate::state::*;
-use crate::BPS_SCALE;
 
 #[derive(Accounts)]
 pub struct CreateAmm<'info> {

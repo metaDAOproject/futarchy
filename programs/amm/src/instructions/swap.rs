@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::*;
-use num_traits::ToPrimitive;
 
 use crate::generate_vault_seeds;
 use crate::state::*;
-use crate::{utils::*, BPS_SCALE};
+use crate::utils::{token_transfer_signed, token_transfer};
 
 #[derive(Accounts)]
 pub struct Swap<'info> {

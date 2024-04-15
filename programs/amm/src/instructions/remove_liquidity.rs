@@ -5,7 +5,7 @@ use num_traits::ToPrimitive;
 
 use crate::generate_vault_seeds;
 use crate::state::*;
-use crate::{utils::*, BPS_SCALE};
+use crate::utils::token_transfer_signed;
 
 #[derive(Accounts)]
 pub struct RemoveLiquidity<'info> {

@@ -14,6 +14,8 @@ pub enum SwapType {
 
 #[account]
 #[derive(Default)]
+// we need the "64X32" to be non-snake-case because of some weird casing logic in anchor-ts
+#[allow(non_snake_case)] 
 pub struct Amm {
     pub bump: u8,
 
