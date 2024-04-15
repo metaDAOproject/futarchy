@@ -1,8 +1,5 @@
 use anchor_lang::prelude::*;
 
-#[cfg(test)]
-mod tests;
-
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
 
