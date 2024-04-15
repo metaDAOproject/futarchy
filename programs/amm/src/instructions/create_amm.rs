@@ -5,6 +5,13 @@ use anchor_spl::token::*;
 use crate::error::AmmError;
 use crate::state::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+#[allow(non_snake_case)]
+pub struct CreateAmmArgs {
+    pub twap_max_observation_change_per_update: u128,
+    pub twap_expected_value: u128,
+}
+
 #[derive(Accounts)]
 pub struct CreateAmm<'info> {
     #[account(mut)]
@@ -44,14 +51,18 @@ pub struct CreateAmm<'info> {
 
 impl CreateAmm<'_> {
     fn validate(&self) -> Result<()> {
-        require_neq!(self.base_mint.key(), self.quote_mint.key(), AmmError::SameTokenMints);
+        require_neq!(
+            self.base_mint.key(),
+            self.quote_mint.key(),
+            AmmError::SameTokenMints
+        );
 
         Ok(())
     }
 }
 
 #[access_control(ctx.accounts.validate())]
-pub fn handler(ctx: Context<CreateAmm>) -> Result<()> {
+pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
     let CreateAmm {
         user: _,
         amm,
@@ -64,15 +75,35 @@ pub fn handler(ctx: Context<CreateAmm>) -> Result<()> {
         system_program: _,
     } = ctx.accounts;
 
-    amm.created_at_slot = Clock::get()?.slot;
+    let current_slot = Clock::get()?.slot;
 
-    amm.base_mint = base_mint.key();
-    amm.quote_mint = quote_mint.key();
+    let CreateAmmArgs {
+        twap_max_observation_change_per_update,
+        twap_expected_value,
+    } = args;
 
-    amm.base_mint_decimals = base_mint.decimals;
-    amm.quote_mint_decimals = quote_mint.decimals;
+    amm.set_inner(Amm {
+        bump: *ctx.bumps.get("amm").unwrap(),
 
-    amm.bump = *ctx.bumps.get("amm").unwrap();
+        created_at_slot: current_slot,
+
+        base_mint: base_mint.key(),
+        quote_mint: quote_mint.key(),
+
+        base_mint_decimals: base_mint.decimals,
+        quote_mint_decimals: quote_mint.decimals,
+
+        base_amount: 0,
+        quote_amount: 0,
+
+        total_ownership: 0,
+
+        oracle: TwapOracle::new(
+            current_slot,
+            twap_expected_value,
+            twap_max_observation_change_per_update,
+        ),
+    });
 
     Ok(())
 }

@@ -28,8 +28,8 @@ declare_id!("Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz");
 pub mod amm {
     use super::*;
 
-    pub fn create_amm(ctx: Context<CreateAmm>) -> Result<()> {
-        instructions::create_amm::handler(ctx)
+    pub fn create_amm(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
+        instructions::create_amm::handler(ctx, args)
     }
 
     pub fn create_position(ctx: Context<CreatePosition>) -> Result<()> {

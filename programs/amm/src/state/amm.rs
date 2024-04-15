@@ -2,7 +2,8 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::clock::Slot;
 
 use crate::error::AmmError;
-use crate::ONE_MINUTE_IN_SLOTS;
+use crate::{MAX_PRICE, ONE_MINUTE_IN_SLOTS, PRICE_SCALE};
+use std::cmp::{max, min};
 
 #[derive(Clone, Copy, Debug, AnchorSerialize, AnchorDeserialize)]
 pub enum SwapType {
@@ -12,10 +13,53 @@ pub enum SwapType {
     Sell,
 }
 
+#[derive(Default, Clone, Copy, Debug, AnchorDeserialize, AnchorSerialize)]
+pub struct TwapOracle {
+    pub last_updated_slot: u64,
+    /// A price is the number of quote units per base unit multiplied by 1e12.
+    /// You cannot simply divide by 1e12 to get a price you can display in the UI
+    /// because the base and quote decimals may be different. Instead, do:
+    /// ui_price = (price * (10**(base_decimals - quote_decimals))) / 1e12
+    pub last_price: u128,
+    /// If we did a raw TWAP over prices, someone could push the TWAP heavily with
+    /// a few extremely large outliers. So we use observations, which can only move
+    /// by `max_observation_change_per_update` per update.
+    pub last_observation: u128,
+    /// Running sum of slots_per_last_update * last_observation.
+    ///
+    /// Assuming latest observations are as big as possible (u64::MAX * 1e12),
+    /// we can store 18 million slots worth of observations, which turns out to
+    /// be ~85 days worth of slots.
+    ///
+    /// At this point, the aggregot will roll back to 0. It's the client's
+    /// responsibility to check that the second aggregator is bigger than the
+    /// first aggregator.
+    pub aggregator: u128,
+    /// The most that an observation can change per update.
+    pub max_observation_change_per_update: u128,
+    /// What the initial `latest_observation` is set to.
+    pub expected_value: u128,
+}
+
+impl TwapOracle {
+    pub fn new(
+        current_slot: Slot,
+        expected_value: u128,
+        max_observation_change_per_update: u128,
+    ) -> Self {
+        Self {
+            last_updated_slot: current_slot,
+            last_price: 0,
+            last_observation: expected_value,
+            aggregator: 0,
+            max_observation_change_per_update,
+            expected_value,
+        }
+    }
+}
+
 #[account]
 #[derive(Default)]
-// we need the "64X32" to be non-snake-case because of some weird casing logic in anchor-ts
-#[allow(non_snake_case)] 
 pub struct Amm {
     pub bump: u8,
 
@@ -31,22 +75,7 @@ pub struct Amm {
     pub quote_amount: u64,
 
     pub total_ownership: u64,
-
-    pub twap_last_updated_slot: u64,
-    /// To represent prices, we use fixed point numbers with 32 fractional
-    /// bits. To convert to a normal number, you can divide by
-    /// 2**32.
-    pub twap_last_observation_uq64X32: u128,
-    /// Running sum of slots_since_last_update * price.
-    ///
-    /// Assuming last observations are as big as possible (UQ64x32::MAX),
-    /// we can store (2**32) of them. This translates into 54 years worth
-    /// of slots. At this point, the aggregator will roll back to 0. It's the
-    /// client's responsibility to check that the second aggregator is bigger
-    /// than the first aggregator.
-    pub twap_aggregator_uq96X32: u128,
-    /// The most that a price can change per update.
-    pub twap_max_change_per_update_uq64X32: u128,
+    pub oracle: TwapOracle,
 }
 
 impl Amm {
@@ -94,11 +123,8 @@ impl Amm {
             }
         }
 
-        let new_k = (self.base_amount as u128)
-            .checked_mul(self.quote_amount as u128)
-            .unwrap();
+        let new_k = self.base_amount as u128 * self.quote_amount as u128;
 
-        // TODO: turn this into a require!()
         assert!(new_k >= k);
 
         Ok(output_amount)
@@ -106,19 +132,20 @@ impl Amm {
 
     /// Returns the time-weighted average price since market creation in UQ64x32 form.
     pub fn get_twap(&self) -> Result<u128> {
-        let slots_passed = (self.twap_last_updated_slot - self.created_at_slot) as u128;
+        let slots_passed = (self.oracle.last_updated_slot - self.created_at_slot) as u128;
 
         require_neq!(slots_passed, 0, AmmError::NoSlotsPassed);
-        assert!(self.twap_aggregator_uq96X32 != 0);
+        assert!(self.oracle.aggregator != 0);
 
-        Ok(self.twap_aggregator_uq96X32 / slots_passed)
+        Ok(self.oracle.aggregator / slots_passed)
     }
 
     /// Updates the TWAP. Should be called before any changes to the AMM's state
     /// have been made.
     ///
-    /// Returns an observation, stored in UQ64x32, if one was recorded.
+    /// Returns an observation if one was recorded.
     pub fn update_twap(&mut self, current_slot: Slot) -> Option<u128> {
+        let oracle = &mut self.oracle;
         // a manipulator is likely to be "bursty" with their usage, such as a
         // validator who abuses their slots to manipulate the TWAP.
         // meanwhile, regular trading is less likely to happen in each slot.
@@ -137,65 +164,76 @@ impl Amm {
         // we allow updates once a minute as a happy medium. if you have an asset
         // that trades near $1500 and you allow $25 updates per minute, it can double
         // over an hour.
-        if current_slot < self.twap_last_updated_slot + ONE_MINUTE_IN_SLOTS {
+        if current_slot < oracle.last_updated_slot + ONE_MINUTE_IN_SLOTS {
             return None;
         }
 
-        let quote_amount_uq64x32 = (self.quote_amount as u128) << 32;
-        let base_amount_uq64x32 = (self.base_amount as u128) << 32;
+        // we store prices as quote units / base units scaled by 1e12.
+        // for example, suppose META is $100 and there's 400 USDC & 4 META in
+        // this pool. USDC has 6 decimals and META has 9, so we have:
+        // - 400 * 1,000,000   = 400,000,000 USDC units
+        // - 4 * 1,000,000,000 = 4,000,000,000 META units (hansons)
+        // so there's (400,000,000 / 4,000,000,000) or 0.1 USDC units per hanson,
+        // which is 100,000,000,000 when scaled by 1e12.
+        let price = (self.quote_amount as u128 * PRICE_SCALE) / self.base_amount as u128;
 
-        let price_uq64x32 = (quote_amount_uq64x32 << 32) / base_amount_uq64x32;
+        let last_observation = oracle.last_observation;
 
-        let last_observation_uq64x32 = self.twap_last_observation_uq64X32;
+        let new_observation = if price > last_observation {
+            let max_observation =
+                last_observation.saturating_add(oracle.max_observation_change_per_update);
 
-        let observation_uq64x32 = if price_uq64x32 > last_observation_uq64x32 {
-            let max_observation_uq64x32 = last_observation_uq64x32
-                + self.twap_max_change_per_update_uq64X32
-                & 0x00_00_00_00_FF_FF_FF_FF_FF_FF_FF_FF_FF_FF_FF_FF;
-            // we can't do `saturating_add` since a u128 can fit more than
-            // a UQ64x32, so we do the bitwise AND instead
-
-            std::cmp::min(price_uq64x32, max_observation_uq64x32)
+            min(price, max_observation)
         } else {
-            let min_observation_uq64x32 =
-                last_observation_uq64x32.saturating_sub(self.twap_max_change_per_update_uq64X32);
+            let min_observation =
+                last_observation.saturating_sub(oracle.max_observation_change_per_update);
 
-            std::cmp::max(price_uq64x32, min_observation_uq64x32)
+            max(price, min_observation)
         };
 
-        let slot_difference = (current_slot - self.twap_last_updated_slot) as u128;
-        let weighted_observation_uq96x64 = observation_uq64x32 * slot_difference;
+        let slot_difference = (current_slot - oracle.last_updated_slot) as u128;
 
-        self.twap_last_updated_slot = current_slot;
-        self.twap_last_observation_uq64X32 = observation_uq64x32;
-        // will eventually wrap back to 0 theoretically after at least 2**32 slots
-        // but more likely after 2**40 - 2**90 slots. 2**40 slots is 5 million years
-        self.twap_aggregator_uq96X32 = self
-            .twap_aggregator_uq96X32
-            .wrapping_add(weighted_observation_uq96x64);
+        // if this saturates, the aggregator will wrap back to 0, so this value doesn't
+        // really matter. we just can't panic.
+        let weighted_observation = new_observation.saturating_mul(slot_difference);
 
-        Some(observation_uq64x32)
+        let new_aggregator = oracle.aggregator.wrapping_add(weighted_observation);
+
+        let new_oracle = TwapOracle {
+            last_updated_slot: current_slot,
+            last_price: price,
+            last_observation: new_observation,
+            aggregator: new_aggregator,
+            // these two shouldn't change
+            max_observation_change_per_update: oracle.max_observation_change_per_update,
+            expected_value: oracle.expected_value,
+        };
+
+        assert!(new_oracle.last_updated_slot > oracle.last_updated_slot);
+        // assert that the new observation is between price and last observation
+        if price > oracle.last_observation {
+            assert!(new_observation > oracle.last_observation);
+            assert!(new_observation <= price);
+        } else if price == oracle.last_observation {
+            assert!(new_observation == price);
+        } else {
+            assert!(new_observation < oracle.last_observation);
+            assert!(new_observation >= price);
+        }
+
+        *oracle = new_oracle;
+
+        Some(new_observation)
     }
 
-    // get base liquidity units
-    // pub fn get_base_liquidity_units(&self) -> Result<Decimal> {
-    //     let base_decimal_scale = get_decimal_scale_u64(self.base_mint_decimals)?;
+    pub fn invariant(&self) -> Result<()> {
+        let oracle = &self.oracle;
 
-    //     let base_amount_d = Decimal::from_u64(self.base_amount).unwrap();
-    //     let base_decimal_scale_d = Decimal::from_u64(base_decimal_scale).unwrap();
+        assert!(oracle.last_price <= MAX_PRICE);
+        assert!(oracle.last_observation <= MAX_PRICE);
 
-    //     Ok(base_amount_d / base_decimal_scale_d)
-    // }
-
-    // // get quote liquidity units
-    // pub fn get_quote_liquidity_units(&self) -> Result<Decimal> {
-    //     let quote_decimal_scale = get_decimal_scale_u64(self.quote_mint_decimals)?;
-
-    //     let quote_amount_d = Decimal::from_u64(self.quote_amount).unwrap();
-    //     let quote_decimal_scale_d = Decimal::from_u64(quote_decimal_scale).unwrap();
-
-    //     Ok(quote_amount_d / quote_decimal_scale_d)
-    // }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -245,19 +283,14 @@ mod simple_amm_tests {
         let mut amm = Amm {
             base_amount: 5,
             quote_amount: 50,
-            twap_last_observation_uq64X32: 10 * 2_u128.pow(32),
-            twap_max_change_per_update_uq64X32: 100,
-            twap_last_updated_slot: 0,
+            oracle: TwapOracle::new(0, 1_000_000, MAX_PRICE),
             ..Amm::default()
         };
 
         // minute hasn't passed since last slot
         assert_eq!(amm.update_twap(1), None);
-        assert_eq!(amm.twap_last_updated_slot, 0);
+        assert_eq!(amm.oracle.last_updated_slot, 0);
 
-        assert_eq!(
-            amm.update_twap(ONE_MINUTE_IN_SLOTS),
-            Some(10 * 2_u128.pow(32))
-        );
+        assert_eq!(amm.update_twap(ONE_MINUTE_IN_SLOTS), Some(10 * PRICE_SCALE));
     }
 }
