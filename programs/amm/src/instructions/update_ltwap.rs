@@ -11,18 +11,14 @@ pub struct UpdateLtwap<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<UpdateLtwap>, final_slot: Option<u64>) -> Result<()> {
+pub fn handler(ctx: Context<UpdateLtwap>) -> Result<()> {
     let UpdateLtwap {
         user: _,
         amm,
         system_program: _,
     } = ctx.accounts;
 
-    // if final_slot.is_some() {
-    //     assert!(amm.permissioned);
-    // }
-
-    amm.update_ltwap(final_slot)?;
+    amm.update_ltwap()?;
 
     Ok(())
 }

@@ -32,7 +32,6 @@ pub struct Amm {
     // running sum of: current_liquidity * slots_since_last_update * price
     pub ltwap_numerator_agg: AnchorDecimal,
     pub ltwap_latest: u64,
-    pub ltwap_frozen: bool,
 }
 
 impl Amm {
@@ -53,21 +52,9 @@ impl Amm {
         .unwrap_or(u64::MAX))
     }
 
-    pub fn update_ltwap(&mut self, final_slot: Option<u64>) -> Result<u64> {
-        if self.ltwap_frozen {
-            return Ok(self.ltwap_latest);
-        }
-
+    pub fn update_ltwap(&mut self) -> Result<u64> {
         let slot = Clock::get()?.slot;
-        let slot_difference_u64 = if final_slot.is_some() && slot >= final_slot.unwrap() {
-            self.ltwap_frozen = true;
-            final_slot
-                .unwrap()
-                .checked_sub(self.ltwap_slot_updated)
-                .unwrap()
-        } else {
-            slot.checked_sub(self.ltwap_slot_updated).unwrap()
-        };
+        let slot_difference_u64 = slot.checked_sub(self.ltwap_slot_updated).unwrap();
         let slot_difference = Decimal::from_u64(slot_difference_u64).unwrap();
 
         let base_liquidity_units = self.get_base_liquidity_units()?;

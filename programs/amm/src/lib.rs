@@ -65,7 +65,7 @@ pub mod amm {
         instructions::swap::handler(ctx, is_quote_to_base, input_amount, output_amount_min)
     }
 
-    pub fn update_ltwap(ctx: Context<UpdateLtwap>, final_slot: Option<u64>) -> Result<()> {
-        instructions::update_ltwap::handler(ctx, final_slot)
+    pub fn update_ltwap(ctx: Context<UpdateLtwap>) -> Result<()> {
+        instructions::update_ltwap::handler(ctx)
     }
 }

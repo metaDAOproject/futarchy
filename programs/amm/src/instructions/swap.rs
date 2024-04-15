@@ -71,7 +71,7 @@ pub fn handler(
     assert!(input_amount > 0);
     assert!(amm.total_ownership > 0);
 
-    amm.update_ltwap(None)?;
+    amm.update_ltwap()?;
 
     let base_amount_start = amm.base_amount as u128;
     let quote_amount_start = amm.quote_amount as u128;
