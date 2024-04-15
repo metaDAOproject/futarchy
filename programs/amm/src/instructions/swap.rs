@@ -73,16 +73,18 @@ pub fn handler(
 
     amm.update_ltwap()?;
 
-    let base_amount_start = amm.base_amount as u128;
-    let quote_amount_start = amm.quote_amount as u128;
+    let output_amount = amm.swap(input_amount, is_quote_to_base)?;
 
-    let k = base_amount_start.checked_mul(quote_amount_start).unwrap();
+    // let base_amount_start = amm.base_amount as u128;
+    // let quote_amount_start = amm.quote_amount as u128;
 
-    let input_amount_minus_fee = input_amount
-        .checked_mul(BPS_SCALE.checked_sub(amm.swap_fee_bps).unwrap())
-        .unwrap()
-        .checked_div(BPS_SCALE)
-        .unwrap() as u128;
+    // let k = base_amount_start.checked_mul(quote_amount_start).unwrap();
+
+    // let input_amount_minus_fee = input_amount
+    //     .checked_mul(BPS_SCALE.checked_sub(amm.swap_fee_bps).unwrap())
+    //     .unwrap()
+    //     .checked_div(BPS_SCALE)
+    //     .unwrap() as u128;
 
     let base_mint_key = base_mint.key();
     let quote_mint_key = quote_mint.key();
@@ -95,95 +97,100 @@ pub fn handler(
         amm.bump
     );
 
-    let output_amount = if is_quote_to_base {
-        let temp_quote_amount = quote_amount_start
-            .checked_add(input_amount_minus_fee)
-            .unwrap();
+    // let output_amount = if is_quote_to_base {
+    //     let temp_quote_amount = quote_amount_start
+    //         .checked_add(input_amount_minus_fee)
+    //         .unwrap();
 
-        // for rounding up, if we have, a = b / c, we use: a = (b + (c - 1)) / c
-        let temp_base_amount = k
-            .checked_add(temp_quote_amount.checked_sub(1).unwrap())
-            .unwrap()
-            .checked_div(temp_quote_amount)
-            .unwrap();
+    //     // for rounding up, if we have, a = b / c, we use: a = (b + (c - 1)) / c
+    //     let temp_base_amount = k
+    //         .checked_add(temp_quote_amount.checked_sub(1).unwrap())
+    //         .unwrap()
+    //         .checked_div(temp_quote_amount)
+    //         .unwrap();
 
-        let output_amount_base = base_amount_start
-            .checked_sub(temp_base_amount)
-            .unwrap()
-            .to_u64()
-            .unwrap();
+    //     let output_amount_base = base_amount_start
+    //         .checked_sub(temp_base_amount)
+    //         .unwrap()
+    //         .to_u64()
+    //         .unwrap();
 
-        amm.quote_amount = amm.quote_amount.checked_add(input_amount).unwrap();
-        amm.base_amount = amm.base_amount.checked_sub(output_amount_base).unwrap();
+    //     amm.quote_amount = amm.quote_amount.checked_add(input_amount).unwrap();
+    //     amm.base_amount = amm.base_amount.checked_sub(output_amount_base).unwrap();
 
-        // send user quote tokens to vault
-        token_transfer(
-            input_amount,
-            token_program,
-            user_ata_quote,
-            vault_ata_quote,
-            &user,
-        )?;
+    //     // send user quote tokens to vault
 
-        // send vault base tokens to user
-        token_transfer_signed(
-            output_amount_base,
-            token_program,
-            vault_ata_base,
-            user_ata_base,
-            amm,
-            seeds,
-        )?;
+        if is_quote_to_base {
+            token_transfer(
+                input_amount,
+                token_program,
+                user_ata_quote,
+                vault_ata_quote,
+                &user,
+            )?;
 
-        output_amount_base
-    } else {
-        let temp_base_amount = base_amount_start
-            .checked_add(input_amount_minus_fee)
-            .unwrap();
+            // send vault base tokens to user
+            token_transfer_signed(
+                output_amount,
+                token_program,
+                vault_ata_base,
+                user_ata_base,
+                amm,
+                seeds,
+            )?;
+        } else {
+            // send user base tokens to vault
+            token_transfer(
+                input_amount,
+                token_program,
+                &user_ata_base,
+                &vault_ata_base,
+                &user,
+            )?;
 
-        // for rounding up, if we have, a = b / c, we use: a = (b + (c - 1)) / c
-        let temp_quote_amount = k
-            .checked_add(temp_base_amount.checked_sub(1).unwrap())
-            .unwrap()
-            .checked_div(temp_base_amount)
-            .unwrap();
+            // send vault quote tokens to user
+            token_transfer_signed(
+                output_amount,
+                token_program,
+                vault_ata_quote,
+                user_ata_quote,
+                amm,
+                seeds,
+            )?;
 
-        let output_amount_quote = quote_amount_start
-            .checked_sub(temp_quote_amount)
-            .unwrap()
-            .to_u64()
-            .unwrap();
+        }
 
-        amm.base_amount = amm.base_amount.checked_add(input_amount).unwrap();
-        amm.quote_amount = amm.quote_amount.checked_sub(output_amount_quote).unwrap();
+    //     output_amount_base
+    // } else {
+    //     let temp_base_amount = base_amount_start
+    //         .checked_add(input_amount_minus_fee)
+    //         .unwrap();
 
-        // send user base tokens to vault
-        token_transfer(
-            input_amount,
-            token_program,
-            &user_ata_base,
-            &vault_ata_base,
-            &user,
-        )?;
+    //     // for rounding up, if we have, a = b / c, we use: a = (b + (c - 1)) / c
+    //     let temp_quote_amount = k
+    //         .checked_add(temp_base_amount.checked_sub(1).unwrap())
+    //         .unwrap()
+    //         .checked_div(temp_base_amount)
+    //         .unwrap();
 
-        // send vault quote tokens to user
-        token_transfer_signed(
-            output_amount_quote,
-            token_program,
-            vault_ata_quote,
-            user_ata_quote,
-            amm,
-            seeds,
-        )?;
+    //     let output_amount_quote = quote_amount_start
+    //         .checked_sub(temp_quote_amount)
+    //         .unwrap()
+    //         .to_u64()
+    //         .unwrap();
 
-        output_amount_quote
-    };
+    //     amm.base_amount = amm.base_amount.checked_add(input_amount).unwrap();
+    //     amm.quote_amount = amm.quote_amount.checked_sub(output_amount_quote).unwrap();
 
-    let new_k = (amm.base_amount as u128)
-        .checked_mul(amm.quote_amount as u128)
-        .unwrap();
 
-    assert!(new_k >= k); // with non-zero fees, k should always increase
+    //     output_amount_quote
+    // };
+
+    // let new_k = (amm.base_amount as u128)
+    //     .checked_mul(amm.quote_amount as u128)
+    //     .unwrap();
+
+    // assert!(new_k >= k); // with non-zero fees, k should always increase
     assert!(output_amount >= output_amount_min);
 
     Ok(())

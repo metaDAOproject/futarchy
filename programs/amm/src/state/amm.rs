@@ -3,9 +3,10 @@ use num_traits::{FromPrimitive, ToPrimitive};
 use rust_decimal::{Decimal, MathematicalOps};
 
 use crate::utils::anchor_decimal::*;
-use crate::utils::*;
+use crate::{utils::*, BPS_SCALE};
 
 #[account]
+#[derive(Default)]
 pub struct Amm {
     pub bump: u8,
 
@@ -35,6 +36,61 @@ pub struct Amm {
 }
 
 impl Amm {
+    pub fn k(&self) -> u128 {
+        self.base_amount as u128 *
+            self.quote_amount as u128
+    }
+
+    pub fn swap(&mut self, input_amount: u64, is_quote_to_base: bool) -> Result<u64> {
+        let base_amount_start = self.base_amount as u128;
+        let quote_amount_start = self.quote_amount as u128;
+
+        let k = base_amount_start.checked_mul(quote_amount_start).unwrap();
+
+        let input_amount_with_fee = input_amount
+            .checked_mul(BPS_SCALE.checked_sub(self.swap_fee_bps).unwrap())
+            .unwrap() as u128;
+            // .checked_div(BPS_SCALE)
+            // .unwrap() as u128;
+
+        let (input_reserve, output_reserve) = if is_quote_to_base {
+            (quote_amount_start, base_amount_start)
+        } else {
+            (base_amount_start, quote_amount_start)
+        };
+
+        assert!(input_reserve > 0 && output_reserve > 0);
+
+        let numerator = input_amount_with_fee * output_reserve;
+        let denominator = input_reserve.checked_mul(BPS_SCALE as u128).unwrap() + input_amount_with_fee;
+
+        let output_amount = numerator.checked_div(denominator).unwrap() as u64;
+
+        if is_quote_to_base {
+            self.quote_amount = self.quote_amount.checked_add(input_amount).unwrap();
+            self.base_amount = self.base_amount.checked_sub(output_amount).unwrap();
+        } else {
+            self.base_amount = self.base_amount.checked_add(input_amount).unwrap();
+            self.quote_amount = self.quote_amount.checked_sub(output_amount).unwrap();
+        }
+
+        let new_k = (self.base_amount as u128)
+            .checked_mul(self.quote_amount as u128)
+            .unwrap();
+
+        // with non-zero fees, k should always increase
+        assert!(new_k >= k);
+        // validate!(
+        //     new_k >= k,
+        //     ErrorCode::SwapInvariantError,
+        //     "new_k={} is smaller than original k={}",
+        //     new_k,
+        //     k
+        // )?;
+
+        Ok(output_amount)
+    }
+
     pub fn get_ltwap(&self) -> Result<u64> {
         let ltwap_denominator_agg = self.ltwap_denominator_agg.deser();
 
