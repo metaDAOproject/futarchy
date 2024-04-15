@@ -22,4 +22,3 @@ solana-security-txt = "1.1.1"
 num-traits = "0.2"
 num-derive = "0.4.1"
 rust_decimal = { version = "^1.26.1", features = ["maths"] }
-borsh = "0.9.1"

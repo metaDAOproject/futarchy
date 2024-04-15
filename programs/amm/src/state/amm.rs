@@ -1,9 +1,15 @@
 use anchor_lang::prelude::*;
-use num_traits::{FromPrimitive, ToPrimitive};
-use rust_decimal::{Decimal, MathematicalOps};
 
 use crate::error::AmmError;
-use crate::{utils::*, ONE_MINUTE_IN_SLOTS};
+use crate::ONE_MINUTE_IN_SLOTS;
+
+#[derive(Clone, Copy, Debug, AnchorSerialize, AnchorDeserialize)]
+pub enum SwapType {
+    /// Swap quote tokens into base tokens
+    Buy,
+    /// Swap base tokens into quote tokens
+    Sell,
+}
 
 #[account]
 #[derive(Default)]
@@ -43,16 +49,17 @@ impl Amm {
         self.base_amount as u128 * self.quote_amount as u128
     }
 
-    pub fn swap(&mut self, input_amount: u64, is_quote_to_base: bool) -> Result<u64> {
+    /// Does the internal accounting to swap `input_amount` into the returned
+    /// output amount so that output amount can be transferred to the user.
+    pub fn swap(&mut self, input_amount: u64, swap_type: SwapType) -> Result<u64> {
         let base_amount_start = self.base_amount as u128;
         let quote_amount_start = self.quote_amount as u128;
 
         let k = self.k();
 
-        let (input_reserve, output_reserve) = if is_quote_to_base {
-            (quote_amount_start, base_amount_start)
-        } else {
-            (base_amount_start, quote_amount_start)
+        let (input_reserve, output_reserve) = match swap_type {
+            SwapType::Buy => (quote_amount_start, base_amount_start),
+            SwapType::Sell => (base_amount_start, quote_amount_start),
         };
 
         // airlifted from uniswap v1:
@@ -71,12 +78,15 @@ impl Amm {
 
         let output_amount = (numerator / denominator) as u64;
 
-        if is_quote_to_base {
-            self.quote_amount = self.quote_amount.checked_add(input_amount).unwrap();
-            self.base_amount = self.base_amount.checked_sub(output_amount).unwrap();
-        } else {
-            self.base_amount = self.base_amount.checked_add(input_amount).unwrap();
-            self.quote_amount = self.quote_amount.checked_sub(output_amount).unwrap();
+        match swap_type {
+            SwapType::Buy => {
+                self.quote_amount = self.quote_amount.checked_add(input_amount).unwrap();
+                self.base_amount = self.base_amount.checked_sub(output_amount).unwrap();
+            }
+            SwapType::Sell => {
+                self.base_amount = self.base_amount.checked_add(input_amount).unwrap();
+                self.quote_amount = self.quote_amount.checked_sub(output_amount).unwrap();
+            }
         }
 
         let new_k = (self.base_amount as u128)
@@ -181,6 +191,7 @@ impl Amm {
 #[cfg(test)]
 mod simple_amm_tests {
     use crate::{error::AmmError, state::*};
+    use SwapType::{Buy, Sell};
 
     #[test]
     pub fn base_case_amm() {
@@ -189,46 +200,33 @@ mod simple_amm_tests {
         let res = amm.get_twap();
         assert_eq!(res.unwrap_err(), AmmError::NoSlotsPassed.into());
 
-        assert_eq!(amm.swap(1, true).unwrap_err(), AmmError::NoReserves.into());
-        assert_eq!(amm.swap(1, false).unwrap_err(), AmmError::NoReserves.into());
+        assert_eq!(amm.swap(1, Buy).unwrap_err(), AmmError::NoReserves.into());
+        assert_eq!(amm.swap(1, Sell).unwrap_err(), AmmError::NoReserves.into());
         assert_eq!(amm.k(), 0);
     }
 
     #[test]
-    pub fn medium_amm() {
+    pub fn smol_amm() {
         let mut amm = Amm {
             base_amount: 3,
             quote_amount: 8,
             ..Amm::default()
         };
 
-        assert_eq!(amm.swap(1, true).unwrap(), 0);
-        assert_eq!(amm.swap(1, false).unwrap(), 0);
-        return;
-        assert_eq!(amm.k(), 100020001);
+        assert_eq!(amm.k(), 24);
 
-        assert_eq!(amm.swap(100, true).unwrap(), 99);
-        assert_eq!(amm.swap(100, false).unwrap(), 100);
-        assert_eq!(amm.k(), 100030002);
+        // 4 x 6 = 24, would be 2 but we take out 1 for fee
+        assert_eq!(amm.swap(1, Sell).unwrap(), 1);
+        assert_eq!(amm.k(), 28); // 4 x 7
 
-        assert_eq!(amm.swap(1000, true).unwrap(), 909);
-        assert_eq!(amm.swap(1000, false).unwrap(), 1089);
-        assert_eq!(amm.k(), 100041816);
-    }
+        let mut amm_clone = amm.clone();
+        // 2 x 14 = 28, but we take one for fee
+        assert_eq!(amm.swap(7, Buy).unwrap(), 1);
+        assert_eq!(amm.k(), 42); // 3 x 14
 
-    #[test]
-    pub fn medium_amm_with_swap_err() {
-        let mut amm = Amm {
-            base_amount: 10000,
-            quote_amount: 10000,
-            ..Amm::default()
-        };
-
-        amm.swap(amm.quote_amount - 1, true).unwrap();
-
-        assert_eq!(amm.k(), 10);
-
-        // todo?
-        // assert!(amm.swap(amm.quote_amount - 1, true).is_err());
+        // re-run on the clone but give an extra for fee,
+        // we should now get back 2
+        assert_eq!(amm_clone.swap(8, Buy).unwrap(), 2);
+        assert_eq!(amm_clone.k(), 30); // 2 x 15
     }
 }

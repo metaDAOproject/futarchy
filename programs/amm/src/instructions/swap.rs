@@ -50,7 +50,7 @@ pub struct Swap<'info> {
 
 pub fn handler(
     ctx: Context<Swap>,
-    is_quote_to_base: bool,
+    swap_type: SwapType,
     input_amount: u64,
     output_amount_min: u64,
 ) -> Result<()> {
@@ -73,7 +73,7 @@ pub fn handler(
 
     amm.update_twap()?;
 
-    let output_amount = amm.swap(input_amount, is_quote_to_base)?;
+    let output_amount = amm.swap(input_amount, swap_type)?;
 
     // let base_amount_start = amm.base_amount as u128;
     // let quote_amount_start = amm.quote_amount as u128;
@@ -118,7 +118,8 @@ pub fn handler(
 
     //     // send user quote tokens to vault
 
-        if is_quote_to_base {
+    match swap_type {
+        SwapType::Buy => {
             token_transfer(
                 input_amount,
                 token_program,
@@ -136,7 +137,8 @@ pub fn handler(
                 amm,
                 seeds,
             )?;
-        } else {
+        }
+        SwapType::Sell => {
             // send user base tokens to vault
             token_transfer(
                 input_amount,
@@ -155,8 +157,8 @@ pub fn handler(
                 amm,
                 seeds,
             )?;
-
         }
+    }
 
     //     output_amount_base
     // } else {

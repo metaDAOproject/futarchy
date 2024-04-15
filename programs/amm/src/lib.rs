@@ -58,11 +58,11 @@ pub mod amm {
 
     pub fn swap(
         ctx: Context<Swap>,
-        is_quote_to_base: bool,
+        direction: SwapType,
         input_amount: u64,
         output_amount_min: u64,
     ) -> Result<()> {
-        instructions::swap::handler(ctx, is_quote_to_base, input_amount, output_amount_min)
+        instructions::swap::handler(ctx, direction, input_amount, output_amount_min)
     }
 
     pub fn update_ltwap(ctx: Context<UpdateLtwap>) -> Result<()> {
