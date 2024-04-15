@@ -4,7 +4,6 @@ use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
 use anchor_spl::token::*;
 
-use crate::error::ErrorCode;
 use crate::state::*;
 use crate::BPS_SCALE;
 

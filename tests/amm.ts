@@ -110,8 +110,7 @@ describe("amm", async function () {
         ammClient.program.programId,
         META,
         USDC,
-        1,
-        PublicKey.default
+        1
       );
 
       const permissionlessAmmAcc = await ammClient.program.account.amm.fetch(permissionlessAmmAddr);

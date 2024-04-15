@@ -5,7 +5,6 @@ use anchor_spl::token;
 use anchor_spl::token::*;
 use num_traits::ToPrimitive;
 
-use crate::error::ErrorCode;
 use crate::generate_vault_seeds;
 use crate::state::*;
 use crate::{utils::*, BPS_SCALE};

@@ -20,10 +20,8 @@ pub mod instructions;
 pub mod state;
 pub mod utils;
 
-use crate::error::*;
 use crate::instructions::*;
 use crate::state::*;
-use crate::utils::*;
 
 declare_id!("Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz");
 #[program]

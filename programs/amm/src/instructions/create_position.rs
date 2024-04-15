@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::error::ErrorCode;
 use crate::state::*;
 
 #[derive(Accounts)]

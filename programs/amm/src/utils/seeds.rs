@@ -1,5 +1,3 @@
-use crate::state::*;
-
 #[macro_export]
 macro_rules! generate_vault_seeds {
     ($base_mint:expr, $quote_mint:expr, $swap_fee_bps:expr, $bump:expr) => {{

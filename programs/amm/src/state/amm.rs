@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 use num_traits::{FromPrimitive, ToPrimitive};
 use rust_decimal::{Decimal, MathematicalOps};
 
-use crate::error::ErrorCode;
 use crate::utils::anchor_decimal::*;
 use crate::utils::*;
 
