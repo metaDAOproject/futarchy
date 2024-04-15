@@ -496,7 +496,6 @@ describe("autocrat_v0", async function () {
 
     it("doesn't finalize proposals that are too young", async function () {
       const callbacks = expectError(
-        autocrat,
         "ProposalTooYoung",
         "finalize succeeded despite proposal being too young"
       );
@@ -1010,7 +1009,6 @@ describe("autocrat_v0", async function () {
 
     it("doesn't allow pending proposals to be executed", async function () {
       const callbacks = expectError(
-        autocrat,
         "ProposalNotPassed",
         "executed despite proposal still pending"
       );
@@ -1114,7 +1112,6 @@ describe("autocrat_v0", async function () {
       );
 
       const callbacks = expectError(
-        autocrat,
         "ProposalNotPassed",
         "executed despite proposal proposal failed"
       );
@@ -1249,7 +1246,6 @@ describe("autocrat_v0", async function () {
         .rpc();
 
       const callbacks = expectError(
-        autocrat,
         "ProposalNotPassed",
         "executed despite already being executed"
       );
@@ -1471,7 +1467,6 @@ describe("autocrat_v0", async function () {
 
     it("doesn't finalize proposals that are too young", async function () {
       const callbacks = expectError(
-        autocrat,
         "ProposalTooYoung",
         "finalize succeeded despite proposal being too young"
       );
