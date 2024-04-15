@@ -171,6 +171,12 @@ describe("raydium_twap", async function () {
           ? [META, USDC, 9, 6, initialPrice]
           : [USDC, META, 6, 9, new Decimal(1).div(initialPrice)];
 
+      console.log(`token0 = ${token0 === META ? "META" : "USDC"}`)
+      console.log(`token1 = ${token1 === META ? "META" : "USDC"}`)
+
+      const token0Scalar = new BN(10).pow(new BN(token0Decimals));
+      const token1Scalar = new BN(10).pow(new BN(token1Decimals));
+
       console.log("initial price", initPrice);
 
       const [poolState] = PublicKey.findProgramAddressSync(
@@ -250,8 +256,31 @@ describe("raydium_twap", async function () {
 
       // const tickUpper = MAX_TICK - (MAX_TICK % 100);
       // const tickLower = -tickUpper;
-      const tickUpper = 100;
+
+      const tickUpper = 440_000;
       const tickLower = -tickUpper;
+
+      const sqrtPriceX64A = SqrtPriceMath.getSqrtPriceX64FromTick(tickLower)
+      const sqrtPriceX64B = SqrtPriceMath.getSqrtPriceX64FromTick(tickUpper)
+      console.log(SqrtPriceMath.sqrtPriceX64ToPrice(SqrtPriceMath.getSqrtPriceX64FromTick(0), token0Decimals, token1Decimals));
+      console.log("bottom price:", SqrtPriceMath.sqrtPriceX64ToPrice(sqrtPriceX64A, token0Decimals, token1Decimals));
+      console.log("top price:", SqrtPriceMath.sqrtPriceX64ToPrice(sqrtPriceX64B, token0Decimals, token1Decimals));
+      // console.log(SqrtPriceMath.sqrtPriceX64ToPrice(sqrtPriceX64B, token0Decimals, token1Decimals));
+      const token0In = new BN(10).mul(token0Scalar);
+      let liquidity = LiquidityMath.getLiquidityFromTokenAmountA(sqrtPriceX64A, sqrtPriceX64B, token0In, true);
+      let amounts = LiquidityMath.getAmountsFromLiquidity(initialPriceX64, sqrtPriceX64A, sqrtPriceX64B, liquidity, true);
+      console.log(amounts.amountA.div(token0Scalar).toString());
+      console.log(amounts.amountB.div(token1Scalar).toString());
+
+
+      return;
+      // console.log(liquidity.toString());
+
+
+      // let token1In = LiquidityMath.getAmountsFromLiquidity(sq)
+      // Clmm.getLiquidityAmountOutFromAmountIn;
+      // Clmm.makeOpenPositionFromBaseInstructionSimple
+
 
       const tickArrayLowerStartIndex = TickUtils.getTickArrayStartIndexByTick(
         tickLower,
@@ -347,16 +376,10 @@ describe("raydium_twap", async function () {
       //   poolInfo: {}
       // })
 
-      const sqrtPriceX64A = SqrtPriceMath.getSqrtPriceX64FromTick(tickLower)
-      const sqrtPriceX64B = SqrtPriceMath.getSqrtPriceX64FromTick(tickUpper)
-      // console.log(SqrtPriceMath.sqrtPriceX64ToPrice(sqrtPriceX64B, token0Decimals, token1Decimals));
-      const token0In = new BN(10).mul(new BN(10).pow(new BN(token0Decimals)));
-      let liquidity = LiquidityMath.getLiquidityFromTokenAmountA(sqrtPriceX64A, sqrtPriceX64B, token0In, true);
-      console.log(liquidity.toString());
-      Clmm.getLiquidityAmountOutFromAmountIn;
 
-      console.log(tickArrayLowerStartIndex);
-      console.log(tickArrayUpperStartIndex);
+
+      // console.log(tickArrayLowerStartIndex);
+      // console.log(tickArrayUpperStartIndex);
 
       const { publicKey: metadataAccount } = getPdaMetadataKey(positionNftMint)
 
@@ -366,7 +389,7 @@ describe("raydium_twap", async function () {
         tickArrayLowerStartIndex,
         tickArrayUpperStartIndex,
         token0In,
-        new BN(1_000).mul(new BN(10).pow(new BN(token1Decimals))),
+        new BN(100000_000).mul(new BN(10).pow(new BN(token1Decimals))),
         liquidity
         ).accounts({
           positionNftOwner: payer.publicKey,
@@ -442,10 +465,5 @@ describe("raydium_twap", async function () {
   });
 
   describe("#crank", async function () {
-    it("cranks - test #1");
-
-    it("cranks - test #2");
-
-    it("cranks - test #3");
   });
 });
