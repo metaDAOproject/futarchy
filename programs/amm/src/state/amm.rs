@@ -30,10 +30,15 @@ pub struct TwapOracle {
     /// Assuming latest observations are as big as possible (u64::MAX * 1e12),
     /// we can store 18 million slots worth of observations, which turns out to
     /// be ~85 days worth of slots.
-    ///
-    /// At this point, the aggregot will roll back to 0. It's the client's
-    /// responsibility to check that the second aggregator is bigger than the
-    /// first aggregator.
+    /// 
+    /// Assuming that latest observations are 100x smaller than they could theoretically
+    /// be, we can store 8500 days (23 years) worth of them. Even this is a very
+    /// very conservative assumption - META/USDC prices should be between 1e9 and
+    /// 1e15, which would overflow after 1e15 years worth of slots.
+    /// 
+    /// So in the case of an overflow, the aggregator rolls back to 0. It's the
+    /// client's responsibility to sanity check the assets or to handle an
+    /// aggregator at t2 being smaller than an aggregator at t1.
     pub aggregator: u128,
     /// The most that an observation can change per update.
     pub max_observation_change_per_update: u128,
@@ -292,5 +297,30 @@ mod simple_amm_tests {
         assert_eq!(amm.oracle.last_updated_slot, 0);
 
         assert_eq!(amm.update_twap(ONE_MINUTE_IN_SLOTS), Some(10 * PRICE_SCALE));
+    }
+
+    #[test]
+    pub fn overflow_twap() {
+        let mut amm = Amm {
+            base_amount: 1,
+            quote_amount: u64::MAX,
+            oracle: TwapOracle::new(0, MAX_PRICE, MAX_PRICE),
+            ..Amm::default()
+        };
+
+        let mut amm_clone = amm.clone();
+
+        let slots_until_overflow = u128::MAX / (u64::MAX as u128 * PRICE_SCALE);
+
+        amm.update_twap(slots_until_overflow as u64);
+        assert!(amm.oracle.aggregator > MAX_PRICE * 18_400_000);
+        assert_ne!(amm.oracle.aggregator, u128::MAX);
+
+        amm_clone.update_twap(slots_until_overflow as u64 + 1);
+        assert_eq!(amm_clone.oracle.aggregator, u128::MAX);
+
+        // check that it wraps over
+        amm_clone.update_twap(slots_until_overflow as u64 + 1 + ONE_MINUTE_IN_SLOTS);
+        assert_eq!(amm_clone.oracle.aggregator, ONE_MINUTE_IN_SLOTS as u128 * MAX_PRICE - 1); // sub 1 cuz wrap
     }
 }
