@@ -92,16 +92,10 @@ describe("amm", async function () {
 
   describe("#create_amm", async function () {
     it("create a permissionless amm", async function () {
-      let twapFirstObservationScaled = PriceMath.scalePrice(
-        100,
-        META_DECIMALS,
-        USDC_DECIMALS
-      );
-      let twapMaxObservationChangePerUpdateScaled = PriceMath.scalePrice(
-        1,
-        META_DECIMALS,
-        USDC_DECIMALS
-      );
+      let [
+        twapFirstObservationScaled,
+        twapMaxObservationChangePerUpdateScaled,
+      ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
 
       await ammClient
         .createAmm(
@@ -124,7 +118,11 @@ describe("amm", async function () {
       );
 
       assert.equal(permissionlessAmmAcc.bump, bump);
-      assert.isTrue(permissionlessAmmAcc.createdAtSlot.eq(permissionlessAmmAcc.oracle.lastUpdatedSlot));
+      assert.isTrue(
+        permissionlessAmmAcc.createdAtSlot.eq(
+          permissionlessAmmAcc.oracle.lastUpdatedSlot
+        )
+      );
       assert.equal(permissionlessAmmAcc.baseMint.toBase58(), META.toBase58());
       assert.equal(permissionlessAmmAcc.quoteMint.toBase58(), USDC.toBase58());
       assert.equal(permissionlessAmmAcc.baseMintDecimals, 9);
@@ -132,20 +130,37 @@ describe("amm", async function () {
       assert.isTrue(permissionlessAmmAcc.baseAmount.eqn(0));
       assert.isTrue(permissionlessAmmAcc.quoteAmount.eqn(0));
       assert.isTrue(permissionlessAmmAcc.totalOwnership.eqn(0));
-      assert.isTrue(permissionlessAmmAcc.oracle.lastObservation.eq(twapFirstObservationScaled));
+      assert.isTrue(
+        permissionlessAmmAcc.oracle.lastObservation.eq(
+          twapFirstObservationScaled
+        )
+      );
       assert.isTrue(permissionlessAmmAcc.oracle.aggregator.eqn(0));
-      assert.isTrue(permissionlessAmmAcc.oracle.maxObservationChangePerUpdate.eq(twapMaxObservationChangePerUpdateScaled));
-      assert.isTrue(permissionlessAmmAcc.oracle.initialObservation.eq(twapFirstObservationScaled));
+      assert.isTrue(
+        permissionlessAmmAcc.oracle.maxObservationChangePerUpdate.eq(
+          twapMaxObservationChangePerUpdateScaled
+        )
+      );
+      assert.isTrue(
+        permissionlessAmmAcc.oracle.initialObservation.eq(
+          twapFirstObservationScaled
+        )
+      );
     });
 
     it("fails to create an amm with two identical mints", async function () {
+      let [
+        twapFirstObservationScaled,
+        twapMaxObservationChangePerUpdateScaled,
+      ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
+
       const callbacks = expectError(
         "SameTokenMints",
         "create AMM succeeded despite same token mints"
       );
 
       await ammClient
-        .createAmm(META, META)
+        .createAmm(META, META, twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled)
         .rpc()
         .then(callbacks[0], callbacks[1]);
     });

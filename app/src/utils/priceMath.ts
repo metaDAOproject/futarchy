@@ -15,4 +15,15 @@ export class PriceMath {
 
     return scaledPrice;
   }
+
+  public static scalePrices(
+    baseDecimals: number,
+    quoteDecimals: number,
+    ...prices: number[]
+  ): BN[] {
+    // Map through each price, scaling it using the scalePrice method
+    return prices.map(price => 
+      this.scalePrice(price, baseDecimals, quoteDecimals)
+    );
+  }
 }
