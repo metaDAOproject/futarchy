@@ -29,7 +29,7 @@ const AMM_PROGRAM_ID = new PublicKey(
 );
 
 describe("amm", async function () {
-  let amm, context, banksClient, provider, payer;
+  let ammProgram, context, banksClient, provider, payer, META, USDC;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -38,10 +38,49 @@ describe("amm", async function () {
     anchor.setProvider(provider);
     payer = provider.wallet.payer;
 
-    amm = new Program<Amm>(AmmIDL, AMM_PROGRAM_ID, provider);
+    ammProgram = new Program<Amm>(AmmIDL, AMM_PROGRAM_ID, provider);
+
+    META = await createMint(
+      banksClient,
+      payer,
+      payer.publicKey,
+      payer.publicKey,
+      9
+    );
+    USDC = await createMint(
+      banksClient,
+      payer,
+      payer.publicKey,
+      payer.publicKey,
+      6
+    );
   });
 
   it("works", async function () {
-    await amm.methods.initialize().rpc();
+    const amm = PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("amm__"),
+        META.toBuffer(),
+        USDC.toBuffer(),
+        new BN(1).toBuffer('le', 8)
+      ],
+      ammProgram.programId
+    )[0];
+
+    console.log(amm);
+
+    await ammProgram.methods
+      .createAmm({
+        swapFeeBps: new BN(1),
+        ltwapDecimals: 9,
+      })
+      .accounts({
+        amm,
+        baseMint: META,
+        quoteMint: USDC,
+        vaultAtaBase: token.getAssociatedTokenAddressSync(META, amm, true),
+        vaultAtaQuote: token.getAssociatedTokenAddressSync(USDC, amm, true),
+      })
+      .rpc();
   });
 });

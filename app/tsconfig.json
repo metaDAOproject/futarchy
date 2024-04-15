@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "types": [
+      "mocha",
+      "chai"
+    ],
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "lib": [
+      "esnext"
+    ],
+    "module": "commonjs",
+    "target": "esnext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "strict": true,
+    "declaration": true
+  },
+  "include": [
+    "src/*",
+  ],
+  "exclude": [
+    "node_modules",
+    "target",
+    "tests",
+    "migrations"
+  ]
+}

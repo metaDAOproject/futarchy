@@ -32,5 +32,8 @@ bankrun-vault-logs:
 bankrun-logs:
     (find programs && find tests) | entr -csr 'anchor build -p autocrat_v0 && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts'
 
+build-amm:
+	(find programs) | entr -s 'anchor build -p amm'
+
 build:
 	(find programs) | entr -s 'anchor build'
