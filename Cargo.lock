@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "amm"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
@@ -577,7 +577,7 @@ dependencies = [
 
 [[package]]
 name = "autocrat_v0"
-version = "0.3.0"
+version = "1.0.0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
@@ -858,7 +858,7 @@ dependencies = [
 
 [[package]]
 name = "conditional_vault"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",

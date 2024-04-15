@@ -1,6 +1,6 @@
 [package]
 name = "conditional_vault"
-version = "0.1.0"
+version = "1.0.0"
 description = "Created with Anchor"
 edition = "2021"
 

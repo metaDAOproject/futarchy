@@ -1,3 +1,32 @@
+//! The orchestrator of a futarchy. Equivalent to the 'governor' of Compound's 
+//! governance system.
+//! 
+//! Autocrat has two types of accounts: DAOs and proposals. Every DAO has its
+//! own token, its own treasury account, and list of configs. Proposals are
+//! created for a specific DAO, and contain an SVM instruction and a URL that
+//! should point to a description and justification of that instruction.
+//! 
+//! Proposals pass through various states in their lifecycle. Here's a description
+//! of these states:
+//! - Pre-creation: this is when you initialize the accounts needed for a proposal,
+//!   including the vaults and the AMM accounts. The proposer will also deposit to
+//!   create their LP during this time.
+//! - Price discovery: to create a proposal, the proposer must call
+//!   `initialize_proposal`, which requires them to lock up some LP tokens in each
+//!   of the markets. Once a proposal is created, anyone can trade its markets. But
+//!   its market prices don't get included in the proposal's TWAP.
+//! - TWAP recording: after some period of time, such as a day, has passed, there
+//!   is a smaller period of time, such as an hour, for market prices to be recorded
+//!   into a TWAP. This is so that market participants can be informed ahead of time
+//!   when the TWAP recording will occur and a malicious actor can't slip in some TWAP
+//!   manipulation while noone is paying attention.
+//! - Pass or fail: if the TWAP of the pass market is sufficiently higher than the
+//!   TWAP of the fail market, the proposal will pass. If it's not, the proposal will
+//!   fail. If it passes, both vaults will be finalized, allowing pTOKEN holders to
+//!   redeem. If it fails, both vaults will be reverted, allowing fTOKEN holders to
+//!   redeem.
+//! - Executed: if a proposal passes, anyone can make autocrat execute its SVM
+//!   instruction by calling `execute_proposal`.
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::Mint;
@@ -18,8 +47,8 @@ security_txt! {
     project_url: "https://themetadao.org",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
-    source_code: "https://github.com/metaDAOproject/meta-dao",
-    source_release: "v0",
+    source_code: "https://github.com/metaDAOproject/futarchy",
+    source_release: "v1",
     auditors: "None",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
@@ -469,6 +498,7 @@ pub struct FinalizeProposal<'info> {
         has_one = quote_vault,
         has_one = openbook_twap_pass_market,
         has_one = openbook_twap_fail_market,
+        has_one = dao,
     )]
     pub proposal: Account<'info, Proposal>,
     pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
