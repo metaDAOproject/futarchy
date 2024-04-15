@@ -34,7 +34,7 @@ pub struct Amm {
     /// To represent prices, we use fixed point numbers with 32 fractional
     /// bits. To convert to a normal number, you can divide by
     /// 2**32.
-    pub twap_last_observation_uq64x32: u128,
+    pub twap_last_observation_uq64X32: u128,
     /// Running sum of slots_since_last_update * price.
     ///
     /// Assuming last observations are as big as possible (UQ64x32::MAX),
@@ -42,9 +42,9 @@ pub struct Amm {
     /// of slots. At this point, the aggregator will roll back to 0. It's the
     /// client's responsibility to check that the second aggregator is bigger
     /// than the first aggregator.
-    pub twap_aggregator_uq96x32: u128,
+    pub twap_aggregator_uq96X32: u128,
     /// The most that a price can change per update.
-    pub twap_max_change_per_update_uq64x32: u128,
+    pub twap_max_change_per_update_uq64X32: u128,
 }
 
 impl Amm {
@@ -107,9 +107,9 @@ impl Amm {
         let slots_passed = (self.twap_last_updated_slot - self.created_at_slot) as u128;
 
         require_neq!(slots_passed, 0, AmmError::NoSlotsPassed);
-        assert!(self.twap_aggregator_uq96x32 != 0);
+        assert!(self.twap_aggregator_uq96X32 != 0);
 
-        Ok(self.twap_aggregator_uq96x32 / slots_passed)
+        Ok(self.twap_aggregator_uq96X32 / slots_passed)
     }
 
     /// Updates the TWAP. Should be called before any changes to the AMM's state
@@ -144,11 +144,11 @@ impl Amm {
 
         let price_uq64x32 = (quote_amount_uq64x32 << 32) / base_amount_uq64x32;
 
-        let last_observation_uq64x32 = self.twap_last_observation_uq64x32;
+        let last_observation_uq64x32 = self.twap_last_observation_uq64X32;
 
         let observation_uq64x32 = if price_uq64x32 > last_observation_uq64x32 {
             let max_observation_uq64x32 = last_observation_uq64x32
-                + self.twap_max_change_per_update_uq64x32
+                + self.twap_max_change_per_update_uq64X32
                 & 0x00_00_00_00_FF_FF_FF_FF_FF_FF_FF_FF_FF_FF_FF_FF;
             // we can't do `saturating_add` since a u128 can fit more than
             // a UQ64x32, so we do the bitwise AND instead
@@ -156,7 +156,7 @@ impl Amm {
             std::cmp::min(price_uq64x32, max_observation_uq64x32)
         } else {
             let min_observation_uq64x32 =
-                last_observation_uq64x32.saturating_sub(self.twap_max_change_per_update_uq64x32);
+                last_observation_uq64x32.saturating_sub(self.twap_max_change_per_update_uq64X32);
 
             std::cmp::max(price_uq64x32, min_observation_uq64x32)
         };
@@ -165,11 +165,11 @@ impl Amm {
         let weighted_observation_uq96x64 = observation_uq64x32 * slot_difference;
 
         self.twap_last_updated_slot = current_slot;
-        self.twap_last_observation_uq64x32 = observation_uq64x32;
+        self.twap_last_observation_uq64X32 = observation_uq64x32;
         // will eventually wrap back to 0 theoretically after at least 2**32 slots 
         // but more likely after 2**40 - 2**90 slots. 2**40 slots is 5 million years
-        self.twap_aggregator_uq96x32 = self
-            .twap_aggregator_uq96x32
+        self.twap_aggregator_uq96X32 = self
+            .twap_aggregator_uq96X32
             .wrapping_add(weighted_observation_uq96x64);
 
         Some(observation_uq64x32)
@@ -243,8 +243,8 @@ mod simple_amm_tests {
         let mut amm = Amm {
             base_amount: 5,
             quote_amount: 50,
-            twap_last_observation_uq64x32: 10 * 2_u128.pow(32),
-            twap_max_change_per_update_uq64x32: 100,
+            twap_last_observation_uq64X32: 10 * 2_u128.pow(32),
+            twap_max_change_per_update_uq64X32: 100,
             twap_last_updated_slot: 0,
             ..Amm::default()
         };

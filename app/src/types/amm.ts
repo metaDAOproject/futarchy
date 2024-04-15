@@ -398,7 +398,7 @@ export type Amm = {
             "type": "u64"
           },
           {
-            "name": "twapLastObservationUq64x32",
+            "name": "twapLastObservationUq64X32",
             "docs": [
               "To represent prices, we use fixed point numbers with 32 fractional",
               "bits. To convert to a normal number, you can divide by",
@@ -407,7 +407,7 @@ export type Amm = {
             "type": "u128"
           },
           {
-            "name": "twapAggregatorUq96x32",
+            "name": "twapAggregatorUq96X32",
             "docs": [
               "Running sum of slots_since_last_update * price.",
               "",
@@ -420,7 +420,7 @@ export type Amm = {
             "type": "u128"
           },
           {
-            "name": "twapMaxChangePerUpdateUq64x32",
+            "name": "twapMaxChangePerUpdateUq64X32",
             "docs": [
               "The most that a price can change per update."
             ],
@@ -892,7 +892,7 @@ export const IDL: Amm = {
             "type": "u64"
           },
           {
-            "name": "twapLastObservationUq64x32",
+            "name": "twapLastObservationUq64X32",
             "docs": [
               "To represent prices, we use fixed point numbers with 32 fractional",
               "bits. To convert to a normal number, you can divide by",
@@ -901,7 +901,7 @@ export const IDL: Amm = {
             "type": "u128"
           },
           {
-            "name": "twapAggregatorUq96x32",
+            "name": "twapAggregatorUq96X32",
             "docs": [
               "Running sum of slots_since_last_update * price.",
               "",
@@ -914,7 +914,7 @@ export const IDL: Amm = {
             "type": "u128"
           },
           {
-            "name": "twapMaxChangePerUpdateUq64x32",
+            "name": "twapMaxChangePerUpdateUq64X32",
             "docs": [
               "The most that a price can change per update."
             ],

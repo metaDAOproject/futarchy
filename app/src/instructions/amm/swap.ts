@@ -15,7 +15,7 @@ export const swapHandler = async (
 
     let ix = await client.program.methods
         .swap(
-            isQuoteToBase,
+            isQuoteToBase ? { buy: {}} : { sell: {}},
             inputAmount,
             minOutputAmount,
         )

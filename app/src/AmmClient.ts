@@ -131,7 +131,7 @@ export class AmmClient {
         ammAddr: PublicKey,
     ): Promise<number> {
         const amm = await this.program.account.amm.fetch(ammAddr);
-        return amm.ltwapLatest.toNumber() / 10 ** amm.ltwapDecimals
+        return amm.twapLastObservationUq64X32.div(new BN(2).pow(new BN(32))).toNumber();
     }
 
     async getAmm(
@@ -179,7 +179,7 @@ export class AmmClient {
         let k = quoteAmount.mul(baseAmount)
 
         let inputMinusFee = inputAmount
-            .mul(new BN(10_000).sub(amm.swapFeeBps))
+            .mul(new BN(10_000).subn(100))
             .div(new BN(10_000))
 
         if (isBuyBase) {

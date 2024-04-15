@@ -15,17 +15,13 @@ export const createAmmHandler = async (
         client.program.programId,
         baseMint,
         quoteMint,
-        swapFeeBps,
     )
 
     let [vaultAtaBase] = getATA(baseMint, ammAddr)
     let [vaultAtaQuote] = getATA(quoteMint, ammAddr)
 
     let ix = await client.program.methods
-        .createAmm({
-            swapFeeBps: new BN(swapFeeBps),
-            ltwapDecimals
-        })
+        .createAmm()
         .accounts({
             user: client.provider.publicKey,
             amm: ammAddr,
