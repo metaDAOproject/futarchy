@@ -39,11 +39,14 @@ export class AmmClient {
     return new AmmClient(provider, programId || AMM_PROGRAM_ID, luts);
   }
 
+  // both twap values need to be scaled beforehand
   createAmm(
     baseMint: PublicKey,
     quoteMint: PublicKey,
+    twapInitialObservation: BN,
+    twapMaxObservationChangePerUpdate: BN,
   ) {
-    return ixs.createAmmHandler(this, baseMint, quoteMint);
+    return ixs.createAmmHandler(this, baseMint, quoteMint, twapInitialObservation, twapMaxObservationChangePerUpdate);
   }
 
   async createAmmPosition(amm: PublicKey) {
@@ -103,12 +106,12 @@ export class AmmClient {
 
   // getter functions
 
-  async getLTWAP(ammAddr: PublicKey): Promise<number> {
-    const amm = await this.program.account.amm.fetch(ammAddr);
-    return amm.twapLastObservationUq64X32
-      .div(new BN(2).pow(new BN(32)))
-      .toNumber();
-  }
+  // async getLTWAP(ammAddr: PublicKey): Promise<number> {
+  //   const amm = await this.program.account.amm.fetch(ammAddr);
+  //   return amm.twapLastObservationUq64X32
+  //     .div(new BN(2).pow(new BN(32)))
+  //     .toNumber();
+  // }
 
   async getAmm(ammAddr: PublicKey): Promise<Amm> {
     return await this.program.account.amm.fetch(ammAddr);

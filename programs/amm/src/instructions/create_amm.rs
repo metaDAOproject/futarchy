@@ -8,8 +8,8 @@ use crate::state::*;
 #[derive(AnchorSerialize, AnchorDeserialize)]
 #[allow(non_snake_case)]
 pub struct CreateAmmArgs {
+    pub twap_initial_observation: u128,
     pub twap_max_observation_change_per_update: u128,
-    pub twap_expected_value: u128,
 }
 
 #[derive(Accounts)]
@@ -78,8 +78,8 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
     let current_slot = Clock::get()?.slot;
 
     let CreateAmmArgs {
+        twap_initial_observation,
         twap_max_observation_change_per_update,
-        twap_expected_value,
     } = args;
 
     amm.set_inner(Amm {
@@ -100,7 +100,7 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
 
         oracle: TwapOracle::new(
             current_slot,
-            twap_expected_value,
+            twap_initial_observation,
             twap_max_observation_change_per_update,
         ),
     });

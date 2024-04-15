@@ -38,22 +38,22 @@ pub struct TwapOracle {
     /// The most that an observation can change per update.
     pub max_observation_change_per_update: u128,
     /// What the initial `latest_observation` is set to.
-    pub expected_value: u128,
+    pub initial_observation: u128,
 }
 
 impl TwapOracle {
     pub fn new(
         current_slot: Slot,
-        expected_value: u128,
+        initial_observation: u128,
         max_observation_change_per_update: u128,
     ) -> Self {
         Self {
             last_updated_slot: current_slot,
             last_price: 0,
-            last_observation: expected_value,
+            last_observation: initial_observation,
             aggregator: 0,
             max_observation_change_per_update,
-            expected_value,
+            initial_observation,
         }
     }
 }
@@ -206,7 +206,7 @@ impl Amm {
             aggregator: new_aggregator,
             // these two shouldn't change
             max_observation_change_per_update: oracle.max_observation_change_per_update,
-            expected_value: oracle.expected_value,
+            initial_observation: oracle.initial_observation,
         };
 
         assert!(new_oracle.last_updated_slot > oracle.last_updated_slot);

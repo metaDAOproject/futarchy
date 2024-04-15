@@ -9,7 +9,9 @@ import { Amm } from "../../types/amm";
 export const createAmmHandler = (
   client: AmmClient,
   baseMint: PublicKey,
-  quoteMint: PublicKey
+  quoteMint: PublicKey,
+  twapInitialObservation: BN,
+  twapMaxObservationChangePerUpdate: BN,
 ): MethodsBuilder<Amm, any> => {
   let [ammAddr] = getAmmAddr(client.program.programId, baseMint, quoteMint);
 
@@ -17,7 +19,10 @@ export const createAmmHandler = (
   let [vaultAtaQuote] = getATA(quoteMint, ammAddr);
 
   return client.program.methods
-    .createAmm()
+    .createAmm({
+      twapInitialObservation,
+      twapMaxObservationChangePerUpdate,
+    })
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,

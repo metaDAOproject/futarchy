@@ -51,7 +51,14 @@ export type Amm = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "CreateAmmArgs"
+          }
+        }
+      ]
     },
     {
       "name": "createPosition",
@@ -394,37 +401,10 @@ export type Amm = {
             "type": "u64"
           },
           {
-            "name": "twapLastUpdatedSlot",
-            "type": "u64"
-          },
-          {
-            "name": "twapLastObservationUq64X32",
-            "docs": [
-              "To represent prices, we use fixed point numbers with 32 fractional",
-              "bits. To convert to a normal number, you can divide by",
-              "2**32."
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "twapAggregatorUq96X32",
-            "docs": [
-              "Running sum of slots_since_last_update * price.",
-              "",
-              "Assuming last observations are as big as possible (UQ64x32::MAX),",
-              "we can store (2**32) of them. This translates into 54 years worth",
-              "of slots. At this point, the aggregator will roll back to 0. It's the",
-              "client's responsibility to check that the second aggregator is bigger",
-              "than the first aggregator."
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "twapMaxChangePerUpdateUq64X32",
-            "docs": [
-              "The most that a price can change per update."
-            ],
-            "type": "u128"
+            "name": "oracle",
+            "type": {
+              "defined": "TwapOracle"
+            }
           }
         ]
       }
@@ -432,18 +412,77 @@ export type Amm = {
   ],
   "types": [
     {
-      "name": "AnchorDecimal",
+      "name": "CreateAmmArgs",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "data",
-            "type": {
-              "array": [
-                "u8",
-                16
-              ]
-            }
+            "name": "twapInitialObservation",
+            "type": "u128"
+          },
+          {
+            "name": "twapMaxObservationChangePerUpdate",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TwapOracle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lastUpdatedSlot",
+            "type": "u64"
+          },
+          {
+            "name": "lastPrice",
+            "docs": [
+              "A price is the number of quote units per base unit multiplied by 1e12.",
+              "You cannot simply divide by 1e12 to get a price you can display in the UI",
+              "because the base and quote decimals may be different. Instead, do:",
+              "ui_price = (price * (10**(base_decimals - quote_decimals))) / 1e12"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "lastObservation",
+            "docs": [
+              "If we did a raw TWAP over prices, someone could push the TWAP heavily with",
+              "a few extremely large outliers. So we use observations, which can only move",
+              "by `max_observation_change_per_update` per update."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "aggregator",
+            "docs": [
+              "Running sum of slots_per_last_update * last_observation.",
+              "",
+              "Assuming latest observations are as big as possible (u64::MAX * 1e12),",
+              "we can store 18 million slots worth of observations, which turns out to",
+              "be ~85 days worth of slots.",
+              "",
+              "At this point, the aggregot will roll back to 0. It's the client's",
+              "responsibility to check that the second aggregator is bigger than the",
+              "first aggregator."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "maxObservationChangePerUpdate",
+            "docs": [
+              "The most that an observation can change per update."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "initialObservation",
+            "docs": [
+              "What the initial `latest_observation` is set to."
+            ],
+            "type": "u128"
           }
         ]
       }
@@ -550,7 +589,14 @@ export const IDL: Amm = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "CreateAmmArgs"
+          }
+        }
+      ]
     },
     {
       "name": "createPosition",
@@ -893,37 +939,10 @@ export const IDL: Amm = {
             "type": "u64"
           },
           {
-            "name": "twapLastUpdatedSlot",
-            "type": "u64"
-          },
-          {
-            "name": "twapLastObservationUq64X32",
-            "docs": [
-              "To represent prices, we use fixed point numbers with 32 fractional",
-              "bits. To convert to a normal number, you can divide by",
-              "2**32."
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "twapAggregatorUq96X32",
-            "docs": [
-              "Running sum of slots_since_last_update * price.",
-              "",
-              "Assuming last observations are as big as possible (UQ64x32::MAX),",
-              "we can store (2**32) of them. This translates into 54 years worth",
-              "of slots. At this point, the aggregator will roll back to 0. It's the",
-              "client's responsibility to check that the second aggregator is bigger",
-              "than the first aggregator."
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "twapMaxChangePerUpdateUq64X32",
-            "docs": [
-              "The most that a price can change per update."
-            ],
-            "type": "u128"
+            "name": "oracle",
+            "type": {
+              "defined": "TwapOracle"
+            }
           }
         ]
       }
@@ -931,18 +950,77 @@ export const IDL: Amm = {
   ],
   "types": [
     {
-      "name": "AnchorDecimal",
+      "name": "CreateAmmArgs",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "data",
-            "type": {
-              "array": [
-                "u8",
-                16
-              ]
-            }
+            "name": "twapInitialObservation",
+            "type": "u128"
+          },
+          {
+            "name": "twapMaxObservationChangePerUpdate",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TwapOracle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lastUpdatedSlot",
+            "type": "u64"
+          },
+          {
+            "name": "lastPrice",
+            "docs": [
+              "A price is the number of quote units per base unit multiplied by 1e12.",
+              "You cannot simply divide by 1e12 to get a price you can display in the UI",
+              "because the base and quote decimals may be different. Instead, do:",
+              "ui_price = (price * (10**(base_decimals - quote_decimals))) / 1e12"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "lastObservation",
+            "docs": [
+              "If we did a raw TWAP over prices, someone could push the TWAP heavily with",
+              "a few extremely large outliers. So we use observations, which can only move",
+              "by `max_observation_change_per_update` per update."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "aggregator",
+            "docs": [
+              "Running sum of slots_per_last_update * last_observation.",
+              "",
+              "Assuming latest observations are as big as possible (u64::MAX * 1e12),",
+              "we can store 18 million slots worth of observations, which turns out to",
+              "be ~85 days worth of slots.",
+              "",
+              "At this point, the aggregot will roll back to 0. It's the client's",
+              "responsibility to check that the second aggregator is bigger than the",
+              "first aggregator."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "maxObservationChangePerUpdate",
+            "docs": [
+              "The most that an observation can change per update."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "initialObservation",
+            "docs": [
+              "What the initial `latest_observation` is set to."
+            ],
+            "type": "u128"
           }
         ]
       }

@@ -15,6 +15,10 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { AmmClient } from "../app/src/AmmClient";
 import { expectError, fastForward } from "./utils/utils";
+import { PriceMath } from "../app/src/utils/priceMath";
+
+const META_DECIMALS = 9;
+const USDC_DECIMALS = 6;
 
 describe("amm", async function () {
   let provider: BankrunProvider,
@@ -23,8 +27,6 @@ describe("amm", async function () {
     context,
     banksClient,
     permissionlessAmmAddr,
-    permissionedAccessibleAmmAddr,
-    permissionedInaccessibleAmmAddr,
     META,
     USDC,
     userMetaAccount,
@@ -43,14 +45,14 @@ describe("amm", async function () {
       payer,
       payer.publicKey,
       payer.publicKey,
-      9
+      META_DECIMALS
     );
     USDC = await createMint(
       banksClient,
       payer,
       payer.publicKey,
       payer.publicKey,
-      6
+      USDC_DECIMALS
     );
 
     userMetaAccount = await createAssociatedTokenAccount(
@@ -90,9 +92,28 @@ describe("amm", async function () {
 
   describe("#create_amm", async function () {
     it("create a permissionless amm", async function () {
-      await ammClient.createAmm(META, USDC).rpc();
+      let twapFirstObservationScaled = PriceMath.scalePrice(
+        100,
+        META_DECIMALS,
+        USDC_DECIMALS
+      );
+      let twapMaxObservationChangePerUpdateScaled = PriceMath.scalePrice(
+        1,
+        META_DECIMALS,
+        USDC_DECIMALS
+      );
 
-      [permissionlessAmmAddr] = getAmmAddr(
+      await ammClient
+        .createAmm(
+          META,
+          USDC,
+          twapFirstObservationScaled,
+          twapMaxObservationChangePerUpdateScaled
+        )
+        .rpc();
+
+      let bump;
+      [permissionlessAmmAddr, bump] = getAmmAddr(
         ammClient.program.programId,
         META,
         USDC
@@ -102,10 +123,19 @@ describe("amm", async function () {
         permissionlessAmmAddr
       );
 
+      assert.equal(permissionlessAmmAcc.bump, bump);
+      assert.isTrue(permissionlessAmmAcc.createdAtSlot.eq(permissionlessAmmAcc.oracle.lastUpdatedSlot));
       assert.equal(permissionlessAmmAcc.baseMint.toBase58(), META.toBase58());
       assert.equal(permissionlessAmmAcc.quoteMint.toBase58(), USDC.toBase58());
       assert.equal(permissionlessAmmAcc.baseMintDecimals, 9);
       assert.equal(permissionlessAmmAcc.quoteMintDecimals, 6);
+      assert.isTrue(permissionlessAmmAcc.baseAmount.eqn(0));
+      assert.isTrue(permissionlessAmmAcc.quoteAmount.eqn(0));
+      assert.isTrue(permissionlessAmmAcc.totalOwnership.eqn(0));
+      assert.isTrue(permissionlessAmmAcc.oracle.lastObservation.eq(twapFirstObservationScaled));
+      assert.isTrue(permissionlessAmmAcc.oracle.aggregator.eqn(0));
+      assert.isTrue(permissionlessAmmAcc.oracle.maxObservationChangePerUpdate.eq(twapMaxObservationChangePerUpdateScaled));
+      assert.isTrue(permissionlessAmmAcc.oracle.initialObservation.eq(twapFirstObservationScaled));
     });
 
     it("fails to create an amm with two identical mints", async function () {
@@ -114,7 +144,10 @@ describe("amm", async function () {
         "create AMM succeeded despite same token mints"
       );
 
-      await ammClient.createAmm(META, META).rpc().then(callbacks[0], callbacks[1]);
+      await ammClient
+        .createAmm(META, META)
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
     });
   });
 
