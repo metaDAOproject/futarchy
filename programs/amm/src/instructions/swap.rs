@@ -89,11 +89,7 @@ pub fn handler(
     let base_mint_key = base_mint.key();
     let quote_mint_key = quote_mint.key();
 
-    let seeds = generate_vault_seeds!(
-        base_mint_key,
-        quote_mint_key,
-        amm.bump
-    );
+    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
 
     // let output_amount = if is_quote_to_base {
     //     let temp_quote_amount = quote_amount_start
@@ -181,7 +177,6 @@ pub fn handler(
 
     //     amm.base_amount = amm.base_amount.checked_add(input_amount).unwrap();
     //     amm.quote_amount = amm.quote_amount.checked_sub(output_amount_quote).unwrap();
-
 
     //     output_amount_quote
     // };

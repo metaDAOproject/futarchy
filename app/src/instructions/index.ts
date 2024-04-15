@@ -1,2 +1,2 @@
-export * from './amm'
-export * from './autocrat'
+export * from "./amm";
+export * from "./autocrat";

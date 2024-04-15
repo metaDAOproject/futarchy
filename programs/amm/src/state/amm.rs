@@ -166,7 +166,7 @@ impl Amm {
 
         self.twap_last_updated_slot = current_slot;
         self.twap_last_observation_uq64X32 = observation_uq64x32;
-        // will eventually wrap back to 0 theoretically after at least 2**32 slots 
+        // will eventually wrap back to 0 theoretically after at least 2**32 slots
         // but more likely after 2**40 - 2**90 slots. 2**40 slots is 5 million years
         self.twap_aggregator_uq96X32 = self
             .twap_aggregator_uq96X32
@@ -253,6 +253,9 @@ mod simple_amm_tests {
         assert_eq!(amm.update_twap(1), None);
         assert_eq!(amm.twap_last_updated_slot, 0);
 
-        assert_eq!(amm.update_twap(ONE_MINUTE_IN_SLOTS), Some(10 * 2_u128.pow(32)));
+        assert_eq!(
+            amm.update_twap(ONE_MINUTE_IN_SLOTS),
+            Some(10 * 2_u128.pow(32))
+        );
     }
 }

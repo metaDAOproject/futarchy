@@ -1,7 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 
-pub fn token_mint_signed<'info, P: ToAccountInfo<'info>, M: ToAccountInfo<'info>, T: ToAccountInfo<'info>, A: ToAccountInfo<'info>>(
+pub fn token_mint_signed<
+    'info,
+    P: ToAccountInfo<'info>,
+    M: ToAccountInfo<'info>,
+    T: ToAccountInfo<'info>,
+    A: ToAccountInfo<'info>,
+>(
     amount: u64,
     token_program: &P,
     mint: &M,
@@ -27,7 +33,13 @@ pub fn token_mint_signed<'info, P: ToAccountInfo<'info>, M: ToAccountInfo<'info>
     Ok(())
 }
 
-pub fn token_burn<'info, P: ToAccountInfo<'info>, M: ToAccountInfo<'info>, F: ToAccountInfo<'info>, A: ToAccountInfo<'info>>(
+pub fn token_burn<
+    'info,
+    P: ToAccountInfo<'info>,
+    M: ToAccountInfo<'info>,
+    F: ToAccountInfo<'info>,
+    A: ToAccountInfo<'info>,
+>(
     amount: u64,
     token_program: &P,
     mint: &M,
@@ -51,7 +63,13 @@ pub fn token_burn<'info, P: ToAccountInfo<'info>, M: ToAccountInfo<'info>, F: To
     Ok(())
 }
 
-pub fn token_transfer<'info, P: ToAccountInfo<'info>, F: ToAccountInfo<'info>, T: ToAccountInfo<'info>, A: ToAccountInfo<'info>>(
+pub fn token_transfer<
+    'info,
+    P: ToAccountInfo<'info>,
+    F: ToAccountInfo<'info>,
+    T: ToAccountInfo<'info>,
+    A: ToAccountInfo<'info>,
+>(
     amount: u64,
     token_program: &P,
     from: &F,
@@ -75,7 +93,13 @@ pub fn token_transfer<'info, P: ToAccountInfo<'info>, F: ToAccountInfo<'info>, T
     Ok(())
 }
 
-pub fn token_transfer_signed<'info, P: ToAccountInfo<'info>, F: ToAccountInfo<'info>, T: ToAccountInfo<'info>, A: ToAccountInfo<'info>>(
+pub fn token_transfer_signed<
+    'info,
+    P: ToAccountInfo<'info>,
+    F: ToAccountInfo<'info>,
+    T: ToAccountInfo<'info>,
+    A: ToAccountInfo<'info>,
+>(
     amount: u64,
     token_program: &P,
     from: &F,
