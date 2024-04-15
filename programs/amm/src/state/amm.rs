@@ -30,12 +30,12 @@ pub struct TwapOracle {
     /// Assuming latest observations are as big as possible (u64::MAX * 1e12),
     /// we can store 18 million slots worth of observations, which turns out to
     /// be ~85 days worth of slots.
-    /// 
+    ///
     /// Assuming that latest observations are 100x smaller than they could theoretically
     /// be, we can store 8500 days (23 years) worth of them. Even this is a very
     /// very conservative assumption - META/USDC prices should be between 1e9 and
     /// 1e15, which would overflow after 1e15 years worth of slots.
-    /// 
+    ///
     /// So in the case of an overflow, the aggregator rolls back to 0. It's the
     /// client's responsibility to sanity check the assets or to handle an
     /// aggregator at t2 being smaller than an aggregator at t1.
@@ -69,6 +69,8 @@ pub struct Amm {
     pub bump: u8,
 
     pub created_at_slot: u64,
+
+    pub lp_mint: Pubkey,
 
     pub base_mint: Pubkey,
     pub quote_mint: Pubkey,
@@ -321,6 +323,9 @@ mod simple_amm_tests {
 
         // check that it wraps over
         amm_clone.update_twap(slots_until_overflow as u64 + 1 + ONE_MINUTE_IN_SLOTS);
-        assert_eq!(amm_clone.oracle.aggregator, ONE_MINUTE_IN_SLOTS as u128 * MAX_PRICE - 1); // sub 1 cuz wrap
+        assert_eq!(
+            amm_clone.oracle.aggregator,
+            ONE_MINUTE_IN_SLOTS as u128 * MAX_PRICE - 1
+        ); // sub 1 cuz wrap
     }
 }

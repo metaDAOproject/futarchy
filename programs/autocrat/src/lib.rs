@@ -1,11 +1,11 @@
-//! The orchestrator of a futarchy. Equivalent to the 'governor' of Compound's 
+//! The orchestrator of a futarchy. Equivalent to the 'governor' of Compound's
 //! governance system.
-//! 
+//!
 //! Autocrat has two types of accounts: DAOs and proposals. Every DAO has its
 //! own token, its own treasury account, and list of configs. Proposals are
 //! created for a specific DAO, and contain an SVM instruction and a URL that
 //! should point to a description and justification of that instruction.
-//! 
+//!
 //! Proposals pass through various states in their lifecycle. Here's a description
 //! of these states:
 //! - Pre-creation: this is when you initialize the accounts needed for a proposal,

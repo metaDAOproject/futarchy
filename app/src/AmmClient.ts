@@ -1,5 +1,5 @@
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import { AddressLookupTableAccount, PublicKey } from "@solana/web3.js";
+import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
 
 import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
 
@@ -45,8 +45,16 @@ export class AmmClient {
     quoteMint: PublicKey,
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN,
+    lpMint: Keypair = Keypair.generate()
   ) {
-    return ixs.createAmmHandler(this, baseMint, quoteMint, twapInitialObservation, twapMaxObservationChangePerUpdate);
+    return ixs.createAmmHandler(
+      this,
+      baseMint,
+      quoteMint,
+      twapInitialObservation,
+      twapMaxObservationChangePerUpdate,
+      lpMint
+    );
   }
 
   async createAmmPosition(amm: PublicKey) {

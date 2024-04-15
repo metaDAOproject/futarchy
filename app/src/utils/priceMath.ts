@@ -22,7 +22,7 @@ export class PriceMath {
     ...prices: number[]
   ): BN[] {
     // Map through each price, scaling it using the scalePrice method
-    return prices.map(price => 
+    return prices.map((price) =>
       this.scalePrice(price, baseDecimals, quoteDecimals)
     );
   }

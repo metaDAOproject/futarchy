@@ -28,6 +28,14 @@ pub struct CreateAmm<'info> {
         bump
     )]
     pub amm: Account<'info, Amm>,
+    #[account(
+        init,
+        payer = user,
+        mint::authority = amm,
+        mint::freeze_authority = amm,
+        mint::decimals = 9
+    )]
+    pub lp_mint: Account<'info, Mint>,
     pub base_mint: Account<'info, Mint>,
     pub quote_mint: Account<'info, Mint>,
     #[account(
@@ -66,6 +74,7 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
     let CreateAmm {
         user: _,
         amm,
+        lp_mint,
         base_mint,
         quote_mint,
         vault_ata_base: _,
@@ -87,6 +96,7 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
 
         created_at_slot: current_slot,
 
+        lp_mint: lp_mint.key(),
         base_mint: base_mint.key(),
         quote_mint: quote_mint.key(),
 

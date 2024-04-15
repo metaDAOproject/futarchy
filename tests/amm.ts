@@ -97,12 +97,14 @@ describe("amm", async function () {
         twapMaxObservationChangePerUpdateScaled,
       ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
 
+      const lpMint = Keypair.generate();
       await ammClient
         .createAmm(
           META,
           USDC,
           twapFirstObservationScaled,
-          twapMaxObservationChangePerUpdateScaled
+          twapMaxObservationChangePerUpdateScaled,
+          lpMint
         )
         .rpc();
 
@@ -122,6 +124,10 @@ describe("amm", async function () {
         permissionlessAmmAcc.createdAtSlot.eq(
           permissionlessAmmAcc.oracle.lastUpdatedSlot
         )
+      );
+      assert.equal(
+        permissionlessAmmAcc.lpMint.toBase58(),
+        lpMint.publicKey.toBase58()
       );
       assert.equal(permissionlessAmmAcc.baseMint.toBase58(), META.toBase58());
       assert.equal(permissionlessAmmAcc.quoteMint.toBase58(), USDC.toBase58());
@@ -160,7 +166,12 @@ describe("amm", async function () {
       );
 
       await ammClient
-        .createAmm(META, META, twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled)
+        .createAmm(
+          META,
+          META,
+          twapFirstObservationScaled,
+          twapMaxObservationChangePerUpdateScaled
+        )
         .rpc()
         .then(callbacks[0], callbacks[1]);
     });
