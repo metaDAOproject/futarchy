@@ -6,7 +6,7 @@ export type Amm = {
       "name": "createAmm",
       "accounts": [
         {
-          "name": "payer",
+          "name": "user",
           "isMut": true,
           "isSigner": true
         },
@@ -49,6 +49,12 @@ export type Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -82,6 +88,12 @@ export type Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": []
@@ -148,6 +160,12 @@ export type Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -231,6 +249,12 @@ export type Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -297,6 +321,12 @@ export type Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -331,9 +361,22 @@ export type Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "finalSlot",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -364,6 +407,18 @@ export type Amm = {
         "fields": [
           {
             "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "permissioned",
+            "type": "bool"
+          },
+          {
+            "name": "authProgram",
+            "type": "publicKey"
+          },
+          {
+            "name": "authPdaBump",
             "type": "u8"
           },
           {
@@ -440,6 +495,10 @@ export type Amm = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "permissionedCaller",
+            "type": "publicKey"
+          },
           {
             "name": "swapFeeBps",
             "type": "u64"
@@ -491,7 +550,7 @@ export const IDL: Amm = {
       "name": "createAmm",
       "accounts": [
         {
-          "name": "payer",
+          "name": "user",
           "isMut": true,
           "isSigner": true
         },
@@ -534,6 +593,12 @@ export const IDL: Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -567,6 +632,12 @@ export const IDL: Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": []
@@ -633,6 +704,12 @@ export const IDL: Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -716,6 +793,12 @@ export const IDL: Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -782,6 +865,12 @@ export const IDL: Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
       "args": [
@@ -816,9 +905,22 @@ export const IDL: Amm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "authPda",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "finalSlot",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -849,6 +951,18 @@ export const IDL: Amm = {
         "fields": [
           {
             "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "permissioned",
+            "type": "bool"
+          },
+          {
+            "name": "authProgram",
+            "type": "publicKey"
+          },
+          {
+            "name": "authPdaBump",
             "type": "u8"
           },
           {
@@ -925,6 +1039,10 @@ export const IDL: Amm = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "permissionedCaller",
+            "type": "publicKey"
+          },
           {
             "name": "swapFeeBps",
             "type": "u64"
