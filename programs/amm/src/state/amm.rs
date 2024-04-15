@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::clock::Slot;
 
 use crate::error::AmmError;
 use crate::ONE_MINUTE_IN_SLOTS;
@@ -38,7 +39,9 @@ pub struct Amm {
     ///
     /// Assuming last observations are as big as possible (UQ64x32::MAX),
     /// we can store (2**32) of them. This translates into 54 years worth
-    /// of slots.
+    /// of slots. At this point, the aggregator will roll back to 0. It's the
+    /// client's responsibility to check that the second aggregator is bigger
+    /// than the first aggregator.
     pub twap_aggregator_uq96x32: u128,
     /// The most that a price can change per update.
     pub twap_max_change_per_update_uq64x32: u128,
@@ -104,14 +107,16 @@ impl Amm {
         let slots_passed = (self.twap_last_updated_slot - self.created_at_slot) as u128;
 
         require_neq!(slots_passed, 0, AmmError::NoSlotsPassed);
-        assert_ne!(self.twap_aggregator_uq96x32, 0);
+        assert!(self.twap_aggregator_uq96x32 != 0);
 
         Ok(self.twap_aggregator_uq96x32 / slots_passed)
     }
 
-    pub fn update_twap(&mut self) -> Result<()> {
-        let slot = Clock::get()?.slot;
-
+    /// Updates the TWAP. Should be called before any changes to the AMM's state
+    /// have been made.
+    ///
+    /// Returns an observation, stored in UQ64x32, if one was recorded.
+    pub fn update_twap(&mut self, current_slot: Slot) -> Option<u128> {
         // a manipulator is likely to be "bursty" with their usage, such as a
         // validator who abuses their slots to manipulate the TWAP.
         // meanwhile, regular trading is less likely to happen in each slot.
@@ -130,8 +135,8 @@ impl Amm {
         // we allow updates once a minute as a happy medium. if you have an asset
         // that trades near $1500 and you allow $25 updates per minute, it can double
         // over an hour.
-        if slot <= self.twap_last_updated_slot + ONE_MINUTE_IN_SLOTS {
-            return Ok(());
+        if current_slot < self.twap_last_updated_slot + ONE_MINUTE_IN_SLOTS {
+            return None;
         }
 
         let quote_amount_uq64x32 = (self.quote_amount as u128) << 32;
@@ -156,15 +161,18 @@ impl Amm {
             std::cmp::max(price_uq64x32, min_observation_uq64x32)
         };
 
-        let slot_difference = (slot - self.twap_last_updated_slot) as u128;
+        let slot_difference = (current_slot - self.twap_last_updated_slot) as u128;
         let weighted_observation_uq96x64 = observation_uq64x32 * slot_difference;
 
-        self.twap_last_updated_slot = slot;
+        self.twap_last_updated_slot = current_slot;
         self.twap_last_observation_uq64x32 = observation_uq64x32;
-        // TODO: add an error message since this can theoretically overflow
-        self.twap_aggregator_uq96x32 += weighted_observation_uq96x64;
+        // will eventually wrap back to 0 theoretically after at least 2**32 slots 
+        // but more likely after 2**40 - 2**90 slots. 2**40 slots is 5 million years
+        self.twap_aggregator_uq96x32 = self
+            .twap_aggregator_uq96x32
+            .wrapping_add(weighted_observation_uq96x64);
 
-        Ok(())
+        Some(observation_uq64x32)
     }
 
     // get base liquidity units
@@ -228,5 +236,23 @@ mod simple_amm_tests {
         // we should now get back 2
         assert_eq!(amm_clone.swap(8, Buy).unwrap(), 2);
         assert_eq!(amm_clone.k(), 30); // 2 x 15
+    }
+
+    #[test]
+    pub fn simple_twap_math_amm() {
+        let mut amm = Amm {
+            base_amount: 5,
+            quote_amount: 50,
+            twap_last_observation_uq64x32: 10 * 2_u128.pow(32),
+            twap_max_change_per_update_uq64x32: 100,
+            twap_last_updated_slot: 0,
+            ..Amm::default()
+        };
+
+        // minute hasn't passed since last slot
+        assert_eq!(amm.update_twap(1), None);
+        assert_eq!(amm.twap_last_updated_slot, 0);
+
+        assert_eq!(amm.update_twap(ONE_MINUTE_IN_SLOTS), Some(10 * 2_u128.pow(32)));
     }
 }

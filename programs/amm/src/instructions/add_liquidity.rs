@@ -85,7 +85,7 @@ pub fn handler(
     assert!(max_base_amount > 0);
     assert!(max_quote_amount > 0);
 
-    amm.update_twap()?;
+    amm.update_twap(Clock::get()?.slot);
 
     let mut temp_base_amount: u128;
     let mut temp_quote_amount: u128;

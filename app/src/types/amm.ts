@@ -51,14 +51,7 @@ export type Amm = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "createAmmParams",
-          "type": {
-            "defined": "CreateAmmParams"
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "createPosition",
@@ -301,8 +294,10 @@ export type Amm = {
       ],
       "args": [
         {
-          "name": "isQuoteToBase",
-          "type": "bool"
+          "name": "direction",
+          "type": {
+            "defined": "SwapType"
+          }
         },
         {
           "name": "inputAmount",
@@ -333,14 +328,7 @@ export type Amm = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "finalSlot",
-          "type": {
-            "option": "u64"
-          }
-        }
-      ]
+      "args": []
     }
   ],
   "accounts": [
@@ -406,58 +394,43 @@ export type Amm = {
             "type": "u64"
           },
           {
-            "name": "swapFeeBps",
+            "name": "twapLastUpdatedSlot",
             "type": "u64"
           },
           {
-            "name": "ltwapDecimals",
-            "type": "u8"
+            "name": "twapLastObservationUq64x32",
+            "docs": [
+              "To represent prices, we use fixed point numbers with 32 fractional",
+              "bits. To convert to a normal number, you can divide by",
+              "2**32."
+            ],
+            "type": "u128"
           },
           {
-            "name": "ltwapSlotUpdated",
-            "type": "u64"
+            "name": "twapAggregatorUq96x32",
+            "docs": [
+              "Running sum of slots_since_last_update * price.",
+              "",
+              "Assuming last observations are as big as possible (UQ64x32::MAX),",
+              "we can store (2**32) of them. This translates into 54 years worth",
+              "of slots. At this point, the aggregator will roll back to 0. It's the",
+              "client's responsibility to check that the second aggregator is bigger",
+              "than the first aggregator."
+            ],
+            "type": "u128"
           },
           {
-            "name": "ltwapDenominatorAgg",
-            "type": {
-              "defined": "AnchorDecimal"
-            }
-          },
-          {
-            "name": "ltwapNumeratorAgg",
-            "type": {
-              "defined": "AnchorDecimal"
-            }
-          },
-          {
-            "name": "ltwapLatest",
-            "type": "u64"
-          },
-          {
-            "name": "ltwapFrozen",
-            "type": "bool"
+            "name": "twapMaxChangePerUpdateUq64x32",
+            "docs": [
+              "The most that a price can change per update."
+            ],
+            "type": "u128"
           }
         ]
       }
     }
   ],
   "types": [
-    {
-      "name": "CreateAmmParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "swapFeeBps",
-            "type": "u64"
-          },
-          {
-            "name": "ltwapDecimals",
-            "type": "u8"
-          }
-        ]
-      }
-    },
     {
       "name": "AnchorDecimal",
       "type": {
@@ -474,16 +447,45 @@ export type Amm = {
           }
         ]
       }
+    },
+    {
+      "name": "SwapType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Buy"
+          },
+          {
+            "name": "Sell"
+          }
+        ]
+      }
     }
   ],
   "errors": [
     {
       "code": 6000,
+      "name": "NoSlotsPassed",
+      "msg": "Can't get a TWAP before some observations have been stored"
+    },
+    {
+      "code": 6001,
+      "name": "NoReserves",
+      "msg": "Can't swap through a pool without token reserves on either side"
+    },
+    {
+      "code": 6002,
+      "name": "InputAmountOverflow",
+      "msg": "Input token amount is too large for a swap, causes overflow"
+    },
+    {
+      "code": 6003,
       "name": "AddLiquidityCalculationError",
       "msg": "Add liquidity calculation error"
     },
     {
-      "code": 6001,
+      "code": 6004,
       "name": "DecimalScaleError",
       "msg": "Error in decimal scale conversion"
     }
@@ -543,14 +545,7 @@ export const IDL: Amm = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "createAmmParams",
-          "type": {
-            "defined": "CreateAmmParams"
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "createPosition",
@@ -793,8 +788,10 @@ export const IDL: Amm = {
       ],
       "args": [
         {
-          "name": "isQuoteToBase",
-          "type": "bool"
+          "name": "direction",
+          "type": {
+            "defined": "SwapType"
+          }
         },
         {
           "name": "inputAmount",
@@ -825,14 +822,7 @@ export const IDL: Amm = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "finalSlot",
-          "type": {
-            "option": "u64"
-          }
-        }
-      ]
+      "args": []
     }
   ],
   "accounts": [
@@ -898,58 +888,43 @@ export const IDL: Amm = {
             "type": "u64"
           },
           {
-            "name": "swapFeeBps",
+            "name": "twapLastUpdatedSlot",
             "type": "u64"
           },
           {
-            "name": "ltwapDecimals",
-            "type": "u8"
+            "name": "twapLastObservationUq64x32",
+            "docs": [
+              "To represent prices, we use fixed point numbers with 32 fractional",
+              "bits. To convert to a normal number, you can divide by",
+              "2**32."
+            ],
+            "type": "u128"
           },
           {
-            "name": "ltwapSlotUpdated",
-            "type": "u64"
+            "name": "twapAggregatorUq96x32",
+            "docs": [
+              "Running sum of slots_since_last_update * price.",
+              "",
+              "Assuming last observations are as big as possible (UQ64x32::MAX),",
+              "we can store (2**32) of them. This translates into 54 years worth",
+              "of slots. At this point, the aggregator will roll back to 0. It's the",
+              "client's responsibility to check that the second aggregator is bigger",
+              "than the first aggregator."
+            ],
+            "type": "u128"
           },
           {
-            "name": "ltwapDenominatorAgg",
-            "type": {
-              "defined": "AnchorDecimal"
-            }
-          },
-          {
-            "name": "ltwapNumeratorAgg",
-            "type": {
-              "defined": "AnchorDecimal"
-            }
-          },
-          {
-            "name": "ltwapLatest",
-            "type": "u64"
-          },
-          {
-            "name": "ltwapFrozen",
-            "type": "bool"
+            "name": "twapMaxChangePerUpdateUq64x32",
+            "docs": [
+              "The most that a price can change per update."
+            ],
+            "type": "u128"
           }
         ]
       }
     }
   ],
   "types": [
-    {
-      "name": "CreateAmmParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "swapFeeBps",
-            "type": "u64"
-          },
-          {
-            "name": "ltwapDecimals",
-            "type": "u8"
-          }
-        ]
-      }
-    },
     {
       "name": "AnchorDecimal",
       "type": {
@@ -966,16 +941,45 @@ export const IDL: Amm = {
           }
         ]
       }
+    },
+    {
+      "name": "SwapType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Buy"
+          },
+          {
+            "name": "Sell"
+          }
+        ]
+      }
     }
   ],
   "errors": [
     {
       "code": 6000,
+      "name": "NoSlotsPassed",
+      "msg": "Can't get a TWAP before some observations have been stored"
+    },
+    {
+      "code": 6001,
+      "name": "NoReserves",
+      "msg": "Can't swap through a pool without token reserves on either side"
+    },
+    {
+      "code": 6002,
+      "name": "InputAmountOverflow",
+      "msg": "Input token amount is too large for a swap, causes overflow"
+    },
+    {
+      "code": 6003,
       "name": "AddLiquidityCalculationError",
       "msg": "Add liquidity calculation error"
     },
     {
-      "code": 6001,
+      "code": 6004,
       "name": "DecimalScaleError",
       "msg": "Error in decimal scale conversion"
     }

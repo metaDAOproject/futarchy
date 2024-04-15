@@ -18,7 +18,7 @@ pub fn handler(ctx: Context<UpdateLtwap>) -> Result<()> {
         system_program: _,
     } = ctx.accounts;
 
-    amm.update_twap()?;
+    amm.update_twap(Clock::get()?.slot);
 
     Ok(())
 }

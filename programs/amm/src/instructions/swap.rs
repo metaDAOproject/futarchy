@@ -71,7 +71,7 @@ pub fn handler(
     assert!(input_amount > 0);
     assert!(amm.total_ownership > 0);
 
-    amm.update_twap()?;
+    amm.update_twap(Clock::get()?.slot);
 
     let output_amount = amm.swap(input_amount, swap_type)?;
 
