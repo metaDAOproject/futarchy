@@ -125,12 +125,10 @@ pub fn handler(ctx: Context<RemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
 
     let base_mint_key = base_mint.key();
     let quote_mint_key = quote_mint.key();
-    let swap_fee_bps_bytes = amm.swap_fee_bps.to_le_bytes();
 
     let seeds = generate_vault_seeds!(
         base_mint_key,
         quote_mint_key,
-        swap_fee_bps_bytes,
         amm.bump
     );
 

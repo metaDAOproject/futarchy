@@ -1,4 +1,4 @@
-use crate::error::ErrorCode;
+use crate::error::AmmError;
 use anchor_lang::prelude::*;
 
 pub use anchor_decimal::*;
@@ -29,7 +29,7 @@ pub fn get_decimal_scale_u64(decimals: u8) -> Result<u64> {
         15u8 => Ok(1000000000000000u64),
         _ => {
             msg!("{:?}", decimals);
-            err!(ErrorCode::DecimalScaleError)
+            err!(AmmError::DecimalScaleError)
         }
     }
 }

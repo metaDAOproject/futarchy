@@ -6,7 +6,6 @@ use crate::state::*;
 use crate::BPS_SCALE;
 
 #[derive(Accounts)]
-#[instruction(create_amm_params: CreateAmmParams)]
 pub struct CreateAmm<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -18,7 +17,6 @@ pub struct CreateAmm<'info> {
             AMM_SEED_PREFIX,
             base_mint.key().as_ref(),
             quote_mint.key().as_ref(),
-            create_amm_params.swap_fee_bps.to_le_bytes().as_ref(),
         ],
         bump
     )]
@@ -44,13 +42,7 @@ pub struct CreateAmm<'info> {
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
-pub struct CreateAmmParams {
-    pub swap_fee_bps: u64,
-    pub ltwap_decimals: u8,
-}
-
-pub fn handler(ctx: Context<CreateAmm>, create_amm_params: CreateAmmParams) -> Result<()> {
+pub fn handler(ctx: Context<CreateAmm>) -> Result<()> {
     let CreateAmm {
         user: _,
         amm,
@@ -64,12 +56,6 @@ pub fn handler(ctx: Context<CreateAmm>, create_amm_params: CreateAmmParams) -> R
     } = ctx.accounts;
 
     amm.created_at_slot = Clock::get()?.slot;
-
-    assert!(create_amm_params.swap_fee_bps < BPS_SCALE);
-    assert!(create_amm_params.swap_fee_bps > 0);
-
-    amm.swap_fee_bps = create_amm_params.swap_fee_bps;
-    amm.twap_decimals = create_amm_params.ltwap_decimals;
 
     assert_ne!(base_mint.key(), quote_mint.key());
 

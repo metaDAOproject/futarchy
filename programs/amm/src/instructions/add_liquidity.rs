@@ -3,7 +3,7 @@ use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::*;
 use num_traits::ToPrimitive;
 
-use crate::error::ErrorCode;
+use crate::error::AmmError;
 use crate::state::*;
 use crate::utils::*;
 
@@ -121,7 +121,7 @@ pub fn handler(
                 .unwrap();
 
             if temp_base_amount > max_base_amount as u128 {
-                return err!(ErrorCode::AddLiquidityCalculationError);
+                return err!(AmmError::AddLiquidityCalculationError);
             }
         }
 
