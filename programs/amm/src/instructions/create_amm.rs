@@ -69,7 +69,7 @@ pub fn handler(ctx: Context<CreateAmm>, create_amm_params: CreateAmmParams) -> R
     assert!(create_amm_params.swap_fee_bps > 0);
 
     amm.swap_fee_bps = create_amm_params.swap_fee_bps;
-    amm.ltwap_decimals = create_amm_params.ltwap_decimals;
+    amm.twap_decimals = create_amm_params.ltwap_decimals;
 
     assert_ne!(base_mint.key(), quote_mint.key());
 

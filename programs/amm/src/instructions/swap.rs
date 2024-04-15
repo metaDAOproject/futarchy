@@ -71,7 +71,7 @@ pub fn handler(
     assert!(input_amount > 0);
     assert!(amm.total_ownership > 0);
 
-    amm.update_ltwap()?;
+    amm.update_twap()?;
 
     let output_amount = amm.swap(input_amount, is_quote_to_base)?;
 

@@ -18,7 +18,7 @@ pub fn handler(ctx: Context<UpdateLtwap>) -> Result<()> {
         system_program: _,
     } = ctx.accounts;
 
-    amm.update_ltwap()?;
+    amm.update_twap()?;
 
     Ok(())
 }
