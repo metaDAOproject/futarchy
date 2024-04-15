@@ -43,7 +43,7 @@ use std::borrow::Borrow;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
-    name: "autocrat_v0",
+    name: "autocrat",
     project_url: "https://themetadao.org",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
@@ -144,7 +144,7 @@ pub struct ProposalAccount {
 }
 
 #[program]
-pub mod autocrat_v0 {
+pub mod autocrat {
     use super::*;
 
     pub fn initialize_dao(

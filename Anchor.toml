@@ -7,7 +7,7 @@ skip-lint = false
 [programs.localnet]
 amm = "Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz"
 autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
-autocrat_v0 = "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
+autocrat = "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
 conditional_vault = "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 
 [registry]

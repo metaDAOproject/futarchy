@@ -568,15 +568,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
-name = "autocrat_migrator"
-version = "0.1.0"
-dependencies = [
- "anchor-lang 0.29.0",
- "anchor-spl 0.29.0",
-]
-
-[[package]]
-name = "autocrat_v0"
+name = "autocrat"
 version = "1.0.0"
 dependencies = [
  "anchor-lang 0.28.0",
@@ -586,6 +578,14 @@ dependencies = [
  "openbook-v2 0.1.0 (git+https://github.com/openbook-dex/openbook-v2.git)",
  "solana-program",
  "solana-security-txt",
+]
+
+[[package]]
+name = "autocrat_migrator"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang 0.29.0",
+ "anchor-spl 0.29.0",
 ]
 
 [[package]]
