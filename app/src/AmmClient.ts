@@ -39,20 +39,11 @@ export class AmmClient {
     return new AmmClient(provider, programId || AMM_PROGRAM_ID, luts);
   }
 
-  async createAmm(
+  createAmm(
     baseMint: PublicKey,
     quoteMint: PublicKey,
-    swapFeeBps: number,
-    permissionedCaller: PublicKey = PublicKey.default,
-    ltwapDecimals = 9
   ) {
-    return ixs.createAmmHandler(
-      this,
-      baseMint,
-      quoteMint,
-      swapFeeBps,
-      ltwapDecimals
-    );
+    return ixs.createAmmHandler(this, baseMint, quoteMint);
   }
 
   async createAmmPosition(amm: PublicKey) {

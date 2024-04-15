@@ -14,11 +14,11 @@ import { getAmmAddr, getAmmPositionAddr, sleep } from "../app/src/utils";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { AmmClient } from "../app/src/AmmClient";
-import { fastForward } from "./utils/utils";
+import { expectError, fastForward } from "./utils/utils";
 
 describe("amm", async function () {
-  let provider,
-    ammClient,
+  let provider: BankrunProvider,
+    ammClient: AmmClient,
     payer,
     context,
     banksClient,
@@ -90,8 +90,7 @@ describe("amm", async function () {
 
   describe("#create_amm", async function () {
     it("create a permissionless amm", async function () {
-      let ixh = await ammClient.createAmm(META, USDC, 1);
-      await ixh.bankrun(banksClient);
+      await ammClient.createAmm(META, USDC).rpc();
 
       [permissionlessAmmAddr] = getAmmAddr(
         ammClient.program.programId,
@@ -107,6 +106,15 @@ describe("amm", async function () {
       assert.equal(permissionlessAmmAcc.quoteMint.toBase58(), USDC.toBase58());
       assert.equal(permissionlessAmmAcc.baseMintDecimals, 9);
       assert.equal(permissionlessAmmAcc.quoteMintDecimals, 6);
+    });
+
+    it("fails to create an amm with two identical mints", async function () {
+      const callbacks = expectError(
+        "SameTokenMints",
+        "create AMM succeeded despite same token mints"
+      );
+
+      await ammClient.createAmm(META, META).rpc().then(callbacks[0], callbacks[1]);
     });
   });
 

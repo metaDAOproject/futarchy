@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::*;
 
+use crate::error::AmmError;
 use crate::state::*;
 
 #[derive(Accounts)]
@@ -41,6 +42,15 @@ pub struct CreateAmm<'info> {
     pub system_program: Program<'info, System>,
 }
 
+impl CreateAmm<'_> {
+    fn validate(&self) -> Result<()> {
+        require_neq!(self.base_mint.key(), self.quote_mint.key(), AmmError::SameTokenMints);
+
+        Ok(())
+    }
+}
+
+#[access_control(ctx.accounts.validate())]
 pub fn handler(ctx: Context<CreateAmm>) -> Result<()> {
     let CreateAmm {
         user: _,
@@ -55,8 +65,6 @@ pub fn handler(ctx: Context<CreateAmm>) -> Result<()> {
     } = ctx.accounts;
 
     amm.created_at_slot = Clock::get()?.slot;
-
-    assert_ne!(base_mint.key(), quote_mint.key());
 
     amm.base_mint = base_mint.key();
     amm.quote_mint = quote_mint.key();

@@ -29,7 +29,6 @@ let constraints = {
 };
 
 export const expectError = (
-  program: Program,
   expectedError: string,
   message: string
 ): [() => void, (e: any) => void] => {

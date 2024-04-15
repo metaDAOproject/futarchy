@@ -12,4 +12,6 @@ pub enum AmmError {
     AddLiquidityCalculationError,
     #[msg("Error in decimal scale conversion")]
     DecimalScaleError,
+    #[msg("You can't create an AMM pool where the token mints are the same")]
+    SameTokenMints,
 }
