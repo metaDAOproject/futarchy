@@ -8,6 +8,7 @@ skip-lint = false
 autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 autocrat_v0 = "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
 conditional_vault = "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
+metadata = "DATAwTH3mTx43ekTTYoNXL2Z8EAMTGwENkJab7tKXHok"
 
 [registry]
 url = "https://api.apr.dev"
@@ -25,6 +26,7 @@ clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && no
 crank = "yarn run ts-node scripts/crank.ts"
 main = "yarn run ts-node scripts/main.ts"
 propose = "yarn run ts-node scripts/initializeProposal.ts"
+metadata_devnet = "yarn run ts-node scripts/metadata-devnet.ts"
 initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
 place_order = "yarn run ts-node scripts/placeOrder.ts"
 multisig = "yarn run tsx scripts/multisig.ts"
