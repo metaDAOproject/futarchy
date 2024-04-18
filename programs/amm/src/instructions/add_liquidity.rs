@@ -4,8 +4,8 @@ use anchor_spl::token::{self, *};
 use num_traits::ToPrimitive;
 
 use crate::error::AmmError;
-use crate::{generate_vault_seeds, state::*};
 use crate::utils::*;
+use crate::{generate_vault_seeds, state::*};
 
 #[derive(Accounts)]
 pub struct AddLiquidity<'info> {
@@ -108,29 +108,13 @@ pub fn handler(
     let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
     let signer = &[&seeds[..]];
 
-    // if there is no liquidity in the amm, then initialize with new ownership values
-    if amm.base_amount == 0 && amm.quote_amount == 0 {
+    let amount_to_mint = if amm.base_amount == 0 && amm.quote_amount == 0 {
+        // if there is no liquidity in the amm, then initialize with new ownership values
         temp_base_amount = max_base_amount as u128;
         temp_quote_amount = max_quote_amount as u128;
 
         // use the higher number for ownership, to reduce rounding errors
-        let max_base_or_quote_amount = std::cmp::max(temp_base_amount, temp_quote_amount);
-
-        amm_position.ownership = max_base_or_quote_amount.to_u64().unwrap();
-        amm.total_ownership = max_base_or_quote_amount.to_u64().unwrap();
-
-        token::mint_to(
-            CpiContext::new_with_signer(
-                token_program.to_account_info(),
-                MintTo {
-                    mint: lp_mint.to_account_info(),
-                    to: user_ata_lp.to_account_info(),
-                    authority: amm.to_account_info(),
-                },
-                signer,
-            ),
-            max_base_or_quote_amount.to_u64().unwrap(),
-        )?;
+        std::cmp::max(max_base_amount, max_quote_amount)
     } else {
         temp_base_amount = max_base_amount as u128;
 
@@ -172,18 +156,24 @@ pub fn handler(
             .to_u64()
             .unwrap();
 
-        let additional_ownership =
-            std::cmp::min(additional_ownership_base, additional_ownership_quote);
+        std::cmp::min(additional_ownership_base, additional_ownership_quote)
+    };
 
-        amm_position.ownership = amm_position
-            .ownership
-            .checked_add(additional_ownership)
-            .unwrap();
-        amm.total_ownership = amm
-            .total_ownership
-            .checked_add(additional_ownership)
-            .unwrap();
-    }
+    amm_position.ownership = amm_position.ownership.checked_add(amount_to_mint).unwrap();
+    amm.total_ownership = amm.total_ownership.checked_add(amount_to_mint).unwrap();
+
+    token::mint_to(
+        CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            MintTo {
+                mint: lp_mint.to_account_info(),
+                to: user_ata_lp.to_account_info(),
+                authority: amm.to_account_info(),
+            },
+            signer,
+        ),
+        amount_to_mint,
+    )?;
 
     assert!(temp_base_amount >= min_base_amount as u128);
     assert!(temp_quote_amount >= min_quote_amount as u128);

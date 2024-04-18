@@ -18,7 +18,7 @@ import { assert } from "chai";
 import { AmmClient } from "../app/src/AmmClient";
 import { expectError, fastForward } from "./utils/utils";
 import { PriceMath } from "../app/src/utils/priceMath";
-import { getAmmLpMintAddr } from "../app/src/utils/pda";
+import { getATA, getAmmLpMintAddr } from "../app/src/utils/pda";
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -226,6 +226,71 @@ describe("amm", async function () {
         payer.publicKey
       );
 
+      const userLpAccountStart = await getAccount(banksClient, userLpAccount);
+      const lpMintStart = await getMint(banksClient, lpMint);
+
+      await ammClient.addLiquidity(
+        amm,
+        META,
+        USDC,
+        ammPositionAddr,
+        new BN(10 * 10 ** 9),
+        new BN(100 * 10 ** 6),
+        new BN(10 * 0.95 * 10 ** 9),
+        new BN(100 * 0.95 * 10 ** 6)
+      ).rpc();
+
+      const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
+        amm
+      );
+      const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
+        ammPositionAddr
+      );
+      const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
+      const lpMintEnd = await getMint(banksClient, lpMint);
+
+      assert.isAbove(
+        Number(lpMintEnd.supply),
+        Number(lpMintStart.supply)
+      );
+      assert.isAbove(
+        Number(userLpAccountEnd.amount),
+        Number(userLpAccountStart.amount)
+      );
+
+      assert.isAbove(
+        permissionlessAmmEnd.totalOwnership.toNumber(),
+        permissionlessAmmStart.totalOwnership.toNumber()
+      );
+      assert.isAbove(
+        ammPositionEnd.ownership.toNumber(),
+        ammPositionStart.ownership.toNumber()
+      );
+
+      assert.isAbove(
+        permissionlessAmmEnd.baseAmount.toNumber(),
+        permissionlessAmmStart.baseAmount.toNumber()
+      );
+      assert.isAbove(
+        permissionlessAmmEnd.quoteAmount.toNumber(),
+        permissionlessAmmStart.quoteAmount.toNumber()
+      );
+    });
+
+    it("add liquidity after it's already been added", async function () {
+      const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
+        amm
+      );
+
+      let ammPositionAddr = getAmmPositionAddr(
+        ammClient.program.programId,
+        amm,
+        payer.publicKey
+      )[0];
+      const ammPositionStart =
+        await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
+
+      const [userLpAccount] = getATA(lpMint, payer.publicKey);
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
