@@ -37,33 +37,199 @@ const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
 const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.json");
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
-const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"
+// DAO Tokens
+// DeansList
+export const DEAN_DEVNET = new PublicKey(
+  "DEANPaCEAfW2SCJCdEtGvV1nT9bAShWrajnieSzUcWzh"
+)
+export const DEAN = new PublicKey(
+  "Ds52CDgqdWbTWsua1hgT3AuSSy4FNx2Ezge1br3jQ14a"
+)
+// Future DAO
+export const FUTURE_DEVNET = new PublicKey(
+  "DUMm13RrZZoJAaqr1Tz7hv44xUcrYWXADw7SEBGAvbcK"
 );
-const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
+export const FUTURE = new PublicKey(
+  "FUTURETnhzFApq2TiZiNbWLQDXMx4nWNpFtmvTf11pMy"
+)
+// MetaDAO for Mainnet and Devnet
+export const META = new PublicKey(
+  "METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr"
 );
-const OPENBOOK_TWAP_PROGRAM_ID = new PublicKey(
-  "twAP5sArq2vDS1mZCT7f4qRLwzTfHvf5Ay5R5Q5df1m"
+// Base Tokens
+// Meta USDC (created for use in our contracts)
+export const DEVNET_MUSDC = new PublicKey(
+  "B9CZDrwg7d34MiPiWoUSmddriCtQB5eB2h9EUSDHt48b"
+)
+// Circle Devnet USDC (from faucet)
+export const DEVNET_USDC = new PublicKey(
+  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
 );
+// Circle USDC Mainnet
+export const USDC = new PublicKey(
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+);
+
+// The various autocrat versions including the tokens utilized
+// NOTE: starting at v0.3 the base token is defined at the DAO level
+const AUTOCRAT_VERSIONS = [
+  {
+    version: 0,
+    programId: new PublicKey("meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"),
+    mainnetBaseToken: META,
+    mainnetQuoteToken: USDC,
+    devnetBaseToken: META,
+    devnetQuoteToken: DEVNET_MUSDC,
+    dao: 'metadao'
+  },{
+    version: 1,
+    programId: new PublicKey("metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq"),
+    mainnetBaseToken: META,
+    mainnetQuoteToken: USDC,
+    devnetBaseToken: META,
+    devnetQuoteToken: DEVNET_MUSDC,
+    dao: 'metadao'
+  },{
+    version: 2,
+    programId: new PublicKey("metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp"),
+    mainnetBaseToken: META,
+    mainnetQuoteToken: USDC,
+    devnetBaseToken: META,
+    devnetQuoteToken: DEVNET_MUSDC,
+    dao: 'metadao'
+  },{
+    version: 2,
+    programId: new PublicKey("fut5MzSUFcmxaEHMvo9qQThrAL4nAv5FQ52McqhniSt"),
+    mainnetBaseToken: FUTURE,
+    mainnetQuoteToken: USDC,
+    devnetBaseToken: FUTURE_DEVNET,
+    devnetQuoteToken: DEVNET_MUSDC,
+    dao: 'futuredao'
+  },{
+    version: 3,
+    programId: new PublicKey("FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"),
+    mainnetBaseToken: null,
+    mainnetQuoteToken: USDC,
+    devnetBaseToken: null,
+    devnetQuoteToken: DEVNET_USDC,
+    dao: 'multidao'
+  }
+];
+
+const DAOS = [
+  {
+    daoName: 'MetaDAO',
+    icon: 'metaToken.png',
+    devnetBaseToken: META,
+    mainnetBaseToken: META,
+    tokenSymbol: 'META',
+    publicKey: new PublicKey("28vP9VJyGaKgFhGVfWrS3mK9GYhSSJuZZfoAVT7zPLr2"),
+  },{
+    daoName: 'FutureDAO',
+    icon: 'futureToken.png',
+    devnetBaseToken: FUTURE_DEVNET,
+    mainnetBaseToken: FUTURE,
+    tokenSymbol: 'FUTURE',
+    publicKey: new PublicKey("8tanoHEyJEQgaasEkv1DxN6umYNWDotbaEpuzstcEufb"),
+  },{
+    daoName: 'DeansList',
+    icon: 'deanToken.png',
+    devnetBaseToken: DEAN_DEVNET,
+    mainnetBaseToken: DEAN,
+    tokenSymbol: 'DEAN',
+    publicKey: new PublicKey("5rhzhBtevKSjuFMTL377M1AWRsiTF57p9J88TzptzUPp"),
+  },
+];
+
+const CONDITIONAL_VAULT_VERSIONS = [
+  {
+    version: 0,
+    programId: new PublicKey("vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe")
+  },{
+    version: 2,
+    programId: new PublicKey("vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP")
+  },
+];
+
+const OPENBOOK_TWAP_VERSIONS = [
+  {
+    version: 0,
+    programId: new PublicKey("TWAP7frdvD3ia7TWc8e9SxZMmrpd2Yf3ifSPAHS8VG3")
+  },{
+    version: 1,
+    programId: new PublicKey("TWAPrdhADy2aTKN5iFZtNnkQYXERD9NvKjPFVPMSCNN")
+  },{
+    version: 2,
+    programId: new PublicKey("twAP5sArq2vDS1mZCT7f4qRLwzTfHvf5Ay5R5Q5df1m")
+  },
+]
+
+const AUTOCRAT_MIGRATOR_VERSIONS = [
+  {
+    version: 1,
+    programId: new PublicKey("migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3")
+  },{
+    version: 2,
+    programId: new PublicKey("MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt")
+  },
+]
+
+// Used with setting for version
+const useVersion = 3 // Which version you want to use scripts with
+const useDao = 'deanslist'
+const useNet = 'devnet'
+
+// Setup for returning from our selection above
+const AUTOCRAT = AUTOCRAT_VERSIONS.find((program) => program.version === useVersion && (program.version > 2 || program.dao === useDao))
+// Filter through our DAOs for MultiDAO
+export const DAO = DAOS.find((dao) => dao.daoName.toLowerCase() === useDao.toLowerCase())
+// Setup for fetching baseToken given the version and network
+let baseToken: PublicKey;
+if (useNet === 'devnet') {
+  baseToken = useVersion < 3 ? AUTOCRAT.devnetBaseToken : DAO.devnetBaseToken
+} else {
+  baseToken = useVersion < 3 ? AUTOCRAT.mainnetBaseToken: DAO.mainnetBaseToken
+}
+export const BASE_TOKEN = baseToken;
+export const QUOTE_TOKEN = useNet === 'devnet' ? AUTOCRAT.devnetQuoteToken : AUTOCRAT.mainnetQuoteToken
+// These programs don't always have upgrades, therefore you want to
+// use the matching version or one version less.
+// eg. v0.3 autocrat uses v0.2 twap version, or v0.1 uses v0 conditional vault
+// NOTE: The only exception is the migrator, which extends one beyond
+// eg. v0 autocrat uses v0.1 autocrat migrator
+// TODO: We need some logic to loop through and find highest version number and then step back one
+const CONDITIONAL_VAUT = CONDITIONAL_VAULT_VERSIONS.find(
+  (program) => 
+    // NOTE: This is a quick and dirty way
+    program.version === useVersion || program.version === useVersion - 1 || program.version
+)
+const OPENBOOK_TWAP = OPENBOOK_TWAP_VERSIONS.find(
+  (program) => 
+    // NOTE: This is a quick and dirty way
+    program.version === useVersion || program.version === useVersion - 1 || program.version
+)
+const AUTOCRAT_MIGRATOR = AUTOCRAT_MIGRATOR_VERSIONS.find(
+  // TODO: Hack to get this to play nice...
+  (program) => program.version === useVersion + 1 || program.version === useVersion - 1
+)
+
+// Programs for use in scripts, we afford multiple given the different versions which may be active
+const AUTOCRAT_PROGRAM_ID = AUTOCRAT.programId
+const CONDITIONAL_VAULT_PROGRAM_ID = CONDITIONAL_VAUT.programId
+const OPENBOOK_TWAP_PROGRAM_ID = OPENBOOK_TWAP.programId
+const AUTOCRAT_MIGRATOR_PROGRAM_ID = AUTOCRAT_MIGRATOR.programId
+
+console.log(`Using program versions ${useVersion}`);
+console.log(`Creating with DAO for ${useDao}`);
+console.log(`Network ${useNet}`);
+
+// Constant program ID for OpenBook
 export const OPENBOOK_PROGRAM_ID = new PublicKey(
   "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb"
 );
 
-export const META = new PublicKey(
-  "METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr"
-);
-export const DEVNET_USDC = new PublicKey(
-  "B9CZDrwg7d34MiPiWoUSmddriCtQB5eB2h9EUSDHt48b"
-);
-export const USDC = new PublicKey(
-  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-);
 export const PROPH3t_PUBKEY = new PublicKey(
   "65U66fcYuNfqN12vzateJhZ4bgDuxFWN9gMwraeQKByg"
-);
-const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
-  "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
 const MPL_TOKEN_METADATA_PROGRAM_ID = toWeb3JsPublicKey(
@@ -113,15 +279,33 @@ export const migrator = new anchor.Program<AutocratMigrator>(
   provider
 );
 
-export const [dao] = PublicKey.findProgramAddressSync(
-  [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-  autocratProgram.programId
-);
+let _dao: PublicKey;
+if (useVersion < 3) {
+  [_dao] = PublicKey.findProgramAddressSync(
+    [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+    autocratProgram.programId
+  );
+} else {
+  if (!DAO.publicKey){
+    console.log('DAO not initialized, initialize DAO');
+  } else {
+    _dao = DAO.publicKey
+  }
+}
 
-export const [daoTreasury] = PublicKey.findProgramAddressSync(
-  [dao.toBuffer()],
-  autocratProgram.programId
-);
+export const dao = _dao
+
+let _daoTreausry: PublicKey;
+if (dao) {
+  [_daoTreausry] = PublicKey.findProgramAddressSync(
+    [dao.toBuffer()],
+    autocratProgram.programId
+  );
+} else {
+  console.log('Unable to locate treasury due to DAO not being initialized')
+}
+
+export const daoTreasury = _daoTreausry
 
 async function createMint(
   mintAuthority: any,
@@ -298,104 +482,97 @@ async function initializeVault(
   return vault;
 }
 
-// todo: need to fix after contract updates, otherwise we get a typescript compiler error
-// export async function initializeDAO(META: any, USDC: any) {
-//   await autocratProgram.methods
-//     .initializeDao()
-//     .accounts({
-//       dao,
-//       metaMint: META,
-//       usdcMint: USDC,
-//     })
-//     .rpc();
-// }
+export async function initializeDAO(
+  baseToken: PublicKey,
+  quotToken: PublicKey,
+  baseLotSize: number,
+  twapExpectedValue: number,
+  daoKP: Keypair
+) {
+  const daoPublicKey = daoKP.publicKey
+  try {
+    console.log(daoPublicKey.toString())
+    const transaction = await autocratProgram.methods
+      .initializeDao(
+        new BN(baseLotSize.toString()), // Base Lot Size Number 
+        new BN(twapExpectedValue.toString()) // TWAP Expected Value
+      )
+      .accounts({
+        dao: daoPublicKey,
+        payer: payer.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        tokenMint: baseToken,
+        usdcMint: quotToken,
+      })
+      .signers([daoKP])
+      .rpc();
+    
+    console.log('DAO Successfully created');
+    console.log(transaction);
+    console.log(`Please update the configuration with this new DAO public key`)
+    console.log(daoPublicKey.toString())
+  } catch(err) {
+    console.error('Error', err)
+    throw new Error('Unable to initialize DAO!')
+  }
+}
 
 export async function fetchDao() {
   return autocratProgram.account.dao.fetch(dao);
 }
 
-// async function finalizeProposal(proposal: PublicKey) {
-//   const storedProposal = await autocratProgram.account.proposal.fetch(proposal);
-//   console.log(storedProposal)
-//   const treasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     META,
-//     daoTreasury,
-//     true
-//   );
+export async function finalizeProposal(proposal: anchor.web3.PublicKey) {
+  const storedProposal = await autocratProgram.account.proposal.fetch(proposal);
+  const startSlot = storedProposal.slotEnqueued.toNumber()
+  // TODO: Fix this for different times...
+  const endSlot = startSlot + 1_080_000
+  console.log(storedProposal)
 
-//   const treasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     USDC,
-//     daoTreasury,
-//     true
-//   );
+  // TODO: Add in check for current slot compared to end slot
 
-//   const newTreasuryMetaAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     META,
-//     newDaoTreasury,
-//     true
-//   );
+  const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ 
+    microLamports: 1000
+  });
 
-//   const newTreasuryUsdcAccount = await token.getOrCreateAssociatedTokenAccount(
-//     provider.connection,
-//     payer,
-//     USDC,
-//     newDaoTreasury,
-//     true
-//   );
+  const accounts = storedProposal.instruction.accounts
+  const program = storedProposal.instruction.programId
 
-//   const ix = await migrator.methods
-//         .multiTransfer2()
-//         .accounts({
-//           authority: daoTreasury,
-//           from0: treasuryMetaAccount.address,
-//           to0: newTreasuryMetaAccount.address,
-//           from1: treasuryUsdcAccount.address,
-//           to1: newTreasuryUsdcAccount.address,
-//           lamportReceiver: newDaoTreasury,
-//         })
-//         .instruction();
+  // Set this up for certain actions with the treasury such that the 
+  // second signer isn't really a signer..
+  try {
+    accounts[2].isSigner = false
+  } catch (e) {
+    console.error('Error:', e)
+  }
 
-//   const instruction = {
-//     programId: ix.programId,
-//     accounts: ix.keys,
-//     data: ix.data,
-//   };
+  const _program: anchor.web3.AccountMeta = {
+    pubkey: program,
+    isSigner: false,
+    isWritable: false,
+  }
 
-//   let tx = await autocratProgram.methods
-//         .finalizeProposal()
-//         .accounts({
-//           proposal,
-//           openbookTwapPassMarket: storedProposal.openbookTwapPassMarket,
-//           openbookTwapFailMarket: storedProposal.openbookTwapFailMarket,
-//           dao,
-//           baseVault: storedProposal.baseVault,
-//           quoteVault: storedProposal.quoteVault,
-//           vaultProgram: vaultProgram.programId,
-//           daoTreasury,
-//         })
-//         .remainingAccounts(
-//           instruction.accounts
-//             .concat({
-//               pubkey: instruction.programId,
-//               isWritable: false,
-//               isSigner: false,
-//             })
-//             .map((meta) =>
-//               meta.pubkey.equals(daoTreasury)
-//                 ? { ...meta, isSigner: false }
-//                 : meta
-//             )
-//         )
-//         .rpc();
+  accounts.push(_program)
 
-//     console.log("Proposal finalized", tx);
-// }
+  let tx = await autocratProgram.methods
+    .finalizeProposal()
+    .accounts({
+      proposal,
+      openbookTwapPassMarket: storedProposal.openbookTwapPassMarket,
+      openbookTwapFailMarket: storedProposal.openbookTwapFailMarket,
+      dao,
+      baseVault: storedProposal.baseVault,
+      quoteVault: storedProposal.quoteVault,
+      vaultProgram: vaultProgram.programId,
+      daoTreasury,
+    })
+    .remainingAccounts(accounts)
+    .preInstructions([
+      addPriorityFee
+    ])
+    .rpc()
+
+    console.log("Proposal finalized", tx);
+}
 
 export async function initializeProposal(
   instruction: any,
