@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Burn};
 use num_traits::ToPrimitive;
 
 use crate::*;
@@ -6,7 +7,7 @@ use crate::utils::token_transfer_signed;
 
 pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
     let AddOrRemoveLiquidity {
-        user: _,
+        user,
         amm,
         amm_position,
         lp_mint,
@@ -66,6 +67,18 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
 
     amm_position.ownership = amm_position.ownership.checked_sub(less_ownership).unwrap();
     amm.total_ownership = amm.total_ownership.checked_sub(less_ownership).unwrap();
+
+    token::burn(
+        CpiContext::new(
+            token_program.to_account_info(),
+            Burn {
+                mint: lp_mint.to_account_info(),
+                from: user_ata_lp.to_account_info(),
+                authority: user.to_account_info(),
+            },
+        ),
+        less_ownership,
+    )?;
 
     amm.base_amount = amm.base_amount.checked_sub(base_to_withdraw).unwrap();
     amm.quote_amount = amm.quote_amount.checked_sub(quote_to_withdraw).unwrap();

@@ -31,6 +31,7 @@ describe("amm", async function () {
     banksClient,
     amm,
     lpMint,
+    userLpAccount,
     META,
     USDC,
     userMetaAccount,
@@ -219,7 +220,7 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
-      let userLpAccount = await createAssociatedTokenAccount(
+      userLpAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
         lpMint,
@@ -290,7 +291,6 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
-      const [userLpAccount] = getATA(lpMint, payer.publicKey);
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
@@ -546,6 +546,9 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
+      const userLpAccountStart = await getAccount(banksClient, userLpAccount);
+      const lpMintStart = await getMint(banksClient, lpMint);
+
       await ammClient.removeLiquidity(
         amm,
         META,
@@ -554,11 +557,23 @@ describe("amm", async function () {
         new BN(5_000)
       ).rpc();
 
+      const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
+      const lpMintEnd = await getMint(banksClient, lpMint);
+
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
       );
       const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
         ammPositionAddr
+      );
+
+      assert.isBelow(
+        Number(lpMintEnd.supply),
+        Number(lpMintStart.supply)
+      );
+      assert.isBelow(
+        Number(userLpAccountEnd.amount),
+        Number(userLpAccountStart.amount)
       );
 
       assert.isBelow(
@@ -593,6 +608,9 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
+      const userLpAccountStart = await getAccount(banksClient, userLpAccount);
+      const lpMintStart = await getMint(banksClient, lpMint);
+
       await ammClient.removeLiquidity(
         amm,
         META,
@@ -600,6 +618,18 @@ describe("amm", async function () {
         ammPositionAddr,
         new BN(10_000)
       ).rpc();
+
+      const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
+      const lpMintEnd = await getMint(banksClient, lpMint);
+
+      assert.isBelow(
+        Number(lpMintEnd.supply),
+        Number(lpMintStart.supply)
+      );
+      assert.isBelow(
+        Number(userLpAccountEnd.amount),
+        Number(userLpAccountStart.amount)
+      );
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
