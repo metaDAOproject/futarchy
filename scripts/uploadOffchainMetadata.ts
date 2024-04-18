@@ -36,14 +36,14 @@ const payer = provider.wallet["payer"];
 const umi = createUmi(provider.connection);
 umi.use(keypairIdentity(payer));
 
-type AcceptedVaultTokens = "META" | "USDC";
-type ConditionalToken = "pMETA" | "fMETA" | "pUSDC" | "fUSDC";
+type AcceptedVaultTokens = "META" | "USDC" | "FUTURE" | "TOKE" | "DEAN";
+type ConditionalToken = "pMETA" | "fMETA" | "pUSDC" | "fUSDC" | "pFUTURE" | "fFUTURE" | "pTOKE" | "fTOKE" | "pDEAN" | "fDEAN";
 
 const isConditionalToken = (value: string): value is ConditionalToken =>
-  ["pMETA", "fMETA", "pUSDC", "fUSDC"].includes(value as ConditionalToken);
+  ["pMETA", "fMETA", "pUSDC", "fUSDC", "pFUTURE", "fFUTURE", "pTOKE", "fTOKE", "pDEAN", "fDEAN"].includes(value as ConditionalToken);
 
 const isAcceptedVaultToken = (value: string): value is AcceptedVaultTokens =>
-  ["META", "USDC"].includes(value as AcceptedVaultTokens);
+  ["META", "USDC", "FUTURE", "TOKE", "DEAN"].includes(value as AcceptedVaultTokens);
 
 /**
  * Usage options
