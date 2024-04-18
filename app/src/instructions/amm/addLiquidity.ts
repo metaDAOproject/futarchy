@@ -3,32 +3,31 @@ import { InstructionHandler } from "../../InstructionHandler";
 import { getATA } from "../../utils";
 import BN from "bn.js";
 import { AmmClient } from "../../AmmClient";
+import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
+import { Amm } from "../../types/amm";
 
-export const addLiquidityHandler = async (
+export const addLiquidityHandler = (
   client: AmmClient,
   ammAddr: PublicKey,
+  baseMint: PublicKey,
+  quoteMint: PublicKey,
   ammPositionAddr: PublicKey,
   maxBaseAmount: BN,
   maxQuoteAmount: BN,
   minBaseAmount: BN,
   minQuoteAmount: BN
-): Promise<InstructionHandler<typeof client.program, AmmClient>> => {
-  const amm = await client.program.account.amm.fetch(ammAddr);
-
-  let ix = await client.program.methods
+): MethodsBuilder<Amm, any> => {
+  return client.program.methods
     .addLiquidity(maxBaseAmount, maxQuoteAmount, minBaseAmount, minQuoteAmount)
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,
       ammPosition: ammPositionAddr,
-      baseMint: amm.baseMint,
-      quoteMint: amm.quoteMint,
-      userAtaBase: getATA(amm.baseMint, client.provider.publicKey)[0],
-      userAtaQuote: getATA(amm.quoteMint, client.provider.publicKey)[0],
-      vaultAtaBase: getATA(amm.baseMint, ammAddr)[0],
-      vaultAtaQuote: getATA(amm.quoteMint, ammAddr)[0],
-    })
-    .instruction();
-
-  return new InstructionHandler([ix], [], client);
+      baseMint,
+      quoteMint,
+      userAtaBase: getATA(baseMint, client.provider.publicKey)[0],
+      userAtaQuote: getATA(quoteMint, client.provider.publicKey)[0],
+      vaultAtaBase: getATA(baseMint, ammAddr)[0],
+      vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
+    });
 };

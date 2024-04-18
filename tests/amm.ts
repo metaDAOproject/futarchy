@@ -217,15 +217,16 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
-      let ixh = await ammClient.addLiquidity(
+      await ammClient.addLiquidity(
         permissionlessAmmAddr,
+        META,
+        USDC,
         ammPositionAddr,
         new BN(10 * 10 ** 9),
         new BN(100 * 10 ** 6),
         new BN(10 * 0.95 * 10 ** 9),
         new BN(100 * 0.95 * 10 ** 6)
-      );
-      await ixh.bankrun(banksClient);
+      ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         permissionlessAmmAddr

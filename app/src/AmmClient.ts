@@ -61,8 +61,10 @@ export class AmmClient {
     return ixs.createAmmPositionHandler(this, amm);
   }
 
-  async addLiquidity(
+  addLiquidity(
     ammAddr: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
     ammPositionAddr: PublicKey,
     maxBaseAmount: BN,
     maxQuoteAmount: BN,
@@ -72,6 +74,8 @@ export class AmmClient {
     return ixs.addLiquidityHandler(
       this,
       ammAddr,
+      baseMint,
+      quoteMint,
       ammPositionAddr,
       maxBaseAmount,
       maxQuoteAmount,
