@@ -28,6 +28,16 @@ pub struct CreateAmm<'info> {
         bump
     )]
     pub amm: Account<'info, Amm>,
+    #[account(
+        init,
+        payer = user,
+        seeds = [AMM_LP_MINT_SEED_PREFIX, amm.key().as_ref()],
+        bump,
+        mint::authority = amm,
+        mint::freeze_authority = amm,
+        mint::decimals = 9,
+    )]
+    pub lp_mint: Box<Account<'info, Mint>>,
     pub base_mint: Account<'info, Mint>,
     pub quote_mint: Account<'info, Mint>,
     #[account(
@@ -66,6 +76,7 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
     let CreateAmm {
         user: _,
         amm,
+        lp_mint,
         base_mint,
         quote_mint,
         vault_ata_base: _,
@@ -87,6 +98,7 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
 
         created_at_slot: current_slot,
 
+        lp_mint: lp_mint.key(),
         base_mint: base_mint.key(),
         quote_mint: quote_mint.key(),
 
@@ -95,8 +107,6 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
 
         base_amount: 0,
         quote_amount: 0,
-
-        total_ownership: 0,
 
         oracle: TwapOracle::new(
             current_slot,

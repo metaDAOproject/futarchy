@@ -14,21 +14,15 @@ export type ProposalWrapper = {
   publicKey: PublicKey;
 };
 
-export type ProposalVault = IdlAccounts<AutocratIDLType>["proposalVault"];
-export type ProposalInstructions =
-  IdlAccounts<AutocratIDLType>["proposalInstructions"];
+// export type ProposalVault = IdlAccounts<AutocratIDLType>["proposalVault"];
+// export type ProposalInstructions =
+//   IdlAccounts<AutocratIDLType>["proposalInstructions"];
 
 export type Dao = IdlAccounts<AutocratIDLType>["dao"];
-export type DaoTreasury = IdlAccounts<AutocratIDLType>["daoTreasury"];
+// export type DaoTreasury = IdlAccounts<AutocratIDLType>["daoTreasury"];
 
 export type Amm = IdlAccounts<AmmIDLType>["amm"];
 export type AmmWrapper = {
   account: Amm;
-  publicKey: PublicKey;
-};
-
-export type AmmPosition = IdlAccounts<AmmIDLType>["ammPosition"];
-export type AmmPositionWrapper = {
-  account: AmmPosition;
   publicKey: PublicKey;
 };

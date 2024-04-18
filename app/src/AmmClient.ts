@@ -1,13 +1,12 @@
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import { AddressLookupTableAccount, PublicKey } from "@solana/web3.js";
+import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
 
 import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
 
 import * as ixs from "./instructions/amm";
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants";
-import { Amm, AmmPositionWrapper, AmmWrapper } from "./types";
-import { filterPositionsByUser, filterPositionsByAmm } from "./utils";
+import { Amm, AmmWrapper } from "./types";
 
 export type CreateAmmClientParams = {
   provider: AnchorProvider;
@@ -46,16 +45,19 @@ export class AmmClient {
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN,
   ) {
-    return ixs.createAmmHandler(this, baseMint, quoteMint, twapInitialObservation, twapMaxObservationChangePerUpdate);
+    return ixs.createAmmHandler(
+      this,
+      baseMint,
+      quoteMint,
+      twapInitialObservation,
+      twapMaxObservationChangePerUpdate,
+    );
   }
 
-  async createAmmPosition(amm: PublicKey) {
-    return ixs.createAmmPositionHandler(this, amm);
-  }
-
-  async addLiquidity(
+  addLiquidity(
     ammAddr: PublicKey,
-    ammPositionAddr: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
     maxBaseAmount: BN,
     maxQuoteAmount: BN,
     minBaseAmount: BN,
@@ -64,7 +66,8 @@ export class AmmClient {
     return ixs.addLiquidityHandler(
       this,
       ammAddr,
-      ammPositionAddr,
+      baseMint,
+      quoteMint,
       maxBaseAmount,
       maxQuoteAmount,
       minBaseAmount,
@@ -72,21 +75,25 @@ export class AmmClient {
     );
   }
 
-  async removeLiquidity(
+  removeLiquidity(
     ammAddr: PublicKey,
-    ammPositionAddr: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
     removeBps: BN
   ) {
     return ixs.removeLiquidityHandler(
       this,
       ammAddr,
-      ammPositionAddr,
+      baseMint,
+      quoteMint,
       removeBps
     );
   }
 
-  async swap(
+  swap(
     ammAddr: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
     isQuoteToBase: boolean,
     inputAmount: BN,
     minOutputAmount: BN
@@ -94,6 +101,8 @@ export class AmmClient {
     return ixs.swapHandler(
       this,
       ammAddr,
+      baseMint,
+      quoteMint,
       isQuoteToBase,
       inputAmount,
       minOutputAmount
@@ -121,30 +130,6 @@ export class AmmClient {
     return await this.program.account.amm.all();
   }
 
-  async getAllUserPositions(): Promise<AmmPositionWrapper[]> {
-    try {
-      return await this.program.account.ammPosition.all([
-        filterPositionsByUser(this.provider.wallet.publicKey),
-      ]);
-    } catch (e) {
-      return [];
-    }
-  }
-
-  async getUserPositionForAmm(
-    ammAddr: PublicKey
-  ): Promise<AmmPositionWrapper | undefined> {
-    try {
-      return (
-        await this.program.account.ammPosition.all([
-          filterPositionsByUser(this.provider.wallet.publicKey),
-          filterPositionsByAmm(ammAddr),
-        ])
-      )[0];
-    } catch (e) {
-      return undefined;
-    }
-  }
 
   getSwapPreview(amm: Amm, inputAmount: BN, isBuyBase: boolean): SwapPreview {
     let quoteAmount = amm.quoteAmount;

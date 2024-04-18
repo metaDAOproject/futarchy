@@ -1,5 +1,5 @@
 export type Amm = {
-  "version": "0.1.0",
+  "version": "1.0.0",
   "name": "amm",
   "instructions": [
     {
@@ -12,6 +12,11 @@ export type Amm = {
         },
         {
           "name": "amm",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
           "isMut": true,
           "isSigner": false
         },
@@ -61,32 +66,6 @@ export type Amm = {
       ]
     },
     {
-      "name": "createPosition",
-      "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "amm",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "addLiquidity",
       "accounts": [
         {
@@ -100,7 +79,7 @@ export type Amm = {
           "isSigner": false
         },
         {
-          "name": "ammPosition",
+          "name": "lpMint",
           "isMut": true,
           "isSigner": false
         },
@@ -112,6 +91,11 @@ export type Amm = {
         {
           "name": "quoteMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAtaLp",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -183,7 +167,7 @@ export type Amm = {
           "isSigner": false
         },
         {
-          "name": "ammPosition",
+          "name": "lpMint",
           "isMut": true,
           "isSigner": false
         },
@@ -195,6 +179,11 @@ export type Amm = {
         {
           "name": "quoteMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAtaLp",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -340,26 +329,6 @@ export type Amm = {
   ],
   "accounts": [
     {
-      "name": "ammPosition",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "user",
-            "type": "publicKey"
-          },
-          {
-            "name": "amm",
-            "type": "publicKey"
-          },
-          {
-            "name": "ownership",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
       "name": "amm",
       "type": {
         "kind": "struct",
@@ -371,6 +340,10 @@ export type Amm = {
           {
             "name": "createdAtSlot",
             "type": "u64"
+          },
+          {
+            "name": "lpMint",
+            "type": "publicKey"
           },
           {
             "name": "baseMint",
@@ -394,10 +367,6 @@ export type Amm = {
           },
           {
             "name": "quoteAmount",
-            "type": "u64"
-          },
-          {
-            "name": "totalOwnership",
             "type": "u64"
           },
           {
@@ -464,9 +433,14 @@ export type Amm = {
               "we can store 18 million slots worth of observations, which turns out to",
               "be ~85 days worth of slots.",
               "",
-              "At this point, the aggregot will roll back to 0. It's the client's",
-              "responsibility to check that the second aggregator is bigger than the",
-              "first aggregator."
+              "Assuming that latest observations are 100x smaller than they could theoretically",
+              "be, we can store 8500 days (23 years) worth of them. Even this is a very",
+              "very conservative assumption - META/USDC prices should be between 1e9 and",
+              "1e15, which would overflow after 1e15 years worth of slots.",
+              "",
+              "So in the case of an overflow, the aggregator rolls back to 0. It's the",
+              "client's responsibility to sanity check the assets or to handle an",
+              "aggregator at t2 being smaller than an aggregator at t1."
             ],
             "type": "u128"
           },
@@ -532,12 +506,17 @@ export type Amm = {
       "code": 6005,
       "name": "SameTokenMints",
       "msg": "You can't create an AMM pool where the token mints are the same"
+    },
+    {
+      "code": 6006,
+      "name": "SlippageExceeded",
+      "msg": "A user wouldn't have gotten back their `output_amount_min`, reverting"
     }
   ]
 };
 
 export const IDL: Amm = {
-  "version": "0.1.0",
+  "version": "1.0.0",
   "name": "amm",
   "instructions": [
     {
@@ -550,6 +529,11 @@ export const IDL: Amm = {
         },
         {
           "name": "amm",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
           "isMut": true,
           "isSigner": false
         },
@@ -599,32 +583,6 @@ export const IDL: Amm = {
       ]
     },
     {
-      "name": "createPosition",
-      "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "amm",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "addLiquidity",
       "accounts": [
         {
@@ -638,7 +596,7 @@ export const IDL: Amm = {
           "isSigner": false
         },
         {
-          "name": "ammPosition",
+          "name": "lpMint",
           "isMut": true,
           "isSigner": false
         },
@@ -650,6 +608,11 @@ export const IDL: Amm = {
         {
           "name": "quoteMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAtaLp",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -721,7 +684,7 @@ export const IDL: Amm = {
           "isSigner": false
         },
         {
-          "name": "ammPosition",
+          "name": "lpMint",
           "isMut": true,
           "isSigner": false
         },
@@ -733,6 +696,11 @@ export const IDL: Amm = {
         {
           "name": "quoteMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAtaLp",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -878,26 +846,6 @@ export const IDL: Amm = {
   ],
   "accounts": [
     {
-      "name": "ammPosition",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "user",
-            "type": "publicKey"
-          },
-          {
-            "name": "amm",
-            "type": "publicKey"
-          },
-          {
-            "name": "ownership",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
       "name": "amm",
       "type": {
         "kind": "struct",
@@ -909,6 +857,10 @@ export const IDL: Amm = {
           {
             "name": "createdAtSlot",
             "type": "u64"
+          },
+          {
+            "name": "lpMint",
+            "type": "publicKey"
           },
           {
             "name": "baseMint",
@@ -932,10 +884,6 @@ export const IDL: Amm = {
           },
           {
             "name": "quoteAmount",
-            "type": "u64"
-          },
-          {
-            "name": "totalOwnership",
             "type": "u64"
           },
           {
@@ -1002,9 +950,14 @@ export const IDL: Amm = {
               "we can store 18 million slots worth of observations, which turns out to",
               "be ~85 days worth of slots.",
               "",
-              "At this point, the aggregot will roll back to 0. It's the client's",
-              "responsibility to check that the second aggregator is bigger than the",
-              "first aggregator."
+              "Assuming that latest observations are 100x smaller than they could theoretically",
+              "be, we can store 8500 days (23 years) worth of them. Even this is a very",
+              "very conservative assumption - META/USDC prices should be between 1e9 and",
+              "1e15, which would overflow after 1e15 years worth of slots.",
+              "",
+              "So in the case of an overflow, the aggregator rolls back to 0. It's the",
+              "client's responsibility to sanity check the assets or to handle an",
+              "aggregator at t2 being smaller than an aggregator at t1."
             ],
             "type": "u128"
           },
@@ -1070,6 +1023,11 @@ export const IDL: Amm = {
       "code": 6005,
       "name": "SameTokenMints",
       "msg": "You can't create an AMM pool where the token mints are the same"
+    },
+    {
+      "code": 6006,
+      "name": "SlippageExceeded",
+      "msg": "A user wouldn't have gotten back their `output_amount_min`, reverting"
     }
   ]
 };

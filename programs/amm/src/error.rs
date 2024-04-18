@@ -14,4 +14,6 @@ pub enum AmmError {
     DecimalScaleError,
     #[msg("You can't create an AMM pool where the token mints are the same")]
     SameTokenMints,
+    #[msg("A user wouldn't have gotten back their `output_amount_min`, reverting")]
+    SlippageExceeded,
 }
