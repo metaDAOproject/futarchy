@@ -1,9 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Burn};
+use anchor_spl::token::{self, Burn, Transfer};
 use num_traits::ToPrimitive;
 
 use crate::*;
-use crate::utils::token_transfer_signed;
 
 pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
     let AddOrRemoveLiquidity {
@@ -63,7 +62,6 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
         .to_u64()
         .unwrap();
 
-
     token::burn(
         CpiContext::new(
             token_program.to_account_info(),
@@ -84,25 +82,23 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
 
     let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
 
-    // send vault base tokens to user
-    token_transfer_signed(
-        base_to_withdraw,
-        token_program,
-        vault_ata_base,
-        user_ata_base,
-        amm,
-        seeds,
-    )?;
-
-    // send vault quote tokens to user
-    token_transfer_signed(
-        quote_to_withdraw,
-        token_program,
-        vault_ata_quote,
-        user_ata_quote,
-        amm,
-        seeds,
-    )?;
+    for (amount_to_withdraw, from, to) in [
+        (base_to_withdraw, vault_ata_base, user_ata_base),
+        (quote_to_withdraw, vault_ata_quote, user_ata_quote),
+    ] {
+        token::transfer(
+            CpiContext::new_with_signer(
+                token_program.to_account_info(),
+                Transfer {
+                    from: from.to_account_info(),
+                    to: to.to_account_info(),
+                    authority: amm.to_account_info(),
+                },
+                &[seeds],
+            ),
+            amount_to_withdraw as u64,
+        )?;
+    }
 
     Ok(())
 }
