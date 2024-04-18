@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::*;
+use anchor_spl::token::{self, *};
 
 use crate::error::AmmError;
 use crate::generate_vault_seeds;
 use crate::state::*;
-use crate::utils::{token_transfer, token_transfer_signed};
 
 #[derive(Accounts)]
 pub struct Swap<'info> {
@@ -79,47 +78,45 @@ pub fn handler(
 
     let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
 
-    match swap_type {
-        SwapType::Buy => {
-            token_transfer(
-                input_amount,
-                token_program,
-                user_ata_quote,
-                vault_ata_quote,
-                &user,
-            )?;
+    let (user_from, vault_to, vault_from, user_to) = match swap_type {
+        SwapType::Buy => (
+            user_ata_quote,
+            vault_ata_quote,
+            vault_ata_base,
+            user_ata_base,
+        ),
+        SwapType::Sell => (
+            user_ata_base,
+            vault_ata_base,
+            vault_ata_quote,
+            user_ata_quote,
+        ), 
+    };
 
-            // send vault base tokens to user
-            token_transfer_signed(
-                output_amount,
-                token_program,
-                vault_ata_base,
-                user_ata_base,
-                amm,
-                seeds,
-            )?;
-        }
-        SwapType::Sell => {
-            // send user base tokens to vault
-            token_transfer(
-                input_amount,
-                token_program,
-                &user_ata_base,
-                &vault_ata_base,
-                &user,
-            )?;
+    token::transfer(
+        CpiContext::new(
+            token_program.to_account_info(),
+            Transfer {
+                from: user_from.to_account_info(),
+                to: vault_to.to_account_info(),
+                authority: user.to_account_info(),
+            },
+        ),
+        input_amount,
+    )?;
 
-            // send vault quote tokens to user
-            token_transfer_signed(
-                output_amount,
-                token_program,
-                vault_ata_quote,
-                user_ata_quote,
-                amm,
-                seeds,
-            )?;
-        }
-    }
+    token::transfer(
+        CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            Transfer {
+                from: vault_from.to_account_info(),
+                to: user_to.to_account_info(),
+                authority: amm.to_account_info(),
+            },
+            &[seeds],
+        ),
+        output_amount,
+    )?;
 
     require_gte!(output_amount, output_amount_min, AmmError::SlippageExceeded);
 

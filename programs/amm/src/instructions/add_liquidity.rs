@@ -3,8 +3,8 @@ use anchor_spl::token::{self, *};
 use num_traits::ToPrimitive;
 
 use crate::error::AmmError;
-use crate::{utils::*, AddOrRemoveLiquidity};
 use crate::{generate_vault_seeds, state::*};
+use crate::{utils::*, AddOrRemoveLiquidity};
 
 pub fn handler(
     ctx: Context<AddOrRemoveLiquidity>,
@@ -120,23 +120,22 @@ pub fn handler(
         .checked_add(temp_quote_amount.to_u64().unwrap())
         .unwrap();
 
-    // send user base tokens to vault
-    token_transfer(
-        temp_base_amount as u64,
-        &token_program,
-        user_ata_base,
-        vault_ata_base,
-        user,
-    )?;
-
-    // send user quote tokens to vault
-    token_transfer(
-        temp_quote_amount as u64,
-        token_program,
-        user_ata_quote,
-        vault_ata_quote,
-        user,
-    )?;
+    for (amount, from, to) in [
+        (temp_base_amount, user_ata_base, vault_ata_base),
+        (temp_quote_amount, user_ata_quote, vault_ata_quote),
+    ] {
+        token::transfer(
+            CpiContext::new(
+                token_program.to_account_info(),
+                Transfer {
+                    from: from.to_account_info(),
+                    to: to.to_account_info(),
+                    authority: user.to_account_info(),
+                },
+            ),
+            amount as u64,
+        )?;
+    }
 
     Ok(())
 }
