@@ -76,7 +76,7 @@ pub fn handler(
     let base_mint_key = base_mint.key();
     let quote_mint_key = quote_mint.key();
 
-    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
+    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.nonce, amm.bump);
 
     let (user_from, vault_to, vault_from, user_to) = match swap_type {
         SwapType::Buy => (

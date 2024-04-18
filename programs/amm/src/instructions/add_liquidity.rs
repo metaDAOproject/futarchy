@@ -4,7 +4,7 @@ use num_traits::ToPrimitive;
 
 use crate::error::AmmError;
 use crate::{generate_vault_seeds, state::*};
-use crate::{utils::*, AddOrRemoveLiquidity};
+use crate::AddOrRemoveLiquidity;
 
 pub fn handler(
     ctx: Context<AddOrRemoveLiquidity>,
@@ -40,7 +40,7 @@ pub fn handler(
     let base_mint_key = amm.base_mint;
     let quote_mint_key = amm.quote_mint;
 
-    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
+    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.nonce, amm.bump);
     let signer = &[&seeds[..]];
 
     let amount_to_mint = if amm.base_amount == 0 && amm.quote_amount == 0 {

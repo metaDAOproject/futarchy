@@ -12,7 +12,7 @@ import {
   getMint,
 } from "spl-token-bankrun";
 
-import { getAmmAddr, getAmmPositionAddr, sleep } from "../app/src/utils";
+import { getAmmAddr, sleep } from "../app/src/utils";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { AmmClient } from "../app/src/AmmClient";
@@ -102,19 +102,23 @@ describe("amm", async function () {
         twapMaxObservationChangePerUpdateScaled,
       ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
 
+      let nonce = new BN(0);
+
       await ammClient
         .createAmm(
           META,
           USDC,
           twapFirstObservationScaled,
           twapMaxObservationChangePerUpdateScaled,
+          nonce
         ).rpc();
 
       let bump;
       [amm, bump] = getAmmAddr(
         ammClient.program.programId,
         META,
-        USDC
+        USDC,
+        nonce
       );
 
       const ammAcc = await ammClient.getAmm(amm);
