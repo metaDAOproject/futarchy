@@ -13,10 +13,12 @@ pub struct AddLiquidity<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
+        has_one = lp_mint,
         has_one = base_mint,
         has_one = quote_mint,
     )]
     pub amm: Account<'info, Amm>,
+    pub lp_mint: Account<'info, Mint>,
     #[account(
         mut,
         has_one = user,
@@ -31,6 +33,13 @@ pub struct AddLiquidity<'info> {
     pub amm_position: Account<'info, AmmPosition>,
     pub base_mint: Account<'info, Mint>,
     pub quote_mint: Account<'info, Mint>,
+    // #[account(
+    //     init_if_needed,
+    //     payer = user,
+    //     associated_token::mint = lp_mint,
+    //     associated_token::authority = user,
+    // )]
+    // pub user_ata_lp: Account<'info, TokenAccount>,
     #[account(
         mut,
         associated_token::mint = base_mint,
@@ -70,9 +79,11 @@ pub fn handler(
     let AddLiquidity {
         user,
         amm,
+        lp_mint,
         amm_position,
         base_mint: _,
         quote_mint: _,
+        // user_ata_lp,
         user_ata_base,
         user_ata_quote,
         vault_ata_base,

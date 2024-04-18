@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::*;
 
+use crate::error::AmmError;
 use crate::generate_vault_seeds;
 use crate::state::*;
 use crate::utils::{token_transfer, token_transfer_signed};
@@ -121,7 +122,7 @@ pub fn handler(
         }
     }
 
-    assert!(output_amount >= output_amount_min);
+    require_gte!(output_amount, output_amount_min, AmmError::SlippageExceeded);
 
     Ok(())
 }

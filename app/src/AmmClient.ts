@@ -45,7 +45,6 @@ export class AmmClient {
     quoteMint: PublicKey,
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN,
-    lpMint: Keypair = Keypair.generate()
   ) {
     return ixs.createAmmHandler(
       this,
@@ -53,7 +52,6 @@ export class AmmClient {
       quoteMint,
       twapInitialObservation,
       twapMaxObservationChangePerUpdate,
-      lpMint
     );
   }
 
@@ -61,8 +59,10 @@ export class AmmClient {
     return ixs.createAmmPositionHandler(this, amm);
   }
 
-  async addLiquidity(
+  addLiquidity(
     ammAddr: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
     ammPositionAddr: PublicKey,
     maxBaseAmount: BN,
     maxQuoteAmount: BN,
@@ -72,6 +72,8 @@ export class AmmClient {
     return ixs.addLiquidityHandler(
       this,
       ammAddr,
+      baseMint,
+      quoteMint,
       ammPositionAddr,
       maxBaseAmount,
       maxQuoteAmount,
@@ -93,8 +95,10 @@ export class AmmClient {
     );
   }
 
-  async swap(
+  swap(
     ammAddr: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
     isQuoteToBase: boolean,
     inputAmount: BN,
     minOutputAmount: BN
@@ -102,6 +106,8 @@ export class AmmClient {
     return ixs.swapHandler(
       this,
       ammAddr,
+      baseMint,
+      quoteMint,
       isQuoteToBase,
       inputAmount,
       minOutputAmount

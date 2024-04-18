@@ -31,11 +31,13 @@ pub struct CreateAmm<'info> {
     #[account(
         init,
         payer = user,
+        seeds = [AMM_LP_MINT_SEED_PREFIX, amm.key().as_ref()],
+        bump,
         mint::authority = amm,
         mint::freeze_authority = amm,
-        mint::decimals = 9
+        mint::decimals = 9,
     )]
-    pub lp_mint: Account<'info, Mint>,
+    pub lp_mint: Box<Account<'info, Mint>>,
     pub base_mint: Account<'info, Mint>,
     pub quote_mint: Account<'info, Mint>,
     #[account(

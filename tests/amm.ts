@@ -16,6 +16,7 @@ import { assert } from "chai";
 import { AmmClient } from "../app/src/AmmClient";
 import { expectError, fastForward } from "./utils/utils";
 import { PriceMath } from "../app/src/utils/priceMath";
+import { getAmmLpMintAddr } from "../app/dist";
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -97,16 +98,13 @@ describe("amm", async function () {
         twapMaxObservationChangePerUpdateScaled,
       ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
 
-      const lpMint = Keypair.generate();
       await ammClient
         .createAmm(
           META,
           USDC,
           twapFirstObservationScaled,
           twapMaxObservationChangePerUpdateScaled,
-          lpMint
-        )
-        .rpc();
+        ).rpc();
 
       let bump;
       [permissionlessAmmAddr, bump] = getAmmAddr(
@@ -125,9 +123,10 @@ describe("amm", async function () {
           permissionlessAmmAcc.oracle.lastUpdatedSlot
         )
       );
+      let [lpMint] = getAmmLpMintAddr(ammClient.program.programId, permissionlessAmmAddr);
       assert.equal(
         permissionlessAmmAcc.lpMint.toBase58(),
-        lpMint.publicKey.toBase58()
+        lpMint.toBase58()
       );
       assert.equal(permissionlessAmmAcc.baseMint.toBase58(), META.toBase58());
       assert.equal(permissionlessAmmAcc.quoteMint.toBase58(), USDC.toBase58());
@@ -217,15 +216,18 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
-      let ixh = await ammClient.addLiquidity(
+      await ammClient.addLiquidity(
         permissionlessAmmAddr,
+        META,
+        USDC,
         ammPositionAddr,
         new BN(10 * 10 ** 9),
         new BN(100 * 10 ** 6),
         new BN(10 * 0.95 * 10 ** 9),
         new BN(100 * 0.95 * 10 ** 6)
-      );
-      await ixh.bankrun(banksClient);
+      ).rpc();
+      // await ixh.bankrun(banksClient);
+
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         permissionlessAmmAddr
@@ -260,13 +262,14 @@ describe("amm", async function () {
         permissionlessAmmAddr
       );
 
-      let ixh = await ammClient.swap(
+      await ammClient.swap(
         permissionlessAmmAddr,
+        META,
+        USDC,
         true,
         new BN(10 * 10 ** 6),
         new BN(0.8 * 10 ** 9)
-      );
-      await ixh.bankrun(banksClient);
+      ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         permissionlessAmmAddr
@@ -287,13 +290,14 @@ describe("amm", async function () {
         permissionlessAmmAddr
       );
 
-      let ixh = await ammClient.swap(
+      await ammClient.swap(
         permissionlessAmmAddr,
+        META,
+        USDC,
         false,
         new BN(1 * 10 ** 9),
         new BN(8 * 10 ** 6)
-      );
-      await ixh.bankrun(banksClient);
+      ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         permissionlessAmmAddr
@@ -316,13 +320,14 @@ describe("amm", async function () {
 
       let startingBaseSwapAmount = 1 * 10 ** 9;
 
-      let ixh1 = await ammClient.swap(
+      await ammClient.swap(
         permissionlessAmmAddr,
+        META,
+        USDC,
         false,
         new BN(startingBaseSwapAmount),
         new BN(1)
-      );
-      await ixh1.bankrun(banksClient);
+      ).rpc();
 
       await fastForward(context, 1n);
 
@@ -333,13 +338,14 @@ describe("amm", async function () {
         permissionlessAmmStart.quoteAmount.toNumber() -
         permissionlessAmmMiddle.quoteAmount.toNumber();
 
-      let ixh2 = await ammClient.swap(
+      await ammClient.swap(
         permissionlessAmmAddr,
+        META,
+        USDC,
         true,
         new BN(quoteReceived),
         new BN(1)
-      );
-      await ixh2.bankrun(banksClient);
+      ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         permissionlessAmmAddr
@@ -359,13 +365,14 @@ describe("amm", async function () {
 
       let startingQuoteSwapAmount = 1 * 10 ** 6;
 
-      let ixh1 = await ammClient.swap(
+      await ammClient.swap(
         permissionlessAmmAddr,
+        META,
+        USDC,
         true,
         new BN(startingQuoteSwapAmount),
         new BN(1)
-      );
-      await ixh1.bankrun(banksClient);
+      ).rpc();
 
       await fastForward(context, 1n);
 
@@ -376,13 +383,14 @@ describe("amm", async function () {
         permissionlessAmmStart.baseAmount.toNumber() -
         permissionlessAmmMiddle.baseAmount.toNumber();
 
-      let ixh2 = await ammClient.swap(
+      await ammClient.swap(
         permissionlessAmmAddr,
+        META,
+        USDC,
         false,
         new BN(baseReceived),
         new BN(1)
-      );
-      await ixh2.bankrun(banksClient);
+      ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         permissionlessAmmAddr

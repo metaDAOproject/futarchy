@@ -1,7 +1,7 @@
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { AmmClient } from "../../AmmClient";
 import { InstructionHandler } from "../../InstructionHandler";
-import { getATA, getAmmAddr } from "../../utils";
+import { getATA, getAmmAddr, getAmmLpMintAddr } from "../../utils";
 import BN from "bn.js";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
 import { Amm } from "../../types/amm";
@@ -12,9 +12,9 @@ export const createAmmHandler = (
   quoteMint: PublicKey,
   twapInitialObservation: BN,
   twapMaxObservationChangePerUpdate: BN,
-  lpMint: Keypair
 ): MethodsBuilder<Amm, any> => {
   let [ammAddr] = getAmmAddr(client.program.programId, baseMint, quoteMint);
+  let [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
 
   let [vaultAtaBase] = getATA(baseMint, ammAddr);
   let [vaultAtaQuote] = getATA(quoteMint, ammAddr);
@@ -27,11 +27,10 @@ export const createAmmHandler = (
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,
-      lpMint: lpMint.publicKey,
+      lpMint,
       baseMint,
       quoteMint,
       vaultAtaBase,
       vaultAtaQuote,
-    })
-    .signers([lpMint]);
+    });
 };
