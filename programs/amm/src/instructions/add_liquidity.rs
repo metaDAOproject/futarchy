@@ -18,7 +18,7 @@ pub struct AddLiquidity<'info> {
         has_one = quote_mint,
     )]
     pub amm: Account<'info, Amm>,
-    pub lp_mint: Account<'info, Mint>,
+    pub lp_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
         has_one = user,
