@@ -1,0 +1,296 @@
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::clock::Slot;
+
+use crate::error::AmmError;
+use crate::{MAX_PRICE, ONE_MINUTE_IN_SLOTS, PRICE_SCALE};
+use std::cmp::{max, min};
+
+#[derive(Clone, Copy, Debug, AnchorSerialize, AnchorDeserialize)]
+pub enum SwapType {
+    /// Swap quote tokens into base tokens
+    Buy,
+    /// Swap base tokens into quote tokens
+    Sell,
+}
+
+#[derive(Default, Clone, Copy, Debug, AnchorDeserialize, AnchorSerialize)]
+pub struct TwapOracle {
+    pub last_updated_slot: u64,
+    /// A price is the number of quote units per base unit multiplied by 1e12.
+    /// You cannot simply divide by 1e12 to get a price you can display in the UI
+    /// because the base and quote decimals may be different. Instead, do:
+    /// ui_price = (price * (10**(base_decimals - quote_decimals))) / 1e12
+    pub last_price: u128,
+    /// If we did a raw TWAP over prices, someone could push the TWAP heavily with
+    /// a few extremely large outliers. So we use observations, which can only move
+    /// by `max_observation_change_per_update` per update.
+    pub last_observation: u128,
+    /// Running sum of slots_per_last_update * last_observation.
+    ///
+    /// Assuming latest observations are as big as possible (u64::MAX * 1e12),
+    /// we can store 18 million slots worth of observations, which turns out to
+    /// be ~85 days worth of slots.
+    ///
+    /// At this point, the aggregot will roll back to 0. It's the client's
+    /// responsibility to check that the second aggregator is bigger than the
+    /// first aggregator.
+    pub aggregator: u128,
+    /// The most that an observation can change per update.
+    pub max_observation_change_per_update: u128,
+    /// What the initial `latest_observation` is set to.
+    pub initial_observation: u128,
+}
+
+impl TwapOracle {
+    pub fn new(
+        current_slot: Slot,
+        initial_observation: u128,
+        max_observation_change_per_update: u128,
+    ) -> Self {
+        Self {
+            last_updated_slot: current_slot,
+            last_price: 0,
+            last_observation: initial_observation,
+            aggregator: 0,
+            max_observation_change_per_update,
+            initial_observation,
+        }
+    }
+}
+
+#[account]
+#[derive(Default)]
+pub struct Amm {
+    pub bump: u8,
+
+    pub created_at_slot: u64,
+
+    pub base_mint: Pubkey,
+    pub quote_mint: Pubkey,
+
+    pub base_mint_decimals: u8,
+    pub quote_mint_decimals: u8,
+
+    pub base_amount: u64,
+    pub quote_amount: u64,
+
+    pub total_ownership: u64,
+    pub oracle: TwapOracle,
+}
+
+impl Amm {
+    pub fn k(&self) -> u128 {
+        self.base_amount as u128 * self.quote_amount as u128
+    }
+
+    /// Does the internal accounting to swap `input_amount` into the returned
+    /// output amount so that output amount can be transferred to the user.
+    pub fn swap(&mut self, input_amount: u64, swap_type: SwapType) -> Result<u64> {
+        let base_amount_start = self.base_amount as u128;
+        let quote_amount_start = self.quote_amount as u128;
+
+        let k = self.k();
+
+        let (input_reserve, output_reserve) = match swap_type {
+            SwapType::Buy => (quote_amount_start, base_amount_start),
+            SwapType::Sell => (base_amount_start, quote_amount_start),
+        };
+
+        // airlifted from uniswap v1:
+        // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L106-L111
+
+        require!(input_reserve != 0, AmmError::NoReserves);
+        require!(output_reserve != 0, AmmError::NoReserves);
+
+        let input_amount_with_fee = input_amount as u128 * 990;
+
+        let numerator = input_amount_with_fee
+            .checked_mul(output_reserve)
+            .ok_or(error!(AmmError::InputAmountOverflow))?;
+
+        let denominator = (input_reserve * 1000) + input_amount_with_fee;
+
+        let output_amount = (numerator / denominator) as u64;
+
+        match swap_type {
+            SwapType::Buy => {
+                self.quote_amount = self.quote_amount.checked_add(input_amount).unwrap();
+                self.base_amount = self.base_amount.checked_sub(output_amount).unwrap();
+            }
+            SwapType::Sell => {
+                self.base_amount = self.base_amount.checked_add(input_amount).unwrap();
+                self.quote_amount = self.quote_amount.checked_sub(output_amount).unwrap();
+            }
+        }
+
+        let new_k = self.base_amount as u128 * self.quote_amount as u128;
+
+        assert!(new_k >= k);
+
+        Ok(output_amount)
+    }
+
+    /// Returns the time-weighted average price since market creation in UQ64x32 form.
+    pub fn get_twap(&self) -> Result<u128> {
+        let slots_passed = (self.oracle.last_updated_slot - self.created_at_slot) as u128;
+
+        require_neq!(slots_passed, 0, AmmError::NoSlotsPassed);
+        assert!(self.oracle.aggregator != 0);
+
+        Ok(self.oracle.aggregator / slots_passed)
+    }
+
+    /// Updates the TWAP. Should be called before any changes to the AMM's state
+    /// have been made.
+    ///
+    /// Returns an observation if one was recorded.
+    pub fn update_twap(&mut self, current_slot: Slot) -> Option<u128> {
+        let oracle = &mut self.oracle;
+        // a manipulator is likely to be "bursty" with their usage, such as a
+        // validator who abuses their slots to manipulate the TWAP.
+        // meanwhile, regular trading is less likely to happen in each slot.
+        // suppose that in normal trading, one trade happens every 4 slots.
+        // if we allow observations to move 1% per slot, a manipulator who
+        // can land every slot would be able to move the last observation by 348%
+        // over 1 minute (1.01^(# of slots in a minute)) whereas normal trading
+        // activity would be only able to move it by 45% over 1 minute
+        // (1.01^(# of slots in a minute / 4)). so it makes sense to not allow an
+        // update every slot.
+        //
+        // on the other hand, you can't allow updates too infrequently either.
+        // if you could only update once a day, a manipulator only needs to buy
+        // one slot per day to drastically shift the TWAP.
+        //
+        // we allow updates once a minute as a happy medium. if you have an asset
+        // that trades near $1500 and you allow $25 updates per minute, it can double
+        // over an hour.
+        if current_slot < oracle.last_updated_slot + ONE_MINUTE_IN_SLOTS {
+            return None;
+        }
+
+        // we store prices as quote units / base units scaled by 1e12.
+        // for example, suppose META is $100 and there's 400 USDC & 4 META in
+        // this pool. USDC has 6 decimals and META has 9, so we have:
+        // - 400 * 1,000,000   = 400,000,000 USDC units
+        // - 4 * 1,000,000,000 = 4,000,000,000 META units (hansons)
+        // so there's (400,000,000 / 4,000,000,000) or 0.1 USDC units per hanson,
+        // which is 100,000,000,000 when scaled by 1e12.
+        let price = (self.quote_amount as u128 * PRICE_SCALE) / self.base_amount as u128;
+
+        let last_observation = oracle.last_observation;
+
+        let new_observation = if price > last_observation {
+            let max_observation =
+                last_observation.saturating_add(oracle.max_observation_change_per_update);
+
+            min(price, max_observation)
+        } else {
+            let min_observation =
+                last_observation.saturating_sub(oracle.max_observation_change_per_update);
+
+            max(price, min_observation)
+        };
+
+        let slot_difference = (current_slot - oracle.last_updated_slot) as u128;
+
+        // if this saturates, the aggregator will wrap back to 0, so this value doesn't
+        // really matter. we just can't panic.
+        let weighted_observation = new_observation.saturating_mul(slot_difference);
+
+        let new_aggregator = oracle.aggregator.wrapping_add(weighted_observation);
+
+        let new_oracle = TwapOracle {
+            last_updated_slot: current_slot,
+            last_price: price,
+            last_observation: new_observation,
+            aggregator: new_aggregator,
+            // these two shouldn't change
+            max_observation_change_per_update: oracle.max_observation_change_per_update,
+            initial_observation: oracle.initial_observation,
+        };
+
+        assert!(new_oracle.last_updated_slot > oracle.last_updated_slot);
+        // assert that the new observation is between price and last observation
+        if price > oracle.last_observation {
+            assert!(new_observation > oracle.last_observation);
+            assert!(new_observation <= price);
+        } else if price == oracle.last_observation {
+            assert!(new_observation == price);
+        } else {
+            assert!(new_observation < oracle.last_observation);
+            assert!(new_observation >= price);
+        }
+
+        *oracle = new_oracle;
+
+        Some(new_observation)
+    }
+
+    pub fn invariant(&self) -> Result<()> {
+        let oracle = &self.oracle;
+
+        assert!(oracle.last_price <= MAX_PRICE);
+        assert!(oracle.last_observation <= MAX_PRICE);
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod simple_amm_tests {
+    use crate::{error::AmmError, state::*};
+    use SwapType::{Buy, Sell};
+
+    #[test]
+    pub fn base_case_amm() {
+        let mut amm = Amm { ..Amm::default() };
+
+        let res = amm.get_twap();
+        assert_eq!(res.unwrap_err(), AmmError::NoSlotsPassed.into());
+
+        assert_eq!(amm.swap(1, Buy).unwrap_err(), AmmError::NoReserves.into());
+        assert_eq!(amm.swap(1, Sell).unwrap_err(), AmmError::NoReserves.into());
+        assert_eq!(amm.k(), 0);
+    }
+
+    #[test]
+    pub fn smol_amm() {
+        let mut amm = Amm {
+            base_amount: 3,
+            quote_amount: 8,
+            ..Amm::default()
+        };
+
+        assert_eq!(amm.k(), 24);
+
+        // 4 x 6 = 24, would be 2 but we take out 1 for fee
+        assert_eq!(amm.swap(1, Sell).unwrap(), 1);
+        assert_eq!(amm.k(), 28); // 4 x 7
+
+        let mut amm_clone = amm.clone();
+        // 2 x 14 = 28, but we take one for fee
+        assert_eq!(amm.swap(7, Buy).unwrap(), 1);
+        assert_eq!(amm.k(), 42); // 3 x 14
+
+        // re-run on the clone but give an extra for fee,
+        // we should now get back 2
+        assert_eq!(amm_clone.swap(8, Buy).unwrap(), 2);
+        assert_eq!(amm_clone.k(), 30); // 2 x 15
+    }
+
+    #[test]
+    pub fn simple_twap_math_amm() {
+        let mut amm = Amm {
+            base_amount: 5,
+            quote_amount: 50,
+            oracle: TwapOracle::new(0, 1_000_000, MAX_PRICE),
+            ..Amm::default()
+        };
+
+        // minute hasn't passed since last slot
+        assert_eq!(amm.update_twap(1), None);
+        assert_eq!(amm.oracle.last_updated_slot, 0);
+
+        assert_eq!(amm.update_twap(ONE_MINUTE_IN_SLOTS), Some(10 * PRICE_SCALE));
+    }
+}

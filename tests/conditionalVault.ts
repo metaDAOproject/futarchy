@@ -265,7 +265,6 @@ describe("conditional_vault", async function () {
 
     it("blocks mints when the user doesn't have enough underlying tokens", async function () {
       const callbacks = expectError(
-        vaultProgram,
         "InsufficientUnderlyingTokens",
         "mint suceeded despite user not having enough underlying tokens"
       );
@@ -287,7 +286,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "InvalidVaultUnderlyingTokenAccount",
         "was able to mint conditional tokens while supplying an invalid vault underlying account"
       );
@@ -322,7 +320,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "ConstraintTokenOwner",
         "mint suceeded despite `user_underlying_token_account` not being owned by the user"
       );
@@ -346,7 +343,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "ConstraintTokenOwner",
         "mint suceeded despite `user_conditional_token_account` not being owned by the user"
       );
@@ -371,7 +367,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "ConstraintTokenOwner",
         "mint suceeded despite `user_conditional_token_account` not being owned by the user"
       );
@@ -403,7 +398,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "ConstraintTokenMint",
         "mint suceeded despite `user_conditional_token_account` having a wrong mint"
       );
@@ -445,7 +439,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "ConstraintTokenMint",
         "mint suceeded despite `user_underlying_token_account` having the wrong mint"
       );
@@ -477,7 +470,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "InvalidConditionalTokenMint",
         "mint suceeded despite `conditional_token_mint` not being the one stored in the conditional vault"
       );
@@ -552,7 +544,6 @@ describe("conditional_vault", async function () {
         .rpc();
 
       const callbacks = expectError(
-        vaultProgram,
         "VaultAlreadySettled",
         "settle suceeded even though this vault had already been settled"
       );
@@ -658,7 +649,6 @@ describe("conditional_vault", async function () {
         .rpc();
 
       const callbacks = expectError(
-        vaultProgram,
         "VaultAlreadySettled",
         "merge suceeded even though this vault was finalized"
       );
@@ -727,7 +717,6 @@ describe("conditional_vault", async function () {
 
     it("prevents users from redeeming conditional tokens while a vault is still active", async function () {
       const callbacks = expectError(
-        vaultProgram,
         "CantRedeemConditionalTokens",
         "redemption suceeded even though this vault was still active"
       );
@@ -762,7 +751,6 @@ describe("conditional_vault", async function () {
       );
 
       const callbacks = expectError(
-        vaultProgram,
         "InvalidConditionalTokenMint",
         "redemption suceeded despite `conditional_token_mint` not being the one stored in the conditional vault"
       );

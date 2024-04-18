@@ -32,7 +32,7 @@ import {
 } from "./conditionalVault";
 
 import { expectError } from "./utils/utils";
-import { AutocratV0 } from "../target/types/autocrat_v0";
+import { Autocrat } from "../target/types/autocrat";
 import { ConditionalVault } from "../target/types/conditional_vault";
 import { AutocratMigrator } from "../target/types/autocrat_migrator";
 
@@ -41,7 +41,7 @@ const { PublicKey, Keypair } = anchor.web3;
 import { OpenbookTwap } from "./fixtures/openbook_twap";
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
-const AutocratIDL: AutocratV0 = require("../target/idl/autocrat_v0.json");
+const AutocratIDL: Autocrat = require("../target/idl/autocrat.json");
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
@@ -60,7 +60,7 @@ interface MarketMaker {
   fUsdcAcc: PublicKey;
 }
 
-type ProposalInstruction = anchor.IdlTypes<AutocratV0>["ProposalInstruction"];
+type ProposalInstruction = anchor.IdlTypes<Autocrat>["ProposalInstruction"];
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 const AUTOCRAT_PROGRAM_ID = new PublicKey(
@@ -83,7 +83,7 @@ const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
-describe("autocrat_v0", async function () {
+describe("autocrat", async function () {
   let provider,
     autocrat,
     payer,
@@ -124,7 +124,7 @@ describe("autocrat_v0", async function () {
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
 
-    autocrat = new anchor.Program<AutocratV0>(
+    autocrat = new anchor.Program<Autocrat>(
       AutocratIDL,
       AUTOCRAT_PROGRAM_ID,
       provider
@@ -496,7 +496,6 @@ describe("autocrat_v0", async function () {
 
     it("doesn't finalize proposals that are too young", async function () {
       const callbacks = expectError(
-        autocrat,
         "ProposalTooYoung",
         "finalize succeeded despite proposal being too young"
       );
@@ -1010,7 +1009,6 @@ describe("autocrat_v0", async function () {
 
     it("doesn't allow pending proposals to be executed", async function () {
       const callbacks = expectError(
-        autocrat,
         "ProposalNotPassed",
         "executed despite proposal still pending"
       );
@@ -1114,7 +1112,6 @@ describe("autocrat_v0", async function () {
       );
 
       const callbacks = expectError(
-        autocrat,
         "ProposalNotPassed",
         "executed despite proposal proposal failed"
       );
@@ -1249,7 +1246,6 @@ describe("autocrat_v0", async function () {
         .rpc();
 
       const callbacks = expectError(
-        autocrat,
         "ProposalNotPassed",
         "executed despite already being executed"
       );
@@ -1471,7 +1467,6 @@ describe("autocrat_v0", async function () {
 
     it("doesn't finalize proposals that are too young", async function () {
       const callbacks = expectError(
-        autocrat,
         "ProposalTooYoung",
         "finalize succeeded despite proposal being too young"
       );
@@ -2149,7 +2144,7 @@ async function placeOrdersAroundMid(
 }
 
 async function initializeProposal(
-  autocrat: Program<AutocratV0>,
+  autocrat: Program<Autocrat>,
   ix: ProposalInstruction,
   vaultProgram: Program<ConditionalVault>,
   dao: PublicKey,

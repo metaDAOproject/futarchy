@@ -1,12 +1,12 @@
 [package]
-name = "autocrat_v0"
-version = "0.3.0"
-description = "Created with Anchor"
+name = "autocrat"
+version = "1.0.0"
+description = "SVM-based program for running futarchy"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "autocrat_v0"
+name = "autocrat"
 
 [features]
 no-entrypoint = []

@@ -17,6 +17,12 @@ upgrade-idl PROGRAM_NAME PROGRAM_ID CLUSTER:
 bankrun:
     (find programs && find tests) | entr -csr 'anchor build -p autocrat_v0 && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts'
 
+test-amm:
+    find programs tests | entr -csr 'anchor build -p amm && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/amm.ts'
+
+test-amm-logs:
+    find programs tests | entr -csr 'anchor build -p amm && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/amm.ts'
+
 bankrun-vault:
     (find programs && find tests) | entr -csr 'anchor build -p conditional_vault && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts'
 
@@ -28,6 +34,9 @@ bankrun-vault-logs:
 
 bankrun-logs:
     (find programs && find tests) | entr -csr 'anchor build -p autocrat_v0 && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts'
+
+build-amm:
+	(find programs) | entr -s 'anchor build -p amm'
 
 build:
 	(find programs) | entr -s 'anchor build'
