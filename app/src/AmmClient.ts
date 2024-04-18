@@ -82,14 +82,18 @@ export class AmmClient {
     );
   }
 
-  async removeLiquidity(
+  removeLiquidity(
     ammAddr: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
     ammPositionAddr: PublicKey,
     removeBps: BN
   ) {
     return ixs.removeLiquidityHandler(
       this,
       ammAddr,
+      baseMint,
+      quoteMint,
       ammPositionAddr,
       removeBps
     );

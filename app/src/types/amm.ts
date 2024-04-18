@@ -198,6 +198,11 @@ export type Amm = {
           "isSigner": false
         },
         {
+          "name": "lpMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "ammPosition",
           "isMut": true,
           "isSigner": false
@@ -761,6 +766,11 @@ export const IDL: Amm = {
         },
         {
           "name": "amm",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
           "isMut": true,
           "isSigner": false
         },

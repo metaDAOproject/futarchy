@@ -17,6 +17,8 @@ pub struct RemoveLiquidity<'info> {
         has_one = quote_mint,
     )]
     pub amm: Account<'info, Amm>,
+    #[account(mut)]
+    pub lp_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
         has_one = user,
@@ -65,6 +67,7 @@ pub fn handler(ctx: Context<RemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
         user: _,
         amm,
         amm_position,
+        lp_mint,
         base_mint,
         quote_mint,
         user_ata_base,

@@ -1,31 +1,33 @@
 import { PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY } from "@solana/web3.js";
 import { InstructionHandler } from "../../InstructionHandler";
-import { getATA } from "../../utils";
+import { getATA, getAmmLpMintAddr } from "../../utils";
 import BN from "bn.js";
 import { AmmClient } from "../../AmmClient";
+import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
+import { Amm } from "../../types/amm";
 
-export const removeLiquidityHandler = async (
+export const removeLiquidityHandler = (
   client: AmmClient,
   ammAddr: PublicKey,
+  baseMint: PublicKey,
+  quoteMint: PublicKey,
   ammPositionAddr: PublicKey,
   removeBps: BN
-): Promise<InstructionHandler<typeof client.program, AmmClient>> => {
-  const amm = await client.program.account.amm.fetch(ammAddr);
+): MethodsBuilder<Amm, any> => {
+  const [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
 
-  let ix = await client.program.methods
+  return client.program.methods
     .removeLiquidity(removeBps)
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,
       ammPosition: ammPositionAddr,
-      baseMint: amm.baseMint,
-      quoteMint: amm.quoteMint,
-      userAtaBase: getATA(amm.baseMint, client.provider.publicKey)[0],
-      userAtaQuote: getATA(amm.quoteMint, client.provider.publicKey)[0],
-      vaultAtaBase: getATA(amm.baseMint, ammAddr)[0],
-      vaultAtaQuote: getATA(amm.quoteMint, ammAddr)[0],
+      lpMint,
+      baseMint,
+      quoteMint,
+      userAtaBase: getATA(baseMint, client.provider.publicKey)[0],
+      userAtaQuote: getATA(quoteMint, client.provider.publicKey)[0],
+      vaultAtaBase: getATA(baseMint, ammAddr)[0],
+      vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
     })
-    .instruction();
-
-  return new InstructionHandler([ix], [], client);
 };

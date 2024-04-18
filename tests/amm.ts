@@ -546,12 +546,13 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
-      let ixh = await ammClient.removeLiquidity(
+      await ammClient.removeLiquidity(
         amm,
+        META,
+        USDC,
         ammPositionAddr,
         new BN(5_000)
-      );
-      await ixh.bankrun(banksClient);
+      ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
@@ -592,12 +593,13 @@ describe("amm", async function () {
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
-      let ixh = await ammClient.removeLiquidity(
+      await ammClient.removeLiquidity(
         amm,
+        META,
+        USDC,
         ammPositionAddr,
         new BN(10_000)
-      );
-      await ixh.bankrun(banksClient);
+      ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
