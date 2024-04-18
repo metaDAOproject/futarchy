@@ -31,25 +31,25 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
     amm.update_twap(Clock::get()?.slot);
 
     let base_to_withdraw = (amm.base_amount as u128)
-        .checked_mul(amm_position.ownership as u128)
+        .checked_mul(user_ata_lp.amount as u128)
         .unwrap()
         .checked_mul(withdraw_bps as u128)
         .unwrap()
         .checked_div(BPS_SCALE as u128)
         .unwrap()
-        .checked_div(amm.total_ownership as u128)
+        .checked_div(lp_mint.supply as u128)
         .unwrap()
         .to_u64()
         .unwrap();
 
     let quote_to_withdraw = (amm.quote_amount as u128)
-        .checked_mul(amm_position.ownership as u128)
+        .checked_mul(user_ata_lp.amount as u128)
         .unwrap()
         .checked_mul(withdraw_bps as u128)
         .unwrap()
         .checked_div(BPS_SCALE as u128)
         .unwrap()
-        .checked_div(amm.total_ownership as u128)
+        .checked_div(lp_mint.supply as u128)
         .unwrap()
         .to_u64()
         .unwrap();
