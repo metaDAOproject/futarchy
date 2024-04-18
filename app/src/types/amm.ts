@@ -218,6 +218,11 @@ export type Amm = {
           "isSigner": false
         },
         {
+          "name": "userAtaLp",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "userAtaBase",
           "isMut": true,
           "isSigner": false
@@ -787,6 +792,11 @@ export const IDL: Amm = {
         {
           "name": "quoteMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAtaLp",
+          "isMut": true,
           "isSigner": false
         },
         {

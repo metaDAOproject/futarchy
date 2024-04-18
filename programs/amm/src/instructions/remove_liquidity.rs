@@ -1,75 +1,19 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::*;
 use num_traits::ToPrimitive;
 
-use crate::generate_vault_seeds;
-use crate::state::*;
+use crate::*;
 use crate::utils::token_transfer_signed;
 
-#[derive(Accounts)]
-pub struct RemoveLiquidity<'info> {
-    #[account(mut)]
-    pub user: Signer<'info>,
-    #[account(
-        mut,
-        has_one = base_mint,
-        has_one = quote_mint,
-    )]
-    pub amm: Account<'info, Amm>,
-    #[account(mut)]
-    pub lp_mint: Box<Account<'info, Mint>>,
-    #[account(
-        mut,
-        has_one = user,
-        has_one = amm,
-        seeds = [
-            AMM_POSITION_SEED_PREFIX,
-            amm.key().as_ref(),
-            user.key().as_ref(),
-        ],
-        bump
-    )]
-    pub amm_position: Account<'info, AmmPosition>,
-    pub base_mint: Account<'info, Mint>,
-    pub quote_mint: Account<'info, Mint>,
-    #[account(
-        mut,
-        associated_token::mint = base_mint,
-        associated_token::authority = user,
-    )]
-    pub user_ata_base: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        associated_token::mint = quote_mint,
-        associated_token::authority = user,
-    )]
-    pub user_ata_quote: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        associated_token::mint = base_mint,
-        associated_token::authority = amm,
-    )]
-    pub vault_ata_base: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        associated_token::mint = quote_mint,
-        associated_token::authority = amm,
-    )]
-    pub vault_ata_quote: Account<'info, TokenAccount>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}
-
-pub fn handler(ctx: Context<RemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
-    let RemoveLiquidity {
+pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
+    let AddOrRemoveLiquidity {
         user: _,
         amm,
         amm_position,
         lp_mint,
+
         base_mint,
         quote_mint,
+        user_ata_lp,
         user_ata_base,
         user_ata_quote,
         vault_ata_base,
