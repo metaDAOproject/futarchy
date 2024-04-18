@@ -68,6 +68,20 @@ export const getAmmAddr = (
   );
 };
 
+export const getLpMintAddr = (
+  programId: PublicKey,
+  amm: PublicKey
+): [PublicKey, number] => {
+  return PublicKey.findProgramAddressSync(
+    [
+      utils.bytes.utf8.encode("amm_lp_mint"),
+      amm.toBuffer(),
+    ],
+    programId
+  );
+};
+
+
 export const getAmmPositionAddr = (
   programId: PublicKey,
   amm: PublicKey,

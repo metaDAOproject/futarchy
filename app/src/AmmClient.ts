@@ -45,7 +45,6 @@ export class AmmClient {
     quoteMint: PublicKey,
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN,
-    lpMint: Keypair = Keypair.generate()
   ) {
     return ixs.createAmmHandler(
       this,
@@ -53,7 +52,6 @@ export class AmmClient {
       quoteMint,
       twapInitialObservation,
       twapMaxObservationChangePerUpdate,
-      lpMint
     );
   }
 

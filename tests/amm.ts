@@ -10,7 +10,7 @@ import {
   mintTo,
 } from "spl-token-bankrun";
 
-import { getAmmAddr, getAmmPositionAddr, sleep } from "../app/src/utils";
+import { getAmmAddr, getAmmPositionAddr, getLpMintAddr, sleep } from "../app/src/utils";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { AmmClient } from "../app/src/AmmClient";
@@ -97,16 +97,15 @@ describe("amm", async function () {
         twapMaxObservationChangePerUpdateScaled,
       ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
 
-      const lpMint = Keypair.generate();
       await ammClient
         .createAmm(
           META,
           USDC,
           twapFirstObservationScaled,
           twapMaxObservationChangePerUpdateScaled,
-          lpMint
         )
         .rpc();
+
 
       let bump;
       [permissionlessAmmAddr, bump] = getAmmAddr(
@@ -119,6 +118,7 @@ describe("amm", async function () {
         permissionlessAmmAddr
       );
 
+      const [lpMint] = getLpMintAddr(ammClient.program.programId, permissionlessAmmAddr);
       assert.equal(permissionlessAmmAcc.bump, bump);
       assert.isTrue(
         permissionlessAmmAcc.createdAtSlot.eq(
@@ -127,7 +127,7 @@ describe("amm", async function () {
       );
       assert.equal(
         permissionlessAmmAcc.lpMint.toBase58(),
-        lpMint.publicKey.toBase58()
+        lpMint.toBase58()
       );
       assert.equal(permissionlessAmmAcc.baseMint.toBase58(), META.toBase58());
       assert.equal(permissionlessAmmAcc.quoteMint.toBase58(), USDC.toBase58());
