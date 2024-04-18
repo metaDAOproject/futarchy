@@ -82,17 +82,6 @@ export const getAmmLpMintAddr = (
   );
 };
 
-export const getAmmPositionAddr = (
-  programId: PublicKey,
-  amm: PublicKey,
-  user: PublicKey
-): [PublicKey, number] => {
-  return PublicKey.findProgramAddressSync(
-    [utils.bytes.utf8.encode("amm_position"), amm.toBuffer(), user.toBuffer()],
-    programId
-  );
-};
-
 export const getAmmAuthAddr = (programId: PublicKey): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [utils.bytes.utf8.encode("amm_auth")],

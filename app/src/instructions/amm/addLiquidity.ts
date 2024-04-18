@@ -11,7 +11,6 @@ export const addLiquidityHandler = (
   ammAddr: PublicKey,
   baseMint: PublicKey,
   quoteMint: PublicKey,
-  ammPositionAddr: PublicKey,
   maxBaseAmount: BN,
   maxQuoteAmount: BN,
   minBaseAmount: BN,
@@ -24,7 +23,6 @@ export const addLiquidityHandler = (
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,
-      ammPosition: ammPositionAddr,
       baseMint,
       quoteMint,
       lpMint,

@@ -32,10 +32,6 @@ pub mod amm {
         instructions::create_amm::handler(ctx, args)
     }
 
-    pub fn create_position(ctx: Context<CreatePosition>) -> Result<()> {
-        instructions::create_position::handler(ctx)
-    }
-
     pub fn add_liquidity(
         ctx: Context<AddOrRemoveLiquidity>,
         max_base_amount: u64,

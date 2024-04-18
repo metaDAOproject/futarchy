@@ -11,7 +11,6 @@ export const removeLiquidityHandler = (
   ammAddr: PublicKey,
   baseMint: PublicKey,
   quoteMint: PublicKey,
-  ammPositionAddr: PublicKey,
   removeBps: BN
 ): MethodsBuilder<Amm, any> => {
   const [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
@@ -21,7 +20,6 @@ export const removeLiquidityHandler = (
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,
-      ammPosition: ammPositionAddr,
       lpMint,
       baseMint,
       quoteMint,

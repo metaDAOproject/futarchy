@@ -26,9 +26,3 @@ export type AmmWrapper = {
   account: Amm;
   publicKey: PublicKey;
 };
-
-export type AmmPosition = IdlAccounts<AmmIDLType>["ammPosition"];
-export type AmmPositionWrapper = {
-  account: AmmPosition;
-  publicKey: PublicKey;
-};

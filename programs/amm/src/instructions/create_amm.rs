@@ -108,8 +108,6 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
         base_amount: 0,
         quote_amount: 0,
 
-        total_ownership: 0,
-
         oracle: TwapOracle::new(
             current_slot,
             twap_initial_observation,

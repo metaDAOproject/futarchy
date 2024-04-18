@@ -9,7 +9,6 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
     let AddOrRemoveLiquidity {
         user,
         amm,
-        amm_position,
         lp_mint,
 
         base_mint,
@@ -24,7 +23,6 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
         system_program: _,
     } = ctx.accounts;
 
-    assert!(amm_position.ownership > 0);
     assert!(withdraw_bps > 0);
     assert!(withdraw_bps <= BPS_SCALE);
 
@@ -55,7 +53,7 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
         .unwrap();
 
     // for rounding up, if we have, a = b / c, we use: a = (b + (c - 1)) / c
-    let less_ownership = (amm_position.ownership as u128)
+    let less_ownership = (user_ata_lp.amount as u128)
         .checked_mul(withdraw_bps as u128)
         .unwrap()
         .checked_add(BPS_SCALE as u128 - 1)
@@ -65,8 +63,6 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
         .to_u64()
         .unwrap();
 
-    amm_position.ownership = amm_position.ownership.checked_sub(less_ownership).unwrap();
-    amm.total_ownership = amm.total_ownership.checked_sub(less_ownership).unwrap();
 
     token::burn(
         CpiContext::new(

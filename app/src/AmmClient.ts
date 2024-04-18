@@ -6,8 +6,7 @@ import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
 import * as ixs from "./instructions/amm";
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants";
-import { Amm, AmmPositionWrapper, AmmWrapper } from "./types";
-import { filterPositionsByUser, filterPositionsByAmm } from "./utils";
+import { Amm, AmmWrapper } from "./types";
 
 export type CreateAmmClientParams = {
   provider: AnchorProvider;
@@ -55,15 +54,10 @@ export class AmmClient {
     );
   }
 
-  async createAmmPosition(amm: PublicKey) {
-    return ixs.createAmmPositionHandler(this, amm);
-  }
-
   addLiquidity(
     ammAddr: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
-    ammPositionAddr: PublicKey,
     maxBaseAmount: BN,
     maxQuoteAmount: BN,
     minBaseAmount: BN,
@@ -74,7 +68,6 @@ export class AmmClient {
       ammAddr,
       baseMint,
       quoteMint,
-      ammPositionAddr,
       maxBaseAmount,
       maxQuoteAmount,
       minBaseAmount,
@@ -86,7 +79,6 @@ export class AmmClient {
     ammAddr: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
-    ammPositionAddr: PublicKey,
     removeBps: BN
   ) {
     return ixs.removeLiquidityHandler(
@@ -94,7 +86,6 @@ export class AmmClient {
       ammAddr,
       baseMint,
       quoteMint,
-      ammPositionAddr,
       removeBps
     );
   }
@@ -139,30 +130,6 @@ export class AmmClient {
     return await this.program.account.amm.all();
   }
 
-  async getAllUserPositions(): Promise<AmmPositionWrapper[]> {
-    try {
-      return await this.program.account.ammPosition.all([
-        filterPositionsByUser(this.provider.wallet.publicKey),
-      ]);
-    } catch (e) {
-      return [];
-    }
-  }
-
-  async getUserPositionForAmm(
-    ammAddr: PublicKey
-  ): Promise<AmmPositionWrapper | undefined> {
-    try {
-      return (
-        await this.program.account.ammPosition.all([
-          filterPositionsByUser(this.provider.wallet.publicKey),
-          filterPositionsByAmm(ammAddr),
-        ])
-      )[0];
-    } catch (e) {
-      return undefined;
-    }
-  }
 
   getSwapPreview(amm: Amm, inputAmount: BN, isBuyBase: boolean): SwapPreview {
     let quoteAmount = amm.quoteAmount;

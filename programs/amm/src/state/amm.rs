@@ -81,7 +81,6 @@ pub struct Amm {
     pub base_amount: u64,
     pub quote_amount: u64,
 
-    pub total_ownership: u64,
     pub oracle: TwapOracle,
 }
 

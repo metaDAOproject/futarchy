@@ -17,7 +17,6 @@ pub fn handler(
         user,
         amm,
         lp_mint,
-        amm_position,
         base_mint: _,
         quote_mint: _,
         user_ata_lp,
@@ -77,7 +76,7 @@ pub fn handler(
         }
 
         let additional_ownership_base = temp_base_amount
-            .checked_mul(amm.total_ownership as u128)
+            .checked_mul(lp_mint.supply as u128)
             .unwrap()
             .checked_div(amm.base_amount as u128)
             .unwrap()
@@ -85,7 +84,7 @@ pub fn handler(
             .unwrap();
 
         let additional_ownership_quote = temp_quote_amount
-            .checked_mul(amm.total_ownership as u128)
+            .checked_mul(lp_mint.supply as u128)
             .unwrap()
             .checked_div(amm.quote_amount as u128)
             .unwrap()
@@ -94,9 +93,6 @@ pub fn handler(
 
         std::cmp::min(additional_ownership_base, additional_ownership_quote)
     };
-
-    amm_position.ownership = amm_position.ownership.checked_add(amount_to_mint).unwrap();
-    amm.total_ownership = amm.total_ownership.checked_add(amount_to_mint).unwrap();
 
     token::mint_to(
         CpiContext::new_with_signer(

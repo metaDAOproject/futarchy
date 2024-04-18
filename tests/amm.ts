@@ -138,7 +138,6 @@ describe("amm", async function () {
       assert.equal(permissionlessAmmAcc.quoteMintDecimals, 6);
       assert.isTrue(permissionlessAmmAcc.baseAmount.eqn(0));
       assert.isTrue(permissionlessAmmAcc.quoteAmount.eqn(0));
-      assert.isTrue(permissionlessAmmAcc.totalOwnership.eqn(0));
       assert.isTrue(
         permissionlessAmmAcc.oracle.lastObservation.eq(
           twapFirstObservationScaled
@@ -180,45 +179,11 @@ describe("amm", async function () {
     });
   });
 
-  describe("#create_position", async function () {
-    it("create new permissionless amm position", async function () {
-      let ixh = await ammClient.createAmmPosition(amm);
-      await ixh.bankrun(banksClient);
-
-      let permissionlessMarketPositionAddr = getAmmPositionAddr(
-        ammClient.program.programId,
-        amm,
-        payer.publicKey
-      )[0];
-      const permissionlessMarketPosition =
-        await ammClient.program.account.ammPosition.fetch(
-          permissionlessMarketPositionAddr
-        );
-
-      assert.equal(
-        permissionlessMarketPosition.amm.toBase58(),
-        amm.toBase58()
-      );
-      assert.equal(
-        permissionlessMarketPosition.user.toBase58(),
-        payer.publicKey.toBase58()
-      );
-    });
-  });
-
   describe("#add_liquidity", async function () {
     it("add liquidity to an amm position", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
         amm
       );
-
-      let ammPositionAddr = getAmmPositionAddr(
-        ammClient.program.programId,
-        amm,
-        payer.publicKey
-      )[0];
-      const ammPositionStart =
-        await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
       userLpAccount = await createAssociatedTokenAccount(
         banksClient,
@@ -234,7 +199,6 @@ describe("amm", async function () {
         amm,
         META,
         USDC,
-        ammPositionAddr,
         new BN(10 * 10 ** 9),
         new BN(100 * 10 ** 6),
         new BN(10 * 0.95 * 10 ** 9),
@@ -243,9 +207,6 @@ describe("amm", async function () {
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
-      );
-      const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
-        ammPositionAddr
       );
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);
@@ -257,15 +218,6 @@ describe("amm", async function () {
       assert.isAbove(
         Number(userLpAccountEnd.amount),
         Number(userLpAccountStart.amount)
-      );
-
-      assert.isAbove(
-        permissionlessAmmEnd.totalOwnership.toNumber(),
-        permissionlessAmmStart.totalOwnership.toNumber()
-      );
-      assert.isAbove(
-        ammPositionEnd.ownership.toNumber(),
-        ammPositionStart.ownership.toNumber()
       );
 
       assert.isAbove(
@@ -283,14 +235,6 @@ describe("amm", async function () {
         amm
       );
 
-      let ammPositionAddr = getAmmPositionAddr(
-        ammClient.program.programId,
-        amm,
-        payer.publicKey
-      )[0];
-      const ammPositionStart =
-        await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
-
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
@@ -298,7 +242,6 @@ describe("amm", async function () {
         amm,
         META,
         USDC,
-        ammPositionAddr,
         new BN(10 * 10 ** 9),
         new BN(100 * 10 ** 6),
         new BN(10 * 0.95 * 10 ** 9),
@@ -307,9 +250,6 @@ describe("amm", async function () {
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
-      );
-      const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
-        ammPositionAddr
       );
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);
@@ -321,15 +261,6 @@ describe("amm", async function () {
       assert.isAbove(
         Number(userLpAccountEnd.amount),
         Number(userLpAccountStart.amount)
-      );
-
-      assert.isAbove(
-        permissionlessAmmEnd.totalOwnership.toNumber(),
-        permissionlessAmmStart.totalOwnership.toNumber()
-      );
-      assert.isAbove(
-        ammPositionEnd.ownership.toNumber(),
-        ammPositionStart.ownership.toNumber()
       );
 
       assert.isAbove(
@@ -538,14 +469,6 @@ describe("amm", async function () {
         amm
       );
 
-      let ammPositionAddr = getAmmPositionAddr(
-        ammClient.program.programId,
-        amm,
-        payer.publicKey
-      )[0];
-      const ammPositionStart =
-        await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
-
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
@@ -553,7 +476,6 @@ describe("amm", async function () {
         amm,
         META,
         USDC,
-        ammPositionAddr,
         new BN(5_000)
       ).rpc();
 
@@ -563,9 +485,6 @@ describe("amm", async function () {
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
       );
-      const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
-        ammPositionAddr
-      );
 
       assert.isBelow(
         Number(lpMintEnd.supply),
@@ -574,15 +493,6 @@ describe("amm", async function () {
       assert.isBelow(
         Number(userLpAccountEnd.amount),
         Number(userLpAccountStart.amount)
-      );
-
-      assert.isBelow(
-        permissionlessAmmEnd.totalOwnership.toNumber(),
-        permissionlessAmmStart.totalOwnership.toNumber()
-      );
-      assert.isBelow(
-        ammPositionEnd.ownership.toNumber(),
-        ammPositionStart.ownership.toNumber()
       );
 
       assert.isBelow(
@@ -600,14 +510,6 @@ describe("amm", async function () {
         amm
       );
 
-      let ammPositionAddr = getAmmPositionAddr(
-        ammClient.program.programId,
-        amm,
-        payer.publicKey
-      )[0];
-      const ammPositionStart =
-        await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
-
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
@@ -615,7 +517,6 @@ describe("amm", async function () {
         amm,
         META,
         USDC,
-        ammPositionAddr,
         new BN(10_000)
       ).rpc();
 
@@ -634,19 +535,6 @@ describe("amm", async function () {
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
       );
-      const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
-        ammPositionAddr
-      );
-
-      assert.isBelow(
-        permissionlessAmmEnd.totalOwnership.toNumber(),
-        permissionlessAmmStart.totalOwnership.toNumber()
-      );
-      assert.isBelow(
-        ammPositionEnd.ownership.toNumber(),
-        ammPositionStart.ownership.toNumber()
-      );
-      assert.equal(ammPositionEnd.ownership.toNumber(), 0);
 
       assert.isBelow(
         permissionlessAmmEnd.baseAmount.toNumber(),

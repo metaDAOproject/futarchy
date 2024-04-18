@@ -66,32 +66,6 @@ export type Amm = {
       ]
     },
     {
-      "name": "createPosition",
-      "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "amm",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "addLiquidity",
       "accounts": [
         {
@@ -106,11 +80,6 @@ export type Amm = {
         },
         {
           "name": "lpMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
           "isMut": true,
           "isSigner": false
         },
@@ -199,11 +168,6 @@ export type Amm = {
         },
         {
           "name": "lpMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
           "isMut": true,
           "isSigner": false
         },
@@ -365,26 +329,6 @@ export type Amm = {
   ],
   "accounts": [
     {
-      "name": "ammPosition",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "user",
-            "type": "publicKey"
-          },
-          {
-            "name": "amm",
-            "type": "publicKey"
-          },
-          {
-            "name": "ownership",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
       "name": "amm",
       "type": {
         "kind": "struct",
@@ -423,10 +367,6 @@ export type Amm = {
           },
           {
             "name": "quoteAmount",
-            "type": "u64"
-          },
-          {
-            "name": "totalOwnership",
             "type": "u64"
           },
           {
@@ -643,32 +583,6 @@ export const IDL: Amm = {
       ]
     },
     {
-      "name": "createPosition",
-      "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "amm",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "addLiquidity",
       "accounts": [
         {
@@ -683,11 +597,6 @@ export const IDL: Amm = {
         },
         {
           "name": "lpMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
           "isMut": true,
           "isSigner": false
         },
@@ -776,11 +685,6 @@ export const IDL: Amm = {
         },
         {
           "name": "lpMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "ammPosition",
           "isMut": true,
           "isSigner": false
         },
@@ -942,26 +846,6 @@ export const IDL: Amm = {
   ],
   "accounts": [
     {
-      "name": "ammPosition",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "user",
-            "type": "publicKey"
-          },
-          {
-            "name": "amm",
-            "type": "publicKey"
-          },
-          {
-            "name": "ownership",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
       "name": "amm",
       "type": {
         "kind": "struct",
@@ -1000,10 +884,6 @@ export const IDL: Amm = {
           },
           {
             "name": "quoteAmount",
-            "type": "u64"
-          },
-          {
-            "name": "totalOwnership",
             "type": "u64"
           },
           {

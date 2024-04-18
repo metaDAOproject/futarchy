@@ -3,7 +3,6 @@ use anchor_spl::token::{Mint, TokenAccount, Token};
 use anchor_spl::associated_token::AssociatedToken;
 
 use crate::*;
-use crate::state::{Amm, AmmPosition};
 
 #[derive(Accounts)]
 pub struct AddOrRemoveLiquidity<'info> {
@@ -18,18 +17,6 @@ pub struct AddOrRemoveLiquidity<'info> {
     pub amm: Account<'info, Amm>,
     #[account(mut)]
     pub lp_mint: Box<Account<'info, Mint>>,
-    #[account(
-        mut,
-        has_one = user,
-        has_one = amm,
-        seeds = [
-            AMM_POSITION_SEED_PREFIX,
-            amm.key().as_ref(),
-            user.key().as_ref(),
-        ],
-        bump
-    )]
-    pub amm_position: Account<'info, AmmPosition>,
     pub base_mint: Account<'info, Mint>,
     pub quote_mint: Account<'info, Mint>,
     #[account(
