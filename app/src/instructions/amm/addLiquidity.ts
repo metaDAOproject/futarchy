@@ -28,7 +28,7 @@ export const addLiquidityHandler = (
       baseMint,
       quoteMint,
       lpMint,
-      // userAtaLp: getATA(lpMint, client.provider.publicKey)[0],
+      userAtaLp: getATA(lpMint, client.provider.publicKey)[0],
       userAtaBase: getATA(baseMint, client.provider.publicKey)[0],
       userAtaQuote: getATA(quoteMint, client.provider.publicKey)[0],
       vaultAtaBase: getATA(baseMint, ammAddr)[0],

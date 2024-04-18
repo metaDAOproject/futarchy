@@ -8,6 +8,8 @@ import {
   createMint,
   createAssociatedTokenAccount,
   mintTo,
+  getAccount,
+  getMint,
 } from "spl-token-bankrun";
 
 import { getAmmAddr, getAmmPositionAddr, sleep } from "../app/src/utils";
@@ -16,7 +18,7 @@ import { assert } from "chai";
 import { AmmClient } from "../app/src/AmmClient";
 import { expectError, fastForward } from "./utils/utils";
 import { PriceMath } from "../app/src/utils/priceMath";
-import { getAmmLpMintAddr } from "../app/dist";
+import { getAmmLpMintAddr } from "../app/src/utils/pda";
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -27,7 +29,8 @@ describe("amm", async function () {
     payer,
     context,
     banksClient,
-    permissionlessAmmAddr,
+    amm,
+    lpMint,
     META,
     USDC,
     userMetaAccount,
@@ -107,14 +110,14 @@ describe("amm", async function () {
         ).rpc();
 
       let bump;
-      [permissionlessAmmAddr, bump] = getAmmAddr(
+      [amm, bump] = getAmmAddr(
         ammClient.program.programId,
         META,
         USDC
       );
 
       const permissionlessAmmAcc = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       assert.equal(permissionlessAmmAcc.bump, bump);
@@ -123,7 +126,7 @@ describe("amm", async function () {
           permissionlessAmmAcc.oracle.lastUpdatedSlot
         )
       );
-      let [lpMint] = getAmmLpMintAddr(ammClient.program.programId, permissionlessAmmAddr);
+      [lpMint] = getAmmLpMintAddr(ammClient.program.programId, amm);
       assert.equal(
         permissionlessAmmAcc.lpMint.toBase58(),
         lpMint.toBase58()
@@ -178,12 +181,12 @@ describe("amm", async function () {
 
   describe("#create_position", async function () {
     it("create new permissionless amm position", async function () {
-      let ixh = await ammClient.createAmmPosition(permissionlessAmmAddr);
+      let ixh = await ammClient.createAmmPosition(amm);
       await ixh.bankrun(banksClient);
 
       let permissionlessMarketPositionAddr = getAmmPositionAddr(
         ammClient.program.programId,
-        permissionlessAmmAddr,
+        amm,
         payer.publicKey
       )[0];
       const permissionlessMarketPosition =
@@ -193,7 +196,7 @@ describe("amm", async function () {
 
       assert.equal(
         permissionlessMarketPosition.amm.toBase58(),
-        permissionlessAmmAddr.toBase58()
+        amm.toBase58()
       );
       assert.equal(
         permissionlessMarketPosition.user.toBase58(),
@@ -205,19 +208,29 @@ describe("amm", async function () {
   describe("#add_liquidity", async function () {
     it("add liquidity to an amm position", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       let ammPositionAddr = getAmmPositionAddr(
         ammClient.program.programId,
-        permissionlessAmmAddr,
+        amm,
         payer.publicKey
       )[0];
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
+      let userLpAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        lpMint,
+        payer.publicKey
+      );
+
+      const userLpAccountStart = await getAccount(banksClient, userLpAccount);
+      const lpMintStart = await getMint(banksClient, lpMint);
+
       await ammClient.addLiquidity(
-        permissionlessAmmAddr,
+        amm,
         META,
         USDC,
         ammPositionAddr,
@@ -226,14 +239,23 @@ describe("amm", async function () {
         new BN(10 * 0.95 * 10 ** 9),
         new BN(100 * 0.95 * 10 ** 6)
       ).rpc();
-      // await ixh.bankrun(banksClient);
-
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
       const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
         ammPositionAddr
+      );
+      const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
+      const lpMintEnd = await getMint(banksClient, lpMint);
+
+      assert.isAbove(
+        Number(lpMintEnd.supply),
+        Number(lpMintStart.supply)
+      );
+      assert.isAbove(
+        Number(userLpAccountEnd.amount),
+        Number(userLpAccountStart.amount)
       );
 
       assert.isAbove(
@@ -259,11 +281,11 @@ describe("amm", async function () {
   describe("#swap", async function () {
     it("swap quote to base", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         META,
         USDC,
         true,
@@ -272,7 +294,7 @@ describe("amm", async function () {
       ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       assert.isBelow(
@@ -287,11 +309,11 @@ describe("amm", async function () {
 
     it("swap base to quote", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         META,
         USDC,
         false,
@@ -300,7 +322,7 @@ describe("amm", async function () {
       ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       assert.isAbove(
@@ -315,13 +337,13 @@ describe("amm", async function () {
 
     it("swap base to quote and back, should not be profitable", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       let startingBaseSwapAmount = 1 * 10 ** 9;
 
       await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         META,
         USDC,
         false,
@@ -332,14 +354,14 @@ describe("amm", async function () {
       await fastForward(context, 1n);
 
       const permissionlessAmmMiddle = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
       let quoteReceived =
         permissionlessAmmStart.quoteAmount.toNumber() -
         permissionlessAmmMiddle.quoteAmount.toNumber();
 
       await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         META,
         USDC,
         true,
@@ -348,7 +370,7 @@ describe("amm", async function () {
       ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
       let baseReceived =
         permissionlessAmmMiddle.baseAmount.toNumber() -
@@ -360,13 +382,13 @@ describe("amm", async function () {
 
     it("swap quote to base and back, should not be profitable", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       let startingQuoteSwapAmount = 1 * 10 ** 6;
 
       await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         META,
         USDC,
         true,
@@ -377,14 +399,14 @@ describe("amm", async function () {
       await fastForward(context, 1n);
 
       const permissionlessAmmMiddle = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
       let baseReceived =
         permissionlessAmmStart.baseAmount.toNumber() -
         permissionlessAmmMiddle.baseAmount.toNumber();
 
       await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         META,
         USDC,
         false,
@@ -393,7 +415,7 @@ describe("amm", async function () {
       ).rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
       let quoteReceived =
         permissionlessAmmMiddle.quoteAmount.toNumber() -
@@ -404,15 +426,15 @@ describe("amm", async function () {
     });
 
     it.skip("ltwap should go up after buying base, down after selling base", async function () {
-      let ixh1 = await ammClient.updateLTWAP(permissionlessAmmAddr);
+      let ixh1 = await ammClient.updateLTWAP(amm);
       await ixh1.bankrun(banksClient);
 
-      console.log(await ammClient.getAmm(permissionlessAmmAddr));
+      console.log(await ammClient.getAmm(amm));
 
-      const ltwapStart = await ammClient.getLTWAP(permissionlessAmmAddr);
+      const ltwapStart = await ammClient.getLTWAP(amm);
 
       let ixh2 = await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         true,
         new BN(2 * 10 ** 9)
       );
@@ -420,15 +442,15 @@ describe("amm", async function () {
 
       await fastForward(context, 100n);
 
-      let ixh3 = await ammClient.updateLTWAP(permissionlessAmmAddr);
+      let ixh3 = await ammClient.updateLTWAP(amm);
       await ixh3.bankrun(banksClient);
 
-      const ltwapMiddle = await ammClient.getLTWAP(permissionlessAmmAddr);
+      const ltwapMiddle = await ammClient.getLTWAP(amm);
 
       assert.isAbove(ltwapMiddle, ltwapStart);
 
       let ixh4 = await ammClient.swap(
-        permissionlessAmmAddr,
+        amm,
         false,
         new BN(20 * 10 ** 6)
       );
@@ -436,10 +458,10 @@ describe("amm", async function () {
 
       await fastForward(context, 100n);
 
-      let ixh5 = await ammClient.updateLTWAP(permissionlessAmmAddr);
+      let ixh5 = await ammClient.updateLTWAP(amm);
       await ixh5.bankrun(banksClient);
 
-      const ltwapEnd = await ammClient.getLTWAP(permissionlessAmmAddr);
+      const ltwapEnd = await ammClient.getLTWAP(amm);
 
       assert.isAbove(ltwapMiddle, ltwapEnd);
     });
@@ -448,26 +470,26 @@ describe("amm", async function () {
   describe("#remove_liquidity", async function () {
     it("remove some liquidity from an amm position", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       let ammPositionAddr = getAmmPositionAddr(
         ammClient.program.programId,
-        permissionlessAmmAddr,
+        amm,
         payer.publicKey
       )[0];
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
       let ixh = await ammClient.removeLiquidity(
-        permissionlessAmmAddr,
+        amm,
         ammPositionAddr,
         new BN(5_000)
       );
       await ixh.bankrun(banksClient);
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
       const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
         ammPositionAddr
@@ -494,26 +516,26 @@ describe("amm", async function () {
 
     it("remove all liquidity from an amm position", async function () {
       const permissionlessAmmStart = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
 
       let ammPositionAddr = getAmmPositionAddr(
         ammClient.program.programId,
-        permissionlessAmmAddr,
+        amm,
         payer.publicKey
       )[0];
       const ammPositionStart =
         await ammClient.program.account.ammPosition.fetch(ammPositionAddr);
 
       let ixh = await ammClient.removeLiquidity(
-        permissionlessAmmAddr,
+        amm,
         ammPositionAddr,
         new BN(10_000)
       );
       await ixh.bankrun(banksClient);
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
-        permissionlessAmmAddr
+        amm
       );
       const ammPositionEnd = await ammClient.program.account.ammPosition.fetch(
         ammPositionAddr

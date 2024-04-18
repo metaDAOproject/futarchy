@@ -106,7 +106,7 @@ export type Amm = {
         },
         {
           "name": "lpMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -122,6 +122,11 @@ export type Amm = {
         {
           "name": "quoteMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAtaLp",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -551,6 +556,11 @@ export type Amm = {
       "code": 6005,
       "name": "SameTokenMints",
       "msg": "You can't create an AMM pool where the token mints are the same"
+    },
+    {
+      "code": 6006,
+      "name": "SlippageExceeded",
+      "msg": "A user wouldn't have gotten back their `output_amount_min`, reverting"
     }
   ]
 };
@@ -663,7 +673,7 @@ export const IDL: Amm = {
         },
         {
           "name": "lpMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -679,6 +689,11 @@ export const IDL: Amm = {
         {
           "name": "quoteMint",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userAtaLp",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1108,6 +1123,11 @@ export const IDL: Amm = {
       "code": 6005,
       "name": "SameTokenMints",
       "msg": "You can't create an AMM pool where the token mints are the same"
+    },
+    {
+      "code": 6006,
+      "name": "SlippageExceeded",
+      "msg": "A user wouldn't have gotten back their `output_amount_min`, reverting"
     }
   ]
 };

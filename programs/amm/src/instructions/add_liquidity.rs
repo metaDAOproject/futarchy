@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::*;
+use anchor_spl::token::{self, *};
 use num_traits::ToPrimitive;
 
 use crate::error::AmmError;
-use crate::state::*;
+use crate::{generate_vault_seeds, state::*};
 use crate::utils::*;
 
 #[derive(Accounts)]
@@ -18,7 +18,8 @@ pub struct AddLiquidity<'info> {
         has_one = quote_mint,
     )]
     pub amm: Account<'info, Amm>,
-    pub lp_mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub lp_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
         has_one = user,
@@ -33,13 +34,13 @@ pub struct AddLiquidity<'info> {
     pub amm_position: Account<'info, AmmPosition>,
     pub base_mint: Account<'info, Mint>,
     pub quote_mint: Account<'info, Mint>,
-    // #[account(
-    //     init_if_needed,
-    //     payer = user,
-    //     associated_token::mint = lp_mint,
-    //     associated_token::authority = user,
-    // )]
-    // pub user_ata_lp: Account<'info, TokenAccount>,
+    #[account(
+        init_if_needed,
+        payer = user,
+        associated_token::mint = lp_mint,
+        associated_token::authority = user,
+    )]
+    pub user_ata_lp: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = base_mint,
@@ -83,7 +84,7 @@ pub fn handler(
         amm_position,
         base_mint: _,
         quote_mint: _,
-        // user_ata_lp,
+        user_ata_lp,
         user_ata_base,
         user_ata_quote,
         vault_ata_base,
@@ -101,6 +102,12 @@ pub fn handler(
     let mut temp_base_amount: u128;
     let mut temp_quote_amount: u128;
 
+    let base_mint_key = amm.base_mint;
+    let quote_mint_key = amm.quote_mint;
+
+    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
+    let signer = &[&seeds[..]];
+
     // if there is no liquidity in the amm, then initialize with new ownership values
     if amm.base_amount == 0 && amm.quote_amount == 0 {
         temp_base_amount = max_base_amount as u128;
@@ -111,6 +118,19 @@ pub fn handler(
 
         amm_position.ownership = max_base_or_quote_amount.to_u64().unwrap();
         amm.total_ownership = max_base_or_quote_amount.to_u64().unwrap();
+
+        token::mint_to(
+            CpiContext::new_with_signer(
+                token_program.to_account_info(),
+                MintTo {
+                    mint: lp_mint.to_account_info(),
+                    to: user_ata_lp.to_account_info(),
+                    authority: amm.to_account_info(),
+                },
+                signer,
+            ),
+            max_base_or_quote_amount.to_u64().unwrap(),
+        )?;
     } else {
         temp_base_amount = max_base_amount as u128;
 
