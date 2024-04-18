@@ -1,6 +1,6 @@
 import { PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY } from "@solana/web3.js";
 import { InstructionHandler } from "../../InstructionHandler";
-import { getATA } from "../../utils";
+import { getATA, getLpMintAddr } from "../../utils";
 import BN from "bn.js";
 import { AmmClient } from "../../AmmClient";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
@@ -17,12 +17,15 @@ export const addLiquidityHandler = (
   minBaseAmount: BN,
   minQuoteAmount: BN
 ): MethodsBuilder<Amm, any> => {
+  let [lpMint] = getLpMintAddr(client.program.programId, ammAddr);
+
   return client.program.methods
     .addLiquidity(maxBaseAmount, maxQuoteAmount, minBaseAmount, minQuoteAmount)
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,
       ammPosition: ammPositionAddr,
+      lpMint,
       baseMint,
       quoteMint,
       userAtaBase: getATA(baseMint, client.provider.publicKey)[0],

@@ -13,10 +13,12 @@ pub struct AddLiquidity<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
+        has_one = lp_mint,
         has_one = base_mint,
         has_one = quote_mint,
     )]
     pub amm: Account<'info, Amm>,
+    pub lp_mint: Account<'info, Mint>,
     #[account(
         mut,
         has_one = user,
@@ -70,6 +72,7 @@ pub fn handler(
     let AddLiquidity {
         user,
         amm,
+        lp_mint,
         amm_position,
         base_mint: _,
         quote_mint: _,

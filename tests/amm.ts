@@ -97,6 +97,7 @@ describe("amm", async function () {
         twapMaxObservationChangePerUpdateScaled,
       ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
 
+
       await ammClient
         .createAmm(
           META,
