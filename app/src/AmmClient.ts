@@ -44,6 +44,7 @@ export class AmmClient {
     quoteMint: PublicKey,
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN,
+    nonce: BN = new BN(Math.floor(Math.random() * 1_000_000_00))
   ) {
     return ixs.createAmmHandler(
       this,
@@ -51,6 +52,7 @@ export class AmmClient {
       quoteMint,
       twapInitialObservation,
       twapMaxObservationChangePerUpdate,
+      nonce,
     );
   }
 

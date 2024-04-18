@@ -5,6 +5,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import BN from 'bn.js';
 
 export const getDaoAddr = (programId: PublicKey): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
@@ -56,13 +57,15 @@ export const getProposalVaultAddr = (
 export const getAmmAddr = (
   programId: PublicKey,
   baseMint: PublicKey,
-  quoteMint: PublicKey
+  quoteMint: PublicKey,
+  nonce: BN
 ): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [
       utils.bytes.utf8.encode("amm__"),
       baseMint.toBuffer(),
       quoteMint.toBuffer(),
+      nonce.toBuffer('le', 8)
     ],
     programId
   );

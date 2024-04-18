@@ -338,6 +338,14 @@ export type Amm = {
             "type": "u8"
           },
           {
+            "name": "nonce",
+            "docs": [
+              "We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.",
+              "So we can use a nonce as a PDA seed."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "createdAtSlot",
             "type": "u64"
           },
@@ -392,6 +400,10 @@ export type Amm = {
           {
             "name": "twapMaxObservationChangePerUpdate",
             "type": "u128"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
           }
         ]
       }
@@ -855,6 +867,14 @@ export const IDL: Amm = {
             "type": "u8"
           },
           {
+            "name": "nonce",
+            "docs": [
+              "We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.",
+              "So we can use a nonce as a PDA seed."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "createdAtSlot",
             "type": "u64"
           },
@@ -909,6 +929,10 @@ export const IDL: Amm = {
           {
             "name": "twapMaxObservationChangePerUpdate",
             "type": "u128"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
           }
         ]
       }

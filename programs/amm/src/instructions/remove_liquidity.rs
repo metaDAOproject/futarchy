@@ -80,7 +80,7 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
     let base_mint_key = base_mint.key();
     let quote_mint_key = quote_mint.key();
 
-    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.bump);
+    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.nonce, amm.bump);
 
     for (amount_to_withdraw, from, to) in [
         (base_to_withdraw, vault_ata_base, user_ata_base),
