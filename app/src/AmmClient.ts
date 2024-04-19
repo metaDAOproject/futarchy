@@ -81,7 +81,6 @@ export class AmmClient {
       minQuoteAmount instanceof BN ? minQuoteAmount : new BN(minQuoteAmount),
       user ? user.publicKey : undefined
     );
-    console.log(ix);
 
     if (user) {
       ix = ix.signers([user]);

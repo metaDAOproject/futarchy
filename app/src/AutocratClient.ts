@@ -1,5 +1,10 @@
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  AccountMeta,
+  AddressLookupTableAccount,
+  Keypair,
+  PublicKey,
+} from "@solana/web3.js";
 
 import { Autocrat } from "./types/autocrat";
 const AutocratIDL: Autocrat = require("./idl/autocrat.json");
@@ -90,6 +95,74 @@ export class AutocratClient {
     return this.autocrat.account.dao.fetch(dao);
   }
 
+  initializeProposalIx(
+    proposalKeypair: Keypair,
+    descriptionUrl: string,
+    instruction: {programId: PublicKey, accounts: AccountMeta[], data: Buffer},
+    dao: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
+    openbookPassMarket: PublicKey,
+    openbookFailMarket: PublicKey,
+    openbookTwapPassMarket: PublicKey,
+    openbookTwapFailMarket: PublicKey,
+  ) {
+    let vaultProgramId = this.vaultClient.vaultProgram.programId;
+    const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
+    const [baseVault] = getVaultAddr(
+      this.vaultClient.vaultProgram.programId,
+      daoTreasury,
+      baseMint,
+      proposalKeypair.publicKey
+    );
+    const [quoteVault] = getVaultAddr(
+      this.vaultClient.vaultProgram.programId,
+      daoTreasury,
+      quoteMint,
+      proposalKeypair.publicKey
+    );
+
+    const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
+    const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
+
+    const [failBase] = getVaultRevertMintAddr(vaultProgramId, baseVault);
+    const [failQuote] = getVaultRevertMintAddr(vaultProgramId, quoteVault);
+
+    const [passAmm] = getAmmAddr(
+      this.ammClient.program.programId,
+      passBase,
+      passQuote,
+      proposalKeypair.publicKey
+    );
+    const [failAmm] = getAmmAddr(
+      this.ammClient.program.programId,
+      failBase,
+      failQuote,
+      proposalKeypair.publicKey
+    );
+
+    return this.autocrat.methods
+      .initializeProposal(descriptionUrl, instruction)
+      // .preInstructions([
+      //   await this.autocrat.account.proposal.createInstruction(proposalKeypair, 2500),
+      // ])
+      .accounts({
+        proposal: proposalKeypair.publicKey,
+        dao,
+        daoTreasury,
+        baseVault,
+        quoteVault,
+        passAmm,
+        failAmm,
+        openbookPassMarket,
+        openbookFailMarket,
+        openbookTwapPassMarket,
+        openbookTwapFailMarket,
+        proposer: this.provider.publicKey,
+      })
+      .signers([proposalKeypair]);
+  }
+
   async finalizeProposal(proposal: PublicKey) {
     let storedProposal = await this.getProposal(proposal);
     let storedDao = await this.getDao(storedProposal.dao);
@@ -149,32 +222,51 @@ export class AutocratClient {
       proposal
     );
 
+    return this.autocrat.methods.finalizeProposal().accounts({
+      proposal,
+      passAmm,
+      failAmm,
+      openbookTwapPassMarket,
+      openbookTwapFailMarket,
+      dao,
+      baseVault,
+      quoteVault,
+      vaultProgram: this.vaultClient.vaultProgram.programId,
+      daoTreasury,
+    });
+  }
+
+  async executeProposal(proposal: PublicKey) {
+    let storedProposal = await this.getProposal(proposal);
+
+    return this.executeProposalIx(
+      proposal,
+      storedProposal.dao,
+      storedProposal.instruction
+    ).rpc();
+  }
+
+  executeProposalIx(proposal: PublicKey, dao: PublicKey, instruction: any) {
+    const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
     return this.autocrat.methods
-      .finalizeProposal()
+      .executeProposal()
       .accounts({
         proposal,
-        passAmm,
-        failAmm,
-        openbookTwapPassMarket,
-        openbookTwapFailMarket,
         dao,
-        baseVault,
-        quoteVault,
-        vaultProgram: this.vaultClient.vaultProgram.programId,
         daoTreasury,
       })
-      // .remainingAccounts(
-      //   instruction.accounts
-      //     .concat({
-      //       pubkey: instruction.programId,
-      //       isWritable: false,
-      //       isSigner: false,
-      //     })
-      //     .map((meta: any) =>
-      //       meta.pubkey.equals(daoTreasury)
-      //         ? { ...meta, isSigner: false }
-      //         : meta
-      //     )
-      // );
+      .remainingAccounts(
+        instruction.accounts
+          .concat({
+            pubkey: instruction.programId,
+            isWritable: false,
+            isSigner: false,
+          })
+          .map((meta: AccountMeta) =>
+            meta.pubkey.equals(daoTreasury)
+              ? { ...meta, isSigner: false }
+              : meta
+          )
+      );
   }
 }
