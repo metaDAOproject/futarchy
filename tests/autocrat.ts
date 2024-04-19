@@ -418,16 +418,16 @@ describe("autocrat", async function () {
         failAmm,
       } = await autocrat.account.proposal.fetch(proposal));
 
-      mm0 = await generateMarketMaker(
-        openbook,
-        openbookTwap,
-        banksClient,
-        payer,
-        openbookPassMarket,
-        openbookFailMarket,
-        vaultProgram,
-        context
-      );
+      // mm0 = await generateMarketMaker(
+      //   openbook,
+      //   openbookTwap,
+      //   banksClient,
+      //   payer,
+      //   openbookPassMarket,
+      //   openbookFailMarket,
+      //   vaultProgram,
+      //   context
+      // );
 
       // alice wants to buy META if the proposal passes, so she locks up USDC
       // and swaps her pUSDC for pMETA
@@ -987,16 +987,16 @@ describe("autocrat", async function () {
         failAmm,
       } = await autocrat.account.proposal.fetch(proposal));
 
-      mm0 = await generateMarketMaker(
-        openbook,
-        openbookTwap,
-        banksClient,
-        payer,
-        openbookPassMarket,
-        openbookFailMarket,
-        vaultProgram,
-        context
-      );
+      // mm0 = await generateMarketMaker(
+      //   openbook,
+      //   openbookTwap,
+      //   banksClient,
+      //   payer,
+      //   openbookPassMarket,
+      //   openbookFailMarket,
+      //   vaultProgram,
+      //   context
+      // );
     });
 
     it("doesn't allow pending proposals to be executed", async function () {
@@ -1359,16 +1359,16 @@ describe("autocrat", async function () {
         failAmm,
       } = await autocrat.account.proposal.fetch(proposal));
 
-      mm0 = await generateMarketMaker(
-        openbook,
-        openbookTwap,
-        banksClient,
-        payer,
-        openbookPassMarket,
-        openbookFailMarket,
-        vaultProgram,
-        context
-      );
+      // mm0 = await generateMarketMaker(
+      //   openbook,
+      //   openbookTwap,
+      //   banksClient,
+      //   payer,
+      //   openbookPassMarket,
+      //   openbookFailMarket,
+      //   vaultProgram,
+      //   context
+      // );
 
       // alice wants to buy MERTD if the proposal passes, so she locks up USDC
       // and swaps her pUSDC for pMETA
@@ -2328,14 +2328,6 @@ async function initializeProposal(
 
   assert.ok(storedProposal.passAmm.equals(passAmm));
   assert.ok(storedProposal.failAmm.equals(failAmm));
-  assert.ok(
-    storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket)
-  );
-  assert.ok(
-    storedProposal.openbookTwapPassMarket.equals(openbookTwapPassMarket)
-  );
-  assert.ok(storedProposal.openbookPassMarket.equals(openbookPassMarket));
-  assert.ok(storedProposal.openbookFailMarket.equals(openbookFailMarket));
   assert.ok(storedProposal.baseVault.equals(baseVault));
   assert.ok(storedProposal.quoteVault.equals(quoteVault));
   assert.ok(storedProposal.dao.equals(dao));

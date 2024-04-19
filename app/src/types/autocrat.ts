@@ -81,26 +81,6 @@ export type Autocrat = {
           "isSigner": false
         },
         {
-          "name": "openbookPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookFailMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapFailMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "proposer",
           "isMut": true,
           "isSigner": true
@@ -139,16 +119,6 @@ export type Autocrat = {
         },
         {
           "name": "failAmm",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapFailMarket",
           "isMut": false,
           "isSigner": false
         },
@@ -332,22 +302,6 @@ export type Autocrat = {
           },
           {
             "name": "failAmm",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookTwapPassMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookTwapFailMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookPassMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookFailMarket",
             "type": "publicKey"
           },
           {
@@ -625,26 +579,6 @@ export const IDL: Autocrat = {
           "isSigner": false
         },
         {
-          "name": "openbookPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookFailMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapFailMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "proposer",
           "isMut": true,
           "isSigner": true
@@ -683,16 +617,6 @@ export const IDL: Autocrat = {
         },
         {
           "name": "failAmm",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapFailMarket",
           "isMut": false,
           "isSigner": false
         },
@@ -876,22 +800,6 @@ export const IDL: Autocrat = {
           },
           {
             "name": "failAmm",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookTwapPassMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookTwapFailMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookPassMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookFailMarket",
             "type": "publicKey"
           },
           {

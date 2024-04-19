@@ -81,26 +81,6 @@
           "isSigner": false
         },
         {
-          "name": "openbookPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookFailMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapFailMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "proposer",
           "isMut": true,
           "isSigner": true
@@ -139,16 +119,6 @@
         },
         {
           "name": "failAmm",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapPassMarket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openbookTwapFailMarket",
           "isMut": false,
           "isSigner": false
         },
@@ -332,22 +302,6 @@
           },
           {
             "name": "failAmm",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookTwapPassMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookTwapFailMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookPassMarket",
-            "type": "publicKey"
-          },
-          {
-            "name": "openbookFailMarket",
             "type": "publicKey"
           },
           {

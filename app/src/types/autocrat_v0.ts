@@ -1,5 +1,5 @@
 export type AutocratV0 = {
-  "version": "1.0.0",
+  "version": "0.1.0",
   "name": "autocrat_v0",
   "instructions": [
     {
@@ -8,7 +8,7 @@ export type AutocratV0 = {
         {
           "name": "dao",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "payer",
@@ -21,7 +21,7 @@ export type AutocratV0 = {
           "isSigner": false
         },
         {
-          "name": "tokenMint",
+          "name": "metaMint",
           "isMut": false,
           "isSigner": false
         },
@@ -31,16 +31,7 @@ export type AutocratV0 = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "baseLotSize",
-          "type": "i64"
-        },
-        {
-          "name": "twapExpectedValue",
-          "type": "u64"
-        }
-      ]
+      "args": []
     },
     {
       "name": "initializeProposal",
@@ -161,27 +152,6 @@ export type AutocratV0 = {
       "args": []
     },
     {
-      "name": "executeProposal",
-      "accounts": [
-        {
-          "name": "proposal",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dao",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "daoTreasury",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "updateDao",
       "accounts": [
         {
@@ -220,7 +190,7 @@ export type AutocratV0 = {
             "type": "publicKey"
           },
           {
-            "name": "tokenMint",
+            "name": "metaMint",
             "type": "publicKey"
           },
           {
@@ -262,10 +232,6 @@ export type AutocratV0 = {
           {
             "name": "maxObservationChangePerUpdateLots",
             "type": "u64"
-          },
-          {
-            "name": "baseLotSize",
-            "type": "i64"
           }
         ]
       }
@@ -325,10 +291,6 @@ export type AutocratV0 = {
           },
           {
             "name": "quoteVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "dao",
             "type": "publicKey"
           }
         ]
@@ -426,12 +388,6 @@ export type AutocratV0 = {
             "type": {
               "option": "u64"
             }
-          },
-          {
-            "name": "baseLotSize",
-            "type": {
-              "option": "i64"
-            }
           }
         ]
       }
@@ -449,9 +405,6 @@ export type AutocratV0 = {
           },
           {
             "name": "Failed"
-          },
-          {
-            "name": "Executed"
           }
         ]
       }
@@ -491,28 +444,28 @@ export type AutocratV0 = {
     {
       "code": 6006,
       "name": "MarketsTooYoung",
-      "msg": "Markets too young for proposal to be finalized. TWAP might need to be cranked"
+      "msg": "Markets too young for proposal to be finalized"
     },
     {
       "code": 6007,
+      "name": "ProposalCannotPass",
+      "msg": "The market dictates that this proposal cannot pass"
+    },
+    {
+      "code": 6008,
       "name": "ProposalAlreadyFinalized",
       "msg": "This proposal has already been finalized"
     },
     {
-      "code": 6008,
-      "name": "InvalidVaultNonce",
-      "msg": "A conditional vault has an invalid nonce. A nonce should encode the proposal number"
-    },
-    {
       "code": 6009,
-      "name": "ProposalNotPassed",
-      "msg": "This proposal can't be executed because it isn't in the passed state"
+      "name": "InvalidVaultNonce",
+      "msg": "A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits"
     }
   ]
 };
 
 export const IDL: AutocratV0 = {
-  "version": "1.0.0",
+  "version": "0.1.0",
   "name": "autocrat_v0",
   "instructions": [
     {
@@ -521,7 +474,7 @@ export const IDL: AutocratV0 = {
         {
           "name": "dao",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "payer",
@@ -534,7 +487,7 @@ export const IDL: AutocratV0 = {
           "isSigner": false
         },
         {
-          "name": "tokenMint",
+          "name": "metaMint",
           "isMut": false,
           "isSigner": false
         },
@@ -544,16 +497,7 @@ export const IDL: AutocratV0 = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "baseLotSize",
-          "type": "i64"
-        },
-        {
-          "name": "twapExpectedValue",
-          "type": "u64"
-        }
-      ]
+      "args": []
     },
     {
       "name": "initializeProposal",
@@ -674,27 +618,6 @@ export const IDL: AutocratV0 = {
       "args": []
     },
     {
-      "name": "executeProposal",
-      "accounts": [
-        {
-          "name": "proposal",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dao",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "daoTreasury",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "updateDao",
       "accounts": [
         {
@@ -733,7 +656,7 @@ export const IDL: AutocratV0 = {
             "type": "publicKey"
           },
           {
-            "name": "tokenMint",
+            "name": "metaMint",
             "type": "publicKey"
           },
           {
@@ -775,10 +698,6 @@ export const IDL: AutocratV0 = {
           {
             "name": "maxObservationChangePerUpdateLots",
             "type": "u64"
-          },
-          {
-            "name": "baseLotSize",
-            "type": "i64"
           }
         ]
       }
@@ -838,10 +757,6 @@ export const IDL: AutocratV0 = {
           },
           {
             "name": "quoteVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "dao",
             "type": "publicKey"
           }
         ]
@@ -939,12 +854,6 @@ export const IDL: AutocratV0 = {
             "type": {
               "option": "u64"
             }
-          },
-          {
-            "name": "baseLotSize",
-            "type": {
-              "option": "i64"
-            }
           }
         ]
       }
@@ -962,9 +871,6 @@ export const IDL: AutocratV0 = {
           },
           {
             "name": "Failed"
-          },
-          {
-            "name": "Executed"
           }
         ]
       }
@@ -1004,22 +910,22 @@ export const IDL: AutocratV0 = {
     {
       "code": 6006,
       "name": "MarketsTooYoung",
-      "msg": "Markets too young for proposal to be finalized. TWAP might need to be cranked"
+      "msg": "Markets too young for proposal to be finalized"
     },
     {
       "code": 6007,
+      "name": "ProposalCannotPass",
+      "msg": "The market dictates that this proposal cannot pass"
+    },
+    {
+      "code": 6008,
       "name": "ProposalAlreadyFinalized",
       "msg": "This proposal has already been finalized"
     },
     {
-      "code": 6008,
-      "name": "InvalidVaultNonce",
-      "msg": "A conditional vault has an invalid nonce. A nonce should encode the proposal number"
-    },
-    {
       "code": 6009,
-      "name": "ProposalNotPassed",
-      "msg": "This proposal can't be executed because it isn't in the passed state"
+      "name": "InvalidVaultNonce",
+      "msg": "A conditional vault has an invalid nonce. A nonce should encode pass = 0 / fail = 1 in its most significant bit, base = 0 / quote = 1 in its second most significant bit, and the proposal number in least significant 32 bits"
     }
   ]
 };

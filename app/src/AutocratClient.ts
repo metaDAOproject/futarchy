@@ -154,10 +154,6 @@ export class AutocratClient {
         quoteVault,
         passAmm,
         failAmm,
-        openbookPassMarket,
-        openbookFailMarket,
-        openbookTwapPassMarket,
-        openbookTwapFailMarket,
         proposer: this.provider.publicKey,
       })
       .signers([proposalKeypair]);
@@ -171,8 +167,6 @@ export class AutocratClient {
       proposal,
       storedProposal.instruction,
       storedProposal.dao,
-      storedProposal.openbookTwapPassMarket,
-      storedProposal.openbookTwapFailMarket,
       storedDao.tokenMint,
       storedDao.usdcMint
     ).rpc();
@@ -182,8 +176,6 @@ export class AutocratClient {
     proposal: PublicKey,
     instruction: any,
     dao: PublicKey,
-    openbookTwapPassMarket: PublicKey,
-    openbookTwapFailMarket: PublicKey,
     daoToken: PublicKey,
     usdc: PublicKey
   ) {
@@ -226,8 +218,6 @@ export class AutocratClient {
       proposal,
       passAmm,
       failAmm,
-      openbookTwapPassMarket,
-      openbookTwapFailMarket,
       dao,
       baseVault,
       quoteVault,
