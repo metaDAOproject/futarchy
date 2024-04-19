@@ -123,6 +123,9 @@ pub struct Proposal {
     pub slot_enqueued: u64,
     pub state: ProposalState,
     pub instruction: ProposalInstruction,
+    pub pass_amm: Pubkey,
+    pub fail_amm: Pubkey,
+    pub amm_nonce: u64,
     pub openbook_twap_pass_market: Pubkey,
     pub openbook_twap_fail_market: Pubkey,
     pub openbook_pass_market: Pubkey,
@@ -304,6 +307,9 @@ pub mod autocrat {
             slot_enqueued: clock.slot,
             state: ProposalState::Pending,
             instruction,
+            pass_amm: ctx.accounts.pass_amm.key(),
+            fail_amm: ctx.accounts.fail_amm.key(),
+            amm_nonce: ctx.accounts.pass_amm.nonce,
             openbook_twap_pass_market: pass_twap_market.key(),
             openbook_twap_fail_market: fail_twap_market.key(),
             openbook_pass_market: ctx.accounts.openbook_pass_market.key(),
@@ -483,7 +489,17 @@ pub struct InitializeProposal<'info> {
         constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,
-    pub pass_amm: Account<'info, Amm>,
+    #[account(
+        constraint = pass_amm.base_mint == base_vault.conditional_on_finalize_token_mint,
+        constraint = pass_amm.quote_mint == quote_vault.conditional_on_finalize_token_mint,
+        constraint = pass_amm.nonce == fail_amm.nonce
+    )]
+    pub pass_amm: Box<Account<'info, Amm>>,
+    #[account(
+        constraint = fail_amm.base_mint == base_vault.conditional_on_revert_token_mint,
+        constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint
+    )]
+    pub fail_amm: Box<Account<'info, Amm>>,
     pub openbook_pass_market: AccountLoader<'info, Market>,
     pub openbook_fail_market: AccountLoader<'info, Market>,
     #[account(constraint = openbook_twap_pass_market.market == openbook_pass_market.key())]

@@ -2236,6 +2236,23 @@ async function initializeProposal(
     ammNonce
   );
 
+  await ammClient
+    .createAmm(
+      failBaseMint,
+      failQuoteMint,
+      twapFirstObservationScaled,
+      twapMaxObservationChangePerUpdateScaled,
+      ammNonce
+    )
+    .rpc();
+
+  const [failAmm] = getAmmAddr(
+    ammClient.getProgramId(),
+    failBaseMint,
+    failQuoteMint,
+    ammNonce
+  );
+
   const [daoTreasury] = PublicKey.findProgramAddressSync(
     [dao.toBuffer()],
     autocrat.programId
@@ -2347,7 +2364,7 @@ async function initializeProposal(
   await autocrat.methods
     .initializeProposal(dummyURL, ix)
     .preInstructions([
-      await autocrat.account.proposal.createInstruction(proposalKeypair, 1500),
+      await autocrat.account.proposal.createInstruction(proposalKeypair, 2500),
     ])
     .accounts({
       proposal: proposalKeypair.publicKey,
@@ -2356,12 +2373,12 @@ async function initializeProposal(
       baseVault,
       quoteVault,
       passAmm,
+      failAmm,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
       openbookPassMarket,
       openbookFailMarket,
       proposer: payer.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId,
     })
     .signers([proposalKeypair])
     .rpc();
@@ -2388,6 +2405,16 @@ async function initializeProposal(
   assert.deepEqual(storedIx.accounts, ix.accounts);
   assert.deepEqual(storedIx.data, ix.data);
 
+  assert.ok(
+    storedProposal.passAmm.equals(passAmm)
+  );
+  assert.ok(
+    storedProposal.failAmm.equals(failAmm)
+  );
+  assert.equal(
+    storedProposal.ammNonce.toString(),
+    ammNonce.toString()
+  );
   assert.ok(
     storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket)
   );
