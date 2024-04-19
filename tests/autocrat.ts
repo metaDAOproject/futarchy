@@ -41,6 +41,8 @@ const { PublicKey, Keypair } = anchor.web3;
 import { OpenbookTwap } from "./fixtures/openbook_twap";
 import { AmmClient, getAmmAddr } from "../app/src";
 import { PriceMath } from "../app/src/utils/priceMath";
+import { AutocratClient } from "../app/src/AutocratClient";
+import { TransactionInstruction } from "@solana/web3.js";
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: Autocrat = require("../target/idl/autocrat.json");
@@ -102,6 +104,7 @@ describe("autocrat", async function () {
     openbook: OpenBookV2Client,
     openbookTwap,
     ammClient: AmmClient,
+    autocratClient: AutocratClient,
     migrator,
     treasuryMetaAccount,
     treasuryUsdcAccount,
@@ -128,6 +131,7 @@ describe("autocrat", async function () {
     anchor.setProvider(provider);
 
     ammClient = await AmmClient.createClient({ provider });
+    autocratClient = await AutocratClient.createClient({ provider });
 
     autocrat = new anchor.Program<Autocrat>(
       AutocratIDL,
@@ -318,6 +322,8 @@ describe("autocrat", async function () {
       openbookFailMarket,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
+      passAmm,
+      failAmm,
       baseVault,
       quoteVault,
       basePassVaultUnderlyingTokenAccount,
@@ -391,6 +397,8 @@ describe("autocrat", async function () {
         openbookTwapFailMarket,
         baseVault,
         quoteVault,
+        passAmm,
+        failAmm,
       } = await autocrat.account.proposal.fetch(proposal));
 
       mm0 = await generateMarketMaker(
@@ -513,6 +521,8 @@ describe("autocrat", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
+          passAmm,
+          failAmm,
           dao,
           baseVault,
           quoteVault,
@@ -639,6 +649,8 @@ describe("autocrat", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
+          passAmm,
+          failAmm,
           dao,
           baseVault,
           quoteVault,
@@ -882,6 +894,8 @@ describe("autocrat", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
+          passAmm,
+          failAmm,
           dao,
           baseVault,
           quoteVault,
@@ -965,6 +979,8 @@ describe("autocrat", async function () {
     let proposal,
       openbookPassMarket,
       openbookFailMarket,
+      passAmm,
+      failAmm,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
       baseVault,
@@ -1001,6 +1017,8 @@ describe("autocrat", async function () {
         openbookTwapFailMarket,
         baseVault,
         quoteVault,
+        passAmm,
+        failAmm,
       } = await autocrat.account.proposal.fetch(proposal));
 
       mm0 = await generateMarketMaker(
@@ -1094,6 +1112,8 @@ describe("autocrat", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
+          passAmm,
+          failAmm,
           dao,
           baseVault,
           quoteVault,
@@ -1207,6 +1227,8 @@ describe("autocrat", async function () {
           proposal,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
+          passAmm,
+          failAmm,
           dao,
           baseVault,
           quoteVault,
@@ -1300,6 +1322,8 @@ describe("autocrat", async function () {
       openbookTwapFailMarket,
       baseVault,
       quoteVault,
+      passAmm,
+      failAmm,
       basePassVaultUnderlyingTokenAccount,
       basePassConditionalTokenMint,
       baseFailConditionalTokenMint,
@@ -1364,6 +1388,8 @@ describe("autocrat", async function () {
         openbookTwapFailMarket,
         baseVault,
         quoteVault,
+        passAmm,
+        failAmm,
       } = await autocrat.account.proposal.fetch(proposal));
 
       mm0 = await generateMarketMaker(
@@ -1480,18 +1506,18 @@ describe("autocrat", async function () {
         "finalize succeeded despite proposal being too young"
       );
 
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
+      await autocratClient
+        .finalizeProposal(
           proposal,
+          instruction,
+          mertdDao,
+          passAmm,
+          failAmm,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
-          dao: mertdDao,
           baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury: mertdDaoTreasury,
-        })
+          quoteVault
+        )
         .rpc()
         .then(callbacks[0], callbacks[1]);
     });
@@ -1606,30 +1632,17 @@ describe("autocrat", async function () {
         7_500
       );
 
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
+      await autocratClient
+        .finalizeProposal(
           proposal,
+          instruction,
+          mertdDao,
+          passAmm,
+          failAmm,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
-          dao: mertdDao,
           baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury: mertdDaoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(mertdDaoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
+          quoteVault
         )
         .rpc();
 
@@ -1842,34 +1855,17 @@ describe("autocrat", async function () {
       let storedDao = await autocrat.account.dao.fetch(mertdDao);
       const passThresholdBpsBefore = storedDao.passThresholdBps;
 
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
+      await autocratClient
+        .finalizeProposal(
           proposal,
+          instruction,
+          mertdDao,
+          passAmm,
+          failAmm,
           openbookTwapPassMarket,
           openbookTwapFailMarket,
-          dao: mertdDao,
           baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury: mertdDaoTreasury,
-        })
-        .remainingAccounts(
-          autocrat.instruction.updateDao
-            .accounts({
-              dao: mertdDao,
-              daoTreasury: mertdDaoTreasury,
-            })
-            .concat({
-              pubkey: autocrat.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(mertdDaoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
+          quoteVault
         )
         .rpc();
 
@@ -2405,16 +2401,9 @@ async function initializeProposal(
   assert.deepEqual(storedIx.accounts, ix.accounts);
   assert.deepEqual(storedIx.data, ix.data);
 
-  assert.ok(
-    storedProposal.passAmm.equals(passAmm)
-  );
-  assert.ok(
-    storedProposal.failAmm.equals(failAmm)
-  );
-  assert.equal(
-    storedProposal.ammNonce.toString(),
-    ammNonce.toString()
-  );
+  assert.ok(storedProposal.passAmm.equals(passAmm));
+  assert.ok(storedProposal.failAmm.equals(failAmm));
+  assert.equal(storedProposal.ammNonce.toString(), ammNonce.toString());
   assert.ok(
     storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket)
   );

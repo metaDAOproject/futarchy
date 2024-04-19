@@ -15,11 +15,11 @@ export const getDaoAddr = (programId: PublicKey): [PublicKey, number] => {
 };
 
 export const getDaoTreasuryAddr = (
-  programId: PublicKey
+  programId: PublicKey,
+  dao: PublicKey
 ): [PublicKey, number] => {
-  let [dao] = getDaoAddr(programId);
   return PublicKey.findProgramAddressSync(
-    [utils.bytes.utf8.encode("dao_treasury"), dao.toBuffer()],
+    [dao.toBuffer()],
     programId
   );
 };

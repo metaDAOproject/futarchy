@@ -518,9 +518,13 @@ pub struct FinalizeProposal<'info> {
         has_one = quote_vault,
         has_one = openbook_twap_pass_market,
         has_one = openbook_twap_fail_market,
+        has_one = pass_amm,
+        has_one = fail_amm,
         has_one = dao,
     )]
     pub proposal: Account<'info, Proposal>,
+    pub pass_amm: Account<'info, Amm>,
+    pub fail_amm: Account<'info, Amm>,
     pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
     pub dao: Box<Account<'info, DAO>>,
@@ -530,6 +534,7 @@ pub struct FinalizeProposal<'info> {
     pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
     pub vault_program: Program<'info, ConditionalVaultProgram>,
     /// CHECK: never read
+    /// TODO: use a different thing to prevent collision
     #[account(
         seeds = [dao.key().as_ref()],
         bump = dao.treasury_pda_bump,
