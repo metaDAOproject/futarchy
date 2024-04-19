@@ -1,32 +1,19 @@
 import { expect, assert } from "chai";
 import { Program } from "@coral-xyz/anchor";
 
-let constraints = {
-  2000: "ConstraintMut",
-  2001: "ConstraintHasOne",
-  2002: "ConstraintSigner",
-  2003: "ConstraintRaw",
-  2004: "ConstraintOwner",
-  2005: "ConstraintRentExempt",
-  2006: "ConstraintSeeds",
-  2007: "ConstraintExecutable",
-  2008: "ConstraintState",
-  2009: "ConstraintAssociated",
-  2010: "ConstraintAssociatedInit",
-  2011: "ConstraintClose",
-  2012: "ConstraintAddress",
-  2013: "ConstraintZero",
-  2014: "ConstraintTokenMint",
-  2015: "ConstraintTokenOwner",
-  2016: "ConstraintMintMintAuthority",
-  2017: "ConstraintMintFreezeAuthority",
-  2018: "ConstraintMintDecimals",
-  2019: "ConstraintSpace",
-  2020: "ConstraintAccountIsNone",
-  2021: "ConstraintTokenTokenProgram",
-  2022: "ConstraintMintTokenProgram",
-  2023: "ConstraintAssociatedTokenTokenProgram",
-};
+export const advanceBySlots = async (context: any, slots: number) => {
+  const currentClock = await context.banksClient.getClock();
+  const slot = currentClock.slot + 1n;
+  context.setClock(
+    new Clock(
+      slot,
+      currentClock.epochStartTimestamp,
+      currentClock.epoch,
+      currentClock.leaderScheduleEpoch,
+      currentClock.unixTimestamp
+    )
+  );
+}
 
 export const expectError = (
   expectedError: string,

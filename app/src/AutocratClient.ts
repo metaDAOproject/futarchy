@@ -1,10 +1,11 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
 import {
   AccountMeta,
   AddressLookupTableAccount,
   Keypair,
   PublicKey,
 } from "@solana/web3.js";
+import { PriceMath } from "./utils/priceMath";
 
 import { Autocrat } from "./types/autocrat";
 const AutocratIDL: Autocrat = require("./idl/autocrat.json");
@@ -37,6 +38,8 @@ export type CreateClientParams = {
   conditionalVaultProgramId?: PublicKey;
   ammProgramId?: PublicKey;
 };
+
+export type ProposalInstruction = IdlTypes<Autocrat>["ProposalInstruction"];
 
 export class AutocratClient {
   public readonly provider: AnchorProvider;
@@ -95,17 +98,92 @@ export class AutocratClient {
     return this.autocrat.account.dao.fetch(dao);
   }
 
+  async initializeProposal(
+    dao: PublicKey,
+    descriptionUrl: string,
+    instruction: ProposalInstruction
+  ): Promise<PublicKey> {
+    let vaultProgramId = this.vaultClient.vaultProgram.programId;
+    const proposalKP = Keypair.generate();
+    const proposal = proposalKP.publicKey;
+
+    const storedDao = await this.getDao(dao);
+    const daoTreasury = storedDao.treasury;
+
+    await this.vaultClient
+      .initializeVaultIx(storedDao.treasury, storedDao.tokenMint, proposal)
+      .rpc();
+    await this.vaultClient
+      .initializeVaultIx(storedDao.treasury, storedDao.usdcMint, proposal)
+      .rpc();
+    const [baseVault] = getVaultAddr(
+      this.vaultClient.vaultProgram.programId,
+      daoTreasury,
+      storedDao.tokenMint,
+      proposal
+    );
+    const [quoteVault] = getVaultAddr(
+      this.vaultClient.vaultProgram.programId,
+      daoTreasury,
+      storedDao.usdcMint,
+      proposal
+    );
+
+    const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
+    const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
+
+    const [failBase] = getVaultRevertMintAddr(vaultProgramId, baseVault);
+    const [failQuote] = getVaultRevertMintAddr(vaultProgramId, quoteVault);
+
+    let [twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled] =
+      PriceMath.scalePrices(9, 6, 100, 1);
+
+    await this.ammClient
+      .createAmm(
+        passBase,
+        passQuote,
+        twapFirstObservationScaled,
+        new BN(10).pow(new BN(30)),
+        proposal
+      )
+      .rpc();
+
+    await this.ammClient
+      .createAmm(
+        failBase,
+        failQuote,
+        twapFirstObservationScaled,
+        new BN(10).pow(new BN(30)),
+        proposal
+      )
+      .rpc();
+
+    await this.initializeProposalIx(
+      proposalKP,
+      descriptionUrl,
+      instruction,
+      dao,
+      storedDao.tokenMint,
+      storedDao.usdcMint
+    )
+      .preInstructions([
+        await this.autocrat.account.proposal.createInstruction(
+          proposalKP,
+          2500
+        ),
+      ])
+      .rpc();
+
+    return { proposal };
+  }
+
   initializeProposalIx(
     proposalKeypair: Keypair,
     descriptionUrl: string,
-    instruction: {programId: PublicKey, accounts: AccountMeta[], data: Buffer},
+    instruction: ProposalInstruction,
     dao: PublicKey,
     baseMint: PublicKey,
-    quoteMint: PublicKey,
-    openbookPassMarket: PublicKey,
-    openbookFailMarket: PublicKey,
-    openbookTwapPassMarket: PublicKey,
-    openbookTwapFailMarket: PublicKey,
+    quoteMint: PublicKey
   ) {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
@@ -141,22 +219,24 @@ export class AutocratClient {
       proposalKeypair.publicKey
     );
 
-    return this.autocrat.methods
-      .initializeProposal(descriptionUrl, instruction)
-      // .preInstructions([
-      //   await this.autocrat.account.proposal.createInstruction(proposalKeypair, 2500),
-      // ])
-      .accounts({
-        proposal: proposalKeypair.publicKey,
-        dao,
-        daoTreasury,
-        baseVault,
-        quoteVault,
-        passAmm,
-        failAmm,
-        proposer: this.provider.publicKey,
-      })
-      .signers([proposalKeypair]);
+    return (
+      this.autocrat.methods
+        .initializeProposal(descriptionUrl, instruction)
+        // .preInstructions([
+        //   await this.autocrat.account.proposal.createInstruction(proposalKeypair, 2500),
+        // ])
+        .accounts({
+          proposal: proposalKeypair.publicKey,
+          dao,
+          daoTreasury,
+          baseVault,
+          quoteVault,
+          passAmm,
+          failAmm,
+          proposer: this.provider.publicKey,
+        })
+        .signers([proposalKeypair])
+    );
   }
 
   async finalizeProposal(proposal: PublicKey) {

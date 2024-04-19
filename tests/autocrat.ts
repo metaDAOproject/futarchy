@@ -66,6 +66,7 @@ export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 export type Keypair = anchor.web3.Keypair;
 
+
 interface MarketMaker {
   publicKey: PublicKey;
   keypair: Keypair;
@@ -310,18 +311,7 @@ describe("autocrat", async function () {
 
       let balanceBefore = await banksClient.getBalance(payer.publicKey);
 
-      await initializeProposal(
-        autocrat,
-        autocratClient,
-        instruction,
-        vaultProgram,
-        dao,
-        context,
-        payer,
-        openbook,
-        openbookTwap,
-        ammClient
-      );
+      await autocratClient.initializeProposal(dao, "", instruction);
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
 
@@ -334,10 +324,6 @@ describe("autocrat", async function () {
 
   describe("#finalize_proposal", async function () {
     let proposal,
-      openbookPassMarket,
-      openbookFailMarket,
-      openbookTwapPassMarket,
-      openbookTwapFailMarket,
       passAmm,
       failAmm,
       baseVault,
@@ -345,9 +331,6 @@ describe("autocrat", async function () {
       basePassVaultUnderlyingTokenAccount,
       basePassConditionalTokenMint,
       baseFailConditionalTokenMint,
-      mm0: MarketMaker,
-      mm0OpenOrdersAccount,
-      mm1OpenOrdersAccount,
       alice,
       aliceUnderlyingQuoteTokenAccount,
       aliceUnderlyingBaseTokenAccount,
@@ -394,40 +377,15 @@ describe("autocrat", async function () {
         data: ix.data,
       };
 
-      proposal = await initializeProposal(
-        autocrat,
-        autocratClient,
-        instruction,
-        vaultProgram,
-        dao,
-        context,
-        payer,
-        openbook,
-        openbookTwap,
-        ammClient
-      );
+      proposal = (await autocratClient.initializeProposal(dao, "", instruction)).proposal;
+      
 
       ({
-        openbookPassMarket,
-        openbookFailMarket,
-        openbookTwapPassMarket,
-        openbookTwapFailMarket,
         baseVault,
         quoteVault,
         passAmm,
         failAmm,
       } = await autocrat.account.proposal.fetch(proposal));
-
-      // mm0 = await generateMarketMaker(
-      //   openbook,
-      //   openbookTwap,
-      //   banksClient,
-      //   payer,
-      //   openbookPassMarket,
-      //   openbookFailMarket,
-      //   vaultProgram,
-      //   context
-      // );
 
       // alice wants to buy META if the proposal passes, so she locks up USDC
       // and swaps her pUSDC for pMETA
@@ -547,12 +505,7 @@ describe("autocrat", async function () {
       assert.ok(
         storedPassAmm.baseMint.equals(baseVault.conditionalOnFinalizeTokenMint)
       );
-      console.log(
-        await getAccount(
-          banksClient,
-          getATA(storedPassAmm.baseMint, mm0.keypair.publicKey)[0]
-        )
-      );
+      
 
       // let tx =
       //   new Transaction().add(
@@ -570,41 +523,25 @@ describe("autocrat", async function () {
 
       let [lpMint] = getAmmLpMintAddr(ammClient.getProgramId(), passAmm);
 
-      await createAssociatedTokenAccount(
-        banksClient,
-        payer,
-        lpMint,
-        mm0.keypair.publicKey
-      );
-
       [lpMint] = getAmmLpMintAddr(ammClient.getProgramId(), failAmm);
 
-      await createAssociatedTokenAccount(
-        banksClient,
-        payer,
-        lpMint,
-        mm0.keypair.publicKey
-      );
-      // await createAssociatedTokenAccount(banksClient, payer, baseVault.conditionalOnFinalizeTokenMint, mm0.keypair.publicKey);
-      // await createAssociatedTokenAccount(banksClient, payer, quoteVault.conditionalOnFinalizeTokenMint, mm0.keypair.publicKey);
+      // await ammClient.addLiquidity(
+      //   storedProposal.passAmm,
+      //   1000,
+      //   100,
+      //   1000,
+      //   100,
+      //   mm0.keypair
+      // );
 
-      await ammClient.addLiquidity(
-        storedProposal.passAmm,
-        1000,
-        100,
-        1000,
-        100,
-        mm0.keypair
-      );
-
-      await ammClient.addLiquidity(
-        storedProposal.failAmm,
-        1000,
-        110,
-        1000,
-        110,
-        mm0.keypair
-      );
+      // await ammClient.addLiquidity(
+      //   storedProposal.failAmm,
+      //   1000,
+      //   110,
+      //   1000,
+      //   110,
+      //   mm0.keypair
+      // );
 
       for (let i = 0; i < 100; i++) {
         let currentClock = await context.banksClient.getClock();
@@ -741,115 +678,6 @@ describe("autocrat", async function () {
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
       let storedProposal = await autocrat.account.proposal.fetch(proposal);
 
-      const storedPassMarket = await openbook.deserializeMarketAccount(
-        openbookPassMarket
-      );
-      const storedFailMarket = await openbook.deserializeMarketAccount(
-        openbookFailMarket
-      );
-
-      let currentClock;
-      for (let i = 0; i < 10; i++) {
-        await placeOrdersAroundMid(
-          openbookTwap,
-          openbook,
-          openbookTwapPassMarket,
-          mm0,
-          1050
-        );
-        await placeOrdersAroundMid(
-          openbookTwap,
-          openbook,
-          openbookTwapFailMarket,
-          mm0,
-          3000
-        );
-
-        currentClock = await context.banksClient.getClock();
-        context.setClock(
-          new Clock(
-            currentClock.slot + 10_000n,
-            currentClock.epochStartTimestamp,
-            currentClock.epoch,
-            currentClock.leaderScheduleEpoch,
-            currentClock.unixTimestamp
-          )
-        );
-      }
-
-      // set the current clock slot to +10_000
-      currentClock = await context.banksClient.getClock();
-      context.setClock(
-        new Clock(
-          currentClock.slot + 10_000n,
-          currentClock.epochStartTimestamp,
-          currentClock.epoch,
-          currentClock.leaderScheduleEpoch,
-          currentClock.unixTimestamp
-        )
-      );
-
-      let takeBuyArgs: PlaceOrderArgs = {
-        side: Side.Bid,
-        priceLots: new BN(1_300), // 1.3 USDC for 1 META
-        maxBaseLots: new BN(1),
-        maxQuoteLotsIncludingFees: new BN(2000),
-        clientOrderId: new BN(1),
-        orderType: OrderType.Market,
-        expiryTimestamp: new BN(0),
-        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-        limit: 255,
-      };
-
-      await openbookTwap.methods
-        .placeTakeOrder(takeBuyArgs)
-        .accountsStrict({
-          market: openbookPassMarket,
-          asks: storedPassMarket.asks,
-          bids: storedPassMarket.bids,
-          eventHeap: storedPassMarket.eventHeap,
-          marketAuthority: storedPassMarket.marketAuthority,
-          marketBaseVault: storedPassMarket.marketBaseVault,
-          marketQuoteVault: storedPassMarket.marketQuoteVault,
-          userQuoteAccount: aliceQuotePassConditionalTokenAccount,
-          userBaseAccount: aliceBasePassConditionalTokenAccount,
-          referrerAccount: null,
-          twapMarket: openbookTwapPassMarket,
-          openbookProgram: OPENBOOK_PROGRAM_ID,
-          tokenProgram: token.TOKEN_PROGRAM_ID,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          signer: alice.publicKey,
-        })
-        .signers([alice])
-        .rpc();
-
-      currentClock = await context.banksClient.getClock();
-      const newSlot = currentClock.slot + 10_000_000n;
-      context.setClock(
-        new Clock(
-          newSlot,
-          currentClock.epochStartTimestamp,
-          currentClock.epoch,
-          currentClock.leaderScheduleEpoch,
-          currentClock.unixTimestamp
-        )
-      );
-
-      await placeOrdersAroundMid(
-        openbookTwap,
-        openbook,
-        openbookTwapPassMarket,
-        mm0,
-        1050
-      );
-      await placeOrdersAroundMid(
-        openbookTwap,
-        openbook,
-        openbookTwapFailMarket,
-        mm0,
-        3000
-      );
-
       let storedDao = await autocrat.account.dao.fetch(dao);
       const passThresholdBpsBefore = storedDao.passThresholdBps;
 
@@ -963,18 +791,7 @@ describe("autocrat", async function () {
         data: Buffer.from("hello, world"),
       };
 
-      proposal = await initializeProposal(
-        autocrat,
-        autocratClient,
-        instruction,
-        vaultProgram,
-        dao,
-        context,
-        payer,
-        openbook,
-        openbookTwap,
-        ammClient
-      );
+      await autocratClient.initializeProposal(dao, "", instruction);
 
       ({
         openbookPassMarket,
@@ -1335,24 +1152,9 @@ describe("autocrat", async function () {
         data,
       };
 
-      proposal = await initializeProposal(
-        autocrat,
-        autocratClient,
-        instruction,
-        vaultProgram,
-        mertdDao,
-        context,
-        payer,
-        openbook,
-        openbookTwap,
-        ammClient
-      );
+      proposal = await autocratClient.initializeProposal(dao, "", instruction);
 
       ({
-        openbookPassMarket,
-        openbookFailMarket,
-        openbookTwapPassMarket,
-        openbookTwapFailMarket,
         baseVault,
         quoteVault,
         passAmm,
@@ -2079,307 +1881,3 @@ async function placeOrdersAroundMid(
     .signers([maker.keypair])
     .rpc();
 }
-
-async function initializeProposal(
-  autocrat: Program<Autocrat>,
-  autocratClient: AutocratClient,
-  ix: ProposalInstruction,
-  vaultProgram: Program<ConditionalVault>,
-  dao: PublicKey,
-  context: ProgramTestContext,
-  payer: Keypair,
-  openbook: OpenBookV2Client,
-  openbookTwap: Program<OpenbookTwap>,
-  ammClient: AmmClient
-): Promise<PublicKey> {
-  const vaultClient = autocratClient.vaultClient;
-
-  const proposalKeypair = Keypair.generate();
-
-  const currentClock = await context.banksClient.getClock();
-  const slot = currentClock.slot + 1n;
-  context.setClock(
-    new Clock(
-      slot,
-      currentClock.epochStartTimestamp,
-      currentClock.epoch,
-      currentClock.leaderScheduleEpoch,
-      currentClock.unixTimestamp
-    )
-  );
-
-  const storedDAO = await autocrat.account.dao.fetch(dao);
-
-  // least signficant 32 bits of nonce are proposal number
-  // most significant bit of nonce is 0 for pass and 1 for fail
-  // second most significant bit of nonce is 0 for base and 1 for quote
-
-  let vaultNonce = new BN(storedDAO.proposalCount + 1);
-
-  const baseVault = await vaultClient.initializeVault(
-    storedDAO.treasury,
-    storedDAO.tokenMint,
-    proposalKeypair.publicKey
-  );
-
-  const quoteVault = await vaultClient.initializeVault(
-    storedDAO.treasury,
-    storedDAO.usdcMint,
-    proposalKeypair.publicKey
-  );
-
-  const passBaseMint = (
-    await vaultProgram.account.conditionalVault.fetch(baseVault)
-  ).conditionalOnFinalizeTokenMint;
-  const passQuoteMint = (
-    await vaultProgram.account.conditionalVault.fetch(quoteVault)
-  ).conditionalOnFinalizeTokenMint;
-  const failBaseMint = (
-    await vaultProgram.account.conditionalVault.fetch(baseVault)
-  ).conditionalOnRevertTokenMint;
-  const failQuoteMint = (
-    await vaultProgram.account.conditionalVault.fetch(quoteVault)
-  ).conditionalOnRevertTokenMint;
-
-  let [twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled] =
-    PriceMath.scalePrices(9, 6, 100, 1);
-
-  await ammClient
-    .createAmm(
-      passBaseMint,
-      passQuoteMint,
-      twapFirstObservationScaled,
-      new BN(10).pow(new BN(30)),
-      proposalKeypair.publicKey
-    )
-    .rpc();
-
-  const [passAmm] = getAmmAddr(
-    ammClient.getProgramId(),
-    passBaseMint,
-    passQuoteMint,
-    proposalKeypair.publicKey
-  );
-
-  await ammClient
-    .createAmm(
-      failBaseMint,
-      failQuoteMint,
-      twapFirstObservationScaled,
-      twapMaxObservationChangePerUpdateScaled,
-      proposalKeypair.publicKey
-    )
-    .rpc();
-
-  const [failAmm] = getAmmAddr(
-    ammClient.getProgramId(),
-    failBaseMint,
-    failQuoteMint,
-    proposalKeypair.publicKey
-  );
-
-  const [daoTreasury] = PublicKey.findProgramAddressSync(
-    [dao.toBuffer()],
-    autocrat.programId
-  );
-
-  const daoBefore = await autocrat.account.dao.fetch(dao);
-
-  const dummyURL = "https://www.eff.org/cyberspace-independence";
-
-  let openbookPassMarketKP = Keypair.generate();
-  let openbookPassMarket = openbookPassMarketKP.publicKey;
-
-  let [openbookTwapPassMarket] = PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("twap_market"),
-      openbookPassMarketKP.publicKey.toBuffer(),
-    ],
-    openbookTwap.programId
-  );
-
-  const currentTimeInSeconds = Math.floor(Date.now() / 1000);
-  const elevenDaysInSeconds = 11 * 24 * 60 * 60;
-  const quoteLotSize = new BN(100);
-  const baseLotSize = new BN(storedDAO.baseLotSize);
-  const maxObservationChangePerUpdateLots = new BN(5_000);
-  const expiryTime = new BN(currentTimeInSeconds + elevenDaysInSeconds);
-
-  // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246
-  let [openbookPassMarketIxs, openbookPassMarketSigners] =
-    await openbook.createMarketIx(
-      payer.publicKey,
-      "pMETA/pUSDC",
-      passQuoteMint,
-      passBaseMint,
-      quoteLotSize,
-      baseLotSize,
-      new BN(0),
-      new BN(0),
-      expiryTime,
-      null,
-      null,
-      openbookTwapPassMarket,
-      null,
-      openbookTwapPassMarket,
-      { confFilter: 0.1, maxStalenessSlots: 100 },
-      openbookPassMarketKP,
-      daoTreasury
-    );
-
-  await openbookTwap.methods
-    .createTwapMarket(
-      new BN(daoBefore.twapExpectedValue),
-      maxObservationChangePerUpdateLots
-    )
-    .accounts({
-      market: openbookPassMarketKP.publicKey,
-      twapMarket: openbookTwapPassMarket,
-    })
-    .preInstructions(openbookPassMarketIxs)
-    .signers(openbookPassMarketSigners)
-    .rpc();
-
-  let openbookFailMarketKP = Keypair.generate();
-  let openbookFailMarket = openbookFailMarketKP.publicKey;
-
-  let [openbookTwapFailMarket] = PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("twap_market"),
-      openbookFailMarketKP.publicKey.toBuffer(),
-    ],
-    openbookTwap.programId
-  );
-
-  // https://github.com/openbook-dex/openbook-v2/blob/fd1bfba307479e1587d453e5a8b03a2743339ea6/ts/client/src/client.ts#L246
-  let [openbookFailMarketIxs, openbookFailMarketSigners] =
-    await openbook.createMarketIx(
-      payer.publicKey,
-      "fMETA/fUSDC",
-      failQuoteMint,
-      failBaseMint,
-      quoteLotSize,
-      baseLotSize,
-      new BN(0),
-      new BN(0),
-      expiryTime,
-      null,
-      null,
-      openbookTwapFailMarket,
-      null,
-      openbookTwapFailMarket,
-      { confFilter: 0.1, maxStalenessSlots: 100 },
-      openbookFailMarketKP,
-      daoTreasury
-    );
-
-  await openbookTwap.methods
-    .createTwapMarket(
-      new BN(daoBefore.twapExpectedValue),
-      maxObservationChangePerUpdateLots
-    )
-    .accounts({
-      market: openbookFailMarket,
-      twapMarket: openbookTwapFailMarket,
-    })
-    .preInstructions(openbookFailMarketIxs)
-    .signers(openbookFailMarketSigners)
-    .rpc();
-
-  await autocratClient
-    .initializeProposalIx(
-      proposalKeypair,
-      dummyURL,
-      ix,
-      dao,
-      storedDAO.tokenMint,
-      storedDAO.usdcMint,
-      openbookPassMarket,
-      openbookFailMarket,
-      openbookTwapPassMarket,
-      openbookTwapFailMarket
-    )
-    .preInstructions([
-      await autocrat.account.proposal.createInstruction(proposalKeypair, 2500),
-    ])
-    .rpc();
-
-  const storedProposal = await autocrat.account.proposal.fetch(
-    proposalKeypair.publicKey
-  );
-
-  const daoAfter = await autocrat.account.dao.fetch(dao);
-
-  assert.equal(daoAfter.proposalCount, daoBefore.proposalCount + 1);
-
-  assert.equal(storedProposal.number, daoBefore.proposalCount + 1);
-  assert.ok(storedProposal.proposer.equals(payer.publicKey));
-  assert.equal(storedProposal.descriptionUrl, dummyURL);
-  assert.equal(
-    storedProposal.slotEnqueued.toString(),
-    new BN(slot.toString()).toString()
-  );
-  assert.deepEqual(storedProposal.state, { pending: {} });
-
-  const storedIx = storedProposal.instruction;
-  assert.ok(storedIx.programId.equals(ix.programId));
-  assert.deepEqual(storedIx.accounts, ix.accounts);
-  assert.deepEqual(storedIx.data, ix.data);
-
-  assert.ok(storedProposal.passAmm.equals(passAmm));
-  assert.ok(storedProposal.failAmm.equals(failAmm));
-  assert.ok(storedProposal.baseVault.equals(baseVault));
-  assert.ok(storedProposal.quoteVault.equals(quoteVault));
-  assert.ok(storedProposal.dao.equals(dao));
-
-  return proposalKeypair.publicKey;
-}
-
-// async function initializeVault(
-//   vaultClient: ConditionalVaultClient,
-//   settlementAuthority: PublicKey,
-//   underlyingTokenMint: PublicKey,
-//   nonce: BN,
-//   payer: Keypair
-// ): Promise<PublicKey> {
-//   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
-//     [
-//       anchor.utils.bytes.utf8.encode("conditional_vault"),
-//       settlementAuthority.toBuffer(),
-//       underlyingTokenMint.toBuffer(),
-//       nonce.toBuffer("le", 8),
-//     ],
-//     vaultProgram.programId
-//   );
-//   const conditionalOnFinalizeTokenMintKeypair = Keypair.generate();
-//   const conditionalOnRevertTokenMintKeypair = Keypair.generate();
-
-//   const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
-//     underlyingTokenMint,
-//     vault,
-//     true
-//   );
-
-//   await vaultProgram.methods
-//     .initializeConditionalVault(settlementAuthority, nonce)
-//     .accounts({
-//       vault,
-//       underlyingTokenMint,
-//       vaultUnderlyingTokenAccount,
-//       conditionalOnFinalizeTokenMint:
-//         conditionalOnFinalizeTokenMintKeypair.publicKey,
-//       conditionalOnRevertTokenMint:
-//         conditionalOnRevertTokenMintKeypair.publicKey,
-//       payer: payer.publicKey,
-//       tokenProgram: token.TOKEN_PROGRAM_ID,
-//       associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
-//       systemProgram: anchor.web3.SystemProgram.programId,
-//     })
-//     .signers([
-//       conditionalOnFinalizeTokenMintKeypair,
-//       conditionalOnRevertTokenMintKeypair,
-//     ])
-//     .rpc();
-
-//   return vault;
-// }
