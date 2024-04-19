@@ -9,7 +9,7 @@ amm = "AMM5G2nxuKUwCLRYTW7qqEwuoqCtNSjtbipwEmm2g8bH"
 autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 autocrat = "autoQP9RmUNkzzKRXsMkWicDVZ3h29vvyMDcAYjCxxg"
 conditional_vault = "VAU1T7S5UuEHmMvXtXMVmpEoQtZ2ya7eRb7gcN47wDp"
-timelock = "865v1CyvRbUK2dPpPT5jgRBh1Hu3wxxy7p19YFugURHX"
+timelock = "tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF"
 
 [registry]
 url = "https://api.apr.dev"
