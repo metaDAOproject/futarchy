@@ -34,6 +34,9 @@ use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use conditional_vault::VaultStatus;
+
+use amm::state::Amm;
+
 use openbook_twap::TWAPMarket;
 use openbook_v2::state::Market;
 use solana_program::instruction::Instruction;
@@ -120,6 +123,9 @@ pub struct Proposal {
     pub slot_enqueued: u64,
     pub state: ProposalState,
     pub instruction: ProposalInstruction,
+    pub pass_amm: Pubkey,
+    pub fail_amm: Pubkey,
+    pub amm_nonce: u64,
     pub openbook_twap_pass_market: Pubkey,
     pub openbook_twap_fail_market: Pubkey,
     pub openbook_pass_market: Pubkey,
@@ -301,6 +307,9 @@ pub mod autocrat {
             slot_enqueued: clock.slot,
             state: ProposalState::Pending,
             instruction,
+            pass_amm: ctx.accounts.pass_amm.key(),
+            fail_amm: ctx.accounts.fail_amm.key(),
+            amm_nonce: ctx.accounts.pass_amm.nonce,
             openbook_twap_pass_market: pass_twap_market.key(),
             openbook_twap_fail_market: fail_twap_market.key(),
             openbook_pass_market: ctx.accounts.openbook_pass_market.key(),
@@ -310,18 +319,18 @@ pub mod autocrat {
             dao: dao.key(),
         });
 
-        // least signficant 32 bits of nonce are proposal number
-        // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
-        require_eq!(
-            base_vault.nonce,
-            proposal.number as u64,
-            AutocratError::InvalidVaultNonce
-        );
-        require_eq!(
-            quote_vault.nonce,
-            proposal.number as u64,
-            AutocratError::InvalidVaultNonce
-        );
+        // // least signficant 32 bits of nonce are proposal number
+        // // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
+        // require_eq!(
+        //     base_vault.nonce,
+        //     proposal.number as u64,
+        //     AutocratError::InvalidVaultNonce
+        // );
+        // require_eq!(
+        //     quote_vault.nonce,
+        //     proposal.number as u64,
+        //     AutocratError::InvalidVaultNonce
+        // );
 
         Ok(())
     }
@@ -471,15 +480,28 @@ pub struct InitializeProposal<'info> {
     )]
     pub dao_treasury: UncheckedAccount<'info>,
     #[account(
+        has_one = proposal,
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
         constraint = quote_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
+        has_one = proposal,
         constraint = base_vault.underlying_token_mint == dao.token_mint,
         constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,
+    #[account(
+        constraint = pass_amm.base_mint == base_vault.conditional_on_finalize_token_mint,
+        constraint = pass_amm.quote_mint == quote_vault.conditional_on_finalize_token_mint,
+        constraint = pass_amm.nonce == fail_amm.nonce
+    )]
+    pub pass_amm: Box<Account<'info, Amm>>,
+    #[account(
+        constraint = fail_amm.base_mint == base_vault.conditional_on_revert_token_mint,
+        constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint
+    )]
+    pub fail_amm: Box<Account<'info, Amm>>,
     pub openbook_pass_market: AccountLoader<'info, Market>,
     pub openbook_fail_market: AccountLoader<'info, Market>,
     #[account(constraint = openbook_twap_pass_market.market == openbook_pass_market.key())]
@@ -498,9 +520,13 @@ pub struct FinalizeProposal<'info> {
         has_one = quote_vault,
         has_one = openbook_twap_pass_market,
         has_one = openbook_twap_fail_market,
+        has_one = pass_amm,
+        has_one = fail_amm,
         has_one = dao,
     )]
     pub proposal: Account<'info, Proposal>,
+    pub pass_amm: Account<'info, Amm>,
+    pub fail_amm: Account<'info, Amm>,
     pub openbook_twap_pass_market: Account<'info, TWAPMarket>,
     pub openbook_twap_fail_market: Account<'info, TWAPMarket>,
     pub dao: Box<Account<'info, DAO>>,
@@ -510,6 +536,7 @@ pub struct FinalizeProposal<'info> {
     pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
     pub vault_program: Program<'info, ConditionalVaultProgram>,
     /// CHECK: never read
+    /// TODO: use a different thing to prevent collision
     #[account(
         seeds = [dao.key().as_ref()],
         bump = dao.treasury_pda_bump,

@@ -41,9 +41,9 @@ pub struct ConditionalVault {
     pub settlement_authority: Pubkey,
     /// The mint of the tokens that are deposited into the vault.
     pub underlying_token_mint: Pubkey,
-    /// A nonce to allow a single account to be the settlement authority of multiple
-    /// vaults with the same underlying token mints.
-    pub nonce: u64,
+    /// We need to be able to create multiple vault for a single underlying token
+    /// account, so we use proposal as a PDA seed.
+    pub proposal: Pubkey,
     /// The vault's storage account for deposited funds.
     pub underlying_token_account: Pubkey,
     pub conditional_on_finalize_token_mint: Pubkey,
@@ -58,7 +58,7 @@ macro_rules! generate_vault_seeds {
             b"conditional_vault",
             $vault.settlement_authority.as_ref(),
             $vault.underlying_token_mint.as_ref(),
-            &$vault.nonce.to_le_bytes(),
+            $vault.proposal.as_ref(),
             &[$vault.pda_bump],
         ]
     }};
@@ -71,7 +71,7 @@ pub mod conditional_vault {
     pub fn initialize_conditional_vault(
         ctx: Context<InitializeConditionalVault>,
         settlement_authority: Pubkey,
-        nonce: u64,
+        proposal: Pubkey,
     ) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
 
@@ -79,7 +79,7 @@ pub mod conditional_vault {
             status: VaultStatus::Active,
             settlement_authority,
             underlying_token_mint: ctx.accounts.underlying_token_mint.key(),
-            nonce,
+            proposal,
             underlying_token_account: ctx.accounts.vault_underlying_token_account.key(),
             conditional_on_finalize_token_mint: ctx
                 .accounts
@@ -484,7 +484,7 @@ pub mod conditional_vault {
 }
 
 #[derive(Accounts)]
-#[instruction(settlement_authority: Pubkey, nonce: u64)]
+#[instruction(settlement_authority: Pubkey, proposal: Pubkey)]
 pub struct InitializeConditionalVault<'info> {
     #[account(
         init,
@@ -494,7 +494,7 @@ pub struct InitializeConditionalVault<'info> {
             b"conditional_vault", 
             settlement_authority.key().as_ref(),
             underlying_token_mint.key().as_ref(),
-            &nonce.to_le_bytes()
+            proposal.as_ref()
         ],
         bump
     )]
@@ -503,19 +503,23 @@ pub struct InitializeConditionalVault<'info> {
     #[account(
         init,
         payer = payer,
+        seeds = [b"conditional_on_finalize_mint", vault.key().as_ref()],
+        bump,
         mint::authority = vault,
         mint::freeze_authority = vault,
         mint::decimals = underlying_token_mint.decimals
     )]
-    pub conditional_on_finalize_token_mint: Account<'info, Mint>,
+    pub conditional_on_finalize_token_mint: Box<Account<'info, Mint>>,
     #[account(
         init,
         payer = payer,
+        seeds = [b"conditional_on_revert_mint", vault.key().as_ref()],
+        bump,
         mint::authority = vault,
         mint::freeze_authority = vault,
         mint::decimals = underlying_token_mint.decimals
     )]
-    pub conditional_on_revert_token_mint: Account<'info, Mint>,
+    pub conditional_on_revert_token_mint: Box<Account<'info, Mint>>,
     #[account(
         init,
         payer = payer,

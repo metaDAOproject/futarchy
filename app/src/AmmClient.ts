@@ -38,6 +38,10 @@ export class AmmClient {
     return new AmmClient(provider, programId || AMM_PROGRAM_ID, luts);
   }
 
+  getProgramId(): PublicKey {
+    return this.program.programId;
+  }
+
   // both twap values need to be scaled beforehand
   createAmm(
     baseMint: PublicKey,

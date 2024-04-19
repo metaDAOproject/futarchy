@@ -18,12 +18,12 @@ export type ConditionalVault = {
         {
           "name": "conditionalOnFinalizeTokenMint",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "conditionalOnRevertTokenMint",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "vaultUnderlyingTokenAccount",
@@ -57,8 +57,8 @@ export type ConditionalVault = {
           "type": "publicKey"
         },
         {
-          "name": "nonce",
-          "type": "u64"
+          "name": "proposal",
+          "type": "publicKey"
         }
       ]
     },
@@ -352,12 +352,12 @@ export type ConditionalVault = {
             "type": "publicKey"
           },
           {
-            "name": "nonce",
+            "name": "proposal",
             "docs": [
-              "A nonce to allow a single account to be the settlement authority of multiple",
-              "vaults with the same underlying token mints."
+              "We need to be able to create multiple vault for a single underlying token",
+              "account, so we use proposal as a PDA seed."
             ],
-            "type": "u64"
+            "type": "publicKey"
           },
           {
             "name": "underlyingTokenAccount",
@@ -450,12 +450,12 @@ export const IDL: ConditionalVault = {
         {
           "name": "conditionalOnFinalizeTokenMint",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "conditionalOnRevertTokenMint",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "vaultUnderlyingTokenAccount",
@@ -489,8 +489,8 @@ export const IDL: ConditionalVault = {
           "type": "publicKey"
         },
         {
-          "name": "nonce",
-          "type": "u64"
+          "name": "proposal",
+          "type": "publicKey"
         }
       ]
     },
@@ -784,12 +784,12 @@ export const IDL: ConditionalVault = {
             "type": "publicKey"
           },
           {
-            "name": "nonce",
+            "name": "proposal",
             "docs": [
-              "A nonce to allow a single account to be the settlement authority of multiple",
-              "vaults with the same underlying token mints."
+              "We need to be able to create multiple vault for a single underlying token",
+              "account, so we use proposal as a PDA seed."
             ],
-            "type": "u64"
+            "type": "publicKey"
           },
           {
             "name": "underlyingTokenAccount",

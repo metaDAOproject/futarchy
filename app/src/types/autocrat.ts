@@ -71,6 +71,16 @@ export type Autocrat = {
           "isSigner": false
         },
         {
+          "name": "passAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "openbookPassMarket",
           "isMut": false,
           "isSigner": false
@@ -123,6 +133,16 @@ export type Autocrat = {
           "isSigner": false
         },
         {
+          "name": "passAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "openbookTwapPassMarket",
           "isMut": false,
           "isSigner": false
@@ -155,7 +175,10 @@ export type Autocrat = {
         {
           "name": "daoTreasury",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "TODO: use a different thing to prevent collision"
+          ]
         }
       ],
       "args": []
@@ -302,6 +325,18 @@ export type Autocrat = {
             "type": {
               "defined": "ProposalInstruction"
             }
+          },
+          {
+            "name": "passAmm",
+            "type": "publicKey"
+          },
+          {
+            "name": "failAmm",
+            "type": "publicKey"
+          },
+          {
+            "name": "ammNonce",
+            "type": "u64"
           },
           {
             "name": "openbookTwapPassMarket",
@@ -584,6 +619,16 @@ export const IDL: Autocrat = {
           "isSigner": false
         },
         {
+          "name": "passAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "openbookPassMarket",
           "isMut": false,
           "isSigner": false
@@ -636,6 +681,16 @@ export const IDL: Autocrat = {
           "isSigner": false
         },
         {
+          "name": "passAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failAmm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "openbookTwapPassMarket",
           "isMut": false,
           "isSigner": false
@@ -668,7 +723,10 @@ export const IDL: Autocrat = {
         {
           "name": "daoTreasury",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "TODO: use a different thing to prevent collision"
+          ]
         }
       ],
       "args": []
@@ -815,6 +873,18 @@ export const IDL: Autocrat = {
             "type": {
               "defined": "ProposalInstruction"
             }
+          },
+          {
+            "name": "passAmm",
+            "type": "publicKey"
+          },
+          {
+            "name": "failAmm",
+            "type": "publicKey"
+          },
+          {
+            "name": "ammNonce",
+            "type": "u64"
           },
           {
             "name": "openbookTwapPassMarket",
