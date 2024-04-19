@@ -39,6 +39,8 @@ import { AutocratMigrator } from "../target/types/autocrat_migrator";
 const { PublicKey, Keypair } = anchor.web3;
 
 import { OpenbookTwap } from "./fixtures/openbook_twap";
+import { AmmClient, getAmmAddr } from "../app/src";
+import { PriceMath } from "../app/src/utils/priceMath";
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: Autocrat = require("../target/idl/autocrat.json");
@@ -99,6 +101,7 @@ describe("autocrat", async function () {
     vaultProgram,
     openbook: OpenBookV2Client,
     openbookTwap,
+    ammClient: AmmClient,
     migrator,
     treasuryMetaAccount,
     treasuryUsdcAccount,
@@ -123,6 +126,8 @@ describe("autocrat", async function () {
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
+
+    ammClient = await AmmClient.createClient({ provider });
 
     autocrat = new anchor.Program<Autocrat>(
       AutocratIDL,
@@ -294,7 +299,8 @@ describe("autocrat", async function () {
         context,
         payer,
         openbook,
-        openbookTwap
+        openbookTwap,
+        ammClient
       );
 
       let balanceAfter = await banksClient.getBalance(payer.publicKey);
@@ -374,7 +380,8 @@ describe("autocrat", async function () {
         context,
         payer,
         openbook,
-        openbookTwap
+        openbookTwap,
+        ammClient
       );
 
       ({
@@ -983,7 +990,8 @@ describe("autocrat", async function () {
         context,
         payer,
         openbook,
-        openbookTwap
+        openbookTwap,
+        ammClient
       );
 
       ({
@@ -1345,7 +1353,8 @@ describe("autocrat", async function () {
         context,
         payer,
         openbook,
-        openbookTwap
+        openbookTwap,
+        ammClient
       );
 
       ({
@@ -2151,7 +2160,8 @@ async function initializeProposal(
   context: ProgramTestContext,
   payer: Keypair,
   openbook: OpenBookV2Client,
-  openbookTwap: Program<OpenbookTwap>
+  openbookTwap: Program<OpenbookTwap>,
+  ammClient: AmmClient
 ): Promise<PublicKey> {
   const proposalKeypair = Keypair.generate();
 
@@ -2173,13 +2183,13 @@ async function initializeProposal(
   // most significant bit of nonce is 0 for pass and 1 for fail
   // second most significant bit of nonce is 0 for base and 1 for quote
 
-  let baseNonce = new BN(storedDAO.proposalCount + 1);
+  let vaultNonce = new BN(storedDAO.proposalCount + 1);
 
   const baseVault = await initializeVault(
     vaultProgram,
     storedDAO.treasury,
     storedDAO.tokenMint,
-    baseNonce,
+    vaultNonce,
     payer
   );
 
@@ -2187,7 +2197,7 @@ async function initializeProposal(
     vaultProgram,
     storedDAO.treasury,
     storedDAO.usdcMint,
-    baseNonce,
+    vaultNonce,
     payer
   );
 
@@ -2203,6 +2213,28 @@ async function initializeProposal(
   const failQuoteMint = (
     await vaultProgram.account.conditionalVault.fetch(quoteVault)
   ).conditionalOnRevertTokenMint;
+
+  let ammNonce = new BN(Math.random() * 100_000_000);
+
+  let [twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled] =
+    PriceMath.scalePrices(9, 6, 100, 1);
+
+  await ammClient
+    .createAmm(
+      passBaseMint,
+      passQuoteMint,
+      twapFirstObservationScaled,
+      twapMaxObservationChangePerUpdateScaled,
+      ammNonce
+    )
+    .rpc();
+
+  const [passAmm] = getAmmAddr(
+    ammClient.getProgramId(),
+    passBaseMint,
+    passQuoteMint,
+    ammNonce
+  );
 
   const [daoTreasury] = PublicKey.findProgramAddressSync(
     [dao.toBuffer()],
@@ -2323,6 +2355,7 @@ async function initializeProposal(
       daoTreasury,
       baseVault,
       quoteVault,
+      passAmm,
       openbookTwapPassMarket,
       openbookTwapFailMarket,
       openbookPassMarket,

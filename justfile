@@ -1,6 +1,9 @@
 test:
     (find programs && find tests) | entr -s 'clear && RUST_LOG= anchor test'
 
+test-only:
+    (find programs && find tests) | entr -sc 'RUST_LOG= anchor test --skip-build'
+
 # build-verifiable autocrat_v0
 build-verifiable PROGRAM_NAME:
 	solana-verify build --library-name {{ PROGRAM_NAME }} -b ellipsislabs/solana:1.16.10
@@ -15,7 +18,7 @@ upgrade-idl PROGRAM_NAME PROGRAM_ID CLUSTER:
 	anchor idl upgrade --filepath ./target/idl/{{ PROGRAM_NAME }}.json {{ PROGRAM_ID }} --provider.cluster {{ CLUSTER }}
 	
 bankrun:
-    (find programs && find tests) | entr -csr 'anchor build -p autocrat_v0 && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocratV0.ts'
+    (find programs && find tests) | entr -csr 'anchor build -p autocrat && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/autocrat.ts'
 
 test-amm:
     find programs tests | entr -csr 'anchor build -p amm && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/amm.ts'

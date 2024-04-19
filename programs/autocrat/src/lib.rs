@@ -34,6 +34,9 @@ use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use conditional_vault::VaultStatus;
+
+use amm::state::Amm;
+
 use openbook_twap::TWAPMarket;
 use openbook_v2::state::Market;
 use solana_program::instruction::Instruction;
@@ -480,6 +483,7 @@ pub struct InitializeProposal<'info> {
         constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,
+    pub pass_amm: Account<'info, Amm>,
     pub openbook_pass_market: AccountLoader<'info, Market>,
     pub openbook_fail_market: AccountLoader<'info, Market>,
     #[account(constraint = openbook_twap_pass_market.market == openbook_pass_market.key())]
