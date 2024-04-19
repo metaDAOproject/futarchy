@@ -338,12 +338,12 @@ export type Amm = {
             "type": "u8"
           },
           {
-            "name": "nonce",
+            "name": "proposal",
             "docs": [
               "We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.",
-              "So we can use a nonce as a PDA seed."
+              "So we can use proposal as a PDA seed."
             ],
-            "type": "u64"
+            "type": "publicKey"
           },
           {
             "name": "createdAtSlot",
@@ -402,8 +402,8 @@ export type Amm = {
             "type": "u128"
           },
           {
-            "name": "nonce",
-            "type": "u64"
+            "name": "proposal",
+            "type": "publicKey"
           }
         ]
       }
@@ -867,12 +867,12 @@ export const IDL: Amm = {
             "type": "u8"
           },
           {
-            "name": "nonce",
+            "name": "proposal",
             "docs": [
               "We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.",
-              "So we can use a nonce as a PDA seed."
+              "So we can use proposal as a PDA seed."
             ],
-            "type": "u64"
+            "type": "publicKey"
           },
           {
             "name": "createdAtSlot",
@@ -931,8 +931,8 @@ export const IDL: Amm = {
             "type": "u128"
           },
           {
-            "name": "nonce",
-            "type": "u64"
+            "name": "proposal",
+            "type": "publicKey"
           }
         ]
       }

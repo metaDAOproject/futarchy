@@ -335,10 +335,6 @@ export type Autocrat = {
             "type": "publicKey"
           },
           {
-            "name": "ammNonce",
-            "type": "u64"
-          },
-          {
             "name": "openbookTwapPassMarket",
             "type": "publicKey"
           },
@@ -881,10 +877,6 @@ export const IDL: Autocrat = {
           {
             "name": "failAmm",
             "type": "publicKey"
-          },
-          {
-            "name": "ammNonce",
-            "type": "u64"
           },
           {
             "name": "openbookTwapPassMarket",

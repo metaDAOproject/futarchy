@@ -10,7 +10,7 @@ import { Amm, AmmWrapper } from "./types";
 
 export type CreateAmmClientParams = {
   provider: AnchorProvider;
-  programId?: PublicKey;
+  ammProgramId?: PublicKey;
 };
 
 export class AmmClient {
@@ -28,10 +28,10 @@ export class AmmClient {
     this.luts = luts;
   }
 
-  public static async createClient(
+  public static createClient(
     createAutocratClientParams: CreateAmmClientParams
-  ): Promise<AmmClient> {
-    let { provider, programId } = createAutocratClientParams;
+  ): AmmClient {
+    let { provider, ammProgramId: programId } = createAutocratClientParams;
 
     const luts: AddressLookupTableAccount[] = [];
 
@@ -48,7 +48,7 @@ export class AmmClient {
     quoteMint: PublicKey,
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN,
-    nonce: BN = new BN(Math.floor(Math.random() * 1_000_000_00))
+    proposal: PublicKey
   ) {
     return ixs.createAmmHandler(
       this,
@@ -56,7 +56,7 @@ export class AmmClient {
       quoteMint,
       twapInitialObservation,
       twapMaxObservationChangePerUpdate,
-      nonce,
+      proposal,
     );
   }
 
