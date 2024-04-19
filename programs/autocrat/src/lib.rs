@@ -319,18 +319,18 @@ pub mod autocrat {
             dao: dao.key(),
         });
 
-        // least signficant 32 bits of nonce are proposal number
-        // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
-        require_eq!(
-            base_vault.nonce,
-            proposal.number as u64,
-            AutocratError::InvalidVaultNonce
-        );
-        require_eq!(
-            quote_vault.nonce,
-            proposal.number as u64,
-            AutocratError::InvalidVaultNonce
-        );
+        // // least signficant 32 bits of nonce are proposal number
+        // // most significant bit of nonce is 0 for base (META) and 1 for quote (USDC)
+        // require_eq!(
+        //     base_vault.nonce,
+        //     proposal.number as u64,
+        //     AutocratError::InvalidVaultNonce
+        // );
+        // require_eq!(
+        //     quote_vault.nonce,
+        //     proposal.number as u64,
+        //     AutocratError::InvalidVaultNonce
+        // );
 
         Ok(())
     }
@@ -480,11 +480,13 @@ pub struct InitializeProposal<'info> {
     )]
     pub dao_treasury: UncheckedAccount<'info>,
     #[account(
+        has_one = proposal,
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
         constraint = quote_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
+        has_one = proposal,
         constraint = base_vault.underlying_token_mint == dao.token_mint,
         constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
     )]

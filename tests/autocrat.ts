@@ -39,10 +39,11 @@ import { AutocratMigrator } from "../target/types/autocrat_migrator";
 const { PublicKey, Keypair } = anchor.web3;
 
 import { OpenbookTwap } from "./fixtures/openbook_twap";
-import { AmmClient, getAmmAddr } from "../app/src";
+import { AmmClient, getAmmAddr, getVaultAddr } from "../app/src";
 import { PriceMath } from "../app/src/utils/priceMath";
 import { AutocratClient } from "../app/src/AutocratClient";
 import { TransactionInstruction } from "@solana/web3.js";
+import { ConditionalVaultClient } from "../app/src/ConditionalVaultClient";
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
 const AutocratIDL: Autocrat = require("../target/idl/autocrat.json");
@@ -105,6 +106,7 @@ describe("autocrat", async function () {
     openbookTwap,
     ammClient: AmmClient,
     autocratClient: AutocratClient,
+    vaultClient: ConditionalVaultClient,
     migrator,
     treasuryMetaAccount,
     treasuryUsdcAccount,
@@ -131,6 +133,7 @@ describe("autocrat", async function () {
     anchor.setProvider(provider);
 
     ammClient = await AmmClient.createClient({ provider });
+    vaultClient = await ConditionalVaultClient.createClient({ provider });
     autocratClient = await AutocratClient.createClient({ provider });
 
     autocrat = new anchor.Program<Autocrat>(
@@ -297,6 +300,7 @@ describe("autocrat", async function () {
 
       await initializeProposal(
         autocrat,
+        autocratClient,
         instruction,
         vaultProgram,
         dao,
@@ -380,6 +384,7 @@ describe("autocrat", async function () {
 
       proposal = await initializeProposal(
         autocrat,
+        autocratClient,
         instruction,
         vaultProgram,
         dao,
@@ -1000,6 +1005,7 @@ describe("autocrat", async function () {
 
       proposal = await initializeProposal(
         autocrat,
+        autocratClient,
         instruction,
         vaultProgram,
         dao,
@@ -1371,6 +1377,7 @@ describe("autocrat", async function () {
 
       proposal = await initializeProposal(
         autocrat,
+        autocratClient,
         instruction,
         vaultProgram,
         mertdDao,
@@ -1507,7 +1514,7 @@ describe("autocrat", async function () {
       );
 
       await autocratClient
-        .finalizeProposal(
+        .finalizeProposalIx(
           proposal,
           instruction,
           mertdDao,
@@ -1633,7 +1640,7 @@ describe("autocrat", async function () {
       );
 
       await autocratClient
-        .finalizeProposal(
+        .finalizeProposalIx(
           proposal,
           instruction,
           mertdDao,
@@ -1856,7 +1863,7 @@ describe("autocrat", async function () {
       const passThresholdBpsBefore = storedDao.passThresholdBps;
 
       await autocratClient
-        .finalizeProposal(
+        .finalizeProposalIx(
           proposal,
           instruction,
           mertdDao,
@@ -2150,6 +2157,7 @@ async function placeOrdersAroundMid(
 
 async function initializeProposal(
   autocrat: Program<Autocrat>,
+  autocratClient: AutocratClient,
   ix: ProposalInstruction,
   vaultProgram: Program<ConditionalVault>,
   dao: PublicKey,
@@ -2159,6 +2167,8 @@ async function initializeProposal(
   openbookTwap: Program<OpenbookTwap>,
   ammClient: AmmClient
 ): Promise<PublicKey> {
+  const vaultClient = autocratClient.vaultClient;
+
   const proposalKeypair = Keypair.generate();
 
   const currentClock = await context.banksClient.getClock();
@@ -2181,21 +2191,19 @@ async function initializeProposal(
 
   let vaultNonce = new BN(storedDAO.proposalCount + 1);
 
-  const baseVault = await initializeVault(
-    vaultProgram,
-    storedDAO.treasury,
-    storedDAO.tokenMint,
-    vaultNonce,
-    payer
-  );
+  const baseVault = await vaultClient
+    .initializeVault(
+      storedDAO.treasury,
+      storedDAO.tokenMint,
+      proposalKeypair.publicKey
+    );
 
-  const quoteVault = await initializeVault(
-    vaultProgram,
-    storedDAO.treasury,
-    storedDAO.usdcMint,
-    vaultNonce,
-    payer
-  );
+  const quoteVault = await vaultClient
+    .initializeVault(
+      storedDAO.treasury,
+      storedDAO.usdcMint,
+      proposalKeypair.publicKey
+    );
 
   const passBaseMint = (
     await vaultProgram.account.conditionalVault.fetch(baseVault)
@@ -2419,51 +2427,51 @@ async function initializeProposal(
   return proposalKeypair.publicKey;
 }
 
-async function initializeVault(
-  vaultProgram: Program<ConditionalVault>,
-  settlementAuthority: PublicKey,
-  underlyingTokenMint: PublicKey,
-  nonce: BN,
-  payer: Keypair
-): Promise<PublicKey> {
-  const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("conditional_vault"),
-      settlementAuthority.toBuffer(),
-      underlyingTokenMint.toBuffer(),
-      nonce.toBuffer("le", 8),
-    ],
-    vaultProgram.programId
-  );
-  const conditionalOnFinalizeTokenMintKeypair = Keypair.generate();
-  const conditionalOnRevertTokenMintKeypair = Keypair.generate();
+// async function initializeVault(
+//   vaultClient: ConditionalVaultClient,
+//   settlementAuthority: PublicKey,
+//   underlyingTokenMint: PublicKey,
+//   nonce: BN,
+//   payer: Keypair
+// ): Promise<PublicKey> {
+//   const [vault] = anchor.web3.PublicKey.findProgramAddressSync(
+//     [
+//       anchor.utils.bytes.utf8.encode("conditional_vault"),
+//       settlementAuthority.toBuffer(),
+//       underlyingTokenMint.toBuffer(),
+//       nonce.toBuffer("le", 8),
+//     ],
+//     vaultProgram.programId
+//   );
+//   const conditionalOnFinalizeTokenMintKeypair = Keypair.generate();
+//   const conditionalOnRevertTokenMintKeypair = Keypair.generate();
 
-  const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
-    underlyingTokenMint,
-    vault,
-    true
-  );
+//   const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
+//     underlyingTokenMint,
+//     vault,
+//     true
+//   );
 
-  await vaultProgram.methods
-    .initializeConditionalVault(settlementAuthority, nonce)
-    .accounts({
-      vault,
-      underlyingTokenMint,
-      vaultUnderlyingTokenAccount,
-      conditionalOnFinalizeTokenMint:
-        conditionalOnFinalizeTokenMintKeypair.publicKey,
-      conditionalOnRevertTokenMint:
-        conditionalOnRevertTokenMintKeypair.publicKey,
-      payer: payer.publicKey,
-      tokenProgram: token.TOKEN_PROGRAM_ID,
-      associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
-      systemProgram: anchor.web3.SystemProgram.programId,
-    })
-    .signers([
-      conditionalOnFinalizeTokenMintKeypair,
-      conditionalOnRevertTokenMintKeypair,
-    ])
-    .rpc();
+//   await vaultProgram.methods
+//     .initializeConditionalVault(settlementAuthority, nonce)
+//     .accounts({
+//       vault,
+//       underlyingTokenMint,
+//       vaultUnderlyingTokenAccount,
+//       conditionalOnFinalizeTokenMint:
+//         conditionalOnFinalizeTokenMintKeypair.publicKey,
+//       conditionalOnRevertTokenMint:
+//         conditionalOnRevertTokenMintKeypair.publicKey,
+//       payer: payer.publicKey,
+//       tokenProgram: token.TOKEN_PROGRAM_ID,
+//       associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+//       systemProgram: anchor.web3.SystemProgram.programId,
+//     })
+//     .signers([
+//       conditionalOnFinalizeTokenMintKeypair,
+//       conditionalOnRevertTokenMintKeypair,
+//     ])
+//     .rpc();
 
-  return vault;
-}
+//   return vault;
+// }

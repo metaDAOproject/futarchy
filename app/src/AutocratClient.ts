@@ -16,6 +16,7 @@ import {
 } from "./constants";
 import { Amm, AmmWrapper } from "./types";
 import { getDaoTreasuryAddr } from "./utils";
+import { ConditionalVaultClient } from "./ConditionalVaultClient";
 
 export type CreateClientParams = {
   provider: AnchorProvider;
@@ -26,7 +27,7 @@ export type CreateClientParams = {
 export class AutocratClient {
   public readonly provider: AnchorProvider;
   public readonly autocrat: Program<Autocrat>;
-  public readonly vault: Program<ConditionalVault>;
+  public readonly vaultClient: ConditionalVaultClient;
   public readonly luts: AddressLookupTableAccount[];
 
   constructor(
@@ -41,11 +42,7 @@ export class AutocratClient {
       autocratProgramId,
       provider
     );
-    this.vault = new Program<ConditionalVault>(
-      ConditionalVaultIDL,
-      conditionalVaultProgramId,
-      provider
-    );
+    this.vaultClient = ConditionalVaultClient.createClient({ provider, conditionalVaultProgramId })
     this.luts = luts;
   }
 
@@ -65,7 +62,7 @@ export class AutocratClient {
     );
   }
 
-  finalizeProposal(
+  finalizeProposalIx(
     proposal: PublicKey,
     instruction: any,
     dao: PublicKey,
@@ -89,7 +86,7 @@ export class AutocratClient {
         dao,
         baseVault,
         quoteVault,
-        vaultProgram: this.vault.programId,
+        vaultProgram: this.vaultClient.vaultProgram.programId,
         daoTreasury,
       })
       .remainingAccounts(
