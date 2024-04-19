@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "autocrat_v0"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
@@ -2956,6 +2956,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.39",
+]
+
+[[package]]
+name = "timelock"
+version = "0.3.0"
+dependencies = [
+ "anchor-lang 0.28.0",
+ "solana-security-txt",
 ]
 
 [[package]]

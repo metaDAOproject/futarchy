@@ -1,0 +1,25 @@
+[package]
+name = "timelock"
+version = "0.3.0"
+description = "Delayed transaction execution on Solana"
+authors = ["Proph3t <metaproph3t@protonmail.com"]
+edition = "2021"
+license = "LGPL-3.0"
+repository = "https://github.com/metaDAOproject/futarchy"
+categories = ["cryptography::cryptocurrencies"]
+keywords = ["solana", "defi", "ponzu"]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "timelock"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.28.0"
+solana-security-txt = "1.1.1"
