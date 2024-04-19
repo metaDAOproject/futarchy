@@ -306,21 +306,11 @@ export type Amm = {
       ]
     },
     {
-      "name": "updateLtwap",
+      "name": "crankThatTwap",
       "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
         {
           "name": "amm",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -835,21 +825,11 @@ export const IDL: Amm = {
       ]
     },
     {
-      "name": "updateLtwap",
+      "name": "crankThatTwap",
       "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
         {
           "name": "amm",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
           "isSigner": false
         }
       ],

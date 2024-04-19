@@ -7,6 +7,7 @@ import * as ixs from "./instructions/amm";
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants";
 import { Amm, AmmWrapper } from "./types";
+import { getATA, getAmmLpMintAddr } from "./utils/pda";
 
 export type CreateAmmClientParams = {
   provider: AnchorProvider;
@@ -56,29 +57,70 @@ export class AmmClient {
       quoteMint,
       twapInitialObservation,
       twapMaxObservationChangePerUpdate,
-      proposal,
+      proposal
     );
   }
 
-  addLiquidity(
-    ammAddr: PublicKey,
+  async addLiquidity(
+    amm: PublicKey,
+    maxBaseAmount: BN | number,
+    maxQuoteAmount: BN | number,
+    minBaseAmount: BN | number,
+    minQuoteAmount: BN | number,
+    user?: Keypair
+  ) {
+    let storedAmm = await this.getAmm(amm);
+
+    let ix = this.addLiquidityIx(
+      amm,
+      storedAmm.baseMint,
+      storedAmm.quoteMint,
+      maxBaseAmount instanceof BN ? maxBaseAmount : new BN(maxBaseAmount),
+      maxQuoteAmount instanceof BN ? maxQuoteAmount : new BN(maxQuoteAmount),
+      minBaseAmount instanceof BN ? minBaseAmount : new BN(minBaseAmount),
+      minQuoteAmount instanceof BN ? minQuoteAmount : new BN(minQuoteAmount),
+      user ? user.publicKey : undefined
+    );
+    console.log(ix);
+
+    if (user) {
+      ix = ix.signers([user]);
+    }
+
+    return ix.rpc();
+  }
+
+  addLiquidityIx(
+    amm: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
     maxBaseAmount: BN,
     maxQuoteAmount: BN,
     minBaseAmount: BN,
-    minQuoteAmount: BN
+    minQuoteAmount: BN,
+    user: PublicKey = this.provider.publicKey
   ) {
-    return ixs.addLiquidityHandler(
-      this,
-      ammAddr,
-      baseMint,
-      quoteMint,
-      maxBaseAmount,
-      maxQuoteAmount,
-      minBaseAmount,
-      minQuoteAmount
-    );
+    const [lpMint] = getAmmLpMintAddr(this.program.programId, amm);
+
+    return this.program.methods
+      .addLiquidity(
+        maxBaseAmount,
+        maxQuoteAmount,
+        minBaseAmount,
+        minQuoteAmount
+      )
+      .accounts({
+        user,
+        amm,
+        baseMint,
+        quoteMint,
+        lpMint,
+        userAtaLp: getATA(lpMint, user)[0],
+        userAtaBase: getATA(baseMint, user)[0],
+        userAtaQuote: getATA(quoteMint, user)[0],
+        vaultAtaBase: getATA(baseMint, amm)[0],
+        vaultAtaQuote: getATA(quoteMint, amm)[0],
+      });
   }
 
   removeLiquidity(
@@ -115,8 +157,14 @@ export class AmmClient {
     );
   }
 
-  async updateLTWAP(ammAddr: PublicKey) {
-    return ixs.updateLtwapHandler(this, ammAddr);
+  async crankThatTwap(amm: PublicKey) {
+    return this.crankThatTwapIx(amm).rpc();
+  }
+
+  crankThatTwapIx(amm: PublicKey) {
+    return this.program.methods.crankThatTwap().accounts({
+      amm,
+    });
   }
 
   // getter functions
@@ -135,7 +183,6 @@ export class AmmClient {
   async getAllAmms(): Promise<AmmWrapper[]> {
     return await this.program.account.amm.all();
   }
-
 
   getSwapPreview(amm: Amm, inputAmount: BN, isBuyBase: boolean): SwapPreview {
     let quoteAmount = amm.quoteAmount;

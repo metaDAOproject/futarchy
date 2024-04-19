@@ -52,6 +52,10 @@ export class ConditionalVaultClient {
     );
   }
 
+  async getVault(vault: PublicKey) {
+    return this.vaultProgram.account.conditionalVault.fetch(vault)
+  }
+
   initializeVaultIx(
     settlementAuthority: PublicKey,
     underlyingTokenMint: PublicKey,

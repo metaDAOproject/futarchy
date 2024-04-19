@@ -163,18 +163,18 @@ export class AutocratClient {
         vaultProgram: this.vaultClient.vaultProgram.programId,
         daoTreasury,
       })
-      .remainingAccounts(
-        instruction.accounts
-          .concat({
-            pubkey: instruction.programId,
-            isWritable: false,
-            isSigner: false,
-          })
-          .map((meta: any) =>
-            meta.pubkey.equals(daoTreasury)
-              ? { ...meta, isSigner: false }
-              : meta
-          )
-      );
+      // .remainingAccounts(
+      //   instruction.accounts
+      //     .concat({
+      //       pubkey: instruction.programId,
+      //       isWritable: false,
+      //       isSigner: false,
+      //     })
+      //     .map((meta: any) =>
+      //       meta.pubkey.equals(daoTreasury)
+      //         ? { ...meta, isSigner: false }
+      //         : meta
+      //     )
+      // );
   }
 }

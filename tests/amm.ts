@@ -198,7 +198,7 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.addLiquidity(
+      await ammClient.addLiquidityIx(
         amm,
         META,
         USDC,
@@ -237,7 +237,7 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.addLiquidity(
+      await ammClient.addLiquidityIx(
         amm,
         META,
         USDC,

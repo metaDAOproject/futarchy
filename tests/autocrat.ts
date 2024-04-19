@@ -39,10 +39,16 @@ import { AutocratMigrator } from "../target/types/autocrat_migrator";
 const { PublicKey, Keypair } = anchor.web3;
 
 import { OpenbookTwap } from "./fixtures/openbook_twap";
-import { AmmClient, getAmmAddr, getVaultAddr } from "../app/src";
+import { AmmClient, getATA, getAmmAddr, getAmmLpMintAddr, getVaultAddr } from "../app/src";
 import { PriceMath } from "../app/src/utils/priceMath";
 import { AutocratClient } from "../app/src/AutocratClient";
-import { TransactionInstruction } from "@solana/web3.js";
+import {
+  ComputeBudgetInstruction,
+  ComputeBudgetProgram,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import { ConditionalVaultClient } from "../app/src/ConditionalVaultClient";
 const OpenbookTwapIDL: OpenbookTwap = require("./fixtures/openbook_twap.json");
 
@@ -132,8 +138,8 @@ describe("autocrat", async function () {
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
 
-    ammClient = await AmmClient.createClient({ provider });
-    vaultClient = await ConditionalVaultClient.createClient({ provider });
+    ammClient = AmmClient.createClient({ provider });
+    vaultClient = ConditionalVaultClient.createClient({ provider });
     autocratClient = await AutocratClient.createClient({ provider });
 
     autocrat = new anchor.Program<Autocrat>(
@@ -333,7 +339,7 @@ describe("autocrat", async function () {
       basePassVaultUnderlyingTokenAccount,
       basePassConditionalTokenMint,
       baseFailConditionalTokenMint,
-      mm0,
+      mm0: MarketMaker,
       mm0OpenOrdersAccount,
       mm1OpenOrdersAccount,
       alice,
@@ -520,51 +526,66 @@ describe("autocrat", async function () {
         "finalize succeeded despite proposal being too young"
       );
 
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
-          proposal,
-          openbookTwapPassMarket,
-          openbookTwapFailMarket,
-          passAmm,
-          failAmm,
-          dao,
-          baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury,
-        })
-        .rpc()
+      await autocratClient
+        .finalizeProposal(proposal)
         .then(callbacks[0], callbacks[1]);
     });
 
     it("finalizes proposals when pass price TWAP > (fail price TWAP + threshold)", async function () {
-      let storedProposal = await autocrat.account.proposal.fetch(proposal);
+      let storedProposal = await autocratClient.getProposal(proposal);
+      let baseVault = await vaultClient.getVault(storedProposal.baseVault);
+      let quoteVault = await vaultClient.getVault(storedProposal.quoteVault);
 
-      const storedPassMarket = await openbook.deserializeMarketAccount(
-        openbookPassMarket
-      );
-      const storedFailMarket = await openbook.deserializeMarketAccount(
-        openbookFailMarket
+      let storedPassAmm = await ammClient.getAmm(storedProposal.passAmm);
+      // console.log(storedPassAmm);
+      assert.ok(storedPassAmm.baseMint.equals(baseVault.conditionalOnFinalizeTokenMint));
+      console.log(await getAccount(banksClient, getATA(storedPassAmm.baseMint, mm0.keypair.publicKey)[0]))
+
+      // let tx = 
+      //   new Transaction().add(
+      //   SystemProgram.transfer({
+      //     fromPubkey: payer.publicKey,
+      //     toPubkey: mm0.keypair.publicKey,
+      //     lamports: 100_000_000
+      //   }));
+      // tx.recentBlockhash = context.lastBlockhash;
+      // tx.sign(payer);
+
+      // await banksClient.processTransaction(
+      //   tx
+      // );
+
+      let [lpMint] = getAmmLpMintAddr(ammClient.getProgramId(), passAmm);
+
+      await createAssociatedTokenAccount(banksClient, payer, lpMint, mm0.keypair.publicKey);
+
+      [lpMint] = getAmmLpMintAddr(ammClient.getProgramId(), failAmm);
+
+      await createAssociatedTokenAccount(banksClient, payer, lpMint, mm0.keypair.publicKey);
+      // await createAssociatedTokenAccount(banksClient, payer, baseVault.conditionalOnFinalizeTokenMint, mm0.keypair.publicKey);
+      // await createAssociatedTokenAccount(banksClient, payer, quoteVault.conditionalOnFinalizeTokenMint, mm0.keypair.publicKey);
+      
+      await ammClient.addLiquidity(
+        storedProposal.passAmm,
+        1000,
+        100,
+        1000,
+        100,
+        mm0.keypair
       );
 
-      let currentClock;
-      for (let i = 0; i < 10; i++) {
-        await placeOrdersAroundMid(
-          openbookTwap,
-          openbook,
-          openbookTwapPassMarket,
-          mm0,
-          140_000
-        );
-        await placeOrdersAroundMid(
-          openbookTwap,
-          openbook,
-          openbookTwapFailMarket,
-          mm0,
-          7_500
-        );
-        currentClock = await context.banksClient.getClock();
+      await ammClient.addLiquidity(
+        storedProposal.failAmm,
+        1000,
+        110,
+        1000,
+        110,
+        mm0.keypair
+      );
+
+
+      for (let i = 0; i < 100; i++) {
+        let currentClock = await context.banksClient.getClock();
         context.setClock(
           new Clock(
             currentClock.slot + 10_000n,
@@ -574,115 +595,26 @@ describe("autocrat", async function () {
             currentClock.unixTimestamp
           )
         );
+        await ammClient
+          .crankThatTwapIx(storedProposal.passAmm)
+          .preInstructions([
+            ComputeBudgetProgram.setComputeUnitPrice({
+              microLamports: i,
+            }),
+          ])
+          .rpc();
+        await ammClient.crankThatTwapIx(storedProposal.failAmm).preInstructions([
+          ComputeBudgetProgram.setComputeUnitPrice({
+            microLamports: i,
+          })
+        ]).rpc();
       }
 
-      // set the current clock slot to +10_000
-      currentClock = await context.banksClient.getClock();
-      context.setClock(
-        new Clock(
-          currentClock.slot + 10_000n,
-          currentClock.epochStartTimestamp,
-          currentClock.epoch,
-          currentClock.leaderScheduleEpoch,
-          currentClock.unixTimestamp
-        )
-      );
+      await autocratClient.finalizeProposal(proposal);
 
-      let takeBuyPassArgs: PlaceOrderArgs = {
-        side: Side.Bid,
-        priceLots: new BN(145_000), // $14.5 USDC for 0.1 META
-        maxBaseLots: new BN(10), // Buy 1 meta
-        maxQuoteLotsIncludingFees: new BN(10_450_000),
-        clientOrderId: new BN(1),
-        orderType: OrderType.Market,
-        expiryTimestamp: new BN(0),
-        selfTradeBehavior: SelfTradeBehavior.DecrementTake,
-        limit: 255,
-      };
 
-      await openbookTwap.methods
-        .placeTakeOrder(takeBuyPassArgs)
-        .accountsStrict({
-          market: openbookPassMarket,
-          asks: storedPassMarket.asks,
-          bids: storedPassMarket.bids,
-          eventHeap: storedPassMarket.eventHeap,
-          marketAuthority: storedPassMarket.marketAuthority,
-          marketBaseVault: storedPassMarket.marketBaseVault,
-          marketQuoteVault: storedPassMarket.marketQuoteVault,
-          userQuoteAccount: aliceQuotePassConditionalTokenAccount,
-          userBaseAccount: aliceBasePassConditionalTokenAccount,
-          referrerAccount: null,
-          twapMarket: openbookTwapPassMarket,
-          openbookProgram: OPENBOOK_PROGRAM_ID,
-          tokenProgram: token.TOKEN_PROGRAM_ID,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          signer: alice.publicKey,
-        })
-        .signers([alice])
-        .rpc();
-
-      currentClock = await context.banksClient.getClock();
-      const newSlot = currentClock.slot + 10_000_000n;
-      context.setClock(
-        new Clock(
-          newSlot,
-          currentClock.epochStartTimestamp,
-          currentClock.epoch,
-          currentClock.leaderScheduleEpoch,
-          currentClock.unixTimestamp
-        )
-      );
-      await placeOrdersAroundMid(
-        openbookTwap,
-        openbook,
-        openbookTwapPassMarket,
-        mm0,
-        140_000
-      );
-      await placeOrdersAroundMid(
-        openbookTwap,
-        openbook,
-        openbookTwapFailMarket,
-        mm0,
-        7_500
-      );
-
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
-          proposal,
-          openbookTwapPassMarket,
-          openbookTwapFailMarket,
-          passAmm,
-          failAmm,
-          dao,
-          baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc();
-
-      let storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
-        baseVault
-      );
-      let storedQuoteVault = await vaultProgram.account.conditionalVault.fetch(
-        quoteVault
-      );
+      let storedBaseVault = await vaultClient.getVault(storedProposal.baseVault);
+      let storedQuoteVault = await vaultClient.getVault(storedProposal.quoteVault);
 
       assert.exists(storedBaseVault.status.finalized);
       assert.exists(storedQuoteVault.status.finalized);
@@ -2189,7 +2121,7 @@ async function initializeProposal(
       passBaseMint,
       passQuoteMint,
       twapFirstObservationScaled,
-      twapMaxObservationChangePerUpdateScaled,
+      new BN(10).pow(new BN(30)),
       proposalKeypair.publicKey
     )
     .rpc();

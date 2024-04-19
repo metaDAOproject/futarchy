@@ -61,7 +61,7 @@ pub mod amm {
         instructions::swap::handler(ctx, direction, input_amount, output_amount_min)
     }
 
-    pub fn update_ltwap(ctx: Context<UpdateLtwap>) -> Result<()> {
-        instructions::update_ltwap::handler(ctx)
+    pub fn crank_that_twap(ctx: Context<CrankThatTwap>) -> Result<()> {
+        instructions::crank_that_twap::handler(ctx)
     }
 }
