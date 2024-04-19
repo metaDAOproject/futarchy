@@ -101,8 +101,8 @@ describe("amm", async function () {
         twapFirstObservationScaled,
         twapMaxObservationChangePerUpdateScaled,
       ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
-
-      let nonce = new BN(0);
+      
+      let proposal = Keypair.generate().publicKey;
 
       await ammClient
         .createAmm(
@@ -110,7 +110,7 @@ describe("amm", async function () {
           USDC,
           twapFirstObservationScaled,
           twapMaxObservationChangePerUpdateScaled,
-          nonce
+          proposal
         ).rpc();
 
       let bump;
@@ -118,7 +118,7 @@ describe("amm", async function () {
         ammClient.program.programId,
         META,
         USDC,
-        nonce
+        proposal
       );
 
       const ammAcc = await ammClient.getAmm(amm);
@@ -169,12 +169,15 @@ describe("amm", async function () {
         "create AMM succeeded despite same token mints"
       );
 
+      let proposal = Keypair.generate().publicKey;
+
       await ammClient
         .createAmm(
           META,
           META,
           twapFirstObservationScaled,
-          twapMaxObservationChangePerUpdateScaled
+          twapMaxObservationChangePerUpdateScaled,
+          proposal
         )
         .rpc()
         .then(callbacks[0], callbacks[1]);

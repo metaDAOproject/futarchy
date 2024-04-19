@@ -68,8 +68,8 @@ impl TwapOracle {
 pub struct Amm {
     pub bump: u8,
     /// We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.
-    /// So we can use a nonce as a PDA seed.
-    pub nonce: u64,
+    /// So we can use proposal as a PDA seed.
+    pub proposal: Pubkey,
 
     pub created_at_slot: u64,
 

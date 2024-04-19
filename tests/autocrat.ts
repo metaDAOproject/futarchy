@@ -1514,18 +1514,7 @@ describe("autocrat", async function () {
       );
 
       await autocratClient
-        .finalizeProposalIx(
-          proposal,
-          instruction,
-          mertdDao,
-          passAmm,
-          failAmm,
-          openbookTwapPassMarket,
-          openbookTwapFailMarket,
-          baseVault,
-          quoteVault
-        )
-        .rpc()
+        .finalizeProposal(proposal)
         .then(callbacks[0], callbacks[1]);
     });
 
@@ -1639,19 +1628,7 @@ describe("autocrat", async function () {
         7_500
       );
 
-      await autocratClient
-        .finalizeProposalIx(
-          proposal,
-          instruction,
-          mertdDao,
-          passAmm,
-          failAmm,
-          openbookTwapPassMarket,
-          openbookTwapFailMarket,
-          baseVault,
-          quoteVault
-        )
-        .rpc();
+      await autocratClient.finalizeProposal(proposal);
 
       let storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
         baseVault
@@ -1862,19 +1839,7 @@ describe("autocrat", async function () {
       let storedDao = await autocrat.account.dao.fetch(mertdDao);
       const passThresholdBpsBefore = storedDao.passThresholdBps;
 
-      await autocratClient
-        .finalizeProposalIx(
-          proposal,
-          instruction,
-          mertdDao,
-          passAmm,
-          failAmm,
-          openbookTwapPassMarket,
-          openbookTwapFailMarket,
-          baseVault,
-          quoteVault
-        )
-        .rpc();
+      await autocratClient.finalizeProposal(proposal);
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.failed);
@@ -2191,19 +2156,17 @@ async function initializeProposal(
 
   let vaultNonce = new BN(storedDAO.proposalCount + 1);
 
-  const baseVault = await vaultClient
-    .initializeVault(
-      storedDAO.treasury,
-      storedDAO.tokenMint,
-      proposalKeypair.publicKey
-    );
+  const baseVault = await vaultClient.initializeVault(
+    storedDAO.treasury,
+    storedDAO.tokenMint,
+    proposalKeypair.publicKey
+  );
 
-  const quoteVault = await vaultClient
-    .initializeVault(
-      storedDAO.treasury,
-      storedDAO.usdcMint,
-      proposalKeypair.publicKey
-    );
+  const quoteVault = await vaultClient.initializeVault(
+    storedDAO.treasury,
+    storedDAO.usdcMint,
+    proposalKeypair.publicKey
+  );
 
   const passBaseMint = (
     await vaultProgram.account.conditionalVault.fetch(baseVault)
@@ -2218,8 +2181,6 @@ async function initializeProposal(
     await vaultProgram.account.conditionalVault.fetch(quoteVault)
   ).conditionalOnRevertTokenMint;
 
-  let ammNonce = new BN(Math.random() * 100_000_000);
-
   let [twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled] =
     PriceMath.scalePrices(9, 6, 100, 1);
 
@@ -2229,7 +2190,7 @@ async function initializeProposal(
       passQuoteMint,
       twapFirstObservationScaled,
       twapMaxObservationChangePerUpdateScaled,
-      ammNonce
+      proposalKeypair.publicKey
     )
     .rpc();
 
@@ -2237,7 +2198,7 @@ async function initializeProposal(
     ammClient.getProgramId(),
     passBaseMint,
     passQuoteMint,
-    ammNonce
+    proposalKeypair.publicKey
   );
 
   await ammClient
@@ -2246,7 +2207,7 @@ async function initializeProposal(
       failQuoteMint,
       twapFirstObservationScaled,
       twapMaxObservationChangePerUpdateScaled,
-      ammNonce
+      proposalKeypair.publicKey
     )
     .rpc();
 
@@ -2254,7 +2215,7 @@ async function initializeProposal(
     ammClient.getProgramId(),
     failBaseMint,
     failQuoteMint,
-    ammNonce
+    proposalKeypair.publicKey
   );
 
   const [daoTreasury] = PublicKey.findProgramAddressSync(
@@ -2411,7 +2372,6 @@ async function initializeProposal(
 
   assert.ok(storedProposal.passAmm.equals(passAmm));
   assert.ok(storedProposal.failAmm.equals(failAmm));
-  assert.equal(storedProposal.ammNonce.toString(), ammNonce.toString());
   assert.ok(
     storedProposal.openbookTwapFailMarket.equals(openbookTwapFailMarket)
   );

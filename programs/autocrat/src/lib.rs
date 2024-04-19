@@ -125,7 +125,6 @@ pub struct Proposal {
     pub instruction: ProposalInstruction,
     pub pass_amm: Pubkey,
     pub fail_amm: Pubkey,
-    pub amm_nonce: u64,
     pub openbook_twap_pass_market: Pubkey,
     pub openbook_twap_fail_market: Pubkey,
     pub openbook_pass_market: Pubkey,
@@ -309,7 +308,6 @@ pub mod autocrat {
             instruction,
             pass_amm: ctx.accounts.pass_amm.key(),
             fail_amm: ctx.accounts.fail_amm.key(),
-            amm_nonce: ctx.accounts.pass_amm.nonce,
             openbook_twap_pass_market: pass_twap_market.key(),
             openbook_twap_fail_market: fail_twap_market.key(),
             openbook_pass_market: ctx.accounts.openbook_pass_market.key(),
@@ -462,6 +460,7 @@ pub struct InitializeDAO<'info> {
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
     pub token_mint: Account<'info, Mint>,
+    // todo: statically check that this is USDC given a feature flag
     #[account(mint::decimals = 6)]
     pub usdc_mint: Account<'info, Mint>,
 }
@@ -494,12 +493,13 @@ pub struct InitializeProposal<'info> {
     #[account(
         constraint = pass_amm.base_mint == base_vault.conditional_on_finalize_token_mint,
         constraint = pass_amm.quote_mint == quote_vault.conditional_on_finalize_token_mint,
-        constraint = pass_amm.nonce == fail_amm.nonce
+        has_one = proposal
     )]
     pub pass_amm: Box<Account<'info, Amm>>,
     #[account(
         constraint = fail_amm.base_mint == base_vault.conditional_on_revert_token_mint,
-        constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint
+        constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint,
+        has_one = proposal
     )]
     pub fail_amm: Box<Account<'info, Amm>>,
     pub openbook_pass_market: AccountLoader<'info, Market>,

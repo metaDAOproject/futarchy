@@ -97,14 +97,14 @@ export const getAmmAddr = (
   programId: PublicKey,
   baseMint: PublicKey,
   quoteMint: PublicKey,
-  nonce: BN
+  proposal: PublicKey
 ): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [
       utils.bytes.utf8.encode("amm__"),
       baseMint.toBuffer(),
       quoteMint.toBuffer(),
-      nonce.toBuffer("le", 8),
+      proposal.toBuffer()
     ],
     programId
   );

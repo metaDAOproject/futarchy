@@ -3,7 +3,7 @@ use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, *};
 
 use crate::error::AmmError;
-use crate::generate_vault_seeds;
+use crate::generate_amm_seeds;
 use crate::state::*;
 
 #[derive(Accounts)]
@@ -56,8 +56,8 @@ pub fn handler(
     let Swap {
         user,
         amm,
-        base_mint,
-        quote_mint,
+        base_mint: _,
+        quote_mint: _,
         user_ata_base,
         user_ata_quote,
         vault_ata_base,
@@ -73,10 +73,7 @@ pub fn handler(
 
     let output_amount = amm.swap(input_amount, swap_type)?;
 
-    let base_mint_key = base_mint.key();
-    let quote_mint_key = quote_mint.key();
-
-    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.nonce, amm.bump);
+    let seeds = generate_amm_seeds!(amm);
 
     let (user_from, vault_to, vault_from, user_to) = match swap_type {
         SwapType::Buy => (

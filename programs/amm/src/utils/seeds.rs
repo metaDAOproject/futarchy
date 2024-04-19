@@ -1,12 +1,12 @@
 #[macro_export]
-macro_rules! generate_vault_seeds {
-    ($base_mint:expr, $quote_mint:expr, $nonce:expr, $bump:expr) => {{
+macro_rules! generate_amm_seeds {
+    ($amm:expr) => {{
         &[
             AMM_SEED_PREFIX,
-            $base_mint.as_ref(),
-            $quote_mint.as_ref(),
-            &$nonce.to_le_bytes(),
-            &[$bump],
+            $amm.base_mint.as_ref(),
+            $amm.quote_mint.as_ref(),
+            $amm.proposal.as_ref(),
+            &[$amm.bump],
         ]
     }};
 }

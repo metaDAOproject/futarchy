@@ -10,7 +10,7 @@ use crate::state::*;
 pub struct CreateAmmArgs {
     pub twap_initial_observation: u128,
     pub twap_max_observation_change_per_update: u128,
-    pub nonce: u64,
+    pub proposal: Pubkey,
 }
 
 #[derive(Accounts)]
@@ -26,7 +26,7 @@ pub struct CreateAmm<'info> {
             AMM_SEED_PREFIX,
             base_mint.key().as_ref(),
             quote_mint.key().as_ref(),
-            &args.nonce.to_le_bytes(),
+            args.proposal.as_ref()
         ],
         bump
     )]
@@ -94,12 +94,12 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
     let CreateAmmArgs {
         twap_initial_observation,
         twap_max_observation_change_per_update,
-        nonce,
+        proposal,
     } = args;
 
     amm.set_inner(Amm {
         bump: *ctx.bumps.get("amm").unwrap(),
-        nonce,
+        proposal,
 
         created_at_slot: current_slot,
 

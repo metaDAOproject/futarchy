@@ -10,8 +10,8 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
         amm,
         lp_mint,
 
-        base_mint,
-        quote_mint,
+        base_mint: _,
+        quote_mint: _,
         user_ata_lp,
         user_ata_base,
         user_ata_quote,
@@ -77,10 +77,7 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
     amm.base_amount = amm.base_amount.checked_sub(base_to_withdraw).unwrap();
     amm.quote_amount = amm.quote_amount.checked_sub(quote_to_withdraw).unwrap();
 
-    let base_mint_key = base_mint.key();
-    let quote_mint_key = quote_mint.key();
-
-    let seeds = generate_vault_seeds!(base_mint_key, quote_mint_key, amm.nonce, amm.bump);
+    let seeds = generate_amm_seeds!(amm);
 
     for (amount_to_withdraw, from, to) in [
         (base_to_withdraw, vault_ata_base, user_ata_base),
