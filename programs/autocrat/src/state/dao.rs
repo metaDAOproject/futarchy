@@ -17,10 +17,5 @@ pub struct DAO {
     // of 1_000_000_000, your `twap_expected_value` could be 10_000 (10,000 hundredths of pennies = $1).
     pub twap_expected_value: u64,
     pub max_observation_change_per_update_lots: u64,
-    // amount of base tokens that constitute a lot. for example, if TOKEN has
-    // 9 decimals, then if lot size was 1_000_000_000 you could trade in increments
-    // of 1 TOKEN. ideally, you want to pick a lot size where each lot is worth $1 - $10.
-    // this balances spam-prevention with allowing users to trade small amounts.
-    pub base_lot_size: i64,
 }
 

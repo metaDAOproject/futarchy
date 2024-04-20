@@ -34,7 +34,6 @@ impl InitializeDAO<'_> {
             slots_per_proposal: THREE_DAYS_IN_SLOTS,
             twap_expected_value,
             max_observation_change_per_update_lots: DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
-            base_lot_size,
         });
 
         Ok(())
