@@ -20,6 +20,7 @@ import {
   AMM_PROGRAM_ID,
   AUTOCRAT_PROGRAM_ID,
   CONDITIONAL_VAULT_PROGRAM_ID,
+  MAINNET_USDC,
 } from "./constants";
 import { Amm, AmmWrapper } from "./types";
 import {
@@ -96,6 +97,41 @@ export class AutocratClient {
 
   async getDao(dao: PublicKey) {
     return this.autocrat.account.dao.fetch(dao);
+  }
+
+  async initializeDao(
+    tokenMint: PublicKey,
+    baseLotSize: BN,
+    twapExpectedValue: BN,
+    usdcMint: PublicKey = MAINNET_USDC,
+    daoKeypair: Keypair = Keypair.generate()
+  ): Promise<PublicKey> {
+    await this.initializeDaoIx(
+      daoKeypair,
+      tokenMint,
+      baseLotSize,
+      twapExpectedValue,
+      usdcMint
+    ).rpc();
+
+    return daoKeypair.publicKey;
+  }
+
+  initializeDaoIx(
+    daoKeypair: Keypair,
+    tokenMint: PublicKey,
+    baseLotSize: BN,
+    twapExpectedValue: BN,
+    usdcMint: PublicKey = MAINNET_USDC
+  ) {
+    return this.autocrat.methods
+      .initializeDao(baseLotSize, twapExpectedValue)
+      .accounts({
+        dao: daoKeypair.publicKey,
+        tokenMint,
+        usdcMint,
+      })
+      .signers([daoKeypair]);
   }
 
   async initializeProposal(

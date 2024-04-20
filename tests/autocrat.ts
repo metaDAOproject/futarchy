@@ -146,33 +146,29 @@ describe("autocrat", async function () {
 
   describe("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
-      const daoKP = Keypair.generate();
-      dao = daoKP.publicKey;
+      dao = await autocratClient
+        .initializeDao(
+          META,
+          new BN(100_000_000),
+          new BN(100_000),
+          USDC
+        );
 
-      [daoTreasury] = PublicKey.findProgramAddressSync(
+      let treasuryPdaBump;
+      [daoTreasury, treasuryPdaBump] = PublicKey.findProgramAddressSync(
         [dao.toBuffer()],
         autocrat.programId
       );
 
-      await autocrat.methods
-        .initializeDao(new BN(100_000_000), new BN(100_000))
-        .accounts({
-          dao,
-          payer: payer.publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          tokenMint: META,
-          usdcMint: USDC,
-        })
-        .signers([daoKP])
-        .rpc();
-
-      const daoAcc = await autocrat.account.dao.fetch(dao);
-      assert(daoAcc.tokenMint.equals(META));
-      assert(daoAcc.usdcMint.equals(USDC));
-      assert.equal(daoAcc.proposalCount, 0);
-      assert.equal(daoAcc.passThresholdBps, 300);
-      assert.ok(daoAcc.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
-      assert.ok(daoAcc.burnDecayPerSlotLamports.eq(new BN(23_150)));
+      const storedDao = await autocratClient.getDao(dao);
+      assert(storedDao.treasury.equals(daoTreasury));
+      assert.equal(storedDao.treasuryPdaBump, treasuryPdaBump);
+      assert(storedDao.tokenMint.equals(META));
+      assert(storedDao.usdcMint.equals(USDC));
+      assert.equal(storedDao.proposalCount, 0);
+      assert.equal(storedDao.passThresholdBps, 300);
+      assert.ok(storedDao.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
+      assert.ok(storedDao.burnDecayPerSlotLamports.eq(new BN(23_150)));
 
       treasuryMetaAccount = await createAssociatedTokenAccount(
         banksClient,
@@ -189,24 +185,12 @@ describe("autocrat", async function () {
     });
 
     it("initializes a second DAO", async function () {
-      const mertdDaoKP = Keypair.generate();
-      mertdDao = mertdDaoKP.publicKey;
+      mertdDao = await autocratClient.initializeDao(MERTD, new BN(1_000_000), new BN(1_000), USDC);
 
       [mertdDaoTreasury] = PublicKey.findProgramAddressSync(
         [mertdDao.toBuffer()],
         autocrat.programId
       );
-
-      await autocrat.methods
-        .initializeDao(new BN(1_000_000), new BN(1_000))
-        .accounts({
-          dao: mertdDao,
-          payer: payer.publicKey,
-          tokenMint: MERTD,
-          usdcMint: USDC,
-        })
-        .signers([mertdDaoKP])
-        .rpc();
 
       mertdTreasuryMertdAccount = await createAssociatedTokenAccount(
         banksClient,
@@ -327,8 +311,7 @@ describe("autocrat", async function () {
         data: ix.data,
       };
 
-      proposal = (await autocratClient.initializeProposal(dao, "", instruction))
-        .proposal;
+      proposal = await autocratClient.initializeProposal(dao, "", instruction);
 
       ({ baseVault, quoteVault, passAmm, failAmm } =
         await autocrat.account.proposal.fetch(proposal));
@@ -657,12 +640,7 @@ describe("autocrat", async function () {
   });
 
   describe("#execute_proposal", async function () {
-    let proposal,
-      passAmm,
-      failAmm,
-      baseVault,
-      quoteVault,
-      instruction;
+    let proposal, passAmm, failAmm, baseVault, quoteVault, instruction;
 
     beforeEach(async function () {
       await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
@@ -676,12 +654,8 @@ describe("autocrat", async function () {
 
       proposal = await autocratClient.initializeProposal(dao, "", instruction);
 
-      ({
-        baseVault,
-        quoteVault,
-        passAmm,
-        failAmm,
-      } = await autocrat.account.proposal.fetch(proposal));
+      ({ baseVault, quoteVault, passAmm, failAmm } =
+        await autocrat.account.proposal.fetch(proposal));
     });
 
     it("doesn't allow pending proposals to be executed", async function () {
@@ -690,7 +664,9 @@ describe("autocrat", async function () {
         "executed despite proposal still pending"
       );
 
-      await autocratClient.executeProposal(proposal).then(callbacks[0], callbacks[1]);
+      await autocratClient
+        .executeProposal(proposal)
+        .then(callbacks[0], callbacks[1]);
     });
 
     it("doesn't allow failed proposals to be executed", async function () {
@@ -717,7 +693,8 @@ describe("autocrat", async function () {
         "executed despite proposal proposal failed"
       );
 
-      await autocratClient.executeProposal(proposal)
+      await autocratClient
+        .executeProposal(proposal)
         .then(callbacks[0], callbacks[1]);
     });
 
@@ -757,7 +734,8 @@ describe("autocrat", async function () {
         "executed despite already being executed"
       );
 
-      await autocratClient.executeProposalIx(proposal, dao, storedProposal.instruction)
+      await autocratClient
+        .executeProposalIx(proposal, dao, storedProposal.instruction)
         .preInstructions([
           // add a pre-instruction so it doesn't think it's already processed it
           anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
