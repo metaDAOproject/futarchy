@@ -11,7 +11,6 @@ pub struct DAO {
     // fail price in order for the proposal to pass
     pub pass_threshold_bps: u16,
     pub slots_per_proposal: u64,
-    pub market_taker_fee: i64,
     // the TWAP can only move by a certain amount per update, so it needs to start at
     // a value. that's `twap_expected_value`, and it's in base lots divided by quote lots.
     // so if you expect your token to trade around $1, your token has 9 decimals and a base_lot_size

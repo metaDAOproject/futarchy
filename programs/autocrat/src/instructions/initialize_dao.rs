@@ -32,7 +32,6 @@ impl InitializeDAO<'_> {
             proposal_count: 0,
             pass_threshold_bps: DEFAULT_PASS_THRESHOLD_BPS,
             slots_per_proposal: THREE_DAYS_IN_SLOTS,
-            market_taker_fee: 0,
             twap_expected_value,
             max_observation_change_per_update_lots: DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
             base_lot_size,
