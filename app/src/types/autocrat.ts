@@ -225,20 +225,8 @@ export type Autocrat = {
             "type": "u32"
           },
           {
-            "name": "lastProposalSlot",
-            "type": "u64"
-          },
-          {
             "name": "passThresholdBps",
             "type": "u16"
-          },
-          {
-            "name": "baseBurnLamports",
-            "type": "u64"
-          },
-          {
-            "name": "burnDecayPerSlotLamports",
-            "type": "u64"
           },
           {
             "name": "slotsPerProposal",
@@ -322,50 +310,6 @@ export type Autocrat = {
   ],
   "types": [
     {
-      "name": "ProposalInstruction",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "programId",
-            "type": "publicKey"
-          },
-          {
-            "name": "accounts",
-            "type": {
-              "vec": {
-                "defined": "ProposalAccount"
-              }
-            }
-          },
-          {
-            "name": "data",
-            "type": "bytes"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ProposalAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pubkey",
-            "type": "publicKey"
-          },
-          {
-            "name": "isSigner",
-            "type": "bool"
-          },
-          {
-            "name": "isWritable",
-            "type": "bool"
-          }
-        ]
-      }
-    },
-    {
       "name": "UpdateDaoParams",
       "type": {
         "kind": "struct",
@@ -374,18 +318,6 @@ export type Autocrat = {
             "name": "passThresholdBps",
             "type": {
               "option": "u16"
-            }
-          },
-          {
-            "name": "baseBurnLamports",
-            "type": {
-              "option": "u64"
-            }
-          },
-          {
-            "name": "burnDecayPerSlotLamports",
-            "type": {
-              "option": "u64"
             }
           },
           {
@@ -417,6 +349,50 @@ export type Autocrat = {
             "type": {
               "option": "i64"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "publicKey"
+          },
+          {
+            "name": "isSigner",
+            "type": "bool"
+          },
+          {
+            "name": "isWritable",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalInstruction",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "programId",
+            "type": "publicKey"
+          },
+          {
+            "name": "accounts",
+            "type": {
+              "vec": {
+                "defined": "ProposalAccount"
+              }
+            }
+          },
+          {
+            "name": "data",
+            "type": "bytes"
           }
         ]
       }
@@ -723,20 +699,8 @@ export const IDL: Autocrat = {
             "type": "u32"
           },
           {
-            "name": "lastProposalSlot",
-            "type": "u64"
-          },
-          {
             "name": "passThresholdBps",
             "type": "u16"
-          },
-          {
-            "name": "baseBurnLamports",
-            "type": "u64"
-          },
-          {
-            "name": "burnDecayPerSlotLamports",
-            "type": "u64"
           },
           {
             "name": "slotsPerProposal",
@@ -820,50 +784,6 @@ export const IDL: Autocrat = {
   ],
   "types": [
     {
-      "name": "ProposalInstruction",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "programId",
-            "type": "publicKey"
-          },
-          {
-            "name": "accounts",
-            "type": {
-              "vec": {
-                "defined": "ProposalAccount"
-              }
-            }
-          },
-          {
-            "name": "data",
-            "type": "bytes"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ProposalAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pubkey",
-            "type": "publicKey"
-          },
-          {
-            "name": "isSigner",
-            "type": "bool"
-          },
-          {
-            "name": "isWritable",
-            "type": "bool"
-          }
-        ]
-      }
-    },
-    {
       "name": "UpdateDaoParams",
       "type": {
         "kind": "struct",
@@ -872,18 +792,6 @@ export const IDL: Autocrat = {
             "name": "passThresholdBps",
             "type": {
               "option": "u16"
-            }
-          },
-          {
-            "name": "baseBurnLamports",
-            "type": {
-              "option": "u64"
-            }
-          },
-          {
-            "name": "burnDecayPerSlotLamports",
-            "type": {
-              "option": "u64"
             }
           },
           {
@@ -915,6 +823,50 @@ export const IDL: Autocrat = {
             "type": {
               "option": "i64"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "publicKey"
+          },
+          {
+            "name": "isSigner",
+            "type": "bool"
+          },
+          {
+            "name": "isWritable",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalInstruction",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "programId",
+            "type": "publicKey"
+          },
+          {
+            "name": "accounts",
+            "type": {
+              "vec": {
+                "defined": "ProposalAccount"
+              }
+            }
+          },
+          {
+            "name": "data",
+            "type": "bytes"
           }
         ]
       }

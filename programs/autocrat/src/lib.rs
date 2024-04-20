@@ -72,10 +72,6 @@ pub const TEN_DAYS_IN_SECONDS: i64 = 10 * 24 * 60 * 60;
 // by default, the pass price needs to be 3% higher than the fail price
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 300;
 
-// start at 10 SOL ($600 at current prices), decay by ~5 SOL per day
-pub const DEFAULT_BASE_BURN_LAMPORTS: u64 = 10 * solana_program::native_token::LAMPORTS_PER_SOL;
-pub const DEFAULT_BURN_DECAY_PER_SLOT_LAMPORTS: u64 = 23_150;
-
 pub const MAX_BPS: u16 = 10_000;
 
 // TWAP can only move by $5 per slot

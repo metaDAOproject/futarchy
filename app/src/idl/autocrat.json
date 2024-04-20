@@ -225,20 +225,8 @@
             "type": "u32"
           },
           {
-            "name": "lastProposalSlot",
-            "type": "u64"
-          },
-          {
             "name": "passThresholdBps",
             "type": "u16"
-          },
-          {
-            "name": "baseBurnLamports",
-            "type": "u64"
-          },
-          {
-            "name": "burnDecayPerSlotLamports",
-            "type": "u64"
           },
           {
             "name": "slotsPerProposal",
@@ -322,50 +310,6 @@
   ],
   "types": [
     {
-      "name": "ProposalInstruction",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "programId",
-            "type": "publicKey"
-          },
-          {
-            "name": "accounts",
-            "type": {
-              "vec": {
-                "defined": "ProposalAccount"
-              }
-            }
-          },
-          {
-            "name": "data",
-            "type": "bytes"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ProposalAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pubkey",
-            "type": "publicKey"
-          },
-          {
-            "name": "isSigner",
-            "type": "bool"
-          },
-          {
-            "name": "isWritable",
-            "type": "bool"
-          }
-        ]
-      }
-    },
-    {
       "name": "UpdateDaoParams",
       "type": {
         "kind": "struct",
@@ -374,18 +318,6 @@
             "name": "passThresholdBps",
             "type": {
               "option": "u16"
-            }
-          },
-          {
-            "name": "baseBurnLamports",
-            "type": {
-              "option": "u64"
-            }
-          },
-          {
-            "name": "burnDecayPerSlotLamports",
-            "type": {
-              "option": "u64"
             }
           },
           {
@@ -417,6 +349,50 @@
             "type": {
               "option": "i64"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "publicKey"
+          },
+          {
+            "name": "isSigner",
+            "type": "bool"
+          },
+          {
+            "name": "isWritable",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalInstruction",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "programId",
+            "type": "publicKey"
+          },
+          {
+            "name": "accounts",
+            "type": {
+              "vec": {
+                "defined": "ProposalAccount"
+              }
+            }
+          },
+          {
+            "name": "data",
+            "type": "bytes"
           }
         ]
       }

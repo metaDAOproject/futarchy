@@ -132,27 +132,6 @@ impl InitializeProposal<'_> {
         //     );
         // }
 
-        let slots_passed = clock.slot - dao.last_proposal_slot;
-        let burn_amount = dao.base_burn_lamports.saturating_sub(
-            dao.burn_decay_per_slot_lamports
-                .saturating_mul(slots_passed),
-        );
-        dao.last_proposal_slot = clock.slot;
-
-        let lockup_ix = solana_program::system_instruction::transfer(
-            &ctx.accounts.proposer.key(),
-            &ctx.accounts.dao_treasury.key(),
-            burn_amount,
-        );
-
-        solana_program::program::invoke(
-            &lockup_ix,
-            &[
-                ctx.accounts.proposer.to_account_info(),
-                ctx.accounts.dao_treasury.to_account_info(),
-            ],
-        )?;
-
         dao.proposal_count += 1;
 
         let proposal = &mut ctx.accounts.proposal;

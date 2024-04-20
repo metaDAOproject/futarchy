@@ -3,8 +3,6 @@ use super::*;
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct UpdateDaoParams {
     pub pass_threshold_bps: Option<u16>,
-    pub base_burn_lamports: Option<u64>,
-    pub burn_decay_per_slot_lamports: Option<u64>,
     pub slots_per_proposal: Option<u64>,
     pub market_taker_fee: Option<i64>,
     pub twap_expected_value: Option<u64>,
@@ -37,8 +35,6 @@ impl UpdateDao<'_> {
         }
 
         update_dao_if_passed!(pass_threshold_bps);
-        update_dao_if_passed!(base_burn_lamports);
-        update_dao_if_passed!(burn_decay_per_slot_lamports);
         update_dao_if_passed!(slots_per_proposal);
         update_dao_if_passed!(market_taker_fee);
         update_dao_if_passed!(twap_expected_value);

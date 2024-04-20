@@ -175,8 +175,6 @@ describe("autocrat", async function () {
       assert(storedDao.usdcMint.equals(USDC));
       assert.equal(storedDao.proposalCount, 0);
       assert.equal(storedDao.passThresholdBps, 300);
-      assert.ok(storedDao.baseBurnLamports.eq(new BN(1_000_000_000).muln(10)));
-      assert.ok(storedDao.burnDecayPerSlotLamports.eq(new BN(23_150)));
 
       treasuryMetaAccount = await createAssociatedTokenAccount(
         banksClient,
