@@ -541,27 +541,7 @@ describe("autocrat", async function () {
         1_000_000n
       );
 
-      await autocrat.methods
-        .executeProposal()
-        .accounts({
-          proposal,
-          dao,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc();
+      await autocratClient.executeProposal(proposal);
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
 
@@ -620,36 +600,7 @@ describe("autocrat", async function () {
       let storedDao = await autocrat.account.dao.fetch(dao);
       const passThresholdBpsBefore = storedDao.passThresholdBps;
 
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
-          proposal,
-          passAmm,
-          failAmm,
-          dao,
-          baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          autocrat.instruction.updateDao
-            .accounts({
-              dao,
-              daoTreasury,
-            })
-            .concat({
-              pubkey: autocrat.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc();
+      await autocratClient.finalizeProposal(proposal);
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.failed);
@@ -723,7 +674,7 @@ describe("autocrat", async function () {
         data: Buffer.from("hello, world"),
       };
 
-      await autocratClient.initializeProposal(dao, "", instruction);
+      proposal = await autocratClient.initializeProposal(dao, "", instruction);
 
       ({
         baseVault,
@@ -739,28 +690,7 @@ describe("autocrat", async function () {
         "executed despite proposal still pending"
       );
 
-      await autocrat.methods
-        .executeProposal()
-        .accounts({
-          proposal,
-          dao,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc()
-        .then(callbacks[0], callbacks[1]);
+      await autocratClient.executeProposal(proposal).then(callbacks[0], callbacks[1]);
     });
 
     it("doesn't allow failed proposals to be executed", async function () {
@@ -776,32 +706,7 @@ describe("autocrat", async function () {
         )
       );
 
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
-          proposal,
-          passAmm,
-          failAmm,
-          dao,
-          baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(mertdDaoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc();
+      await autocratClient.finalizeProposal(proposal);
 
       assert.exists(
         (await autocrat.account.proposal.fetch(proposal)).state.failed
@@ -812,27 +717,7 @@ describe("autocrat", async function () {
         "executed despite proposal proposal failed"
       );
 
-      await autocrat.methods
-        .executeProposal()
-        .accounts({
-          proposal,
-          dao,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc()
+      await autocratClient.executeProposal(proposal)
         .then(callbacks[0], callbacks[1]);
     });
 
@@ -860,83 +745,19 @@ describe("autocrat", async function () {
         )
       );
 
-      await autocrat.methods
-        .finalizeProposal()
-        .accounts({
-          proposal,
-          passAmm,
-          failAmm,
-          dao,
-          baseVault,
-          quoteVault,
-          vaultProgram: vaultProgram.programId,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(mertdDaoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc();
+      await autocratClient.finalizeProposal(proposal);
 
       const storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
 
-      await autocrat.methods
-        .executeProposal()
-        .accounts({
-          proposal,
-          dao,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc();
+      await autocratClient.executeProposal(proposal);
 
       const callbacks = expectError(
         "ProposalNotPassed",
         "executed despite already being executed"
       );
 
-      await autocrat.methods
-        .executeProposal()
-        .accounts({
-          proposal,
-          dao,
-          daoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(daoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
+      await autocratClient.executeProposalIx(proposal, dao, storedProposal.instruction)
         .preInstructions([
           // add a pre-instruction so it doesn't think it's already processed it
           anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
@@ -1177,27 +998,7 @@ describe("autocrat", async function () {
         300
       );
 
-      await autocrat.methods
-        .executeProposal()
-        .accounts({
-          proposal,
-          dao: mertdDao,
-          daoTreasury: mertdDaoTreasury,
-        })
-        .remainingAccounts(
-          instruction.accounts
-            .concat({
-              pubkey: instruction.programId,
-              isWritable: false,
-              isSigner: false,
-            })
-            .map((meta) =>
-              meta.pubkey.equals(mertdDaoTreasury)
-                ? { ...meta, isSigner: false }
-                : meta
-            )
-        )
-        .rpc();
+      await autocratClient.executeProposal(proposal);
 
       storedProposal = await autocrat.account.proposal.fetch(proposal);
 

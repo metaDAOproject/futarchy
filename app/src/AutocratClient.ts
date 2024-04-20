@@ -174,7 +174,7 @@ export class AutocratClient {
       ])
       .rpc();
 
-    return { proposal };
+    return proposal;
   }
 
   initializeProposalIx(
