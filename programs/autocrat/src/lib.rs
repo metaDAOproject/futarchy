@@ -84,10 +84,9 @@ pub mod autocrat {
 
     pub fn initialize_dao(
         ctx: Context<InitializeDAO>,
-        base_lot_size: i64,
-        twap_expected_value: u64,
+        params: InitializeDaoParams
     ) -> Result<()> {
-        InitializeDAO::handle(ctx, base_lot_size, twap_expected_value)
+        InitializeDAO::handle(ctx, params)
     }
 
     pub fn initialize_proposal(

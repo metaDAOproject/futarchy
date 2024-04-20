@@ -4,8 +4,8 @@ use super::*;
 pub struct UpdateDaoParams {
     pub pass_threshold_bps: Option<u16>,
     pub slots_per_proposal: Option<u64>,
-    pub twap_expected_value: Option<u64>,
-    pub max_observation_change_per_update_lots: Option<u64>,
+    pub twap_initial_observation: Option<u128>,
+    pub twap_max_observation_change_per_update: Option<u128>,
 }
 
 #[derive(Accounts)]
@@ -34,8 +34,8 @@ impl UpdateDao<'_> {
 
         update_dao_if_passed!(pass_threshold_bps);
         update_dao_if_passed!(slots_per_proposal);
-        update_dao_if_passed!(twap_expected_value);
-        update_dao_if_passed!(max_observation_change_per_update_lots);
+        update_dao_if_passed!(twap_initial_observation);
+        update_dao_if_passed!(twap_max_observation_change_per_update);
 
         Ok(())
     }

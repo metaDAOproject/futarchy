@@ -157,8 +157,8 @@ describe("autocrat", async function () {
       dao = await autocratClient
         .initializeDao(
           META,
-          new BN(100_000_000),
-          new BN(100_000),
+          400,
+          9,
           USDC
         );
 

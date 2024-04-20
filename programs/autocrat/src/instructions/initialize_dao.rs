@@ -1,5 +1,13 @@
 pub use super::*;
 
+#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub struct InitializeDaoParams {
+    pub twap_initial_observation: u128,
+    pub twap_max_observation_change_per_update: u128,
+    pub pass_threshold_bps: Option<u16>,
+    pub slots_per_proposal: Option<u64>,
+}
+
 #[derive(Accounts)]
 pub struct InitializeDAO<'info> {
     #[account(
@@ -18,7 +26,7 @@ pub struct InitializeDAO<'info> {
 }
 
 impl InitializeDAO<'_> {
-    pub fn handle(ctx: Context<Self>, base_lot_size: i64, twap_expected_value: u64) -> Result<()> {
+    pub fn handle(ctx: Context<Self>, params: InitializeDaoParams) -> Result<()> {
         let dao = &mut ctx.accounts.dao;
 
         let (treasury, treasury_pda_bump) =
@@ -30,10 +38,10 @@ impl InitializeDAO<'_> {
             treasury_pda_bump,
             treasury,
             proposal_count: 0,
-            pass_threshold_bps: DEFAULT_PASS_THRESHOLD_BPS,
-            slots_per_proposal: THREE_DAYS_IN_SLOTS,
-            twap_expected_value,
-            max_observation_change_per_update_lots: DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS,
+            pass_threshold_bps: params.pass_threshold_bps.unwrap_or(DEFAULT_PASS_THRESHOLD_BPS),
+            slots_per_proposal: params.slots_per_proposal.unwrap_or(THREE_DAYS_IN_SLOTS),
+            twap_initial_observation: params.twap_initial_observation,
+            twap_max_observation_change_per_update: params.twap_max_observation_change_per_update,
         });
 
         Ok(())

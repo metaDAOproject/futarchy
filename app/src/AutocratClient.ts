@@ -41,6 +41,7 @@ export type CreateClientParams = {
 };
 
 export type ProposalInstruction = IdlTypes<Autocrat>["ProposalInstruction"];
+export type InitializeDaoParams = IdlTypes<Autocrat>["InitializeDaoParams"];
 
 export class AutocratClient {
   public readonly provider: AnchorProvider;
@@ -162,16 +163,22 @@ export class AutocratClient {
 
   async initializeDao(
     tokenMint: PublicKey,
-    baseLotSize: BN,
-    twapExpectedValue: BN,
+    tokenPriceUiAmount: number,
+    tokenDecimals: number,
     usdcMint: PublicKey = MAINNET_USDC,
     daoKeypair: Keypair = Keypair.generate()
   ): Promise<PublicKey> {
+    let scaledPrice = PriceMath.scalePrice(tokenPriceUiAmount, tokenDecimals, 6);
+
     await this.initializeDaoIx(
       daoKeypair,
       tokenMint,
-      baseLotSize,
-      twapExpectedValue,
+      {
+        twapInitialObservation: scaledPrice,
+        twapMaxObservationChangePerUpdate: scaledPrice.divn(50),
+        passThresholdBps: null,
+        slotsPerProposal: null,
+      },
       usdcMint
     ).rpc();
 
@@ -181,12 +188,11 @@ export class AutocratClient {
   initializeDaoIx(
     daoKeypair: Keypair,
     tokenMint: PublicKey,
-    baseLotSize: BN,
-    twapExpectedValue: BN,
+    params: InitializeDaoParams,
     usdcMint: PublicKey = MAINNET_USDC
   ) {
     return this.autocrat.methods
-      .initializeDao(baseLotSize, twapExpectedValue)
+      .initializeDao(params)
       .accounts({
         dao: daoKeypair.publicKey,
         tokenMint,
