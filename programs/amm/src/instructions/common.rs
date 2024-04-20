@@ -27,15 +27,13 @@ pub struct AddOrRemoveLiquidity<'info> {
     )]
     pub user_ata_lp: Box<Account<'info, TokenAccount>>,
     #[account(
-        init_if_needed,
-        payer = user,
+        mut,
         associated_token::mint = base_mint,
         associated_token::authority = user,
     )]
     pub user_ata_base: Box<Account<'info, TokenAccount>>,
     #[account(
-        init_if_needed,
-        payer = user,
+        mut,
         associated_token::mint = quote_mint,
         associated_token::authority = user,
     )]

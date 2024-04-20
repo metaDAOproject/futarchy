@@ -1,9 +1,9 @@
 import { expect, assert } from "chai";
 import { Program } from "@coral-xyz/anchor";
 
-export const advanceBySlots = async (context: any, slots: number) => {
+export const advanceBySlots = async (context: any, slots: BigInt) => {
   const currentClock = await context.banksClient.getClock();
-  const slot = currentClock.slot + 1n;
+  const slot = currentClock.slot + slots;
   context.setClock(
     new Clock(
       slot,

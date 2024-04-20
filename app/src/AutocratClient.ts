@@ -99,6 +99,67 @@ export class AutocratClient {
     return this.autocrat.account.dao.fetch(dao);
   }
 
+  getProposalPdas(
+    proposal: PublicKey,
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
+    dao: PublicKey
+  ): {
+    baseVault: PublicKey;
+    quoteVault: PublicKey;
+    passBaseMint: PublicKey;
+    passQuoteMint: PublicKey;
+    failBaseMint: PublicKey;
+    failQuoteMint: PublicKey;
+    passAmm: PublicKey;
+    failAmm: PublicKey;
+  } {
+    let vaultProgramId = this.vaultClient.vaultProgram.programId;
+    const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
+    const [baseVault] = getVaultAddr(
+      this.vaultClient.vaultProgram.programId,
+      daoTreasury,
+      baseMint,
+      proposal
+    );
+    const [quoteVault] = getVaultAddr(
+      this.vaultClient.vaultProgram.programId,
+      daoTreasury,
+      quoteMint,
+      proposal
+    );
+
+    const [passBaseMint] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
+    const [passQuoteMint] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
+
+    const [failBaseMint] = getVaultRevertMintAddr(vaultProgramId, baseVault);
+    const [failQuoteMint] = getVaultRevertMintAddr(vaultProgramId, quoteVault);
+
+    const [passAmm] = getAmmAddr(
+      this.ammClient.program.programId,
+      passBaseMint,
+      passQuoteMint,
+      proposal
+    );
+    const [failAmm] = getAmmAddr(
+      this.ammClient.program.programId,
+      failBaseMint,
+      failQuoteMint,
+      proposal
+    );
+
+    return {
+      baseVault,
+      quoteVault,
+      passBaseMint,
+      passQuoteMint,
+      failBaseMint,
+      failQuoteMint,
+      passAmm,
+      failAmm
+    };
+  }
+
   async initializeDao(
     tokenMint: PublicKey,
     baseLotSize: BN,
@@ -164,6 +225,9 @@ export class AutocratClient {
       storedDao.usdcMint,
       proposal
     );
+
+    await this.vaultClient.mintConditionalTokens(baseVault, 1);
+    await this.vaultClient.mintConditionalTokens(quoteVault, 1_000);
 
     const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
     const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
@@ -375,4 +439,5 @@ export class AutocratClient {
           )
       );
   }
+
 }
