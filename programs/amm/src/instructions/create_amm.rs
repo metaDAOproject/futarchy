@@ -6,7 +6,6 @@ use crate::error::AmmError;
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-#[allow(non_snake_case)]
 pub struct CreateAmmArgs {
     pub twap_initial_observation: u128,
     pub twap_max_observation_change_per_update: u128,

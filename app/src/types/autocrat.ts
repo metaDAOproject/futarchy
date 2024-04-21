@@ -209,7 +209,7 @@ export type Autocrat = {
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
+          "name": "treasury",
           "isMut": false,
           "isSigner": true
         }
@@ -791,7 +791,7 @@ export const IDL: Autocrat = {
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
+          "name": "treasury",
           "isMut": false,
           "isSigner": true
         }

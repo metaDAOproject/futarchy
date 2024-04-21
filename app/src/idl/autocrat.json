@@ -209,7 +209,7 @@
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
+          "name": "treasury",
           "isMut": false,
           "isSigner": true
         }

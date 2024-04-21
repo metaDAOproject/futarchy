@@ -1,5 +1,12 @@
 use super::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct AddMetadataToConditionalTokensArgs {
+    pub proposal_number: u64,
+    pub on_finalize_uri: String,
+    pub on_revert_uri: String,
+}
+
 #[derive(Accounts)]
 pub struct AddMetadataToConditionalTokens<'info> {
     #[account(mut)]
@@ -43,7 +50,8 @@ impl AddMetadataToConditionalTokens<'_> {
 
         Ok(())
     }
-    pub fn handle(ctx: Context<Self>, proposal_number: u64, on_finalize_uri: String, on_revert_uri: String) -> Result<()> {
+
+    pub fn handle(ctx: Context<Self>, args: AddMetadataToConditionalTokensArgs) -> Result<()> {
         let seeds = generate_vault_seeds!(ctx.accounts.vault);
         let signer_seeds = &[&seeds[..]];
 
@@ -58,13 +66,13 @@ impl AddMetadataToConditionalTokens<'_> {
         for (symbol, uri, metadata, mint) in [
             (
                 on_finalize_token_symbol,
-                on_finalize_uri,
+                args.on_finalize_uri,
                 &ctx.accounts.conditional_on_finalize_token_metadata,
                 &ctx.accounts.conditional_on_finalize_token_mint,
             ),
             (
                 on_revert_token_symbol,
-                on_revert_uri,
+                args.on_revert_uri,
                 &ctx.accounts.conditional_on_revert_token_metadata,
                 &ctx.accounts.conditional_on_revert_token_mint,
             ),
@@ -84,7 +92,7 @@ impl AddMetadataToConditionalTokens<'_> {
             create_metadata_accounts_v3(
                 CpiContext::new(cpi_program, cpi_accounts).with_signer(signer_seeds),
                 DataV2 {
-                    name: format!("Proposal {}: {}", proposal_number, symbol),
+                    name: format!("Proposal {}: {}", args.proposal_number, symbol),
                     symbol,
                     uri,
                     seller_fee_basis_points: 0,

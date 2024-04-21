@@ -77,9 +77,7 @@ version = "1.0.0"
 dependencies = [
  "anchor-lang 0.28.0",
  "anchor-spl 0.28.0",
- "num-derive 0.4.1",
  "num-traits",
- "rust_decimal",
  "solana-security-txt",
 ]
 
@@ -1900,17 +1898,6 @@ checksum = "bffea85eea980d8a74453e5d02a8d93028f3c34725de143085a844ebe953258a"
 dependencies = [
  "byteorder",
  "rmp",
- "serde",
-]
-
-[[package]]
-name = "rust_decimal"
-version = "1.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee9164faf726e4f3ece4978b25ca877ddc6802fa77f38cdccb32c7f805ecd70c"
-dependencies = [
- "arrayvec",
- "num-traits",
  "serde",
 ]
 

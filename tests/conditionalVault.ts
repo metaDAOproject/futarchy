@@ -880,11 +880,11 @@ async function generateRandomVault(
     );
 
   const addMetadataToConditionalTokensIx = await vaultProgram.methods
-    .addMetadataToConditionalTokens(
-      new BN(0), // nonce,
-      METADATA_URI,
-      METADATA_URI
-    )
+    .addMetadataToConditionalTokens({
+      proposalNumber: new BN(0), // nonce,
+      onFinalizeUri: METADATA_URI,
+      onRevertUri: METADATA_URI
+    })
     .accounts({
       payer: payer.publicKey,
       vault,

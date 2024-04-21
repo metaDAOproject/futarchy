@@ -10,9 +10,11 @@ use mpl_token_metadata::state::DataV2;
 
 pub mod state;
 pub mod instructions;
+pub mod error;
 
 pub use state::*;
 pub use instructions::*;
+pub use error::VaultError;
 
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
@@ -23,8 +25,8 @@ security_txt! {
     project_url: "https://themetadao.org",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
-    source_code: "https://github.com/metaDAOproject/meta-dao",
-    source_release: "v0",
+    source_code: "https://github.com/metaDAOproject/futarchy",
+    source_release: "v1",
     auditors: "None",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
@@ -37,19 +39,17 @@ pub mod conditional_vault {
 
     pub fn initialize_conditional_vault(
         ctx: Context<InitializeConditionalVault>,
-        settlement_authority: Pubkey,
-        proposal: Pubkey,
+        args: InitializeConditionalVaultArgs
     ) -> Result<()> {
-        InitializeConditionalVault::handle(ctx, settlement_authority, proposal)
+        InitializeConditionalVault::handle(ctx, args)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn add_metadata_to_conditional_tokens(
         ctx: Context<AddMetadataToConditionalTokens>,
-        proposal_number: u64,
-        on_finalize_uri: String,
-        on_revert_uri: String,
+        args: AddMetadataToConditionalTokensArgs
     ) -> Result<()> {
-        AddMetadataToConditionalTokens::handle(ctx, proposal_number, on_finalize_uri, on_revert_uri)
+        AddMetadataToConditionalTokens::handle(ctx, args)
     }
 
     #[access_control(ctx.accounts.validate())]
@@ -78,18 +78,4 @@ pub mod conditional_vault {
     ) -> Result<()> {
         InteractWithVault::handle_redeem_conditional_tokens(ctx)
     }
-}
-
-#[error_code]
-pub enum VaultError {
-    #[msg("Insufficient underlying token balance to mint this amount of conditional tokens")]
-    InsufficientUnderlyingTokens,
-    #[msg("This `vault_underlying_token_account` is not this vault's `underlying_token_account`")]
-    InvalidVaultUnderlyingTokenAccount,
-    #[msg("This conditional token mint is not this vault's conditional token mint")]
-    InvalidConditionalTokenMint,
-    #[msg("Vault needs to be settled as finalized before users can redeem conditional tokens for underlying tokens")]
-    CantRedeemConditionalTokens,
-    #[msg("Once a vault has been settled, its status as either finalized or reverted cannot be changed")]
-    VaultAlreadySettled,
 }

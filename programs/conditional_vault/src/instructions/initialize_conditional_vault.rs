@@ -1,7 +1,13 @@
 use super::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct InitializeConditionalVaultArgs {
+    pub settlement_authority: Pubkey,
+    pub proposal: Pubkey,
+}
+
 #[derive(Accounts)]
-#[instruction(settlement_authority: Pubkey, proposal: Pubkey)]
+#[instruction(args: InitializeConditionalVaultArgs)]
 pub struct InitializeConditionalVault<'info> {
     #[account(
         init,
@@ -9,9 +15,9 @@ pub struct InitializeConditionalVault<'info> {
         space = 8 + std::mem::size_of::<ConditionalVault>(),
         seeds = [
             b"conditional_vault", 
-            settlement_authority.key().as_ref(),
+            args.settlement_authority.key().as_ref(),
             underlying_token_mint.key().as_ref(),
-            proposal.as_ref()
+            args.proposal.as_ref()
         ],
         bump
     )]
@@ -52,8 +58,13 @@ pub struct InitializeConditionalVault<'info> {
 }
 
 impl InitializeConditionalVault<'_> {
-    pub fn handle(ctx: Context<Self>, settlement_authority: Pubkey, proposal: Pubkey) -> Result<()> {
+    pub fn handle(ctx: Context<Self>, args: InitializeConditionalVaultArgs) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
+
+        let InitializeConditionalVaultArgs {
+            proposal,
+            settlement_authority
+        } = args;
 
         vault.set_inner(ConditionalVault {
             status: VaultStatus::Active,

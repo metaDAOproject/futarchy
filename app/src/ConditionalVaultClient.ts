@@ -169,7 +169,7 @@ export class ConditionalVaultClient {
     );
 
     return this.vaultProgram.methods
-      .initializeConditionalVault(settlementAuthority, proposal)
+      .initializeConditionalVault({settlementAuthority, proposal})
       .accounts({
         vault,
         underlyingTokenMint,
