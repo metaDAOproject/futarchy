@@ -254,8 +254,10 @@ export class AutocratClient {
       proposal
     );
 
-    await this.vaultClient.mintConditionalTokens(baseVault, 10);
-    await this.vaultClient.mintConditionalTokens(quoteVault, 10_000);
+    // await this.vaultClient.mintConditionalTokens(baseVault, 10);
+    // await this.vaultClient.mintConditionalTokens(quoteVault, 10_000);
+    await this.vaultClient.mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP).rpc();
+    await this.vaultClient.mintConditionalTokensIx(quoteVault, storedDao.usdcMint, quoteTokensToLP).rpc();
 
     const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
     const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
