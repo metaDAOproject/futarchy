@@ -29,7 +29,7 @@
 //!   instruction by calling `execute_proposal`.
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
-use anchor_spl::token::Mint;
+use anchor_spl::token::{Mint, TokenAccount, Token, Transfer, self};
 use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;

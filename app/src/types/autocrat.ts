@@ -147,17 +147,39 @@ export type Autocrat = {
           "isSigner": false
         },
         {
-          "name": "vaultProgram",
+          "name": "daoTreasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "passLpUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "failLpUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "passLpVaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "failLpVaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "TODO: use a different thing to prevent collision"
-          ]
+          "name": "vaultProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": []
@@ -336,6 +358,14 @@ export type Autocrat = {
           {
             "name": "dao",
             "type": "publicKey"
+          },
+          {
+            "name": "passLpTokensLocked",
+            "type": "u64"
+          },
+          {
+            "name": "failLpTokensLocked",
+            "type": "u64"
           }
         ]
       }
@@ -704,17 +734,39 @@ export const IDL: Autocrat = {
           "isSigner": false
         },
         {
-          "name": "vaultProgram",
+          "name": "daoTreasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "passLpUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "failLpUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "passLpVaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "failLpVaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "TODO: use a different thing to prevent collision"
-          ]
+          "name": "vaultProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": []
@@ -893,6 +945,14 @@ export const IDL: Autocrat = {
           {
             "name": "dao",
             "type": "publicKey"
+          },
+          {
+            "name": "passLpTokensLocked",
+            "type": "u64"
+          },
+          {
+            "name": "failLpTokensLocked",
+            "type": "u64"
           }
         ]
       }

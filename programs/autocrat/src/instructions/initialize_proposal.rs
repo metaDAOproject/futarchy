@@ -163,6 +163,8 @@ impl InitializeProposal<'_> {
             base_vault: base_vault.key(),
             quote_vault: quote_vault.key(),
             dao: dao.key(),
+            pass_lp_tokens_locked: pass_lp_tokens_to_lock,
+            fail_lp_tokens_locked: fail_lp_tokens_to_lock,
         });
 
         Ok(())

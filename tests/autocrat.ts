@@ -352,6 +352,8 @@ describe("autocrat", async function () {
         failQuoteMint,
         baseVault,
         quoteVault,
+        passLp,
+        failLp,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
       // swap $500 in the pass market, make it pass
@@ -381,7 +383,16 @@ describe("autocrat", async function () {
           .rpc();
       }
 
+      const prePassLpBalance = (await getAccount(banksClient, getATA(passLp, payer.publicKey)[0])).amount;
+      const preFailLpBalance = (await getAccount(banksClient, getATA(failLp, payer.publicKey)[0])).amount;
+
       await autocratClient.finalizeProposal(proposal);
+
+      const postPassLpBalance = (await getAccount(banksClient, getATA(passLp, payer.publicKey)[0])).amount;
+      const postFailLpBalance = (await getAccount(banksClient, getATA(failLp, payer.publicKey)[0])).amount;
+
+      assert(postPassLpBalance > prePassLpBalance);
+      assert(postFailLpBalance > preFailLpBalance);
 
       let storedPassAmm = await ammClient.getAmm(passAmm);
       let storedFailAmm = await ammClient.getAmm(failAmm);

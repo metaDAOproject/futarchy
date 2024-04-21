@@ -12,31 +12,60 @@ pub struct FinalizeProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     pub pass_amm: Account<'info, Amm>,
     pub fail_amm: Account<'info, Amm>,
+    #[account(has_one = treasury)]
     pub dao: Box<Account<'info, DAO>>,
     #[account(mut)]
     pub base_vault: Box<Account<'info, ConditionalVaultAccount>>,
     #[account(mut)]
     pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
-    pub vault_program: Program<'info, ConditionalVaultProgram>,
     /// CHECK: never read
-    /// TODO: use a different thing to prevent collision
+    #[account(mut)]
+    pub treasury: UncheckedAccount<'info>,
     #[account(
-        seeds = [dao.key().as_ref()],
-        bump = dao.treasury_pda_bump,
-        mut
+        mut,
+        associated_token::mint = pass_amm.lp_mint,
+        associated_token::authority = proposal.proposer,
     )]
-    pub dao_treasury: UncheckedAccount<'info>,
+    pub pass_lp_user_account: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        associated_token::mint = fail_amm.lp_mint,
+        associated_token::authority = proposal.proposer,
+    )]
+    pub fail_lp_user_account: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        associated_token::mint = pass_amm.lp_mint,
+        associated_token::authority = dao.treasury,
+    )]
+    pub pass_lp_vault_account: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        associated_token::mint = fail_amm.lp_mint,
+        associated_token::authority = dao.treasury,
+    )]
+    pub fail_lp_vault_account: Box<Account<'info, TokenAccount>>,
+    pub token_program: Program<'info, Token>,
+    pub vault_program: Program<'info, ConditionalVaultProgram>,
 }
 
 impl FinalizeProposal<'_> {
     pub fn handle(ctx: Context<Self>) -> Result<()> {
-        let pass_amm = &ctx.accounts.pass_amm;
-        let fail_amm = &ctx.accounts.fail_amm;
-        let dao = &ctx.accounts.dao;
-        let base_vault = &mut ctx.accounts.base_vault;
-        let quote_vault = &mut ctx.accounts.quote_vault;
-
-        let proposal = &mut ctx.accounts.proposal;
+        let FinalizeProposal {
+            proposal,
+            pass_amm,
+            fail_amm,
+            dao,
+            base_vault,
+            quote_vault,
+            treasury,
+            pass_lp_user_account,
+            fail_lp_user_account,
+            pass_lp_vault_account,
+            fail_lp_vault_account,
+            vault_program,
+            token_program,
+        } = ctx.accounts;
         let clock = Clock::get()?;
 
         require!(
@@ -52,6 +81,36 @@ impl FinalizeProposal<'_> {
         let dao_key = dao.key();
         let treasury_seeds = &[dao_key.as_ref(), &[dao.treasury_pda_bump]];
         let signer = &[&treasury_seeds[..]];
+
+        for (lp_tokens_to_unlock, from, to) in [
+            (
+                proposal.pass_lp_tokens_locked,
+                pass_lp_vault_account,
+                pass_lp_user_account,
+            ),
+            (
+                proposal.fail_lp_tokens_locked,
+                fail_lp_vault_account,
+                fail_lp_user_account,
+            ),
+        ] {
+            // without this, someone can brick a proposal if they have another proposal transfer
+            // out its LP tokens from the treasury.
+            let lp_tokens_to_unlock = std::cmp::min(lp_tokens_to_unlock, from.amount);
+
+            token::transfer(
+                CpiContext::new(
+                    token_program.to_account_info(),
+                    Transfer {
+                        from: from.to_account_info(),
+                        to: to.to_account_info(),
+                        authority: treasury.to_account_info(),
+                    },
+                )
+                .with_signer(signer),
+                lp_tokens_to_unlock,
+            )?;
+        }
 
         let calculate_twap = |amm: &Amm| -> Result<u128> {
             let slots_passed = amm.oracle.last_updated_slot - proposal.slot_enqueued;
@@ -83,9 +142,9 @@ impl FinalizeProposal<'_> {
         proposal.state = new_proposal_state;
 
         for vault in [base_vault.to_account_info(), quote_vault.to_account_info()] {
-            let vault_program = ctx.accounts.vault_program.to_account_info();
+            let vault_program = vault_program.to_account_info();
             let cpi_accounts = SettleConditionalVault {
-                settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
+                settlement_authority: treasury.to_account_info(),
                 vault,
             };
             let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);

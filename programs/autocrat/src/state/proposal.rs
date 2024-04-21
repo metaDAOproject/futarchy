@@ -35,6 +35,8 @@ pub struct Proposal {
     pub base_vault: Pubkey,
     pub quote_vault: Pubkey,
     pub dao: Pubkey,
+    pub pass_lp_tokens_locked: u64,
+    pub fail_lp_tokens_locked: u64,
 }
 
 impl From<&ProposalInstruction> for Instruction {

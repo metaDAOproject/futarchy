@@ -118,6 +118,8 @@ export class AutocratClient {
     failQuoteMint: PublicKey;
     passAmm: PublicKey;
     failAmm: PublicKey;
+    passLp: PublicKey;
+    failLp: PublicKey;
   } {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
@@ -156,6 +158,15 @@ export class AutocratClient {
       proposal
     );
 
+    const [passLp] = getAmmLpMintAddr(
+      this.ammClient.program.programId,
+      passAmm
+    );
+    const [failLp] = getAmmLpMintAddr(
+      this.ammClient.program.programId,
+      failAmm
+    );
+
     return {
       baseVault,
       quoteVault,
@@ -165,6 +176,8 @@ export class AutocratClient {
       failQuoteMint,
       passAmm,
       failAmm,
+      passLp,
+      failLp,
     };
   }
 
@@ -498,6 +511,15 @@ export class AutocratClient {
       proposal
     );
 
+    const [passLp] = getAmmLpMintAddr(
+      this.ammClient.program.programId,
+      passAmm
+    );
+    const [failLp] = getAmmLpMintAddr(
+      this.ammClient.program.programId,
+      failAmm
+    );
+
     return this.autocrat.methods.finalizeProposal().accounts({
       proposal,
       passAmm,
@@ -505,6 +527,10 @@ export class AutocratClient {
       dao,
       baseVault,
       quoteVault,
+      passLpUserAccount: getATA(passLp, this.provider.publicKey)[0],
+      failLpUserAccount: getATA(failLp, this.provider.publicKey)[0],
+      passLpVaultAccount: getATA(passLp, daoTreasury)[0],
+      failLpVaultAccount: getATA(failLp, daoTreasury)[0],
       vaultProgram: this.vaultClient.vaultProgram.programId,
       daoTreasury,
     });
