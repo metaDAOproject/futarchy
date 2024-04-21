@@ -89,6 +89,7 @@ pub mod autocrat {
         InitializeDAO::handle(ctx, params)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn initialize_proposal(
         ctx: Context<InitializeProposal>,
         description_url: String,

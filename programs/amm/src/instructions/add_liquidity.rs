@@ -29,6 +29,9 @@ pub fn handler(
         system_program: _,
     } = ctx.accounts;
 
+    require_gt!(user_ata_base.amount, min_base_amount, AmmError::InsufficientBalance);
+    require_gt!(user_ata_quote.amount, min_quote_amount, AmmError::InsufficientBalance);
+
     assert!(max_base_amount > 0);
     assert!(max_quote_amount > 0);
 

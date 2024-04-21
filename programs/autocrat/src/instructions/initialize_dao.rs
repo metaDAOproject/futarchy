@@ -4,6 +4,8 @@ pub use super::*;
 pub struct InitializeDaoParams {
     pub twap_initial_observation: u128,
     pub twap_max_observation_change_per_update: u128,
+    pub min_quote_futarchic_liquidity: u64,
+    pub min_base_futarchic_liquidity: u64,
     pub pass_threshold_bps: Option<u16>,
     pub slots_per_proposal: Option<u64>,
 }
@@ -27,6 +29,15 @@ pub struct InitializeDAO<'info> {
 
 impl InitializeDAO<'_> {
     pub fn handle(ctx: Context<Self>, params: InitializeDaoParams) -> Result<()> {
+        let InitializeDaoParams {
+            twap_initial_observation,
+            twap_max_observation_change_per_update,
+            min_base_futarchic_liquidity,
+            min_quote_futarchic_liquidity,
+            pass_threshold_bps,
+            slots_per_proposal,
+        } = params;
+
         let dao = &mut ctx.accounts.dao;
 
         let (treasury, treasury_pda_bump) =
@@ -38,10 +49,12 @@ impl InitializeDAO<'_> {
             treasury_pda_bump,
             treasury,
             proposal_count: 0,
-            pass_threshold_bps: params.pass_threshold_bps.unwrap_or(DEFAULT_PASS_THRESHOLD_BPS),
-            slots_per_proposal: params.slots_per_proposal.unwrap_or(THREE_DAYS_IN_SLOTS),
-            twap_initial_observation: params.twap_initial_observation,
-            twap_max_observation_change_per_update: params.twap_max_observation_change_per_update,
+            pass_threshold_bps: pass_threshold_bps.unwrap_or(DEFAULT_PASS_THRESHOLD_BPS),
+            slots_per_proposal: slots_per_proposal.unwrap_or(THREE_DAYS_IN_SLOTS),
+            twap_initial_observation,
+            twap_max_observation_change_per_update,
+            min_base_futarchic_liquidity,
+            min_quote_futarchic_liquidity,
         });
 
         Ok(())

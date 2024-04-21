@@ -27,5 +27,13 @@ pub struct DAO {
     /// in 50 minutes.
     pub twap_initial_observation: u128,
     pub twap_max_observation_change_per_update: u128,
+    /// As an anti-spam measure and to help liquidity, you need to lock up some liquidity
+    /// in both futarchic markets in order to create a proposal.
+    /// 
+    /// For example, for META, we can use a `min_quote_futarchic_liquidity` of
+    /// 5000 * 1_000_000 (5000 USDC) and a `min_base_futarchic_liquidity` of
+    /// 10 * 1_000_000_000 (10 META).
+    pub min_quote_futarchic_liquidity: u64,
+    pub min_base_futarchic_liquidity: u64,
 }
 

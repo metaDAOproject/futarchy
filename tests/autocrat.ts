@@ -72,6 +72,9 @@ const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
+const ONE_META = new BN(1_000_000_000);
+const ONE_USDC = new BN(1_000_000);
+
 describe("autocrat", async function () {
   let provider,
     autocrat,
@@ -143,24 +146,43 @@ describe("autocrat", async function () {
       6
     );
 
-    await createAssociatedTokenAccount(banksClient, payer, META, payer.publicKey);
-    await createAssociatedTokenAccount(banksClient, payer, USDC, payer.publicKey);
+    await createAssociatedTokenAccount(
+      banksClient,
+      payer,
+      META,
+      payer.publicKey
+    );
+    await createAssociatedTokenAccount(
+      banksClient,
+      payer,
+      USDC,
+      payer.publicKey
+    );
 
-    // 10 META
-    await mintToOverride(context, getATA(META, payer.publicKey)[0], 10n * 1_000_000_000n);
+    // 100 META
+    await mintToOverride(
+      context,
+      getATA(META, payer.publicKey)[0],
+      100n * 1_000_000_000n
+    );
     // 20,000 USDC
-    await mintToOverride(context, getATA(USDC, payer.publicKey)[0], 20_000n * 1_000_000n);
+    await mintToOverride(
+      context,
+      getATA(USDC, payer.publicKey)[0],
+      20_000n * 1_000_000n
+    );
   });
 
   describe("#initialize_dao", async function () {
     it.only("initializes the DAO", async function () {
-      dao = await autocratClient
-        .initializeDao(
-          META,
-          400,
-          9,
-          USDC
-        );
+      dao = await autocratClient.initializeDao(
+        META,
+        400,
+        9,
+        new BN(10).mul(new BN(10).pow(new BN(9))),
+        new BN(5000).mul(new BN(10).pow(new BN(6))),
+        USDC
+      );
 
       let treasuryPdaBump;
       [daoTreasury, treasuryPdaBump] = PublicKey.findProgramAddressSync(
@@ -191,7 +213,12 @@ describe("autocrat", async function () {
     });
 
     it("initializes a second DAO", async function () {
-      mertdDao = await autocratClient.initializeDao(MERTD, new BN(1_000_000), new BN(1_000), USDC);
+      mertdDao = await autocratClient.initializeDao(
+        MERTD,
+        new BN(1_000_000),
+        new BN(1_000),
+        USDC
+      );
 
       [mertdDaoTreasury] = PublicKey.findProgramAddressSync(
         [mertdDao.toBuffer()],
@@ -311,30 +338,33 @@ describe("autocrat", async function () {
         failBaseMint,
         failQuoteMint,
         baseVault,
-        quoteVault
+        quoteVault,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
-      await ammClient.addLiquidityIx(
-        passAmm,
-        passBaseMint,
-        passQuoteMint,
-        new BN(1500),
-        new BN(100),
-        new BN(1500),
-        new BN(100),
-      )
-      .postInstructions([
-        await ammClient.addLiquidityIx(
-          failAmm,
-          failBaseMint,
-          failQuoteMint,
-          new BN(1000),
-          new BN(100),
-          new BN(1000),
-          new BN(100),
-        ).instruction()
-      ])
-      .rpc();
+      await ammClient
+        .addLiquidityIx(
+          passAmm,
+          passBaseMint,
+          passQuoteMint,
+          ONE_META.muln(5),
+          ONE_USDC.muln(5500),
+          ONE_META.muln(5),
+          ONE_USDC.muln(5500)
+        )
+        .postInstructions([
+          await ammClient
+            .addLiquidityIx(
+              failAmm,
+              failBaseMint,
+              failQuoteMint,
+              ONE_META.muln(5),
+              ONE_USDC.muln(4000),
+              ONE_META.muln(5),
+              ONE_USDC.muln(4000)
+            )
+            .instruction(),
+        ])
+        .rpc();
     });
 
     it("doesn't finalize proposals that are too young", async function () {
@@ -357,10 +387,9 @@ describe("autocrat", async function () {
         failBaseMint,
         failQuoteMint,
         baseVault,
-        quoteVault
+        quoteVault,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
-      
       // await ammClient.addLiquidityIx(
       //   failAmm,
       //   failBaseMint,
@@ -381,19 +410,38 @@ describe("autocrat", async function () {
             ComputeBudgetProgram.setComputeUnitPrice({
               microLamports: i,
             }),
-            await ammClient.crankThatTwapIx(failAmm).instruction()
+            await ammClient.crankThatTwapIx(failAmm).instruction(),
           ])
           .rpc();
       }
 
       await autocratClient.finalizeProposal(proposal);
 
-      let storedBaseVault = await vaultClient.getVault(
-        baseVault
+      let storedPassAmm = await ammClient.getAmm(passAmm);
+      let storedFailAmm = await ammClient.getAmm(failAmm);
+
+      console.log(
+        PriceMath.getHumanPrice(storedPassAmm.oracle.lastObservation, 9, 6)
       );
-      let storedQuoteVault = await vaultClient.getVault(
-        quoteVault
+      console.log(
+        PriceMath.getHumanPrice(
+          storedFailAmm.oracle.lastObservation,
+          9,
+          6
+        )
       );
+
+      let passTwap = ammClient.getTwap(storedPassAmm);
+
+      let failTwap = ammClient.getTwap(storedFailAmm);
+
+      console.log(PriceMath.getHumanPrice(passTwap, 9, 6));
+      console.log(PriceMath.getHumanPrice(failTwap, 9, 6));
+
+      let storedBaseVault = await vaultClient.getVault(baseVault);
+      let storedQuoteVault = await vaultClient.getVault(quoteVault);
+
+      console.log(storedBaseVault);
 
       assert.exists(storedBaseVault.status.finalized);
       assert.exists(storedQuoteVault.status.finalized);
@@ -465,28 +513,21 @@ describe("autocrat", async function () {
 
     it.only("rejects proposals when pass price TWAP < fail price TWAP", async function () {
       // let storedProposal = await autocrat.account.proposal.fetch(proposal);
-
       // let storedDao = await autocrat.account.dao.fetch(dao);
       // const passThresholdBpsBefore = storedDao.passThresholdBps;
-
       // await autocratClient.finalizeProposal(proposal);
-
       // storedProposal = await autocrat.account.proposal.fetch(proposal);
       // assert.exists(storedProposal.state.failed);
-
       // let storedBaseVault = await vaultProgram.account.conditionalVault.fetch(
       //   baseVault
       // );
       // let storedQuoteVault = await vaultProgram.account.conditionalVault.fetch(
       //   quoteVault
       // );
-
       // assert.exists(storedBaseVault.status.reverted);
       // assert.exists(storedQuoteVault.status.reverted);
-
       // storedDao = await autocrat.account.dao.fetch(dao);
       // assert.equal(storedDao.passThresholdBps, passThresholdBpsBefore);
-
       // await redeemConditionalTokens(
       //   vaultProgram,
       //   alice,
@@ -511,7 +552,6 @@ describe("autocrat", async function () {
       //   quoteVault,
       //   banksClient
       // );
-
       // // alice should have the same balance as she started with
       // assert.equal(
       //   (await getAccount(banksClient, aliceUnderlyingBaseTokenAccount)).amount,

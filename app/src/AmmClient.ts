@@ -183,6 +183,10 @@ export class AmmClient {
     return await this.program.account.amm.all();
   }
 
+  getTwap(amm: Amm): BN {
+    return amm.oracle.aggregator.div(amm.oracle.lastUpdatedSlot.sub(amm.createdAtSlot));
+  }
+
   getSwapPreview(amm: Amm, inputAmount: BN, isBuyBase: boolean): SwapPreview {
     let quoteAmount = amm.quoteAmount;
     let baseAmount = amm.baseAmount;

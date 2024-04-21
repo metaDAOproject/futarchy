@@ -21,6 +21,7 @@ import {
   AUTOCRAT_PROGRAM_ID,
   CONDITIONAL_VAULT_PROGRAM_ID,
   MAINNET_USDC,
+  USDC_DECIMALS,
 } from "./constants";
 import { Amm, AmmWrapper } from "./types";
 import {
@@ -165,10 +166,14 @@ export class AutocratClient {
     tokenMint: PublicKey,
     tokenPriceUiAmount: number,
     tokenDecimals: number,
+    minBaseFutarchicLiquidity: BN,
+    minQuoteFutarchicLiquidity: BN,
     usdcMint: PublicKey = MAINNET_USDC,
     daoKeypair: Keypair = Keypair.generate()
   ): Promise<PublicKey> {
-    let scaledPrice = PriceMath.scalePrice(tokenPriceUiAmount, tokenDecimals, 6);
+    let scaledPrice = PriceMath.getAmmPrice(tokenPriceUiAmount, tokenDecimals, USDC_DECIMALS);
+
+    console.log(PriceMath.getHumanPrice(scaledPrice, tokenDecimals, USDC_DECIMALS));
 
     await this.initializeDaoIx(
       daoKeypair,
@@ -176,6 +181,8 @@ export class AutocratClient {
       {
         twapInitialObservation: scaledPrice,
         twapMaxObservationChangePerUpdate: scaledPrice.divn(50),
+        minBaseFutarchicLiquidity,
+        minQuoteFutarchicLiquidity,
         passThresholdBps: null,
         slotsPerProposal: null,
       },
@@ -232,8 +239,8 @@ export class AutocratClient {
       proposal
     );
 
-    await this.vaultClient.mintConditionalTokens(baseVault, 1);
-    await this.vaultClient.mintConditionalTokens(quoteVault, 1_000);
+    await this.vaultClient.mintConditionalTokens(baseVault, 10);
+    await this.vaultClient.mintConditionalTokens(quoteVault, 10_000);
 
     const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
     const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
@@ -241,15 +248,12 @@ export class AutocratClient {
     const [failBase] = getVaultRevertMintAddr(vaultProgramId, baseVault);
     const [failQuote] = getVaultRevertMintAddr(vaultProgramId, quoteVault);
 
-    let [twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled] =
-      PriceMath.scalePrices(9, 6, 100, 1);
-
     await this.ammClient
       .createAmm(
         passBase,
         passQuote,
-        twapFirstObservationScaled,
-        new BN(10).pow(new BN(30)),
+        storedDao.twapInitialObservation,
+        storedDao.twapMaxObservationChangePerUpdate,
         proposal
       )
       .rpc();
@@ -258,8 +262,8 @@ export class AutocratClient {
       .createAmm(
         failBase,
         failQuote,
-        twapFirstObservationScaled,
-        new BN(10).pow(new BN(30)),
+        storedDao.twapInitialObservation,
+        storedDao.twapMaxObservationChangePerUpdate,
         proposal
       )
       .rpc();

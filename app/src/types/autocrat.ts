@@ -253,6 +253,22 @@ export type Autocrat = {
           {
             "name": "twapMaxObservationChangePerUpdate",
             "type": "u128"
+          },
+          {
+            "name": "minQuoteFutarchicLiquidity",
+            "docs": [
+              "As an anti-spam measure and to help liquidity, you need to lock up some liquidity",
+              "in both futarchic markets in order to create a proposal.",
+              "",
+              "For example, for META, we can use a `min_quote_futarchic_liquidity` of",
+              "5000 * 1_000_000 (5000 USDC) and a `min_base_futarchic_liquidity` of",
+              "10 * 1_000_000_000 (10 META)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minBaseFutarchicLiquidity",
+            "type": "u64"
           }
         ]
       }
@@ -327,6 +343,14 @@ export type Autocrat = {
           {
             "name": "twapMaxObservationChangePerUpdate",
             "type": "u128"
+          },
+          {
+            "name": "minQuoteFutarchicLiquidity",
+            "type": "u64"
+          },
+          {
+            "name": "minBaseFutarchicLiquidity",
+            "type": "u64"
           },
           {
             "name": "passThresholdBps",
@@ -749,6 +773,22 @@ export const IDL: Autocrat = {
           {
             "name": "twapMaxObservationChangePerUpdate",
             "type": "u128"
+          },
+          {
+            "name": "minQuoteFutarchicLiquidity",
+            "docs": [
+              "As an anti-spam measure and to help liquidity, you need to lock up some liquidity",
+              "in both futarchic markets in order to create a proposal.",
+              "",
+              "For example, for META, we can use a `min_quote_futarchic_liquidity` of",
+              "5000 * 1_000_000 (5000 USDC) and a `min_base_futarchic_liquidity` of",
+              "10 * 1_000_000_000 (10 META)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minBaseFutarchicLiquidity",
+            "type": "u64"
           }
         ]
       }
@@ -823,6 +863,14 @@ export const IDL: Autocrat = {
           {
             "name": "twapMaxObservationChangePerUpdate",
             "type": "u128"
+          },
+          {
+            "name": "minQuoteFutarchicLiquidity",
+            "type": "u64"
+          },
+          {
+            "name": "minBaseFutarchicLiquidity",
+            "type": "u64"
           },
           {
             "name": "passThresholdBps",
