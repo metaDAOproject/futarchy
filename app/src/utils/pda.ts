@@ -26,17 +26,17 @@ export const getVaultAddr = (
 
 export const getVaultFinalizeMintAddr = (
   programId: PublicKey,
-  vault: PublicKey,
+  vault: PublicKey
 ) => {
   return getVaultMintAddr(programId, vault, "conditional_on_finalize_mint");
-}
+};
 
 export const getVaultRevertMintAddr = (
   programId: PublicKey,
-  vault: PublicKey,
+  vault: PublicKey
 ) => {
   return getVaultMintAddr(programId, vault, "conditional_on_revert_mint");
-}
+};
 
 const getVaultMintAddr = (
   programId: PublicKey,
@@ -104,7 +104,7 @@ export const getAmmAddr = (
       utils.bytes.utf8.encode("amm__"),
       baseMint.toBuffer(),
       quoteMint.toBuffer(),
-      proposal.toBuffer()
+      proposal.toBuffer(),
     ],
     programId
   );

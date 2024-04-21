@@ -48,7 +48,10 @@ pub mod amm {
         )
     }
 
-    pub fn remove_liquidity(ctx: Context<AddOrRemoveLiquidity>, params: RemoveLiquidityParams) -> Result<()> {
+    pub fn remove_liquidity(
+        ctx: Context<AddOrRemoveLiquidity>,
+        params: RemoveLiquidityParams,
+    ) -> Result<()> {
         instructions::remove_liquidity::handler(ctx, params)
     }
 

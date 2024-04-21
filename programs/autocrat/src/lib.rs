@@ -35,13 +35,13 @@ use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use conditional_vault::VaultStatus;
 
-pub mod state;
 pub mod error;
 pub mod instructions;
+pub mod state;
 
+pub use crate::error::AutocratError;
 pub use crate::instructions::*;
 pub use crate::state::*;
-pub use crate::error::AutocratError;
 
 use amm::state::Amm;
 
@@ -77,22 +77,18 @@ pub const MAX_BPS: u16 = 10_000;
 // TWAP can only move by $5 per slot
 pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
-
 #[program]
 pub mod autocrat {
     use super::*;
 
-    pub fn initialize_dao(
-        ctx: Context<InitializeDAO>,
-        params: InitializeDaoParams
-    ) -> Result<()> {
+    pub fn initialize_dao(ctx: Context<InitializeDAO>, params: InitializeDaoParams) -> Result<()> {
         InitializeDAO::handle(ctx, params)
     }
 
     #[access_control(ctx.accounts.validate())]
     pub fn initialize_proposal(
         ctx: Context<InitializeProposal>,
-        params: InitializeProposalParams
+        params: InitializeProposalParams,
     ) -> Result<()> {
         InitializeProposal::handle(ctx, params)
     }

@@ -6,7 +6,9 @@ pub enum AutocratError {
     AmmTooOld,
     #[msg("An amm has an `initial_observation` that doesn't match the `dao`'s config")]
     InvalidInitialObservation,
-    #[msg("An amm has a `max_observation_change_per_update` that doesn't match the `dao`'s config")]
+    #[msg(
+        "An amm has a `max_observation_change_per_update` that doesn't match the `dao`'s config"
+    )]
     InvalidMaxObservationChange,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
     InvalidSettlementAuthority,

@@ -12,9 +12,14 @@ export const createAmmHandler = (
   quoteMint: PublicKey,
   twapInitialObservation: BN,
   twapMaxObservationChangePerUpdate: BN,
-  proposal: PublicKey,
+  proposal: PublicKey
 ): MethodsBuilder<Amm, any> => {
-  let [ammAddr] = getAmmAddr(client.program.programId, baseMint, quoteMint, proposal);
+  let [ammAddr] = getAmmAddr(
+    client.program.programId,
+    baseMint,
+    quoteMint,
+    proposal
+  );
   let [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
 
   let [vaultAtaBase] = getATA(baseMint, ammAddr);

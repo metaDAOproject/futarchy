@@ -14,7 +14,7 @@ export const addLiquidityHandler = (
   maxBaseAmount: BN,
   maxQuoteAmount: BN,
   minBaseAmount: BN,
-  minQuoteAmount: BN,
+  minQuoteAmount: BN
 ): MethodsBuilder<Amm, any> => {
   const [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
 
@@ -31,5 +31,5 @@ export const addLiquidityHandler = (
       userAtaQuote: getATA(quoteMint, client.provider.publicKey)[0],
       vaultAtaBase: getATA(baseMint, ammAddr)[0],
       vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
-    })
+    });
 };

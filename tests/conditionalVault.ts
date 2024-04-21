@@ -567,7 +567,13 @@ describe("conditional_vault", async function () {
 
     beforeEach(async function () {
       [vault, underlyingMintAuthority, settlementAuthority] =
-        await generateRandomVault(vaultProgram, vaultClient, payer, banksClient, umi);
+        await generateRandomVault(
+          vaultProgram,
+          vaultClient,
+          payer,
+          banksClient,
+          umi
+        );
       let storedVault = await vaultProgram.account.conditionalVault.fetch(
         vault
       );
@@ -827,8 +833,14 @@ async function generateRandomVault(
     proposal
   );
 
-  const conditionalOnFinalizeTokenMint = getVaultFinalizeMintAddr(vaultProgram.programId, vault)[0];
-  const conditionalOnRevertTokenMint = getVaultRevertMintAddr(vaultProgram.programId, vault)[0];
+  const conditionalOnFinalizeTokenMint = getVaultFinalizeMintAddr(
+    vaultProgram.programId,
+    vault
+  )[0];
+  const conditionalOnRevertTokenMint = getVaultRevertMintAddr(
+    vaultProgram.programId,
+    vault
+  )[0];
 
   const vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
     underlyingTokenMint,

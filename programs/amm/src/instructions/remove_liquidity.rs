@@ -3,7 +3,6 @@ use anchor_spl::token::{self, Burn, Transfer};
 
 use crate::{error::AmmError, *};
 
-
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct RemoveLiquidityParams {
     pub lp_tokens_to_burn: u64,
@@ -32,11 +31,14 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, params: RemoveLiquidityParams
     let RemoveLiquidityParams {
         lp_tokens_to_burn,
         min_quote_amount,
-        min_base_amount
+        min_base_amount,
     } = params;
 
-    require_gt!(user_ata_lp.amount, lp_tokens_to_burn, AmmError::InsufficientBalance);
-
+    require_gt!(
+        user_ata_lp.amount,
+        lp_tokens_to_burn,
+        AmmError::InsufficientBalance
+    );
 
     amm.update_twap(Clock::get()?.slot);
 
@@ -47,11 +49,21 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, params: RemoveLiquidityParams
     assert!(total_liquidity > 0);
 
     // these must fit back into u64 since `lp_tokens_to_burn` <= `total_liquidity`
-    let base_to_withdraw = ((lp_tokens_to_burn as u128 * amm.base_amount as u128) / total_liquidity) as u64;
-    let quote_to_withdraw = ((lp_tokens_to_burn as u128 * amm.quote_amount as u128) / total_liquidity) as u64;
+    let base_to_withdraw =
+        ((lp_tokens_to_burn as u128 * amm.base_amount as u128) / total_liquidity) as u64;
+    let quote_to_withdraw =
+        ((lp_tokens_to_burn as u128 * amm.quote_amount as u128) / total_liquidity) as u64;
 
-    require_gt!(base_to_withdraw, min_base_amount, AmmError::SlippageExceeded);
-    require_gt!(quote_to_withdraw, min_quote_amount, AmmError::SlippageExceeded);
+    require_gt!(
+        base_to_withdraw,
+        min_base_amount,
+        AmmError::SlippageExceeded
+    );
+    require_gt!(
+        quote_to_withdraw,
+        min_quote_amount,
+        AmmError::SlippageExceeded
+    );
 
     token::burn(
         CpiContext::new(

@@ -53,7 +53,6 @@ impl FinalizeProposal<'_> {
         let treasury_seeds = &[dao_key.as_ref(), &[dao.treasury_pda_bump]];
         let signer = &[&treasury_seeds[..]];
 
-
         let calculate_twap = |amm: &Amm| -> Result<u128> {
             let slots_passed = amm.oracle.last_updated_slot - proposal.slot_enqueued;
 
@@ -83,10 +82,7 @@ impl FinalizeProposal<'_> {
 
         proposal.state = new_proposal_state;
 
-        for vault in [
-            base_vault.to_account_info(),
-            quote_vault.to_account_info(),
-        ] {
+        for vault in [base_vault.to_account_info(), quote_vault.to_account_info()] {
             let vault_program = ctx.accounts.vault_program.to_account_info();
             let cpi_accounts = SettleConditionalVault {
                 settlement_authority: ctx.accounts.dao_treasury.to_account_info(),
@@ -108,7 +104,7 @@ impl FinalizeProposal<'_> {
                 assert!(base_vault.status == VaultStatus::Reverted);
                 assert!(quote_vault.status == VaultStatus::Reverted);
             }
-            _ => assert!(false)
+            _ => assert!(false),
         }
 
         Ok(())

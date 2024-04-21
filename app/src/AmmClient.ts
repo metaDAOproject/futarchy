@@ -184,7 +184,9 @@ export class AmmClient {
   }
 
   getTwap(amm: Amm): BN {
-    return amm.oracle.aggregator.div(amm.oracle.lastUpdatedSlot.sub(amm.createdAtSlot));
+    return amm.oracle.aggregator.div(
+      amm.oracle.lastUpdatedSlot.sub(amm.createdAtSlot)
+    );
   }
 
   getSwapPreview(amm: Amm, inputAmount: BN, isBuyBase: boolean): SwapPreview {

@@ -87,7 +87,7 @@ pub fn handler(
             vault_ata_base,
             vault_ata_quote,
             user_ata_quote,
-        ), 
+        ),
     };
 
     token::transfer(

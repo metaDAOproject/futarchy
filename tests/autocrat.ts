@@ -328,8 +328,13 @@ describe("autocrat", async function () {
         data: ix.data,
       };
 
-
-      proposal = await autocratClient.initializeProposal(dao, "", instruction, ONE_META.muln(5), ONE_USDC.muln(5000));
+      proposal = await autocratClient.initializeProposal(
+        dao,
+        "",
+        instruction,
+        ONE_META.muln(5),
+        ONE_USDC.muln(5000)
+      );
 
       let {
         passAmm,
@@ -367,7 +372,6 @@ describe("autocrat", async function () {
       //   ])
       //   .rpc();
     });
-
 
     it("doesn't finalize proposals that are too young", async function () {
       const callbacks = expectError(
@@ -426,11 +430,7 @@ describe("autocrat", async function () {
         PriceMath.getHumanPrice(storedPassAmm.oracle.lastObservation, 9, 6)
       );
       console.log(
-        PriceMath.getHumanPrice(
-          storedFailAmm.oracle.lastObservation,
-          9,
-          6
-        )
+        PriceMath.getHumanPrice(storedFailAmm.oracle.lastObservation, 9, 6)
       );
 
       let passTwap = ammClient.getTwap(storedPassAmm);

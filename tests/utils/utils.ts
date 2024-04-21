@@ -13,7 +13,7 @@ export const advanceBySlots = async (context: any, slots: BigInt) => {
       currentClock.unixTimestamp
     )
   );
-}
+};
 
 export const expectError = (
   expectedError: string,

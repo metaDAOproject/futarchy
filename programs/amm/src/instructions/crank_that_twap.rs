@@ -9,9 +9,7 @@ pub struct CrankThatTwap<'info> {
 }
 
 pub fn handler(ctx: Context<CrankThatTwap>) -> Result<()> {
-    let CrankThatTwap {
-        amm,
-    } = ctx.accounts;
+    let CrankThatTwap { amm } = ctx.accounts;
 
     amm.update_twap(Clock::get()?.slot);
 

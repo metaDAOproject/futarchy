@@ -7,13 +7,14 @@ export class PriceMath {
   public static getHumanPrice(
     ammPrice: BN,
     baseDecimals: number,
-    quoteDecimals: number,
+    quoteDecimals: number
   ): number {
     let decimalScalar = BN_TEN.pow(new BN(quoteDecimals - baseDecimals).abs());
 
-    let price1e12 = quoteDecimals > baseDecimals ?
-      ammPrice.div(decimalScalar) :
-      ammPrice.mul(decimalScalar);
+    let price1e12 =
+      quoteDecimals > baseDecimals
+        ? ammPrice.div(decimalScalar)
+        : ammPrice.mul(decimalScalar);
 
     return price1e12.toNumber() / 1e12;
   }
@@ -26,9 +27,10 @@ export class PriceMath {
 
     let decimalScalar = BN_TEN.pow(new BN(quoteDecimals - baseDecimals).abs());
 
-    let scaledPrice = quoteDecimals > baseDecimals ?
-      price1e12.mul(decimalScalar) :
-      price1e12.div(decimalScalar);
+    let scaledPrice =
+      quoteDecimals > baseDecimals
+        ? price1e12.mul(decimalScalar)
+        : price1e12.div(decimalScalar);
 
     return scaledPrice;
   }

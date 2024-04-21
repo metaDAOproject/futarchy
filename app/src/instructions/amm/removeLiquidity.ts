@@ -16,7 +16,11 @@ export const removeLiquidityHandler = (
   const [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
 
   return client.program.methods
-    .removeLiquidity({lpTokensToBurn: new BN(0), minBaseAmount: new BN(0), minQuoteAmount: new BN(0)})
+    .removeLiquidity({
+      lpTokensToBurn: new BN(0),
+      minBaseAmount: new BN(0),
+      minQuoteAmount: new BN(0),
+    })
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,
@@ -28,5 +32,5 @@ export const removeLiquidityHandler = (
       userAtaQuote: getATA(quoteMint, client.provider.publicKey)[0],
       vaultAtaBase: getATA(baseMint, ammAddr)[0],
       vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
-    })
+    });
 };
