@@ -10,14 +10,9 @@ pub struct UpdateDaoParams {
 
 #[derive(Accounts)]
 pub struct UpdateDao<'info> {
-    #[account(mut)]
+    #[account(mut, has_one = treasury)]
     pub dao: Account<'info, DAO>,
-    /// CHECK: never read
-    #[account(
-        seeds = [dao.key().as_ref()],
-        bump = dao.treasury_pda_bump,
-    )]
-    pub dao_treasury: Signer<'info>,
+    pub treasury: Signer<'info>,
 }
 
 impl UpdateDao<'_> {

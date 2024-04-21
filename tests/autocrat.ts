@@ -266,7 +266,16 @@ describe("autocrat", async function () {
         data,
       };
 
+      const preMetaBalance = (await getAccount(banksClient, getATA(META, payer.publicKey)[0])).amount;
+      const preUsdcBalance = (await getAccount(banksClient, getATA(USDC, payer.publicKey)[0])).amount;
+
       await autocratClient.initializeProposal(dao, "", instruction, ONE_META, ONE_USDC.muln(1000));
+
+      const postMetaBalance = (await getAccount(banksClient, getATA(META, payer.publicKey)[0])).amount;
+      const postUsdcBalance = (await getAccount(banksClient, getATA(USDC, payer.publicKey)[0])).amount;
+
+      assert.equal(postMetaBalance, preMetaBalance - BigInt(10**9));
+      assert.equal(postUsdcBalance, preUsdcBalance - BigInt(1000 * 10**6));
     });
   });
 
@@ -316,6 +325,10 @@ describe("autocrat", async function () {
         ONE_META.muln(10),
         ONE_USDC.muln(5000)
       );
+
+      let {baseVault, quoteVault} = autocratClient.getProposalPdas(proposal, META, USDC, dao);
+      await vaultClient.mintConditionalTokens(baseVault, 10);
+      await vaultClient.mintConditionalTokens(quoteVault, 10_000);
     });
 
     it("doesn't finalize proposals that are too young", async function () {
@@ -339,6 +352,8 @@ describe("autocrat", async function () {
         failQuoteMint,
         baseVault,
         quoteVault,
+        passLp,
+        failLp,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
       // swap $500 in the pass market, make it pass
@@ -368,7 +383,16 @@ describe("autocrat", async function () {
           .rpc();
       }
 
+      const prePassLpBalance = (await getAccount(banksClient, getATA(passLp, payer.publicKey)[0])).amount;
+      const preFailLpBalance = (await getAccount(banksClient, getATA(failLp, payer.publicKey)[0])).amount;
+
       await autocratClient.finalizeProposal(proposal);
+
+      const postPassLpBalance = (await getAccount(banksClient, getATA(passLp, payer.publicKey)[0])).amount;
+      const postFailLpBalance = (await getAccount(banksClient, getATA(failLp, payer.publicKey)[0])).amount;
+
+      assert(postPassLpBalance > prePassLpBalance);
+      assert(postFailLpBalance > preFailLpBalance);
 
       let storedPassAmm = await ammClient.getAmm(passAmm);
       let storedFailAmm = await ammClient.getAmm(failAmm);
@@ -475,6 +499,9 @@ describe("autocrat", async function () {
 
       ({ baseVault, quoteVault, passAmm, failAmm } =
         await autocrat.account.proposal.fetch(proposal));
+
+      await vaultClient.mintConditionalTokens(baseVault, 10);
+      await vaultClient.mintConditionalTokens(quoteVault, 10_000);
     });
 
     it("doesn't allow pending proposals to be executed", async function () {

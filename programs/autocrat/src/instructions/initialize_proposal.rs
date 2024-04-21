@@ -75,6 +75,7 @@ impl InitializeProposal<'_> {
         let clock = Clock::get()?;
 
         for amm in [&self.pass_amm, &self.fail_amm] {
+            // an attacker is able to crank 5 observations before a proposal starts
             require!(
                 clock.slot < amm.created_at_slot + (5 * ONE_MINUTE_IN_SLOTS),
                 AutocratError::AmmTooOld
@@ -163,6 +164,8 @@ impl InitializeProposal<'_> {
             base_vault: base_vault.key(),
             quote_vault: quote_vault.key(),
             dao: dao.key(),
+            pass_lp_tokens_locked: pass_lp_tokens_to_lock,
+            fail_lp_tokens_locked: fail_lp_tokens_to_lock,
         });
 
         Ok(())

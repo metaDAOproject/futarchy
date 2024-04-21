@@ -9,7 +9,7 @@ security_txt! {
     project_url: "https://themetadao.org",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
-    source_code: "https://github.com/metaDAOproject/meta-dao",
+    source_code: "https://github.com/metaDAOproject/futarchy",
     source_release: "v1",
     auditors: "None",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
@@ -18,7 +18,6 @@ security_txt! {
 pub mod error;
 pub mod instructions;
 pub mod state;
-pub mod utils;
 
 use crate::instructions::*;
 use crate::state::*;

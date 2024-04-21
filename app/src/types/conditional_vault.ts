@@ -53,12 +53,10 @@ export type ConditionalVault = {
       ],
       "args": [
         {
-          "name": "settlementAuthority",
-          "type": "publicKey"
-        },
-        {
-          "name": "proposal",
-          "type": "publicKey"
+          "name": "args",
+          "type": {
+            "defined": "InitializeConditionalVaultArgs"
+          }
         }
       ]
     },
@@ -123,16 +121,10 @@ export type ConditionalVault = {
       ],
       "args": [
         {
-          "name": "proposalNumber",
-          "type": "u64"
-        },
-        {
-          "name": "onFinalizeUri",
-          "type": "string"
-        },
-        {
-          "name": "onRevertUri",
-          "type": "string"
+          "name": "args",
+          "type": {
+            "defined": "AddMetadataToConditionalTokensArgs"
+          }
         }
       ]
     },
@@ -387,6 +379,42 @@ export type ConditionalVault = {
     }
   ],
   "types": [
+    {
+      "name": "AddMetadataToConditionalTokensArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposalNumber",
+            "type": "u64"
+          },
+          {
+            "name": "onFinalizeUri",
+            "type": "string"
+          },
+          {
+            "name": "onRevertUri",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitializeConditionalVaultArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "settlementAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "proposal",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
     {
       "name": "VaultStatus",
       "type": {
@@ -489,12 +517,10 @@ export const IDL: ConditionalVault = {
       ],
       "args": [
         {
-          "name": "settlementAuthority",
-          "type": "publicKey"
-        },
-        {
-          "name": "proposal",
-          "type": "publicKey"
+          "name": "args",
+          "type": {
+            "defined": "InitializeConditionalVaultArgs"
+          }
         }
       ]
     },
@@ -559,16 +585,10 @@ export const IDL: ConditionalVault = {
       ],
       "args": [
         {
-          "name": "proposalNumber",
-          "type": "u64"
-        },
-        {
-          "name": "onFinalizeUri",
-          "type": "string"
-        },
-        {
-          "name": "onRevertUri",
-          "type": "string"
+          "name": "args",
+          "type": {
+            "defined": "AddMetadataToConditionalTokensArgs"
+          }
         }
       ]
     },
@@ -823,6 +843,42 @@ export const IDL: ConditionalVault = {
     }
   ],
   "types": [
+    {
+      "name": "AddMetadataToConditionalTokensArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposalNumber",
+            "type": "u64"
+          },
+          {
+            "name": "onFinalizeUri",
+            "type": "string"
+          },
+          {
+            "name": "onRevertUri",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitializeConditionalVaultArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "settlementAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "proposal",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
     {
       "name": "VaultStatus",
       "type": {

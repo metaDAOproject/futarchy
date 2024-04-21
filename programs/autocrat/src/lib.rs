@@ -11,15 +11,11 @@
 //! - Pre-creation: this is when you initialize the accounts needed for a proposal,
 //!   including the vaults and the AMM accounts. The proposer will also deposit to
 //!   create their LP during this time.
-//! - Price discovery: to create a proposal, the proposer must call
+//! - Trading: to create a proposal, the proposer must call
 //!   `initialize_proposal`, which requires them to lock up some LP tokens in each
-//!   of the markets. Once a proposal is created, anyone can trade its markets. But
-//!   its market prices don't get included in the proposal's TWAP.
-//! - TWAP recording: after some period of time, such as a day, has passed, there
-//!   is a smaller period of time, such as an hour, for market prices to be recorded
-//!   into a TWAP. This is so that market participants can be informed ahead of time
-//!   when the TWAP recording will occur and a malicious actor can't slip in some TWAP
-//!   manipulation while noone is paying attention.
+//!   of the markets. Once a proposal is created, anyone can trade its markets.
+//!   Prices of these markets are aggregated into a time-weighted average price
+//!   oracle.
 //! - Pass or fail: if the TWAP of the pass market is sufficiently higher than the
 //!   TWAP of the fail market, the proposal will pass. If it's not, the proposal will
 //!   fail. If it passes, both vaults will be finalized, allowing pTOKEN holders to
@@ -29,7 +25,7 @@
 //!   instruction by calling `execute_proposal`.
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
-use anchor_spl::token::Mint;
+use anchor_spl::token::{Mint, TokenAccount, Token, Transfer, self};
 use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
@@ -93,10 +89,12 @@ pub mod autocrat {
         InitializeProposal::handle(ctx, params)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {
         FinalizeProposal::handle(ctx)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         ExecuteProposal::handle(ctx)
     }

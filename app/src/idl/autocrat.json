@@ -147,17 +147,39 @@
           "isSigner": false
         },
         {
-          "name": "vaultProgram",
+          "name": "treasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "passLpUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "failLpUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "passLpVaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "failLpVaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "TODO: use a different thing to prevent collision"
-          ]
+          "name": "vaultProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": []
@@ -174,11 +196,6 @@
           "name": "dao",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "daoTreasury",
-          "isMut": true,
-          "isSigner": false
         }
       ],
       "args": []
@@ -192,7 +209,7 @@
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
+          "name": "treasury",
           "isMut": false,
           "isSigner": true
         }
@@ -336,6 +353,14 @@
           {
             "name": "dao",
             "type": "publicKey"
+          },
+          {
+            "name": "passLpTokensLocked",
+            "type": "u64"
+          },
+          {
+            "name": "failLpTokensLocked",
+            "type": "u64"
           }
         ]
       }
