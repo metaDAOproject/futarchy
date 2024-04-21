@@ -16,7 +16,7 @@ export const removeLiquidityHandler = (
   const [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
 
   return client.program.methods
-    .removeLiquidity(removeBps)
+    .removeLiquidity({lpTokensToBurn: new BN(0), minBaseAmount: new BN(0), minQuoteAmount: new BN(0)})
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,

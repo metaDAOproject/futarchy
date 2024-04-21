@@ -92,10 +92,9 @@ pub mod autocrat {
     #[access_control(ctx.accounts.validate())]
     pub fn initialize_proposal(
         ctx: Context<InitializeProposal>,
-        description_url: String,
-        instruction: ProposalInstruction,
+        params: InitializeProposalParams
     ) -> Result<()> {
-        InitializeProposal::handle(ctx, description_url, instruction)
+        InitializeProposal::handle(ctx, params)
     }
 
     pub fn finalize_proposal(ctx: Context<FinalizeProposal>) -> Result<()> {

@@ -1,9 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::clock::Slot;
-use num_traits::ToPrimitive;
 
 use crate::error::AmmError;
-use crate::{BPS_SCALE, MAX_PRICE, ONE_MINUTE_IN_SLOTS, PRICE_SCALE};
+use crate::{MAX_PRICE, ONE_MINUTE_IN_SLOTS, PRICE_SCALE};
 use std::cmp::{max, min};
 
 #[derive(Clone, Copy, Debug, AnchorSerialize, AnchorDeserialize)]

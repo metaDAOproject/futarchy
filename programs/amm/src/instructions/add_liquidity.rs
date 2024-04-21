@@ -29,11 +29,16 @@ pub fn handler(
         system_program: _,
     } = ctx.accounts;
 
-    require_gt!(user_ata_base.amount, min_base_amount, AmmError::InsufficientBalance);
-    require_gt!(user_ata_quote.amount, min_quote_amount, AmmError::InsufficientBalance);
+    require_gte!(user_ata_base.amount, min_base_amount, AmmError::InsufficientBalance);
+    require_gte!(user_ata_quote.amount, min_quote_amount, AmmError::InsufficientBalance);
 
-    assert!(max_base_amount > 0);
-    assert!(max_quote_amount > 0);
+    require_gt!(max_base_amount, 0, AmmError::ZeroLiquidityToAdd);
+    require_gt!(max_quote_amount, 0, AmmError::ZeroLiquidityToAdd);
+
+    // assert!(max_base_amount > 0);
+    // assert!(max_quote_amount > 0);
+
+    // return Ok(());
 
     amm.update_twap(Clock::get()?.slot);
 
@@ -42,6 +47,7 @@ pub fn handler(
 
     let seeds = generate_amm_seeds!(amm);
     let signer = &[&seeds[..]];
+
 
     let amount_to_mint = if amm.base_amount == 0 && amm.quote_amount == 0 {
         // if there is no liquidity in the amm, then initialize with new ownership values

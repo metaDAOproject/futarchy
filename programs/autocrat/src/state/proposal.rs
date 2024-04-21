@@ -8,14 +8,14 @@ pub enum ProposalState {
     Executed,
 }
 
-#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq)]
 pub struct ProposalAccount {
     pub pubkey: Pubkey,
     pub is_signer: bool,
     pub is_writable: bool,
 }
 
-#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, Debug, PartialEq, Eq)]
 pub struct ProposalInstruction {
     pub program_id: Pubkey,
     pub accounts: Vec<ProposalAccount>,

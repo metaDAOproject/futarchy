@@ -8,10 +8,6 @@ pub enum AutocratError {
     InvalidInitialObservation,
     #[msg("An amm has a `max_observation_change_per_update` that doesn't match the `dao`'s config")]
     InvalidMaxObservationChange,
-    // #[msg("`TWAPOracle` has an incorrect max_observation_change_per_update_lots value")]
-    // TWAPOracleWrongChangeLots,
-    // #[msg("`TWAPMarket` has the wrong `expected_value`")]
-    // TWAPMarketInvalidExpectedValue,
     #[msg("One of the vaults has an invalid `settlement_authority`")]
     InvalidSettlementAuthority,
     #[msg("Proposal is too young to be executed or rejected")]
@@ -24,4 +20,6 @@ pub enum AutocratError {
     InvalidVaultNonce,
     #[msg("This proposal can't be executed because it isn't in the passed state")]
     ProposalNotPassed,
+    #[msg("The proposer has fewer pass or fail LP tokens than they requested to lock")]
+    InsufficientLPTokens,
 }

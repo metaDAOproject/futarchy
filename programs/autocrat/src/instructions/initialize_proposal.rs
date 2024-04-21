@@ -1,6 +1,15 @@
 use super::*;
 
 use amm::state::ONE_MINUTE_IN_SLOTS;
+use anchor_spl::token::TokenAccount;
+
+#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct InitializeProposalParams {
+    pub description_url: String,
+    pub instruction: ProposalInstruction,
+    pub pass_lp_tokens_to_lock: u64,
+    pub fail_lp_tokens_to_lock: u64,
+}
 
 #[derive(Accounts)]
 pub struct InitializeProposal<'info> {
@@ -8,13 +17,6 @@ pub struct InitializeProposal<'info> {
     pub proposal: Box<Account<'info, Proposal>>,
     #[account(mut)]
     pub dao: Account<'info, DAO>,
-    /// CHECK: never read
-    #[account(
-        seeds = [dao.key().as_ref()],
-        bump = dao.treasury_pda_bump,
-        mut
-    )]
-    pub dao_treasury: UncheckedAccount<'info>,
     #[account(
         has_one = proposal,
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
@@ -39,6 +41,26 @@ pub struct InitializeProposal<'info> {
         has_one = proposal
     )]
     pub fail_amm: Box<Account<'info, Amm>>,
+    #[account(
+        associated_token::mint = pass_amm.lp_mint,
+        associated_token::authority = proposer,
+    )]
+    pub pass_lp_user_account: Account<'info, TokenAccount>,
+    #[account(
+        associated_token::mint = fail_amm.lp_mint,
+        associated_token::authority = proposer,
+    )]
+    pub fail_lp_user_account: Account<'info, TokenAccount>,
+    #[account(
+        associated_token::mint = pass_amm.lp_mint,
+        associated_token::authority = dao.treasury,
+    )]
+    pub pass_lp_vault_account: Account<'info, TokenAccount>,
+    #[account(
+        associated_token::mint = fail_amm.lp_mint,
+        associated_token::authority = dao.treasury,
+    )]
+    pub fail_lp_vault_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub proposer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -70,24 +92,45 @@ impl InitializeProposal<'_> {
         Ok(())
     }
 
-    pub fn handle(ctx: Context<Self>, description_url: String, instruction: ProposalInstruction) -> Result<()> {
-        let base_vault = &ctx.accounts.base_vault;
-        let quote_vault = &ctx.accounts.quote_vault;
-        let dao = &mut ctx.accounts.dao;
+    pub fn handle(ctx: Context<Self>, params: InitializeProposalParams) -> Result<()> {
+        let Self {
+            base_vault,
+            quote_vault,
+            proposal,
+            dao,
+            pass_amm,
+            fail_amm,
+            pass_lp_user_account,
+            fail_lp_user_account,
+            pass_lp_vault_account,
+            fail_lp_vault_account,
+            proposer,
+            system_program: _,
+        } = ctx.accounts;
+
+        let InitializeProposalParams {
+            description_url,
+            instruction,
+            pass_lp_tokens_to_lock,
+            fail_lp_tokens_to_lock,
+        } = params;
+
+        require_gte!(pass_lp_user_account.amount, pass_lp_tokens_to_lock);
+        require_gte!(fail_lp_user_account.amount, fail_lp_tokens_to_lock);
+
         let clock = Clock::get()?;
 
         dao.proposal_count += 1;
 
-        let proposal = &mut ctx.accounts.proposal;
         proposal.set_inner(Proposal {
             number: dao.proposal_count,
-            proposer: ctx.accounts.proposer.key(),
+            proposer: proposer.key(),
             description_url,
             slot_enqueued: clock.slot,
             state: ProposalState::Pending,
             instruction,
-            pass_amm: ctx.accounts.pass_amm.key(),
-            fail_amm: ctx.accounts.fail_amm.key(),
+            pass_amm: pass_amm.key(),
+            fail_amm: fail_amm.key(),
             base_vault: base_vault.key(),
             quote_vault: quote_vault.key(),
             dao: dao.key(),

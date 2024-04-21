@@ -54,11 +54,6 @@
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "quoteVault",
           "isMut": false,
           "isSigner": false
@@ -79,6 +74,26 @@
           "isSigner": false
         },
         {
+          "name": "passLpUserAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failLpUserAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "passLpVaultAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failLpVaultAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "proposer",
           "isMut": true,
           "isSigner": true
@@ -91,13 +106,9 @@
       ],
       "args": [
         {
-          "name": "descriptionUrl",
-          "type": "string"
-        },
-        {
-          "name": "instruction",
+          "name": "params",
           "type": {
-            "defined": "ProposalInstruction"
+            "defined": "InitializeProposalParams"
           }
         }
       ]
@@ -368,6 +379,32 @@
       }
     },
     {
+      "name": "InitializeProposalParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "descriptionUrl",
+            "type": "string"
+          },
+          {
+            "name": "instruction",
+            "type": {
+              "defined": "ProposalInstruction"
+            }
+          },
+          {
+            "name": "passLpTokensToLock",
+            "type": "u64"
+          },
+          {
+            "name": "failLpTokensToLock",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "UpdateDaoParams",
       "type": {
         "kind": "struct",
@@ -467,53 +504,53 @@
   "errors": [
     {
       "code": 6000,
-      "name": "InvalidMarket",
-      "msg": "Either the `pass_market` or the `fail_market`'s tokens doesn't match the vaults supplied"
+      "name": "AmmTooOld",
+      "msg": "Amms must have been created within 5 minutes (counted in slots) of proposal initialization"
     },
     {
       "code": 6001,
-      "name": "TWAPMarketTooOld",
-      "msg": "`TWAPMarket` must have an `initial_slot` within 50 slots of the proposal's `slot_enqueued`"
+      "name": "InvalidInitialObservation",
+      "msg": "An amm has an `initial_observation` that doesn't match the `dao`'s config"
     },
     {
       "code": 6002,
-      "name": "TWAPOracleWrongChangeLots",
-      "msg": "`TWAPOracle` has an incorrect max_observation_change_per_update_lots value"
+      "name": "InvalidMaxObservationChange",
+      "msg": "An amm has a `max_observation_change_per_update` that doesn't match the `dao`'s config"
     },
     {
       "code": 6003,
-      "name": "TWAPMarketInvalidExpectedValue",
-      "msg": "`TWAPMarket` has the wrong `expected_value`"
-    },
-    {
-      "code": 6004,
       "name": "InvalidSettlementAuthority",
       "msg": "One of the vaults has an invalid `settlement_authority`"
     },
     {
-      "code": 6005,
+      "code": 6004,
       "name": "ProposalTooYoung",
       "msg": "Proposal is too young to be executed or rejected"
     },
     {
-      "code": 6006,
+      "code": 6005,
       "name": "MarketsTooYoung",
       "msg": "Markets too young for proposal to be finalized. TWAP might need to be cranked"
     },
     {
-      "code": 6007,
+      "code": 6006,
       "name": "ProposalAlreadyFinalized",
       "msg": "This proposal has already been finalized"
     },
     {
-      "code": 6008,
+      "code": 6007,
       "name": "InvalidVaultNonce",
       "msg": "A conditional vault has an invalid nonce. A nonce should encode the proposal number"
     },
     {
-      "code": 6009,
+      "code": 6008,
       "name": "ProposalNotPassed",
       "msg": "This proposal can't be executed because it isn't in the passed state"
+    },
+    {
+      "code": 6009,
+      "name": "InsufficientLPTokens",
+      "msg": "The proposer has fewer pass or fail LP tokens than they requested to lock"
     }
   ],
   "metadata": {

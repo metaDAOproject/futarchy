@@ -25,7 +25,9 @@ import {
 } from "./constants";
 import { Amm, AmmWrapper } from "./types";
 import {
+  getATA,
   getAmmAddr,
+  getAmmLpMintAddr,
   getDaoTreasuryAddr,
   getVaultAddr,
   getVaultFinalizeMintAddr,
@@ -33,6 +35,7 @@ import {
 } from "./utils";
 import { ConditionalVaultClient } from "./ConditionalVaultClient";
 import { AmmClient } from "./AmmClient";
+import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
 
 export type CreateClientParams = {
   provider: AnchorProvider;
@@ -132,7 +135,10 @@ export class AutocratClient {
     );
 
     const [passBaseMint] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
-    const [passQuoteMint] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
+    const [passQuoteMint] = getVaultFinalizeMintAddr(
+      vaultProgramId,
+      quoteVault
+    );
 
     const [failBaseMint] = getVaultRevertMintAddr(vaultProgramId, baseVault);
     const [failQuoteMint] = getVaultRevertMintAddr(vaultProgramId, quoteVault);
@@ -158,7 +164,7 @@ export class AutocratClient {
       failBaseMint,
       failQuoteMint,
       passAmm,
-      failAmm
+      failAmm,
     };
   }
 
@@ -171,9 +177,15 @@ export class AutocratClient {
     usdcMint: PublicKey = MAINNET_USDC,
     daoKeypair: Keypair = Keypair.generate()
   ): Promise<PublicKey> {
-    let scaledPrice = PriceMath.getAmmPrice(tokenPriceUiAmount, tokenDecimals, USDC_DECIMALS);
+    let scaledPrice = PriceMath.getAmmPrice(
+      tokenPriceUiAmount,
+      tokenDecimals,
+      USDC_DECIMALS
+    );
 
-    console.log(PriceMath.getHumanPrice(scaledPrice, tokenDecimals, USDC_DECIMALS));
+    console.log(
+      PriceMath.getHumanPrice(scaledPrice, tokenDecimals, USDC_DECIMALS)
+    );
 
     await this.initializeDaoIx(
       daoKeypair,
@@ -211,7 +223,9 @@ export class AutocratClient {
   async initializeProposal(
     dao: PublicKey,
     descriptionUrl: string,
-    instruction: ProposalInstruction
+    instruction: ProposalInstruction,
+    baseTokensToLP: BN,
+    quoteTokensToLP: BN
   ): Promise<PublicKey> {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
     const proposalKP = Keypair.generate();
@@ -226,6 +240,7 @@ export class AutocratClient {
     await this.vaultClient
       .initializeVaultIx(storedDao.treasury, storedDao.usdcMint, proposal)
       .rpc();
+
     const [baseVault] = getVaultAddr(
       this.vaultClient.vaultProgram.programId,
       daoTreasury,
@@ -244,9 +259,21 @@ export class AutocratClient {
 
     const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
     const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
+    const [passAmm] = getAmmAddr(
+      this.ammClient.program.programId,
+      passBase,
+      passQuote,
+      proposal
+    );
 
     const [failBase] = getVaultRevertMintAddr(vaultProgramId, baseVault);
     const [failQuote] = getVaultRevertMintAddr(vaultProgramId, quoteVault);
+    const [failAmm] = getAmmAddr(
+      this.ammClient.program.programId,
+      failBase,
+      failQuote,
+      proposal
+    );
 
     await this.ammClient
       .createAmm(
@@ -256,6 +283,19 @@ export class AutocratClient {
         storedDao.twapMaxObservationChangePerUpdate,
         proposal
       )
+      .postInstructions([
+        await this.ammClient
+          .addLiquidityIx(
+            passAmm,
+            passBase,
+            passQuote,
+            baseTokensToLP,
+            quoteTokensToLP,
+            baseTokensToLP,
+            quoteTokensToLP
+          )
+          .instruction(),
+      ])
       .rpc();
 
     await this.ammClient
@@ -268,13 +308,29 @@ export class AutocratClient {
       )
       .rpc();
 
+    await this.ammClient
+      .addLiquidityIx(
+        failAmm,
+        failBase,
+        failQuote,
+        baseTokensToLP,
+        quoteTokensToLP,
+        baseTokensToLP,
+        quoteTokensToLP
+      )
+      .rpc();
+
+    const lpTokens = BN.max(baseTokensToLP, quoteTokensToLP);
+
     await this.initializeProposalIx(
       proposalKP,
       descriptionUrl,
       instruction,
       dao,
       storedDao.tokenMint,
-      storedDao.usdcMint
+      storedDao.usdcMint,
+      lpTokens,
+      lpTokens
     )
       .preInstructions([
         await this.autocrat.account.proposal.createInstruction(
@@ -293,7 +349,9 @@ export class AutocratClient {
     instruction: ProposalInstruction,
     dao: PublicKey,
     baseMint: PublicKey,
-    quoteMint: PublicKey
+    quoteMint: PublicKey,
+    passLpTokensToLock: BN,
+    failLpTokensToLock: BN
   ) {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
@@ -329,22 +387,56 @@ export class AutocratClient {
       proposalKeypair.publicKey
     );
 
+    const [passLp] = getAmmLpMintAddr(
+      this.ammClient.program.programId,
+      passAmm
+    );
+    const [failLp] = getAmmLpMintAddr(
+      this.ammClient.program.programId,
+      failAmm
+    );
+
+    const passLpVaultAccount = getATA(passLp, daoTreasury)[0];
+    const failLpVaultAccount = getATA(failLp, daoTreasury)[0];
+
     return (
       this.autocrat.methods
-        .initializeProposal(descriptionUrl, instruction)
+        .initializeProposal({
+          descriptionUrl,
+          instruction,
+          passLpTokensToLock,
+          failLpTokensToLock,
+        })
         // .preInstructions([
         //   await this.autocrat.account.proposal.createInstruction(proposalKeypair, 2500),
         // ])
         .accounts({
           proposal: proposalKeypair.publicKey,
           dao,
-          daoTreasury,
           baseVault,
           quoteVault,
           passAmm,
           failAmm,
+          passLpUserAccount: getATA(passLp, this.provider.publicKey)[0],
+          failLpUserAccount: getATA(failLp, this.provider.publicKey)[0],
+          passLpVaultAccount,
+          failLpVaultAccount,
           proposer: this.provider.publicKey,
         })
+        .preInstructions([
+          createAssociatedTokenAccountIdempotentInstruction(
+            this.provider.publicKey,
+            passLpVaultAccount,
+            daoTreasury,
+            passLp
+          ),
+          createAssociatedTokenAccountIdempotentInstruction(
+            this.provider.publicKey,
+            failLpVaultAccount,
+            daoTreasury,
+            failLp
+          ),
+        ])
         .signers([proposalKeypair])
     );
   }
@@ -449,5 +541,4 @@ export class AutocratClient {
           )
       );
   }
-
 }

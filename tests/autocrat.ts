@@ -328,7 +328,8 @@ describe("autocrat", async function () {
         data: ix.data,
       };
 
-      proposal = await autocratClient.initializeProposal(dao, "", instruction);
+
+      proposal = await autocratClient.initializeProposal(dao, "", instruction, ONE_META.muln(5), ONE_USDC.muln(5000));
 
       let {
         passAmm,
@@ -341,31 +342,32 @@ describe("autocrat", async function () {
         quoteVault,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
-      await ammClient
-        .addLiquidityIx(
-          passAmm,
-          passBaseMint,
-          passQuoteMint,
-          ONE_META.muln(5),
-          ONE_USDC.muln(5500),
-          ONE_META.muln(5),
-          ONE_USDC.muln(5500)
-        )
-        .postInstructions([
-          await ammClient
-            .addLiquidityIx(
-              failAmm,
-              failBaseMint,
-              failQuoteMint,
-              ONE_META.muln(5),
-              ONE_USDC.muln(4000),
-              ONE_META.muln(5),
-              ONE_USDC.muln(4000)
-            )
-            .instruction(),
-        ])
-        .rpc();
+      // await ammClient
+      //   .addLiquidityIx(
+      //     passAmm,
+      //     passBaseMint,
+      //     passQuoteMint,
+      //     ONE_META.muln(5),
+      //     ONE_USDC.muln(5500),
+      //     ONE_META.muln(5),
+      //     ONE_USDC.muln(5500)
+      //   )
+      //   .postInstructions([
+      //     await ammClient
+      //       .addLiquidityIx(
+      //         failAmm,
+      //         failBaseMint,
+      //         failQuoteMint,
+      //         ONE_META.muln(5),
+      //         ONE_USDC.muln(4000),
+      //         ONE_META.muln(5),
+      //         ONE_USDC.muln(4000)
+      //       )
+      //       .instruction(),
+      //   ])
+      //   .rpc();
     });
+
 
     it("doesn't finalize proposals that are too young", async function () {
       const callbacks = expectError(
@@ -441,7 +443,7 @@ describe("autocrat", async function () {
       let storedBaseVault = await vaultClient.getVault(baseVault);
       let storedQuoteVault = await vaultClient.getVault(quoteVault);
 
-      console.log(storedBaseVault);
+      // console.log(storedBaseVault);
 
       assert.exists(storedBaseVault.status.finalized);
       assert.exists(storedQuoteVault.status.finalized);

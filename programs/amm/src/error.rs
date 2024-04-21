@@ -18,4 +18,6 @@ pub enum AmmError {
     SlippageExceeded,
     #[msg("The user had insufficient balance to do this")]
     InsufficientBalance,
+    #[msg("Cannot add liquidity with 0 tokens on either side")]
+    ZeroLiquidityToAdd,
 }
