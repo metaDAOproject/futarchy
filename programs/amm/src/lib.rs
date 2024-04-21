@@ -18,7 +18,6 @@ security_txt! {
 pub mod error;
 pub mod instructions;
 pub mod state;
-pub mod utils;
 
 use crate::instructions::*;
 use crate::state::*;
