@@ -3,8 +3,8 @@ use anchor_spl::token::{self, *};
 use num_traits::ToPrimitive;
 
 use crate::error::AmmError;
-use crate::{generate_amm_seeds, state::*};
 use crate::AddOrRemoveLiquidity;
+use crate::{generate_amm_seeds, state::*};
 
 pub fn handler(
     ctx: Context<AddOrRemoveLiquidity>,
@@ -29,8 +29,19 @@ pub fn handler(
         system_program: _,
     } = ctx.accounts;
 
-    assert!(max_base_amount > 0);
-    assert!(max_quote_amount > 0);
+    require_gte!(
+        user_ata_base.amount,
+        min_base_amount,
+        AmmError::InsufficientBalance
+    );
+    require_gte!(
+        user_ata_quote.amount,
+        min_quote_amount,
+        AmmError::InsufficientBalance
+    );
+
+    require_gt!(max_base_amount, 0, AmmError::ZeroLiquidityToAdd);
+    require_gt!(max_quote_amount, 0, AmmError::ZeroLiquidityToAdd);
 
     amm.update_twap(Clock::get()?.slot);
 

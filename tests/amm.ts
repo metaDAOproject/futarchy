@@ -101,7 +101,7 @@ describe("amm", async function () {
         twapFirstObservationScaled,
         twapMaxObservationChangePerUpdateScaled,
       ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
-      
+
       let proposal = Keypair.generate().publicKey;
 
       await ammClient
@@ -111,7 +111,8 @@ describe("amm", async function () {
           twapFirstObservationScaled,
           twapMaxObservationChangePerUpdateScaled,
           proposal
-        ).rpc();
+        )
+        .rpc();
 
       let bump;
       [amm, bump] = getAmmAddr(
@@ -124,16 +125,9 @@ describe("amm", async function () {
       const ammAcc = await ammClient.getAmm(amm);
 
       assert.equal(ammAcc.bump, bump);
-      assert.isTrue(
-        ammAcc.createdAtSlot.eq(
-          ammAcc.oracle.lastUpdatedSlot
-        )
-      );
+      assert.isTrue(ammAcc.createdAtSlot.eq(ammAcc.oracle.lastUpdatedSlot));
       [lpMint] = getAmmLpMintAddr(ammClient.program.programId, amm);
-      assert.equal(
-        ammAcc.lpMint.toBase58(),
-        lpMint.toBase58()
-      );
+      assert.equal(ammAcc.lpMint.toBase58(), lpMint.toBase58());
       assert.equal(ammAcc.baseMint.toBase58(), META.toBase58());
       assert.equal(ammAcc.quoteMint.toBase58(), USDC.toBase58());
       assert.equal(ammAcc.baseMintDecimals, 9);
@@ -141,9 +135,7 @@ describe("amm", async function () {
       assert.isTrue(ammAcc.baseAmount.eqn(0));
       assert.isTrue(ammAcc.quoteAmount.eqn(0));
       assert.isTrue(
-        ammAcc.oracle.lastObservation.eq(
-          twapFirstObservationScaled
-        )
+        ammAcc.oracle.lastObservation.eq(twapFirstObservationScaled)
       );
       assert.isTrue(ammAcc.oracle.aggregator.eqn(0));
       assert.isTrue(
@@ -152,9 +144,7 @@ describe("amm", async function () {
         )
       );
       assert.isTrue(
-        ammAcc.oracle.initialObservation.eq(
-          twapFirstObservationScaled
-        )
+        ammAcc.oracle.initialObservation.eq(twapFirstObservationScaled)
       );
     });
 
@@ -198,24 +188,23 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.addLiquidity(
-        amm,
-        META,
-        USDC,
-        new BN(10 * 10 ** 9),
-        new BN(100 * 10 ** 6),
-        new BN(10 * 0.95 * 10 ** 9),
-        new BN(100 * 0.95 * 10 ** 6)
-      ).rpc();
+      await ammClient
+        .addLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(10 * 10 ** 9),
+          new BN(100 * 10 ** 6),
+          new BN(10 * 0.95 * 10 ** 9),
+          new BN(100 * 0.95 * 10 ** 6)
+        )
+        .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);
 
-      assert.isAbove(
-        Number(lpMintEnd.supply),
-        Number(lpMintStart.supply)
-      );
+      assert.isAbove(Number(lpMintEnd.supply), Number(lpMintStart.supply));
       assert.isAbove(
         Number(userLpAccountEnd.amount),
         Number(userLpAccountStart.amount)
@@ -237,24 +226,23 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.addLiquidity(
-        amm,
-        META,
-        USDC,
-        new BN(10 * 10 ** 9),
-        new BN(100 * 10 ** 6),
-        new BN(10 * 0.95 * 10 ** 9),
-        new BN(100 * 0.95 * 10 ** 6)
-      ).rpc();
+      await ammClient
+        .addLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(10 * 10 ** 9),
+          new BN(100 * 10 ** 6),
+          new BN(10 * 0.95 * 10 ** 9),
+          new BN(100 * 0.95 * 10 ** 6)
+        )
+        .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);
 
-      assert.isAbove(
-        Number(lpMintEnd.supply),
-        Number(lpMintStart.supply)
-      );
+      assert.isAbove(Number(lpMintEnd.supply), Number(lpMintStart.supply));
       assert.isAbove(
         Number(userLpAccountEnd.amount),
         Number(userLpAccountStart.amount)
@@ -275,14 +263,16 @@ describe("amm", async function () {
     it("swap quote to base", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
-      await ammClient.swap(
-        amm,
-        META,
-        USDC,
-        true,
-        new BN(10 * 10 ** 6),
-        new BN(0.8 * 10 ** 9)
-      ).rpc();
+      await ammClient
+        .swap(
+          amm,
+          META,
+          USDC,
+          true,
+          new BN(10 * 10 ** 6),
+          new BN(0.8 * 10 ** 9)
+        )
+        .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
 
@@ -299,14 +289,9 @@ describe("amm", async function () {
     it("swap base to quote", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
-      await ammClient.swap(
-        amm,
-        META,
-        USDC,
-        false,
-        new BN(1 * 10 ** 9),
-        new BN(8 * 10 ** 6)
-      ).rpc();
+      await ammClient
+        .swap(amm, META, USDC, false, new BN(1 * 10 ** 9), new BN(8 * 10 ** 6))
+        .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
 
@@ -328,14 +313,9 @@ describe("amm", async function () {
 
       let startingBaseSwapAmount = 1 * 10 ** 9;
 
-      await ammClient.swap(
-        amm,
-        META,
-        USDC,
-        false,
-        new BN(startingBaseSwapAmount),
-        new BN(1)
-      ).rpc();
+      await ammClient
+        .swap(amm, META, USDC, false, new BN(startingBaseSwapAmount), new BN(1))
+        .rpc();
 
       await fastForward(context, 1n);
 
@@ -344,14 +324,9 @@ describe("amm", async function () {
         permissionlessAmmStart.quoteAmount.toNumber() -
         ammMiddle.quoteAmount.toNumber();
 
-      await ammClient.swap(
-        amm,
-        META,
-        USDC,
-        true,
-        new BN(quoteReceived),
-        new BN(1)
-      ).rpc();
+      await ammClient
+        .swap(amm, META, USDC, true, new BN(quoteReceived), new BN(1))
+        .rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
         amm
@@ -369,79 +344,26 @@ describe("amm", async function () {
 
       let startingQuoteSwapAmount = 1 * 10 ** 6;
 
-      await ammClient.swap(
-        amm,
-        META,
-        USDC,
-        true,
-        new BN(startingQuoteSwapAmount),
-        new BN(1)
-      ).rpc();
+      await ammClient
+        .swap(amm, META, USDC, true, new BN(startingQuoteSwapAmount), new BN(1))
+        .rpc();
 
       await fastForward(context, 1n);
 
       const ammMiddle = await ammClient.getAmm(amm);
       let baseReceived =
-        ammStart.baseAmount.toNumber() -
-        ammMiddle.baseAmount.toNumber();
+        ammStart.baseAmount.toNumber() - ammMiddle.baseAmount.toNumber();
 
-      await ammClient.swap(
-        amm,
-        META,
-        USDC,
-        false,
-        new BN(baseReceived),
-        new BN(1)
-      ).rpc();
+      await ammClient
+        .swap(amm, META, USDC, false, new BN(baseReceived), new BN(1))
+        .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
       let quoteReceived =
-        ammMiddle.quoteAmount.toNumber() -
-        ammEnd.quoteAmount.toNumber();
+        ammMiddle.quoteAmount.toNumber() - ammEnd.quoteAmount.toNumber();
 
       assert.isBelow(quoteReceived, startingQuoteSwapAmount);
       assert.isAbove(quoteReceived, startingQuoteSwapAmount * 0.98);
-    });
-
-    it.skip("ltwap should go up after buying base, down after selling base", async function () {
-      let ixh1 = await ammClient.updateLTWAP(amm);
-      await ixh1.bankrun(banksClient);
-
-      console.log(await ammClient.getAmm(amm));
-
-      const ltwapStart = await ammClient.getLTWAP(amm);
-
-      let ixh2 = await ammClient.swap(
-        amm,
-        true,
-        new BN(2 * 10 ** 9)
-      );
-      await ixh2.bankrun(banksClient);
-
-      await fastForward(context, 100n);
-
-      let ixh3 = await ammClient.updateLTWAP(amm);
-      await ixh3.bankrun(banksClient);
-
-      const ltwapMiddle = await ammClient.getLTWAP(amm);
-
-      assert.isAbove(ltwapMiddle, ltwapStart);
-
-      let ixh4 = await ammClient.swap(
-        amm,
-        false,
-        new BN(20 * 10 ** 6)
-      );
-      await ixh4.bankrun(banksClient);
-
-      await fastForward(context, 100n);
-
-      let ixh5 = await ammClient.updateLTWAP(amm);
-      await ixh5.bankrun(banksClient);
-
-      const ltwapEnd = await ammClient.getLTWAP(amm);
-
-      assert.isAbove(ltwapMiddle, ltwapEnd);
     });
   });
 
@@ -452,22 +374,23 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.removeLiquidity(
-        amm,
-        META,
-        USDC,
-        new BN(5_000)
-      ).rpc();
+      await ammClient
+        .removeLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(userLpAccountStart.amount.toString()).divn(2),
+          new BN(0),
+          new BN(0)
+        )
+        .rpc();
 
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);
 
       const ammEnd = await ammClient.getAmm(amm);
 
-      assert.isBelow(
-        Number(lpMintEnd.supply),
-        Number(lpMintStart.supply)
-      );
+      assert.isBelow(Number(lpMintEnd.supply), Number(lpMintStart.supply));
       assert.isBelow(
         Number(userLpAccountEnd.amount),
         Number(userLpAccountStart.amount)
@@ -489,20 +412,22 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.removeLiquidity(
-        amm,
-        META,
-        USDC,
-        new BN(10_000)
-      ).rpc();
+      await ammClient
+        .removeLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(userLpAccountStart.amount.toString()),
+          new BN(1 * 10**9),
+          new BN(10 * 10**6)
+        )
+        .rpc();
+
 
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);
 
-      assert.isBelow(
-        Number(lpMintEnd.supply),
-        Number(lpMintStart.supply)
-      );
+      assert.isBelow(Number(lpMintEnd.supply), Number(lpMintStart.supply));
       assert.isBelow(
         Number(userLpAccountEnd.amount),
         Number(userLpAccountStart.amount)

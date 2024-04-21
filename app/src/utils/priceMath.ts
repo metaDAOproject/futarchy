@@ -4,14 +4,33 @@ const BN_TEN = new BN(10);
 const PRICE_SCALE = BN_TEN.pow(new BN(12));
 
 export class PriceMath {
-  public static scalePrice(
-    price: number,
+  public static getHumanPrice(
+    ammPrice: BN,
+    baseDecimals: number,
+    quoteDecimals: number
+  ): number {
+    let decimalScalar = BN_TEN.pow(new BN(quoteDecimals - baseDecimals).abs());
+
+    let price1e12 =
+      quoteDecimals > baseDecimals
+        ? ammPrice.div(decimalScalar)
+        : ammPrice.mul(decimalScalar);
+
+    return price1e12.toNumber() / 1e12;
+  }
+  public static getAmmPrice(
+    humanPrice: number,
     baseDecimals: number,
     quoteDecimals: number
   ): BN {
-    let scaledPrice = new BN(price)
-      .mul(PRICE_SCALE)
-      .mul(BN_TEN.pow(new BN(baseDecimals - quoteDecimals)));
+    let price1e12 = PRICE_SCALE.muln(humanPrice);
+
+    let decimalScalar = BN_TEN.pow(new BN(quoteDecimals - baseDecimals).abs());
+
+    let scaledPrice =
+      quoteDecimals > baseDecimals
+        ? price1e12.mul(decimalScalar)
+        : price1e12.div(decimalScalar);
 
     return scaledPrice;
   }
@@ -23,7 +42,7 @@ export class PriceMath {
   ): BN[] {
     // Map through each price, scaling it using the scalePrice method
     return prices.map((price) =>
-      this.scalePrice(price, baseDecimals, quoteDecimals)
+      this.getAmmPrice(price, baseDecimals, quoteDecimals)
     );
   }
 }

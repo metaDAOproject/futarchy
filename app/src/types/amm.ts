@@ -224,8 +224,10 @@ export type Amm = {
       ],
       "args": [
         {
-          "name": "removeBps",
-          "type": "u64"
+          "name": "params",
+          "type": {
+            "defined": "RemoveLiquidityParams"
+          }
         }
       ]
     },
@@ -306,21 +308,11 @@ export type Amm = {
       ]
     },
     {
-      "name": "updateLtwap",
+      "name": "crankThatTwap",
       "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
         {
           "name": "amm",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -404,6 +396,26 @@ export type Amm = {
           {
             "name": "proposal",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RemoveLiquidityParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lpTokensToBurn",
+            "type": "u64"
+          },
+          {
+            "name": "minQuoteAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minBaseAmount",
+            "type": "u64"
           }
         ]
       }
@@ -523,6 +535,16 @@ export type Amm = {
       "code": 6006,
       "name": "SlippageExceeded",
       "msg": "A user wouldn't have gotten back their `output_amount_min`, reverting"
+    },
+    {
+      "code": 6007,
+      "name": "InsufficientBalance",
+      "msg": "The user had insufficient balance to do this"
+    },
+    {
+      "code": 6008,
+      "name": "ZeroLiquidityToAdd",
+      "msg": "Cannot add liquidity with 0 tokens on either side"
     }
   ]
 };
@@ -753,8 +775,10 @@ export const IDL: Amm = {
       ],
       "args": [
         {
-          "name": "removeBps",
-          "type": "u64"
+          "name": "params",
+          "type": {
+            "defined": "RemoveLiquidityParams"
+          }
         }
       ]
     },
@@ -835,21 +859,11 @@ export const IDL: Amm = {
       ]
     },
     {
-      "name": "updateLtwap",
+      "name": "crankThatTwap",
       "accounts": [
-        {
-          "name": "user",
-          "isMut": true,
-          "isSigner": true
-        },
         {
           "name": "amm",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -933,6 +947,26 @@ export const IDL: Amm = {
           {
             "name": "proposal",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RemoveLiquidityParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lpTokensToBurn",
+            "type": "u64"
+          },
+          {
+            "name": "minQuoteAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minBaseAmount",
+            "type": "u64"
           }
         ]
       }
@@ -1052,6 +1086,16 @@ export const IDL: Amm = {
       "code": 6006,
       "name": "SlippageExceeded",
       "msg": "A user wouldn't have gotten back their `output_amount_min`, reverting"
+    },
+    {
+      "code": 6007,
+      "name": "InsufficientBalance",
+      "msg": "The user had insufficient balance to do this"
+    },
+    {
+      "code": 6008,
+      "name": "ZeroLiquidityToAdd",
+      "msg": "Cannot add liquidity with 0 tokens on either side"
     }
   ]
 };

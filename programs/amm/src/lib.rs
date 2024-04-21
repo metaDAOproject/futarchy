@@ -48,8 +48,11 @@ pub mod amm {
         )
     }
 
-    pub fn remove_liquidity(ctx: Context<AddOrRemoveLiquidity>, remove_bps: u64) -> Result<()> {
-        instructions::remove_liquidity::handler(ctx, remove_bps)
+    pub fn remove_liquidity(
+        ctx: Context<AddOrRemoveLiquidity>,
+        params: RemoveLiquidityParams,
+    ) -> Result<()> {
+        instructions::remove_liquidity::handler(ctx, params)
     }
 
     pub fn swap(
@@ -61,7 +64,7 @@ pub mod amm {
         instructions::swap::handler(ctx, direction, input_amount, output_amount_min)
     }
 
-    pub fn update_ltwap(ctx: Context<UpdateLtwap>) -> Result<()> {
-        instructions::update_ltwap::handler(ctx)
+    pub fn crank_that_twap(ctx: Context<CrankThatTwap>) -> Result<()> {
+        instructions::crank_that_twap::handler(ctx)
     }
 }

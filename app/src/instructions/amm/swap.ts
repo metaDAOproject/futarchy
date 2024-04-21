@@ -30,5 +30,5 @@ export const swapHandler = (
       userAtaQuote: getATA(quoteMint, client.provider.publicKey)[0],
       vaultAtaBase: getATA(baseMint, ammAddr)[0],
       vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
-    })
+    });
 };

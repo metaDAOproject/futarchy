@@ -16,4 +16,8 @@ pub enum AmmError {
     SameTokenMints,
     #[msg("A user wouldn't have gotten back their `output_amount_min`, reverting")]
     SlippageExceeded,
+    #[msg("The user had insufficient balance to do this")]
+    InsufficientBalance,
+    #[msg("Cannot add liquidity with 0 tokens on either side")]
+    ZeroLiquidityToAdd,
 }

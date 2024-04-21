@@ -177,6 +177,10 @@ impl Amm {
             return None;
         }
 
+        if self.base_amount == 0 || self.quote_amount == 0 {
+            return None;
+        }
+
         // we store prices as quote units / base units scaled by 1e12.
         // for example, suppose META is $100 and there's 400 USDC & 4 META in
         // this pool. USDC has 6 decimals and META has 9, so we have:

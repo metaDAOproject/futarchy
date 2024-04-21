@@ -1,10 +1,16 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Transfer};
-use num_traits::ToPrimitive;
 
-use crate::*;
+use crate::{error::AmmError, *};
 
-pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<()> {
+#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub struct RemoveLiquidityParams {
+    pub lp_tokens_to_burn: u64,
+    pub min_quote_amount: u64,
+    pub min_base_amount: u64,
+}
+
+pub fn handler(ctx: Context<AddOrRemoveLiquidity>, params: RemoveLiquidityParams) -> Result<()> {
     let AddOrRemoveLiquidity {
         user,
         amm,
@@ -22,45 +28,42 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
         system_program: _,
     } = ctx.accounts;
 
-    assert!(withdraw_bps > 0);
-    assert!(withdraw_bps <= BPS_SCALE);
+    let RemoveLiquidityParams {
+        lp_tokens_to_burn,
+        min_quote_amount,
+        min_base_amount,
+    } = params;
+
+    require_gte!(
+        user_ata_lp.amount,
+        lp_tokens_to_burn,
+        AmmError::InsufficientBalance
+    );
 
     amm.update_twap(Clock::get()?.slot);
 
-    let base_to_withdraw = (amm.base_amount as u128)
-        .checked_mul(user_ata_lp.amount as u128)
-        .unwrap()
-        .checked_mul(withdraw_bps as u128)
-        .unwrap()
-        .checked_div(BPS_SCALE as u128)
-        .unwrap()
-        .checked_div(lp_mint.supply as u128)
-        .unwrap()
-        .to_u64()
-        .unwrap();
+    // airlifted from uniswap v1:
+    // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L83
 
-    let quote_to_withdraw = (amm.quote_amount as u128)
-        .checked_mul(user_ata_lp.amount as u128)
-        .unwrap()
-        .checked_mul(withdraw_bps as u128)
-        .unwrap()
-        .checked_div(BPS_SCALE as u128)
-        .unwrap()
-        .checked_div(lp_mint.supply as u128)
-        .unwrap()
-        .to_u64()
-        .unwrap();
+    let total_liquidity = lp_mint.supply as u128;
+    assert!(total_liquidity > 0);
 
-    // for rounding up, if we have, a = b / c, we use: a = (b + (c - 1)) / c
-    let less_ownership = (user_ata_lp.amount as u128)
-        .checked_mul(withdraw_bps as u128)
-        .unwrap()
-        .checked_add(BPS_SCALE as u128 - 1)
-        .unwrap()
-        .checked_div(BPS_SCALE as u128)
-        .unwrap()
-        .to_u64()
-        .unwrap();
+    // these must fit back into u64 since `lp_tokens_to_burn` <= `total_liquidity`
+    let base_to_withdraw =
+        ((lp_tokens_to_burn as u128 * amm.base_amount as u128) / total_liquidity) as u64;
+    let quote_to_withdraw =
+        ((lp_tokens_to_burn as u128 * amm.quote_amount as u128) / total_liquidity) as u64;
+
+    require_gte!(
+        base_to_withdraw,
+        min_base_amount,
+        AmmError::SlippageExceeded
+    );
+    require_gte!(
+        quote_to_withdraw,
+        min_quote_amount,
+        AmmError::SlippageExceeded
+    );
 
     token::burn(
         CpiContext::new(
@@ -71,11 +74,11 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, withdraw_bps: u64) -> Result<
                 authority: user.to_account_info(),
             },
         ),
-        less_ownership,
+        lp_tokens_to_burn,
     )?;
 
-    amm.base_amount = amm.base_amount.checked_sub(base_to_withdraw).unwrap();
-    amm.quote_amount = amm.quote_amount.checked_sub(quote_to_withdraw).unwrap();
+    amm.base_amount -= base_to_withdraw;
+    amm.quote_amount -= quote_to_withdraw;
 
     let seeds = generate_amm_seeds!(amm);
 

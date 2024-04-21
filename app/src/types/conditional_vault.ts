@@ -377,6 +377,10 @@ export type ConditionalVault = {
           {
             "name": "pdaBump",
             "type": "u8"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
           }
         ]
       }
@@ -808,6 +812,10 @@ export const IDL: ConditionalVault = {
           },
           {
             "name": "pdaBump",
+            "type": "u8"
+          },
+          {
+            "name": "decimals",
             "type": "u8"
           }
         ]
