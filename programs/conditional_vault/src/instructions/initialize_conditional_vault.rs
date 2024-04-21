@@ -77,7 +77,7 @@ impl InitializeConditionalVault<'_> {
                 .conditional_on_finalize_token_mint
                 .key(),
             conditional_on_revert_token_mint: ctx.accounts.conditional_on_revert_token_mint.key(),
-            pda_bump: *ctx.bumps.get("vault").unwrap(),
+            pda_bump: ctx.bumps.vault,
             decimals: ctx.accounts.underlying_token_mint.decimals,
         });
 

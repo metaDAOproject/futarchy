@@ -1,12 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::metadata::{
     create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata, MetadataAccount,
+    mpl_token_metadata::types::DataV2
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
-use mpl_token_metadata::state::DataV2;
+// use mpl_token_metadata::state::DataV2;
 
 pub mod state;
 pub mod instructions;

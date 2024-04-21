@@ -97,7 +97,7 @@ pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
     } = args;
 
     amm.set_inner(Amm {
-        bump: *ctx.bumps.get("amm").unwrap(),
+        bump: ctx.bumps.amm,
         proposal,
 
         created_at_slot: current_slot,
