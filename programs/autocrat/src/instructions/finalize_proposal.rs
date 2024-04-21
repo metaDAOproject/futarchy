@@ -50,6 +50,22 @@ pub struct FinalizeProposal<'info> {
 }
 
 impl FinalizeProposal<'_> {
+    pub fn validate(&self) -> Result<()> {
+        let clock = Clock::get()?;
+
+        require!(
+            clock.slot >= self.proposal.slot_enqueued + self.dao.slots_per_proposal,
+            AutocratError::ProposalTooYoung
+        );
+
+        require!(
+            self.proposal.state == ProposalState::Pending,
+            AutocratError::ProposalAlreadyFinalized
+        );
+
+        Ok(())
+    }
+
     pub fn handle(ctx: Context<Self>) -> Result<()> {
         let FinalizeProposal {
             proposal,
@@ -66,17 +82,6 @@ impl FinalizeProposal<'_> {
             vault_program,
             token_program,
         } = ctx.accounts;
-        let clock = Clock::get()?;
-
-        require!(
-            clock.slot >= proposal.slot_enqueued + dao.slots_per_proposal,
-            AutocratError::ProposalTooYoung
-        );
-
-        require!(
-            proposal.state == ProposalState::Pending,
-            AutocratError::ProposalAlreadyFinalized
-        );
 
         let dao_key = dao.key();
         let treasury_seeds = &[dao_key.as_ref(), &[dao.treasury_pda_bump]];
