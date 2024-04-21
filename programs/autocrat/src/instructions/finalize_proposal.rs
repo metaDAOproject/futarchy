@@ -19,7 +19,6 @@ pub struct FinalizeProposal<'info> {
     #[account(mut)]
     pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
     /// CHECK: never read
-    #[account(mut)]
     pub treasury: UncheckedAccount<'info>,
     #[account(
         mut,
