@@ -75,22 +75,22 @@
         },
         {
           "name": "passLpUserAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "failLpUserAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "passLpVaultAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "failLpVaultAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -99,7 +99,7 @@
           "isSigner": true
         },
         {
-          "name": "systemProgram",
+          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         }

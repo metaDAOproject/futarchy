@@ -1,7 +1,7 @@
 use super::*;
 
 use amm::state::ONE_MINUTE_IN_SLOTS;
-use anchor_spl::token::TokenAccount;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct InitializeProposalParams {
@@ -42,28 +42,32 @@ pub struct InitializeProposal<'info> {
     )]
     pub fail_amm: Box<Account<'info, Amm>>,
     #[account(
+        mut,
         associated_token::mint = pass_amm.lp_mint,
         associated_token::authority = proposer,
     )]
     pub pass_lp_user_account: Account<'info, TokenAccount>,
     #[account(
+        mut,
         associated_token::mint = fail_amm.lp_mint,
         associated_token::authority = proposer,
     )]
     pub fail_lp_user_account: Account<'info, TokenAccount>,
     #[account(
+        mut,
         associated_token::mint = pass_amm.lp_mint,
         associated_token::authority = dao.treasury,
     )]
     pub pass_lp_vault_account: Account<'info, TokenAccount>,
     #[account(
+        mut,
         associated_token::mint = fail_amm.lp_mint,
         associated_token::authority = dao.treasury,
     )]
     pub fail_lp_vault_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub proposer: Signer<'info>,
-    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
 }
 
 impl InitializeProposal<'_> {
@@ -105,7 +109,7 @@ impl InitializeProposal<'_> {
             pass_lp_vault_account,
             fail_lp_vault_account,
             proposer,
-            system_program: _,
+            token_program,
         } = ctx.accounts;
 
         let InitializeProposalParams {
@@ -117,6 +121,31 @@ impl InitializeProposal<'_> {
 
         require_gte!(pass_lp_user_account.amount, pass_lp_tokens_to_lock);
         require_gte!(fail_lp_user_account.amount, fail_lp_tokens_to_lock);
+
+        for (amount, from, to) in [
+            (
+                pass_lp_tokens_to_lock,
+                &pass_lp_user_account,
+                &pass_lp_vault_account,
+            ),
+            (
+                fail_lp_tokens_to_lock,
+                &fail_lp_user_account,
+                &fail_lp_vault_account,
+            ),
+        ] {
+            token::transfer(
+                CpiContext::new(
+                    token_program.to_account_info(),
+                    Transfer {
+                        from: from.to_account_info(),
+                        to: to.to_account_info(),
+                        authority: proposer.to_account_info(),
+                    },
+                ),
+                amount,
+            )?;
+        }
 
         let clock = Clock::get()?;
 

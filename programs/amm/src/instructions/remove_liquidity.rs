@@ -34,7 +34,7 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, params: RemoveLiquidityParams
         min_base_amount,
     } = params;
 
-    require_gt!(
+    require_gte!(
         user_ata_lp.amount,
         lp_tokens_to_burn,
         AmmError::InsufficientBalance
@@ -54,12 +54,12 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, params: RemoveLiquidityParams
     let quote_to_withdraw =
         ((lp_tokens_to_burn as u128 * amm.quote_amount as u128) / total_liquidity) as u64;
 
-    require_gt!(
+    require_gte!(
         base_to_withdraw,
         min_base_amount,
         AmmError::SlippageExceeded
     );
-    require_gt!(
+    require_gte!(
         quote_to_withdraw,
         min_quote_amount,
         AmmError::SlippageExceeded

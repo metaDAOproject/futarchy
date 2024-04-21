@@ -43,11 +43,6 @@ pub fn handler(
     require_gt!(max_base_amount, 0, AmmError::ZeroLiquidityToAdd);
     require_gt!(max_quote_amount, 0, AmmError::ZeroLiquidityToAdd);
 
-    // assert!(max_base_amount > 0);
-    // assert!(max_quote_amount > 0);
-
-    // return Ok(());
-
     amm.update_twap(Clock::get()?.slot);
 
     let mut temp_base_amount: u128;

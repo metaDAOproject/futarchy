@@ -365,39 +365,6 @@ describe("amm", async function () {
       assert.isBelow(quoteReceived, startingQuoteSwapAmount);
       assert.isAbove(quoteReceived, startingQuoteSwapAmount * 0.98);
     });
-
-    it.skip("ltwap should go up after buying base, down after selling base", async function () {
-      let ixh1 = await ammClient.updateLTWAP(amm);
-      await ixh1.bankrun(banksClient);
-
-      console.log(await ammClient.getAmm(amm));
-
-      const ltwapStart = await ammClient.getLTWAP(amm);
-
-      let ixh2 = await ammClient.swap(amm, true, new BN(2 * 10 ** 9));
-      await ixh2.bankrun(banksClient);
-
-      await fastForward(context, 100n);
-
-      let ixh3 = await ammClient.updateLTWAP(amm);
-      await ixh3.bankrun(banksClient);
-
-      const ltwapMiddle = await ammClient.getLTWAP(amm);
-
-      assert.isAbove(ltwapMiddle, ltwapStart);
-
-      let ixh4 = await ammClient.swap(amm, false, new BN(20 * 10 ** 6));
-      await ixh4.bankrun(banksClient);
-
-      await fastForward(context, 100n);
-
-      let ixh5 = await ammClient.updateLTWAP(amm);
-      await ixh5.bankrun(banksClient);
-
-      const ltwapEnd = await ammClient.getLTWAP(amm);
-
-      assert.isAbove(ltwapMiddle, ltwapEnd);
-    });
   });
 
   describe("#remove_liquidity", async function () {
@@ -407,7 +374,16 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.removeLiquidity(amm, META, USDC, new BN(5_000)).rpc();
+      await ammClient
+        .removeLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(userLpAccountStart.amount.toString()).divn(2),
+          new BN(0),
+          new BN(0)
+        )
+        .rpc();
 
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);
@@ -436,7 +412,17 @@ describe("amm", async function () {
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
-      await ammClient.removeLiquidity(amm, META, USDC, new BN(10_000)).rpc();
+      await ammClient
+        .removeLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(userLpAccountStart.amount.toString()),
+          new BN(1 * 10**9),
+          new BN(10 * 10**6)
+        )
+        .rpc();
+
 
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);

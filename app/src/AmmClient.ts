@@ -122,19 +122,34 @@ export class AmmClient {
       });
   }
 
-  removeLiquidity(
+  removeLiquidityIx(
     ammAddr: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
-    removeBps: BN
+    lpTokensToBurn: BN,
+    minBaseAmount: BN,
+    minQuoteAmount: BN,
   ) {
-    return ixs.removeLiquidityHandler(
-      this,
-      ammAddr,
+    const [lpMint] = getAmmLpMintAddr(this.program.programId, ammAddr);
+
+  return this.program.methods
+    .removeLiquidity({
+      lpTokensToBurn,
+      minBaseAmount,
+      minQuoteAmount,
+    })
+    .accounts({
+      user: this.provider.publicKey,
+      amm: ammAddr,
+      lpMint,
       baseMint,
       quoteMint,
-      removeBps
-    );
+      userAtaLp: getATA(lpMint, this.provider.publicKey)[0],
+      userAtaBase: getATA(baseMint, this.provider.publicKey)[0],
+      userAtaQuote: getATA(quoteMint, this.provider.publicKey)[0],
+      vaultAtaBase: getATA(baseMint, ammAddr)[0],
+      vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
+    });
   }
 
   swap(
