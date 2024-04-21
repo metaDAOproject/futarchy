@@ -532,7 +532,7 @@ export class AutocratClient {
       passLpVaultAccount: getATA(passLp, daoTreasury)[0],
       failLpVaultAccount: getATA(failLp, daoTreasury)[0],
       vaultProgram: this.vaultClient.vaultProgram.programId,
-      daoTreasury,
+      treasury: daoTreasury,
     });
   }
 
@@ -553,7 +553,7 @@ export class AutocratClient {
       .accounts({
         proposal,
         dao,
-        daoTreasury,
+        // daoTreasury,
       })
       .remainingAccounts(
         instruction.accounts

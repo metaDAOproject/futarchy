@@ -97,6 +97,7 @@ pub mod autocrat {
         FinalizeProposal::handle(ctx)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         ExecuteProposal::handle(ctx)
     }

@@ -147,7 +147,7 @@
           "isSigner": false
         },
         {
-          "name": "daoTreasury",
+          "name": "treasury",
           "isMut": true,
           "isSigner": false
         },
@@ -195,11 +195,6 @@
         {
           "name": "dao",
           "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "daoTreasury",
-          "isMut": true,
           "isSigner": false
         }
       ],
