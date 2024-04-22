@@ -2,6 +2,7 @@ import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
 import {
   AccountMeta,
   AddressLookupTableAccount,
+  Connection,
   Keypair,
   PublicKey,
 } from "@solana/web3.js";
@@ -206,8 +207,8 @@ export class AutocratClient {
       {
         twapInitialObservation: scaledPrice,
         twapMaxObservationChangePerUpdate: scaledPrice.divn(50),
-        minBaseFutarchicLiquidity,
         minQuoteFutarchicLiquidity,
+        minBaseFutarchicLiquidity,
         passThresholdBps: null,
         slotsPerProposal: null,
       },
@@ -337,6 +338,35 @@ export class AutocratClient {
 
     const lpTokens = BN.max(baseTokensToLP, quoteTokensToLP);
 
+    // let tx = await this.initializeProposalIx(
+    //   proposalKP,
+    //   descriptionUrl,
+    //   instruction,
+    //   dao,
+    //   storedDao.tokenMint,
+    //   storedDao.usdcMint,
+    //   lpTokens,
+    //   lpTokens
+    // )
+    //   .preInstructions([
+    //     await this.autocrat.account.proposal.createInstruction(
+    //       proposalKP,
+    //       2500
+    //     ),
+    //   ])
+    //   .transaction();
+
+    // tx.feePayer = this.provider.publicKey;
+    // console.log(await this.provider.connection.banksClient.getLatestBlockhash());
+    // let blockhash = await this.provider.connection.banksClient.getLatestBlockhash();
+    // [tx.recentBlockhash] = blockhash;
+    // let msg = tx.compileMessage();
+    // console.log(msg.serialize().length);
+    // console.log(msg.recentBlockhash = );
+    // Connection
+    
+    // console.log(tx.feePayer = payer.publicKey);
+
     await this.initializeProposalIx(
       proposalKP,
       descriptionUrl,
@@ -432,6 +462,8 @@ export class AutocratClient {
           quoteVault,
           passAmm,
           failAmm,
+          passLpMint: passLp,
+          failLpMint: failLp,
           passLpUserAccount: getATA(passLp, this.provider.publicKey)[0],
           failLpUserAccount: getATA(failLp, this.provider.publicKey)[0],
           passLpVaultAccount,
