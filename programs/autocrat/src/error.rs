@@ -23,5 +23,7 @@ pub enum AutocratError {
     #[msg("This proposal can't be executed because it isn't in the passed state")]
     ProposalNotPassed,
     #[msg("The proposer has fewer pass or fail LP tokens than they requested to lock")]
-    InsufficientLPTokens,
+    InsufficientLpTokenBalance,
+    #[msg("The LP tokens passed in have less liquidity than the DAO's `min_quote_futarchic_liquidity` or `min_base_futachic_liquidity`")]
+    InsufficientLpTokenLock,
 }

@@ -69,6 +69,16 @@ export type Autocrat = {
           "isSigner": false
         },
         {
+          "name": "passLpMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failLpMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "failAmm",
           "isMut": false,
           "isSigner": false
@@ -148,7 +158,7 @@ export type Autocrat = {
         },
         {
           "name": "treasury",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -574,8 +584,13 @@ export type Autocrat = {
     },
     {
       "code": 6009,
-      "name": "InsufficientLPTokens",
+      "name": "InsufficientLPTokenBalance",
       "msg": "The proposer has fewer pass or fail LP tokens than they requested to lock"
+    },
+    {
+      "code": 6010,
+      "name": "InsufficientLpTokenLock",
+      "msg": "The LP tokens passed in have less liquidity than the DAO's `min_quote_futarchic_liquidity` or `min_base_futachic_liquidity`"
     }
   ]
 };
@@ -651,6 +666,16 @@ export const IDL: Autocrat = {
           "isSigner": false
         },
         {
+          "name": "passLpMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "failLpMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "failAmm",
           "isMut": false,
           "isSigner": false
@@ -730,7 +755,7 @@ export const IDL: Autocrat = {
         },
         {
           "name": "treasury",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -1156,8 +1181,13 @@ export const IDL: Autocrat = {
     },
     {
       "code": 6009,
-      "name": "InsufficientLPTokens",
+      "name": "InsufficientLPTokenBalance",
       "msg": "The proposer has fewer pass or fail LP tokens than they requested to lock"
+    },
+    {
+      "code": 6010,
+      "name": "InsufficientLpTokenLock",
+      "msg": "The LP tokens passed in have less liquidity than the DAO's `min_quote_futarchic_liquidity` or `min_base_futachic_liquidity`"
     }
   ]
 };

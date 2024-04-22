@@ -35,6 +35,10 @@ pub struct InitializeProposal<'info> {
         has_one = proposal
     )]
     pub pass_amm: Box<Account<'info, Amm>>,
+    #[account(constraint = pass_amm.lp_mint == pass_lp_mint.key())]
+    pub pass_lp_mint: Account<'info, Mint>,
+    #[account(constraint = fail_amm.lp_mint == fail_lp_mint.key())]
+    pub fail_lp_mint: Account<'info, Mint>,
     #[account(
         constraint = fail_amm.base_mint == base_vault.conditional_on_revert_token_mint,
         constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint,
@@ -105,6 +109,8 @@ impl InitializeProposal<'_> {
             dao,
             pass_amm,
             fail_amm,
+            pass_lp_mint,
+            fail_lp_mint,
             pass_lp_user_account,
             fail_lp_user_account,
             pass_lp_vault_account,
@@ -120,8 +126,48 @@ impl InitializeProposal<'_> {
             fail_lp_tokens_to_lock,
         } = params;
 
-        require_gte!(pass_lp_user_account.amount, pass_lp_tokens_to_lock);
-        require_gte!(fail_lp_user_account.amount, fail_lp_tokens_to_lock);
+        require_gte!(
+            pass_lp_user_account.amount,
+            pass_lp_tokens_to_lock,
+            AutocratError::InsufficientLpTokenBalance
+        );
+        require_gte!(
+            fail_lp_user_account.amount,
+            fail_lp_tokens_to_lock,
+            AutocratError::InsufficientLpTokenBalance
+        );
+
+        let pass_base_liquidity = ((pass_lp_tokens_to_lock as u128 * pass_amm.base_amount as u128)
+            / pass_lp_mint.supply as u128) as u64;
+        let pass_quote_liquidity = ((pass_lp_tokens_to_lock as u128
+            * pass_amm.quote_amount as u128)
+            / pass_lp_mint.supply as u128) as u64;
+        let fail_base_liquidity = ((pass_lp_tokens_to_lock as u128 * fail_amm.base_amount as u128)
+            / fail_lp_mint.supply as u128) as u64;
+        let fail_quote_liquidity = ((pass_lp_tokens_to_lock as u128
+            * fail_amm.quote_amount as u128)
+            / fail_lp_mint.supply as u128) as u64;
+
+        require_gte!(
+            pass_base_liquidity,
+            dao.min_base_futarchic_liquidity,
+            AutocratError::InsufficientLpTokenLock
+        );
+        require_gte!(
+            pass_quote_liquidity,
+            dao.min_quote_futarchic_liquidity,
+            AutocratError::InsufficientLpTokenLock
+        );
+        require_gte!(
+            fail_base_liquidity,
+            dao.min_base_futarchic_liquidity,
+            AutocratError::InsufficientLpTokenLock
+        );
+        require_gte!(
+            fail_quote_liquidity,
+            dao.min_quote_futarchic_liquidity,
+            AutocratError::InsufficientLpTokenLock
+        );
 
         for (amount, from, to) in [
             (

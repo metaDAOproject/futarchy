@@ -179,7 +179,7 @@ describe("autocrat", async function () {
         META,
         400,
         9,
-        new BN(10).mul(new BN(10).pow(new BN(9))),
+        new BN(5).mul(new BN(10).pow(new BN(9))),
         new BN(5000).mul(new BN(10).pow(new BN(6))),
         USDC
       );
@@ -269,13 +269,13 @@ describe("autocrat", async function () {
       const preMetaBalance = (await getAccount(banksClient, getATA(META, payer.publicKey)[0])).amount;
       const preUsdcBalance = (await getAccount(banksClient, getATA(USDC, payer.publicKey)[0])).amount;
 
-      await autocratClient.initializeProposal(dao, "", instruction, ONE_META, ONE_USDC.muln(1000));
+      await autocratClient.initializeProposal(dao, "", instruction, ONE_META.muln(5), ONE_USDC.muln(5000));
 
       const postMetaBalance = (await getAccount(banksClient, getATA(META, payer.publicKey)[0])).amount;
       const postUsdcBalance = (await getAccount(banksClient, getATA(USDC, payer.publicKey)[0])).amount;
 
-      assert.equal(postMetaBalance, preMetaBalance - BigInt(10**9));
-      assert.equal(postUsdcBalance, preUsdcBalance - BigInt(1000 * 10**6));
+      assert.equal(postMetaBalance, preMetaBalance - BigInt(5 * 10**9));
+      assert.equal(postUsdcBalance, preUsdcBalance - BigInt(5000 * 10**6));
     });
   });
 
@@ -495,8 +495,7 @@ describe("autocrat", async function () {
         data: Buffer.from("hello, world"),
       };
 
-      proposal = await autocratClient.initializeProposal(dao, "", instruction, ONE_META.muln(10), ONE_USDC.muln(1_000));
-
+      proposal = await autocratClient.initializeProposal(dao, "", instruction, ONE_META.muln(10), ONE_USDC.muln(6_000));
       ({ baseVault, quoteVault, passAmm, failAmm } =
         await autocrat.account.proposal.fetch(proposal));
 
@@ -570,7 +569,7 @@ describe("autocrat", async function () {
           passBaseMint,
           passQuoteMint,
           true,
-          new BN(500).muln(1_000_000),
+          new BN(1000).muln(1_000_000),
           new BN(0)
         )
         .rpc();
