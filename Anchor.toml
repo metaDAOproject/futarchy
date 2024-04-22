@@ -5,8 +5,9 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
+amm = "Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz"
 autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
-autocrat_v0 = "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
+autocrat = "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
 conditional_vault = "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
 timelock = "tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF"
 
@@ -18,17 +19,17 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-initialize_dao = "yarn run ts-node scripts/initializeDao.ts"
-crank_twap = "yarn run ts-node scripts/crankTwap.ts"
 airdrop = "yarn run ts-node scripts/airdrop.ts"
 autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
 clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && node scripts/clob.js && rm scripts/clob.js"
 crank = "yarn run ts-node scripts/crank.ts"
-main = "yarn run ts-node scripts/main.ts"
-propose = "yarn run ts-node scripts/initializeProposal.ts"
+crank_twap = "yarn run ts-node scripts/crankTwap.ts"
+initialize_dao = "yarn run ts-node scripts/initializeDao.ts"
 initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
-place_order = "yarn run ts-node scripts/placeOrder.ts"
+main = "yarn run ts-node scripts/main.ts"
 multisig = "yarn run tsx scripts/multisig.ts"
+place_order = "yarn run ts-node scripts/placeOrder.ts"
+propose = "yarn run ts-node scripts/initializeProposal.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]
