@@ -45,14 +45,11 @@ pub fn handler(ctx: Context<AddOrRemoveLiquidity>, params: RemoveLiquidityParams
     // airlifted from uniswap v1:
     // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L83
 
-    let total_liquidity = lp_mint.supply as u128;
+    let total_liquidity = lp_mint.supply;
     assert!(total_liquidity > 0);
 
-    // these must fit back into u64 since `lp_tokens_to_burn` <= `total_liquidity`
-    let base_to_withdraw =
-        ((lp_tokens_to_burn as u128 * amm.base_amount as u128) / total_liquidity) as u64;
-    let quote_to_withdraw =
-        ((lp_tokens_to_burn as u128 * amm.quote_amount as u128) / total_liquidity) as u64;
+    let (base_to_withdraw, quote_to_withdraw) =
+        amm.get_base_and_quote_withdrawable(lp_tokens_to_burn, total_liquidity);
 
     require_gte!(
         base_to_withdraw,
