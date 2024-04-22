@@ -6,6 +6,13 @@ use crate::error::AmmError;
 use crate::generate_amm_seeds;
 use crate::state::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct SwapArgs {
+    pub swap_type: SwapType,
+    pub input_amount: u64,
+    pub output_amount_min: u64,
+}
+
 #[derive(Accounts)]
 pub struct Swap<'info> {
     #[account(mut)]
@@ -48,12 +55,7 @@ pub struct Swap<'info> {
 }
 
 impl Swap<'_> {
-    pub fn handle(
-        ctx: Context<Swap>,
-        swap_type: SwapType,
-        input_amount: u64,
-        output_amount_min: u64,
-    ) -> Result<()> {
+    pub fn handle(ctx: Context<Swap>, args: SwapArgs) -> Result<()> {
         let Swap {
             user,
             amm,
@@ -67,6 +69,12 @@ impl Swap<'_> {
             token_program,
             system_program: _,
         } = ctx.accounts;
+
+        let SwapArgs {
+            swap_type,
+            input_amount,
+            output_amount_min,
+        } = args;
 
         assert!(input_amount > 0);
 

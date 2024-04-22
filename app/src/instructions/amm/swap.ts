@@ -13,14 +13,14 @@ export const swapHandler = (
   quoteMint: PublicKey,
   isQuoteToBase: boolean,
   inputAmount: BN,
-  minOutputAmount: BN
+  outputAmountMin: BN
 ): MethodsBuilder<Amm, any> => {
   return client.program.methods
-    .swap(
-      isQuoteToBase ? { buy: {} } : { sell: {} },
+    .swap({
+      swapType: isQuoteToBase ? { buy: {} } : { sell: {} },
       inputAmount,
-      minOutputAmount
-    )
+      outputAmountMin
+    })
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,

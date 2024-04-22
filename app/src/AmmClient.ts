@@ -102,12 +102,12 @@ export class AmmClient {
     const [lpMint] = getAmmLpMintAddr(this.program.programId, amm);
 
     return this.program.methods
-      .addLiquidity(
+      .addLiquidity({
         maxBaseAmount,
         maxQuoteAmount,
         minBaseAmount,
         minQuoteAmount
-      )
+      })
       .accounts({
         user,
         amm,

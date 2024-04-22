@@ -136,20 +136,10 @@
       ],
       "args": [
         {
-          "name": "maxBaseAmount",
-          "type": "u64"
-        },
-        {
-          "name": "maxQuoteAmount",
-          "type": "u64"
-        },
-        {
-          "name": "minBaseAmount",
-          "type": "u64"
-        },
-        {
-          "name": "minQuoteAmount",
-          "type": "u64"
+          "name": "args",
+          "type": {
+            "defined": "AddLiquidityArgs"
+          }
         }
       ]
     },
@@ -224,9 +214,9 @@
       ],
       "args": [
         {
-          "name": "params",
+          "name": "args",
           "type": {
-            "defined": "RemoveLiquidityParams"
+            "defined": "RemoveLiquidityArgs"
           }
         }
       ]
@@ -292,18 +282,10 @@
       ],
       "args": [
         {
-          "name": "direction",
+          "name": "args",
           "type": {
-            "defined": "SwapType"
+            "defined": "SwapArgs"
           }
-        },
-        {
-          "name": "inputAmount",
-          "type": "u64"
-        },
-        {
-          "name": "outputAmountMin",
-          "type": "u64"
         }
       ]
     },
@@ -381,6 +363,30 @@
   ],
   "types": [
     {
+      "name": "AddLiquidityArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxBaseAmount",
+            "type": "u64"
+          },
+          {
+            "name": "maxQuoteAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minBaseAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minQuoteAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "CreateAmmArgs",
       "type": {
         "kind": "struct",
@@ -401,7 +407,7 @@
       }
     },
     {
-      "name": "RemoveLiquidityParams",
+      "name": "RemoveLiquidityArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -415,6 +421,28 @@
           },
           {
             "name": "minBaseAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swapType",
+            "type": {
+              "defined": "SwapType"
+            }
+          },
+          {
+            "name": "inputAmount",
+            "type": "u64"
+          },
+          {
+            "name": "outputAmountMin",
             "type": "u64"
           }
         ]

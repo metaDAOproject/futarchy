@@ -4,7 +4,7 @@ use anchor_spl::token::{self, Burn, Transfer};
 use crate::{error::AmmError, *};
 
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
-pub struct RemoveLiquidityParams {
+pub struct RemoveLiquidityArgs {
     pub lp_tokens_to_burn: u64,
     pub min_quote_amount: u64,
     pub min_base_amount: u64,
@@ -13,7 +13,7 @@ pub struct RemoveLiquidityParams {
 impl AddOrRemoveLiquidity<'_> {
     pub fn handle_remove(
         ctx: Context<AddOrRemoveLiquidity>,
-        params: RemoveLiquidityParams,
+        args: RemoveLiquidityArgs,
     ) -> Result<()> {
         let AddOrRemoveLiquidity {
             user,
@@ -32,11 +32,11 @@ impl AddOrRemoveLiquidity<'_> {
             system_program: _,
         } = ctx.accounts;
 
-        let RemoveLiquidityParams {
+        let RemoveLiquidityArgs {
             lp_tokens_to_burn,
             min_quote_amount,
             min_base_amount,
-        } = params;
+        } = args;
 
         require_gte!(
             user_ata_lp.amount,

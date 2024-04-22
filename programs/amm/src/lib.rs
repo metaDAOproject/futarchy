@@ -25,6 +25,8 @@ use crate::state::*;
 declare_id!("Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz");
 #[program]
 pub mod amm {
+    use self::add_liquidity::AddLiquidityArgs;
+
     use super::*;
 
     #[access_control(ctx.accounts.validate())]
@@ -32,36 +34,19 @@ pub mod amm {
         CreateAmm::handle(ctx, args)
     }
 
-    pub fn add_liquidity(
-        ctx: Context<AddOrRemoveLiquidity>,
-        max_base_amount: u64,
-        max_quote_amount: u64,
-        min_base_amount: u64,
-        min_quote_amount: u64,
-    ) -> Result<()> {
-        AddOrRemoveLiquidity::handle_add(
-            ctx,
-            max_base_amount,
-            max_quote_amount,
-            min_base_amount,
-            min_quote_amount,
-        )
+    pub fn add_liquidity(ctx: Context<AddOrRemoveLiquidity>, args: AddLiquidityArgs) -> Result<()> {
+        AddOrRemoveLiquidity::handle_add(ctx, args)
     }
 
     pub fn remove_liquidity(
         ctx: Context<AddOrRemoveLiquidity>,
-        params: RemoveLiquidityParams,
+        args: RemoveLiquidityArgs,
     ) -> Result<()> {
-        AddOrRemoveLiquidity::handle_remove(ctx, params)
+        AddOrRemoveLiquidity::handle_remove(ctx, args)
     }
 
-    pub fn swap(
-        ctx: Context<Swap>,
-        direction: SwapType,
-        input_amount: u64,
-        output_amount_min: u64,
-    ) -> Result<()> {
-        Swap::handle(ctx, direction, input_amount, output_amount_min)
+    pub fn swap(ctx: Context<Swap>, args: SwapArgs) -> Result<()> {
+        Swap::handle(ctx, args)
     }
 
     pub fn crank_that_twap(ctx: Context<CrankThatTwap>) -> Result<()> {

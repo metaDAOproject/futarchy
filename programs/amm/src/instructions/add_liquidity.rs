@@ -6,14 +6,16 @@ use crate::error::AmmError;
 use crate::AddOrRemoveLiquidity;
 use crate::{generate_amm_seeds, state::*};
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct AddLiquidityArgs {
+    pub max_base_amount: u64,
+    pub max_quote_amount: u64,
+    pub min_base_amount: u64,
+    pub min_quote_amount: u64,
+}
+
 impl AddOrRemoveLiquidity<'_> {
-    pub fn handle_add(
-        ctx: Context<Self>,
-        max_base_amount: u64,
-        max_quote_amount: u64,
-        min_base_amount: u64,
-        min_quote_amount: u64,
-    ) -> Result<()> {
+    pub fn handle_add(ctx: Context<Self>, args: AddLiquidityArgs) -> Result<()> {
         let AddOrRemoveLiquidity {
             user,
             amm,
@@ -29,6 +31,13 @@ impl AddOrRemoveLiquidity<'_> {
             token_program,
             system_program: _,
         } = ctx.accounts;
+
+        let AddLiquidityArgs {
+            max_base_amount,
+            max_quote_amount,
+            min_base_amount,
+            min_quote_amount,
+        } = args;
 
         require_gte!(
             user_ata_base.amount,
