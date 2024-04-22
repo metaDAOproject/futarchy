@@ -154,7 +154,6 @@ describe("conditional_vault", async function () {
         )
         .rpc();
 
-
       conditionalOnFinalizeMint = getVaultFinalizeMintAddr(
         vaultProgram.programId,
         vault
@@ -884,7 +883,7 @@ async function generateRandomVault(
     .addMetadataToConditionalTokens({
       proposalNumber: new BN(0), // nonce,
       onFinalizeUri: METADATA_URI,
-      onRevertUri: METADATA_URI
+      onRevertUri: METADATA_URI,
     })
     .accounts({
       payer: payer.publicKey,

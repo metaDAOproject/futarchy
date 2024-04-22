@@ -140,13 +140,17 @@ impl Amm {
     }
 
     /// Get the number of base and quote tokens withdrawable from a position
-    pub fn get_base_and_quote_withdrawable(&self, lp_tokens: u64, lp_total_supply: u64) -> (u64, u64) {
+    pub fn get_base_and_quote_withdrawable(
+        &self,
+        lp_tokens: u64,
+        lp_total_supply: u64,
+    ) -> (u64, u64) {
         (
             self.get_base_withdrawable(lp_tokens, lp_total_supply),
-            self.get_quote_withdrawable(lp_tokens, lp_total_supply)
+            self.get_quote_withdrawable(lp_tokens, lp_total_supply),
         )
     }
-    
+
     /// Get the number of base tokens withdrawable from a position
     pub fn get_base_withdrawable(&self, lp_tokens: u64, lp_total_supply: u64) -> u64 {
         // must fit back into u64 since `lp_tokens` <= `lp_total_supply`

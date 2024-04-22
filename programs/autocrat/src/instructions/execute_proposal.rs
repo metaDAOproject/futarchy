@@ -9,16 +9,16 @@ pub struct ExecuteProposal<'info> {
 
 impl ExecuteProposal<'_> {
     pub fn validate(&self) -> Result<()> {
-        require!(self.proposal.state == ProposalState::Passed, AutocratError::ProposalNotPassed);
+        require!(
+            self.proposal.state == ProposalState::Passed,
+            AutocratError::ProposalNotPassed
+        );
 
         Ok(())
     }
 
     pub fn handle(ctx: Context<Self>) -> Result<()> {
-        let ExecuteProposal {
-            proposal,
-            dao
-        } = ctx.accounts;
+        let ExecuteProposal { proposal, dao } = ctx.accounts;
 
         proposal.state = ProposalState::Executed;
 

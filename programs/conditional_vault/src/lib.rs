@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::metadata::{
-    create_metadata_accounts_v3, CreateMetadataAccountsV3, Metadata, MetadataAccount,
-    mpl_token_metadata::types::DataV2
+    create_metadata_accounts_v3, mpl_token_metadata::types::DataV2, CreateMetadataAccountsV3,
+    Metadata, MetadataAccount,
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -9,13 +9,13 @@ use anchor_spl::{
 };
 // use mpl_token_metadata::state::DataV2;
 
-pub mod state;
-pub mod instructions;
 pub mod error;
+pub mod instructions;
+pub mod state;
 
-pub use state::*;
-pub use instructions::*;
 pub use error::VaultError;
+pub use instructions::*;
+pub use state::*;
 
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
@@ -40,7 +40,7 @@ pub mod conditional_vault {
 
     pub fn initialize_conditional_vault(
         ctx: Context<InitializeConditionalVault>,
-        args: InitializeConditionalVaultArgs
+        args: InitializeConditionalVaultArgs,
     ) -> Result<()> {
         InitializeConditionalVault::handle(ctx, args)
     }
@@ -48,7 +48,7 @@ pub mod conditional_vault {
     #[access_control(ctx.accounts.validate())]
     pub fn add_metadata_to_conditional_tokens(
         ctx: Context<AddMetadataToConditionalTokens>,
-        args: AddMetadataToConditionalTokensArgs
+        args: AddMetadataToConditionalTokensArgs,
     ) -> Result<()> {
         AddMetadataToConditionalTokens::handle(ctx, args)
     }

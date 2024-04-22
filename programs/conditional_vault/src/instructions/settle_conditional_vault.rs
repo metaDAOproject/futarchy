@@ -12,7 +12,10 @@ pub struct SettleConditionalVault<'info> {
 
 impl SettleConditionalVault<'_> {
     pub fn validate(&self) -> Result<()> {
-        require!(self.vault.status == VaultStatus::Active, VaultError::VaultAlreadySettled);
+        require!(
+            self.vault.status == VaultStatus::Active,
+            VaultError::VaultAlreadySettled
+        );
 
         Ok(())
     }

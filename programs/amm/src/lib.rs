@@ -27,8 +27,9 @@ declare_id!("Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz");
 pub mod amm {
     use super::*;
 
+    #[access_control(ctx.accounts.validate())]
     pub fn create_amm(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
-        instructions::create_amm::handler(ctx, args)
+        CreateAmm::handle(ctx, args)
     }
 
     pub fn add_liquidity(
@@ -38,7 +39,7 @@ pub mod amm {
         min_base_amount: u64,
         min_quote_amount: u64,
     ) -> Result<()> {
-        instructions::add_liquidity::handler(
+        AddOrRemoveLiquidity::handle_add(
             ctx,
             max_base_amount,
             max_quote_amount,
@@ -51,7 +52,7 @@ pub mod amm {
         ctx: Context<AddOrRemoveLiquidity>,
         params: RemoveLiquidityParams,
     ) -> Result<()> {
-        instructions::remove_liquidity::handler(ctx, params)
+        AddOrRemoveLiquidity::handle_remove(ctx, params)
     }
 
     pub fn swap(
@@ -60,10 +61,10 @@ pub mod amm {
         input_amount: u64,
         output_amount_min: u64,
     ) -> Result<()> {
-        instructions::swap::handler(ctx, direction, input_amount, output_amount_min)
+        Swap::handle(ctx, direction, input_amount, output_amount_min)
     }
 
     pub fn crank_that_twap(ctx: Context<CrankThatTwap>) -> Result<()> {
-        instructions::crank_that_twap::handler(ctx)
+        CrankThatTwap::handle(ctx)
     }
 }
