@@ -154,6 +154,7 @@ describe("conditional_vault", async function () {
         )
         .rpc();
 
+
       conditionalOnFinalizeMint = getVaultFinalizeMintAddr(
         vaultProgram.programId,
         vault

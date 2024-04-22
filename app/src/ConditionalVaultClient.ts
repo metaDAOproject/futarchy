@@ -15,7 +15,7 @@ import {
   getVaultRevertMintAddr,
 } from "./utils";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
-import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
+import { createAssociatedTokenAccountIdempotentInstruction, createAssociatedTokenAccountInstruction } from "@solana/spl-token";
 
 export type CreateClientParams = {
   provider: AnchorProvider;
@@ -168,15 +168,25 @@ export class ConditionalVaultClient {
       vault
     );
 
+    const vaultUnderlyingTokenAccount = getATA(underlyingTokenMint, vault)[0];
+
     return this.vaultProgram.methods
       .initializeConditionalVault({settlementAuthority, proposal})
       .accounts({
         vault,
         underlyingTokenMint,
-        vaultUnderlyingTokenAccount: getATA(underlyingTokenMint, vault)[0],
+        vaultUnderlyingTokenAccount,
         conditionalOnFinalizeTokenMint,
         conditionalOnRevertTokenMint,
-      });
+      })
+      .preInstructions([
+        createAssociatedTokenAccountIdempotentInstruction(
+          this.provider.publicKey,
+          vaultUnderlyingTokenAccount,
+          vault,
+          underlyingTokenMint
+        ),
+      ])
   }
 
   async initializeVault(

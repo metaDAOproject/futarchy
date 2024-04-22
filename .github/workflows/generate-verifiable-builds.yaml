@@ -15,7 +15,7 @@ jobs:
         with:
           program: autocrat_v0
           anchor-version: '0.29.0'
-          solana-cli-version: '1.17.16'
+          solana-cli-version: '1.18.11'
       - run: 'git pull --rebase'
       - run: cp target/deploy/autocrat_v0.so ./verifiable-builds
       - name: Commit verifiable build back to mainline
@@ -31,7 +31,7 @@ jobs:
         with:
           program: conditional_vault
           anchor-version: '0.29.0'
-          solana-cli-version: '1.17.16'
+          solana-cli-version: '1.18.11'
       - run: 'git pull --rebase'
       - run: cp target/deploy/conditional_vault.so ./verifiable-builds
       - name: Commit verifiable build back to mainline
