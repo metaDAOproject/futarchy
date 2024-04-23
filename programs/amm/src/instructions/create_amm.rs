@@ -40,8 +40,8 @@ pub struct CreateAmm<'info> {
         mint::decimals = 9,
     )]
     pub lp_mint: Box<Account<'info, Mint>>,
-    pub base_mint: Account<'info, Mint>,
-    pub quote_mint: Account<'info, Mint>,
+    pub base_mint: Box<Account<'info, Mint>>,
+    pub quote_mint: Box<Account<'info, Mint>>,
     #[account(
         init_if_needed,
         payer = user,
