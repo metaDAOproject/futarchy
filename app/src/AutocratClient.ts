@@ -296,7 +296,7 @@ export class AutocratClient {
     );
 
     await this.ammClient
-      .createAmm(
+      .createAmmIx(
         passBase,
         passQuote,
         storedDao.twapInitialObservation,
@@ -319,7 +319,7 @@ export class AutocratClient {
       .rpc();
 
     await this.ammClient
-      .createAmm(
+      .createAmmIx(
         failBase,
         failQuote,
         storedDao.twapInitialObservation,

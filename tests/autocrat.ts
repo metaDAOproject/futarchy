@@ -381,7 +381,7 @@ describe("autocrat", async function () {
           passAmm,
           passBaseMint,
           passQuoteMint,
-          true,
+          { buy: {} },
           new BN(500).muln(1_000_000),
           new BN(0)
         )
@@ -461,7 +461,7 @@ describe("autocrat", async function () {
           failAmm,
           failBaseMint,
           failQuoteMint,
-          true,
+          { buy: {} },
           new BN(500).muln(1_000_000),
           new BN(0)
         )
@@ -601,7 +601,7 @@ describe("autocrat", async function () {
           passAmm,
           passBaseMint,
           passQuoteMint,
-          true,
+          { buy: {} },
           new BN(1000).muln(1_000_000),
           new BN(0)
         )

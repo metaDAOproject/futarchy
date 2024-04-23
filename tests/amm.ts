@@ -105,7 +105,7 @@ describe("amm", async function () {
       let proposal = Keypair.generate().publicKey;
 
       await ammClient
-        .createAmm(
+        .createAmmIx(
           META,
           USDC,
           twapFirstObservationScaled,
@@ -162,7 +162,7 @@ describe("amm", async function () {
       let proposal = Keypair.generate().publicKey;
 
       await ammClient
-        .createAmm(
+        .createAmmIx(
           META,
           META,
           twapFirstObservationScaled,
@@ -268,7 +268,7 @@ describe("amm", async function () {
           amm,
           META,
           USDC,
-          true,
+          { buy: {} },
           new BN(10 * 10 ** 6),
           new BN(0.8 * 10 ** 9)
         )
@@ -290,7 +290,7 @@ describe("amm", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
       await ammClient
-        .swap(amm, META, USDC, false, new BN(1 * 10 ** 9), new BN(8 * 10 ** 6))
+        .swap(amm, META, USDC, { sell: {} }, new BN(1 * 10 ** 9), new BN(8 * 10 ** 6))
         .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
@@ -314,7 +314,7 @@ describe("amm", async function () {
       let startingBaseSwapAmount = 1 * 10 ** 9;
 
       await ammClient
-        .swap(amm, META, USDC, false, new BN(startingBaseSwapAmount), new BN(1))
+        .swap(amm, META, USDC, { sell: {} }, new BN(startingBaseSwapAmount), new BN(1))
         .rpc();
 
       await fastForward(context, 1n);
@@ -325,7 +325,7 @@ describe("amm", async function () {
         ammMiddle.quoteAmount.toNumber();
 
       await ammClient
-        .swap(amm, META, USDC, true, new BN(quoteReceived), new BN(1))
+        .swap(amm, META, USDC, { buy: {} }, new BN(quoteReceived), new BN(1))
         .rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
@@ -345,7 +345,7 @@ describe("amm", async function () {
       let startingQuoteSwapAmount = 1 * 10 ** 6;
 
       await ammClient
-        .swap(amm, META, USDC, true, new BN(startingQuoteSwapAmount), new BN(1))
+        .swap(amm, META, USDC, { buy: {} }, new BN(startingQuoteSwapAmount), new BN(1))
         .rpc();
 
       await fastForward(context, 1n);
@@ -355,7 +355,7 @@ describe("amm", async function () {
         ammStart.baseAmount.toNumber() - ammMiddle.baseAmount.toNumber();
 
       await ammClient
-        .swap(amm, META, USDC, false, new BN(baseReceived), new BN(1))
+        .swap(amm, META, USDC, { sell: {} }, new BN(baseReceived), new BN(1))
         .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);

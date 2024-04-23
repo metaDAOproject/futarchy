@@ -1,8 +1,8 @@
 test:
     (find programs && find tests) | entr -s 'clear && RUST_LOG= anchor test'
 
-test-only:
-    (find programs && find tests) | entr -sc 'RUST_LOG= anchor test --skip-build'
+test-no-build:
+    find programs tests app | entr -sc 'RUST_LOG= anchor test --skip-build'
 
 # build-verifiable autocrat_v0
 build-verifiable PROGRAM_NAME:

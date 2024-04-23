@@ -574,8 +574,5 @@
       "name": "ZeroLiquidityToAdd",
       "msg": "Cannot add liquidity with 0 tokens on either side"
     }
-  ],
-  "metadata": {
-    "address": "Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz"
-  }
+  ]
 }

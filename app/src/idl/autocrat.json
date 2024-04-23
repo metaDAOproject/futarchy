@@ -592,8 +592,5 @@
       "name": "InsufficientLpTokenLock",
       "msg": "The LP tokens passed in have less liquidity than the DAO's `min_quote_futarchic_liquidity` or `min_base_futachic_liquidity`"
     }
-  ],
-  "metadata": {
-    "address": "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
-  }
+  ]
 }
