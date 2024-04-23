@@ -137,37 +137,26 @@ impl InitializeProposal<'_> {
             AutocratError::InsufficientLpTokenBalance
         );
 
-        let pass_base_liquidity = ((pass_lp_tokens_to_lock as u128 * pass_amm.base_amount as u128)
-            / pass_lp_mint.supply as u128) as u64;
-        let pass_quote_liquidity = ((pass_lp_tokens_to_lock as u128
-            * pass_amm.quote_amount as u128)
-            / pass_lp_mint.supply as u128) as u64;
-        let fail_base_liquidity = ((pass_lp_tokens_to_lock as u128 * fail_amm.base_amount as u128)
-            / fail_lp_mint.supply as u128) as u64;
-        let fail_quote_liquidity = ((pass_lp_tokens_to_lock as u128
-            * fail_amm.quote_amount as u128)
-            / fail_lp_mint.supply as u128) as u64;
+        let (pass_base_liquidity, pass_quote_liquidity) =
+            pass_amm.get_base_and_quote_withdrawable(pass_lp_tokens_to_lock, pass_lp_mint.supply);
+        let (fail_base_liquidity, fail_quote_liquidity) =
+            fail_amm.get_base_and_quote_withdrawable(fail_lp_tokens_to_lock, fail_lp_mint.supply);
 
-        require_gte!(
-            pass_base_liquidity,
-            dao.min_base_futarchic_liquidity,
-            AutocratError::InsufficientLpTokenLock
-        );
-        require_gte!(
-            pass_quote_liquidity,
-            dao.min_quote_futarchic_liquidity,
-            AutocratError::InsufficientLpTokenLock
-        );
-        require_gte!(
-            fail_base_liquidity,
-            dao.min_base_futarchic_liquidity,
-            AutocratError::InsufficientLpTokenLock
-        );
-        require_gte!(
-            fail_quote_liquidity,
-            dao.min_quote_futarchic_liquidity,
-            AutocratError::InsufficientLpTokenLock
-        );
+        for base_liquidity in [pass_base_liquidity, fail_base_liquidity] {
+            require_gte!(
+                base_liquidity,
+                dao.min_base_futarchic_liquidity,
+                AutocratError::InsufficientLpTokenLock
+            );
+        }
+
+        for quote_liquidity in [pass_quote_liquidity, fail_quote_liquidity] {
+            require_gte!(
+                quote_liquidity,
+                dao.min_quote_futarchic_liquidity,
+                AutocratError::InsufficientLpTokenLock
+            );
+        }
 
         for (amount, from, to) in [
             (

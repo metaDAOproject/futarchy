@@ -883,7 +883,7 @@ async function generateRandomVault(
     .addMetadataToConditionalTokens({
       proposalNumber: new BN(0), // nonce,
       onFinalizeUri: METADATA_URI,
-      onRevertUri: METADATA_URI
+      onRevertUri: METADATA_URI,
     })
     .accounts({
       payer: payer.publicKey,

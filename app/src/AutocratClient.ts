@@ -270,8 +270,12 @@ export class AutocratClient {
 
     // await this.vaultClient.mintConditionalTokens(baseVault, 10);
     // await this.vaultClient.mintConditionalTokens(quoteVault, 10_000);
-    await this.vaultClient.mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP).rpc();
-    await this.vaultClient.mintConditionalTokensIx(quoteVault, storedDao.usdcMint, quoteTokensToLP).rpc();
+    await this.vaultClient
+      .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
+      .rpc();
+    await this.vaultClient
+      .mintConditionalTokensIx(quoteVault, storedDao.usdcMint, quoteTokensToLP)
+      .rpc();
 
     const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
     const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
@@ -292,7 +296,7 @@ export class AutocratClient {
     );
 
     await this.ammClient
-      .createAmm(
+      .createAmmIx(
         passBase,
         passQuote,
         storedDao.twapInitialObservation,
@@ -315,7 +319,7 @@ export class AutocratClient {
       .rpc();
 
     await this.ammClient
-      .createAmm(
+      .createAmmIx(
         failBase,
         failQuote,
         storedDao.twapInitialObservation,
@@ -364,7 +368,7 @@ export class AutocratClient {
     // console.log(msg.serialize().length);
     // console.log(msg.recentBlockhash = );
     // Connection
-    
+
     // console.log(tx.feePayer = payer.publicKey);
 
     await this.initializeProposalIx(
