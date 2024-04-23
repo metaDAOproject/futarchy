@@ -14,7 +14,7 @@ const TIMELOCK_PROGRAM_ID = new PublicKey(
 );
 
 import { Timelock } from "../target/types/timelock";
-import { Connection } from "@solana/web3.js";
+import { ComputeBudgetProgram, Connection } from "@solana/web3.js";
 import { printArgs } from "@metaplex-foundation/mpl-token-metadata";
 const TimelockIDL: Timelock = require("../target/idl/timelock.json");
 
@@ -527,6 +527,12 @@ describe("timelock", async function () {
         { pubkey: timelockSignerPubkey, isWritable: false, isSigner: false },
         { pubkey: timelockKp.publicKey, isWritable: true, isSigner: false },
         { pubkey: timelock.programId, isWritable: false, isSigner: false },
+      ])
+      .preInstructions([
+        // this is to get around bankrun thinking we've processed the same transaction multiple times
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 1,
+        }),
       ])
       .rpc();
 
