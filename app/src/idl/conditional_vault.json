@@ -459,8 +459,5 @@
       "name": "VaultAlreadySettled",
       "msg": "Once a vault has been settled, its status as either finalized or reverted cannot be changed"
     }
-  ],
-  "metadata": {
-    "address": "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
-  }
+  ]
 }

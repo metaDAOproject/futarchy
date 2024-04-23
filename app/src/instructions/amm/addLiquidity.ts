@@ -19,7 +19,12 @@ export const addLiquidityHandler = (
   const [lpMint] = getAmmLpMintAddr(client.program.programId, ammAddr);
 
   return client.program.methods
-    .addLiquidity({maxBaseAmount, maxQuoteAmount, minBaseAmount, minQuoteAmount})
+    .addLiquidity({
+      maxBaseAmount,
+      maxQuoteAmount,
+      minBaseAmount,
+      minQuoteAmount,
+    })
     .accounts({
       user: client.provider.publicKey,
       amm: ammAddr,

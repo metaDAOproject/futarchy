@@ -1,4 +1,4 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
 import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
 
 import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
@@ -7,7 +7,10 @@ import * as ixs from "./instructions/amm";
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants";
 import { Amm, AmmWrapper } from "./types";
-import { getATA, getAmmLpMintAddr } from "./utils/pda";
+import { getATA, getAmmLpMintAddr, getAmmAddr } from "./utils/pda";
+import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
+
+export type SwapType = IdlTypes<AmmIDLType>["SwapType"];
 
 export type CreateAmmClientParams = {
   provider: AnchorProvider;
@@ -43,22 +46,55 @@ export class AmmClient {
     return this.program.programId;
   }
 
-  // both twap values need to be scaled beforehand
-  createAmm(
+  async createAmm(
     baseMint: PublicKey,
     quoteMint: PublicKey,
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN,
     proposal: PublicKey
-  ) {
-    return ixs.createAmmHandler(
-      this,
+  ): Promise<PublicKey> {
+    let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint, proposal);
+
+    await this.createAmmIx(
       baseMint,
       quoteMint,
       twapInitialObservation,
       twapMaxObservationChangePerUpdate,
       proposal
-    );
+    ).rpc();
+
+    return amm;
+  }
+
+  // both twap values need to be scaled beforehand
+  createAmmIx(
+    baseMint: PublicKey,
+    quoteMint: PublicKey,
+    twapInitialObservation: BN,
+    twapMaxObservationChangePerUpdate: BN,
+    proposal: PublicKey
+  ): MethodsBuilder<AmmIDLType, any> {
+    let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint, proposal);
+    let [lpMint] = getAmmLpMintAddr(this.getProgramId(), amm);
+
+    let [vaultAtaBase] = getATA(baseMint, amm);
+    let [vaultAtaQuote] = getATA(quoteMint, amm);
+
+    return this.program.methods
+      .createAmm({
+        twapInitialObservation,
+        twapMaxObservationChangePerUpdate,
+        proposal,
+      })
+      .accounts({
+        user: this.provider.publicKey,
+        amm,
+        lpMint,
+        baseMint,
+        quoteMint,
+        vaultAtaBase,
+        vaultAtaQuote,
+      });
   }
 
   async addLiquidity(
@@ -106,7 +142,7 @@ export class AmmClient {
         maxBaseAmount,
         maxQuoteAmount,
         minBaseAmount,
-        minQuoteAmount
+        minQuoteAmount,
       })
       .accounts({
         user,
@@ -156,19 +192,26 @@ export class AmmClient {
     ammAddr: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
-    isQuoteToBase: boolean,
+    swapType: SwapType,
     inputAmount: BN,
-    minOutputAmount: BN
+    outputAmountMin: BN
   ) {
-    return ixs.swapHandler(
-      this,
-      ammAddr,
-      baseMint,
-      quoteMint,
-      isQuoteToBase,
-      inputAmount,
-      minOutputAmount
-    );
+    return this.program.methods
+      .swap({
+        swapType,
+        inputAmount,
+        outputAmountMin,
+      })
+      .accounts({
+        user: this.provider.publicKey,
+        amm: ammAddr,
+        baseMint,
+        quoteMint,
+        userAtaBase: getATA(baseMint, this.provider.publicKey)[0],
+        userAtaQuote: getATA(quoteMint, this.provider.publicKey)[0],
+        vaultAtaBase: getATA(baseMint, ammAddr)[0],
+        vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
+      });
   }
 
   async crankThatTwap(amm: PublicKey) {
