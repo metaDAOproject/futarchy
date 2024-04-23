@@ -35,6 +35,7 @@ const { PublicKey, Keypair } = web3;
 import { ConditionalVault } from "../target/types/conditional_vault";
 import { expectError } from "./utils/utils";
 import {
+  CONDITIONAL_VAULT_PROGRAM_ID,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
@@ -46,10 +47,6 @@ export type VaultProgram = anchor.Program<ConditionalVault>;
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 export type Keypair = anchor.web3.Keypair;
-
-const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
-);
 
 const METADATA_URI =
   "https://ftgnmxferax7tpgqyzdo76sisk5fhpsjv34omvgz33m7udvnsfba.arweave.net/LMzWXKSIL_m80MZG7_pIkrpTvkmu-OZU2d7Z-g6tkUI";
