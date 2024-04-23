@@ -79,7 +79,7 @@ pub mod timelock {
 
         timelock.authority = authority;
         timelock.delay_in_slots = delay_in_slots;
-        timelock.signer_bump = *ctx.bumps.get("timelock_signer").unwrap();
+        timelock.signer_bump = ctx.bumps.timelock_signer;
 
         Ok(())
     }
