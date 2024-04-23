@@ -46,7 +46,10 @@ pub struct AddMetadataToConditionalTokens<'info> {
 
 impl AddMetadataToConditionalTokens<'_> {
     pub fn validate(&self) -> Result<()> {
-        require!(self.vault.status == VaultStatus::Active, VaultError::VaultAlreadySettled);
+        require!(
+            self.vault.status == VaultStatus::Active,
+            VaultError::VaultAlreadySettled
+        );
 
         Ok(())
     }
@@ -56,8 +59,7 @@ impl AddMetadataToConditionalTokens<'_> {
         let signer_seeds = &[&seeds[..]];
 
         // there are null bytes we must trim from string, otherwise string value is longer than we want
-        let underlying_token_symbol_raw =
-            ctx.accounts.underlying_token_metadata.symbol.clone();
+        let underlying_token_symbol_raw = ctx.accounts.underlying_token_metadata.symbol.clone();
         let underlying_token_symbol = underlying_token_symbol_raw.trim_matches(char::from(0));
 
         let on_finalize_token_symbol = format!("p{}", underlying_token_symbol);

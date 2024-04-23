@@ -6,6 +6,13 @@ use crate::error::AmmError;
 use crate::generate_amm_seeds;
 use crate::state::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct SwapArgs {
+    pub swap_type: SwapType,
+    pub input_amount: u64,
+    pub output_amount_min: u64,
+}
+
 #[derive(Accounts)]
 pub struct Swap<'info> {
     #[account(mut)]
@@ -47,75 +54,78 @@ pub struct Swap<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(
-    ctx: Context<Swap>,
-    swap_type: SwapType,
-    input_amount: u64,
-    output_amount_min: u64,
-) -> Result<()> {
-    let Swap {
-        user,
-        amm,
-        base_mint: _,
-        quote_mint: _,
-        user_ata_base,
-        user_ata_quote,
-        vault_ata_base,
-        vault_ata_quote,
-        associated_token_program: _,
-        token_program,
-        system_program: _,
-    } = ctx.accounts;
-
-    assert!(input_amount > 0);
-
-    amm.update_twap(Clock::get()?.slot);
-
-    let output_amount = amm.swap(input_amount, swap_type)?;
-
-    let seeds = generate_amm_seeds!(amm);
-
-    let (user_from, vault_to, vault_from, user_to) = match swap_type {
-        SwapType::Buy => (
+impl Swap<'_> {
+    pub fn handle(ctx: Context<Swap>, args: SwapArgs) -> Result<()> {
+        let Swap {
+            user,
+            amm,
+            base_mint: _,
+            quote_mint: _,
+            user_ata_base,
             user_ata_quote,
-            vault_ata_quote,
-            vault_ata_base,
-            user_ata_base,
-        ),
-        SwapType::Sell => (
-            user_ata_base,
             vault_ata_base,
             vault_ata_quote,
-            user_ata_quote,
-        ),
-    };
+            associated_token_program: _,
+            token_program,
+            system_program: _,
+        } = ctx.accounts;
 
-    token::transfer(
-        CpiContext::new(
-            token_program.to_account_info(),
-            Transfer {
-                from: user_from.to_account_info(),
-                to: vault_to.to_account_info(),
-                authority: user.to_account_info(),
-            },
-        ),
-        input_amount,
-    )?;
+        let SwapArgs {
+            swap_type,
+            input_amount,
+            output_amount_min,
+        } = args;
 
-    token::transfer(
-        CpiContext::new_with_signer(
-            token_program.to_account_info(),
-            Transfer {
-                from: vault_from.to_account_info(),
-                to: user_to.to_account_info(),
-                authority: amm.to_account_info(),
-            },
-            &[seeds],
-        ),
-        output_amount,
-    )?;
+        assert!(input_amount > 0);
 
-    require_gte!(output_amount, output_amount_min, AmmError::SlippageExceeded);
+        amm.update_twap(Clock::get()?.slot);
 
-    Ok(())
+        let output_amount = amm.swap(input_amount, swap_type)?;
+
+        let seeds = generate_amm_seeds!(amm);
+
+        let (user_from, vault_to, vault_from, user_to) = match swap_type {
+            SwapType::Buy => (
+                user_ata_quote,
+                vault_ata_quote,
+                vault_ata_base,
+                user_ata_base,
+            ),
+            SwapType::Sell => (
+                user_ata_base,
+                vault_ata_base,
+                vault_ata_quote,
+                user_ata_quote,
+            ),
+        };
+
+        token::transfer(
+            CpiContext::new(
+                token_program.to_account_info(),
+                Transfer {
+                    from: user_from.to_account_info(),
+                    to: vault_to.to_account_info(),
+                    authority: user.to_account_info(),
+                },
+            ),
+            input_amount,
+        )?;
+
+        token::transfer(
+            CpiContext::new_with_signer(
+                token_program.to_account_info(),
+                Transfer {
+                    from: vault_from.to_account_info(),
+                    to: user_to.to_account_info(),
+                    authority: amm.to_account_info(),
+                },
+                &[seeds],
+            ),
+            output_amount,
+        )?;
+
+        require_gte!(output_amount, output_amount_min, AmmError::SlippageExceeded);
+
+        Ok(())
+    }
 }

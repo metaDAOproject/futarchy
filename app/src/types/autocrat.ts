@@ -584,7 +584,7 @@ export type Autocrat = {
     },
     {
       "code": 6009,
-      "name": "InsufficientLPTokenBalance",
+      "name": "InsufficientLpTokenBalance",
       "msg": "The proposer has fewer pass or fail LP tokens than they requested to lock"
     },
     {
@@ -1181,7 +1181,7 @@ export const IDL: Autocrat = {
     },
     {
       "code": 6009,
-      "name": "InsufficientLPTokenBalance",
+      "name": "InsufficientLpTokenBalance",
       "msg": "The proposer has fewer pass or fail LP tokens than they requested to lock"
     },
     {

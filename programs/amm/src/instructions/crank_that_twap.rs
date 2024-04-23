@@ -8,10 +8,12 @@ pub struct CrankThatTwap<'info> {
     pub amm: Account<'info, Amm>,
 }
 
-pub fn handler(ctx: Context<CrankThatTwap>) -> Result<()> {
-    let CrankThatTwap { amm } = ctx.accounts;
+impl CrankThatTwap<'_> {
+    pub fn handle(ctx: Context<Self>) -> Result<()> {
+        let CrankThatTwap { amm } = ctx.accounts;
 
-    amm.update_twap(Clock::get()?.slot);
+        amm.update_twap(Clock::get()?.slot);
 
-    Ok(())
+        Ok(())
+    }
 }

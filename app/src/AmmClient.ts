@@ -102,12 +102,12 @@ export class AmmClient {
     const [lpMint] = getAmmLpMintAddr(this.program.programId, amm);
 
     return this.program.methods
-      .addLiquidity(
+      .addLiquidity({
         maxBaseAmount,
         maxQuoteAmount,
         minBaseAmount,
         minQuoteAmount
-      )
+      })
       .accounts({
         user,
         amm,
@@ -128,28 +128,28 @@ export class AmmClient {
     quoteMint: PublicKey,
     lpTokensToBurn: BN,
     minBaseAmount: BN,
-    minQuoteAmount: BN,
+    minQuoteAmount: BN
   ) {
     const [lpMint] = getAmmLpMintAddr(this.program.programId, ammAddr);
 
-  return this.program.methods
-    .removeLiquidity({
-      lpTokensToBurn,
-      minBaseAmount,
-      minQuoteAmount,
-    })
-    .accounts({
-      user: this.provider.publicKey,
-      amm: ammAddr,
-      lpMint,
-      baseMint,
-      quoteMint,
-      userAtaLp: getATA(lpMint, this.provider.publicKey)[0],
-      userAtaBase: getATA(baseMint, this.provider.publicKey)[0],
-      userAtaQuote: getATA(quoteMint, this.provider.publicKey)[0],
-      vaultAtaBase: getATA(baseMint, ammAddr)[0],
-      vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
-    });
+    return this.program.methods
+      .removeLiquidity({
+        lpTokensToBurn,
+        minBaseAmount,
+        minQuoteAmount,
+      })
+      .accounts({
+        user: this.provider.publicKey,
+        amm: ammAddr,
+        lpMint,
+        baseMint,
+        quoteMint,
+        userAtaLp: getATA(lpMint, this.provider.publicKey)[0],
+        userAtaBase: getATA(baseMint, this.provider.publicKey)[0],
+        userAtaQuote: getATA(quoteMint, this.provider.publicKey)[0],
+        vaultAtaBase: getATA(baseMint, ammAddr)[0],
+        vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
+      });
   }
 
   swap(

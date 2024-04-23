@@ -136,20 +136,10 @@ export type Amm = {
       ],
       "args": [
         {
-          "name": "maxBaseAmount",
-          "type": "u64"
-        },
-        {
-          "name": "maxQuoteAmount",
-          "type": "u64"
-        },
-        {
-          "name": "minBaseAmount",
-          "type": "u64"
-        },
-        {
-          "name": "minQuoteAmount",
-          "type": "u64"
+          "name": "args",
+          "type": {
+            "defined": "AddLiquidityArgs"
+          }
         }
       ]
     },
@@ -224,9 +214,9 @@ export type Amm = {
       ],
       "args": [
         {
-          "name": "params",
+          "name": "args",
           "type": {
-            "defined": "RemoveLiquidityParams"
+            "defined": "RemoveLiquidityArgs"
           }
         }
       ]
@@ -292,18 +282,10 @@ export type Amm = {
       ],
       "args": [
         {
-          "name": "direction",
+          "name": "args",
           "type": {
-            "defined": "SwapType"
+            "defined": "SwapArgs"
           }
-        },
-        {
-          "name": "inputAmount",
-          "type": "u64"
-        },
-        {
-          "name": "outputAmountMin",
-          "type": "u64"
         }
       ]
     },
@@ -381,6 +363,30 @@ export type Amm = {
   ],
   "types": [
     {
+      "name": "AddLiquidityArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxBaseAmount",
+            "type": "u64"
+          },
+          {
+            "name": "maxQuoteAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minBaseAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minQuoteAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "CreateAmmArgs",
       "type": {
         "kind": "struct",
@@ -401,7 +407,7 @@ export type Amm = {
       }
     },
     {
-      "name": "RemoveLiquidityParams",
+      "name": "RemoveLiquidityArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -415,6 +421,28 @@ export type Amm = {
           },
           {
             "name": "minBaseAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swapType",
+            "type": {
+              "defined": "SwapType"
+            }
+          },
+          {
+            "name": "inputAmount",
+            "type": "u64"
+          },
+          {
+            "name": "outputAmountMin",
             "type": "u64"
           }
         ]
@@ -687,20 +715,10 @@ export const IDL: Amm = {
       ],
       "args": [
         {
-          "name": "maxBaseAmount",
-          "type": "u64"
-        },
-        {
-          "name": "maxQuoteAmount",
-          "type": "u64"
-        },
-        {
-          "name": "minBaseAmount",
-          "type": "u64"
-        },
-        {
-          "name": "minQuoteAmount",
-          "type": "u64"
+          "name": "args",
+          "type": {
+            "defined": "AddLiquidityArgs"
+          }
         }
       ]
     },
@@ -775,9 +793,9 @@ export const IDL: Amm = {
       ],
       "args": [
         {
-          "name": "params",
+          "name": "args",
           "type": {
-            "defined": "RemoveLiquidityParams"
+            "defined": "RemoveLiquidityArgs"
           }
         }
       ]
@@ -843,18 +861,10 @@ export const IDL: Amm = {
       ],
       "args": [
         {
-          "name": "direction",
+          "name": "args",
           "type": {
-            "defined": "SwapType"
+            "defined": "SwapArgs"
           }
-        },
-        {
-          "name": "inputAmount",
-          "type": "u64"
-        },
-        {
-          "name": "outputAmountMin",
-          "type": "u64"
         }
       ]
     },
@@ -932,6 +942,30 @@ export const IDL: Amm = {
   ],
   "types": [
     {
+      "name": "AddLiquidityArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxBaseAmount",
+            "type": "u64"
+          },
+          {
+            "name": "maxQuoteAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minBaseAmount",
+            "type": "u64"
+          },
+          {
+            "name": "minQuoteAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "CreateAmmArgs",
       "type": {
         "kind": "struct",
@@ -952,7 +986,7 @@ export const IDL: Amm = {
       }
     },
     {
-      "name": "RemoveLiquidityParams",
+      "name": "RemoveLiquidityArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -966,6 +1000,28 @@ export const IDL: Amm = {
           },
           {
             "name": "minBaseAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swapType",
+            "type": {
+              "defined": "SwapType"
+            }
+          },
+          {
+            "name": "inputAmount",
+            "type": "u64"
+          },
+          {
+            "name": "outputAmountMin",
             "type": "u64"
           }
         ]

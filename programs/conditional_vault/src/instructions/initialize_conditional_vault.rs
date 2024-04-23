@@ -61,7 +61,7 @@ impl InitializeConditionalVault<'_> {
 
         let InitializeConditionalVaultArgs {
             proposal,
-            settlement_authority
+            settlement_authority,
         } = args;
 
         vault.set_inner(ConditionalVault {

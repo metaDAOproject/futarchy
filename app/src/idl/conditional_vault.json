@@ -27,7 +27,7 @@
         },
         {
           "name": "vaultUnderlyingTokenAccount",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {

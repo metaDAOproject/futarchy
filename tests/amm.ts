@@ -418,11 +418,10 @@ describe("amm", async function () {
           META,
           USDC,
           new BN(userLpAccountStart.amount.toString()),
-          new BN(1 * 10**9),
-          new BN(10 * 10**6)
+          new BN(1 * 10 ** 9),
+          new BN(10 * 10 ** 6)
         )
         .rpc();
-
 
       const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
       const lpMintEnd = await getMint(banksClient, lpMint);

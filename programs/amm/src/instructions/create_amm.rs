@@ -62,7 +62,7 @@ pub struct CreateAmm<'info> {
 }
 
 impl CreateAmm<'_> {
-    fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<()> {
         require_neq!(
             self.base_mint.key(),
             self.quote_mint.key(),
@@ -71,53 +71,52 @@ impl CreateAmm<'_> {
 
         Ok(())
     }
-}
 
-#[access_control(ctx.accounts.validate())]
-pub fn handler(ctx: Context<CreateAmm>, args: CreateAmmArgs) -> Result<()> {
-    let CreateAmm {
-        user: _,
-        amm,
-        lp_mint,
-        base_mint,
-        quote_mint,
-        vault_ata_base: _,
-        vault_ata_quote: _,
-        associated_token_program: _,
-        token_program: _,
-        system_program: _,
-    } = ctx.accounts;
+    pub fn handle(ctx: Context<Self>, args: CreateAmmArgs) -> Result<()> {
+        let CreateAmm {
+            user: _,
+            amm,
+            lp_mint,
+            base_mint,
+            quote_mint,
+            vault_ata_base: _,
+            vault_ata_quote: _,
+            associated_token_program: _,
+            token_program: _,
+            system_program: _,
+        } = ctx.accounts;
 
-    let current_slot = Clock::get()?.slot;
+        let current_slot = Clock::get()?.slot;
 
-    let CreateAmmArgs {
-        twap_initial_observation,
-        twap_max_observation_change_per_update,
-        proposal,
-    } = args;
-
-    amm.set_inner(Amm {
-        bump: ctx.bumps.amm,
-        proposal,
-
-        created_at_slot: current_slot,
-
-        lp_mint: lp_mint.key(),
-        base_mint: base_mint.key(),
-        quote_mint: quote_mint.key(),
-
-        base_mint_decimals: base_mint.decimals,
-        quote_mint_decimals: quote_mint.decimals,
-
-        base_amount: 0,
-        quote_amount: 0,
-
-        oracle: TwapOracle::new(
-            current_slot,
+        let CreateAmmArgs {
             twap_initial_observation,
             twap_max_observation_change_per_update,
-        ),
-    });
+            proposal,
+        } = args;
 
-    Ok(())
+        amm.set_inner(Amm {
+            bump: ctx.bumps.amm,
+            proposal,
+
+            created_at_slot: current_slot,
+
+            lp_mint: lp_mint.key(),
+            base_mint: base_mint.key(),
+            quote_mint: quote_mint.key(),
+
+            base_mint_decimals: base_mint.decimals,
+            quote_mint_decimals: quote_mint.decimals,
+
+            base_amount: 0,
+            quote_amount: 0,
+
+            oracle: TwapOracle::new(
+                current_slot,
+                twap_initial_observation,
+                twap_max_observation_change_per_update,
+            ),
+        });
+
+        Ok(())
+    }
 }

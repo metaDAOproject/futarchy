@@ -2,7 +2,10 @@ use super::*;
 
 impl InteractWithVault<'_> {
     pub fn validate_merge_conditional_tokens(&self) -> Result<()> {
-        require!(self.vault.status == VaultStatus::Active, VaultError::VaultAlreadySettled);
+        require!(
+            self.vault.status == VaultStatus::Active,
+            VaultError::VaultAlreadySettled
+        );
 
         Ok(())
     }
