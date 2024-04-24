@@ -15,7 +15,6 @@ import {
   IDL as ConditionalVaultIDL,
 } from "./types/conditional_vault";
 
-import * as ixs from "./instructions/amm";
 import BN from "bn.js";
 import {
   AMM_PROGRAM_ID,
@@ -309,10 +308,9 @@ export class AutocratClient {
             passAmm,
             passBase,
             passQuote,
-            baseTokensToLP,
             quoteTokensToLP,
             baseTokensToLP,
-            quoteTokensToLP
+            new BN(0)
           )
           .instruction(),
       ])
@@ -333,14 +331,14 @@ export class AutocratClient {
         failAmm,
         failBase,
         failQuote,
-        baseTokensToLP,
         quoteTokensToLP,
         baseTokensToLP,
-        quoteTokensToLP
+        new BN(0)
       )
       .rpc();
 
-    const lpTokens = BN.max(baseTokensToLP, quoteTokensToLP);
+    // this is how many original tokens are created
+    const lpTokens = quoteTokensToLP;
 
     // let tx = await this.initializeProposalIx(
     //   proposalKP,
