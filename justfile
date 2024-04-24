@@ -1,5 +1,5 @@
 test:
-    (find programs && find tests) | entr -s 'clear && RUST_LOG= anchor test'
+    find programs tests app | entr -s 'clear && RUST_LOG= anchor test'
 
 test-no-build:
     find programs tests app | entr -sc 'RUST_LOG= anchor test --skip-build'

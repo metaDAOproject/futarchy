@@ -368,19 +368,18 @@ export type Amm = {
         kind: "struct";
         fields: [
           {
+            name: "quoteAmount";
+            docs: ["How much quote token you will deposit to the pool"];
+            type: "u64";
+          },
+          {
             name: "maxBaseAmount";
+            docs: ["The maximum base token you will deposit to the pool"];
             type: "u64";
           },
           {
-            name: "maxQuoteAmount";
-            type: "u64";
-          },
-          {
-            name: "minBaseAmount";
-            type: "u64";
-          },
-          {
-            name: "minQuoteAmount";
+            name: "minLpTokens";
+            docs: ["The minimum LP token you will get back"];
             type: "u64";
           }
         ];
@@ -557,7 +556,7 @@ export type Amm = {
     },
     {
       code: 6006;
-      name: "SlippageExceeded";
+      name: "SwapSlippageExceeded";
       msg: "A user wouldn't have gotten back their `output_amount_min`, reverting";
     },
     {
@@ -569,6 +568,26 @@ export type Amm = {
       code: 6008;
       name: "ZeroLiquidityToAdd";
       msg: "Cannot add liquidity with 0 tokens on either side";
+    },
+    {
+      code: 6009;
+      name: "ZeroMinLpTokens";
+      msg: "Must specify a non-zero `min_lp_tokens` when adding to an existing pool";
+    },
+    {
+      code: 6010;
+      name: "AddLiquiditySlippageExceeded";
+      msg: "LP wouldn't have gotten back `lp_token_min`";
+    },
+    {
+      code: 6011;
+      name: "AddLiquidityMaxBaseExceeded";
+      msg: "LP would have spent more than `max_base_amount`";
+    },
+    {
+      code: 6012;
+      name: "InsufficientQuoteAmount";
+      msg: "`quote_amount` must be greater than 100000000 when initializing a pool";
     }
   ];
 };
@@ -943,19 +962,18 @@ export const IDL: Amm = {
         kind: "struct",
         fields: [
           {
+            name: "quoteAmount",
+            docs: ["How much quote token you will deposit to the pool"],
+            type: "u64",
+          },
+          {
             name: "maxBaseAmount",
+            docs: ["The maximum base token you will deposit to the pool"],
             type: "u64",
           },
           {
-            name: "maxQuoteAmount",
-            type: "u64",
-          },
-          {
-            name: "minBaseAmount",
-            type: "u64",
-          },
-          {
-            name: "minQuoteAmount",
+            name: "minLpTokens",
+            docs: ["The minimum LP token you will get back"],
             type: "u64",
           },
         ],
@@ -1132,7 +1150,7 @@ export const IDL: Amm = {
     },
     {
       code: 6006,
-      name: "SlippageExceeded",
+      name: "SwapSlippageExceeded",
       msg: "A user wouldn't have gotten back their `output_amount_min`, reverting",
     },
     {
@@ -1144,6 +1162,26 @@ export const IDL: Amm = {
       code: 6008,
       name: "ZeroLiquidityToAdd",
       msg: "Cannot add liquidity with 0 tokens on either side",
+    },
+    {
+      code: 6009,
+      name: "ZeroMinLpTokens",
+      msg: "Must specify a non-zero `min_lp_tokens` when adding to an existing pool",
+    },
+    {
+      code: 6010,
+      name: "AddLiquiditySlippageExceeded",
+      msg: "LP wouldn't have gotten back `lp_token_min`",
+    },
+    {
+      code: 6011,
+      name: "AddLiquidityMaxBaseExceeded",
+      msg: "LP would have spent more than `max_base_amount`",
+    },
+    {
+      code: 6012,
+      name: "InsufficientQuoteAmount",
+      msg: "`quote_amount` must be greater than 100000000 when initializing a pool",
     },
   ],
 };

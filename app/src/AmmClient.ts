@@ -3,7 +3,6 @@ import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
 
 import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
 
-import * as ixs from "./instructions/amm";
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants";
 import { Amm, AmmWrapper } from "./types";
@@ -97,52 +96,50 @@ export class AmmClient {
       });
   }
 
-  async addLiquidity(
-    amm: PublicKey,
-    maxBaseAmount: BN | number,
-    maxQuoteAmount: BN | number,
-    minBaseAmount: BN | number,
-    minQuoteAmount: BN | number,
-    user?: Keypair
-  ) {
-    let storedAmm = await this.getAmm(amm);
+  // async addLiquidity(
+  //   amm: PublicKey,
+  //   maxBaseAmount: BN | number,
+  //   maxQuoteAmount: BN | number,
+  //   minBaseAmount: BN | number,
+  //   minQuoteAmount: BN | number,
+  //   user?: Keypair
+  // ) {
+  //   let storedAmm = await this.getAmm(amm);
 
-    let ix = this.addLiquidityIx(
-      amm,
-      storedAmm.baseMint,
-      storedAmm.quoteMint,
-      maxBaseAmount instanceof BN ? maxBaseAmount : new BN(maxBaseAmount),
-      maxQuoteAmount instanceof BN ? maxQuoteAmount : new BN(maxQuoteAmount),
-      minBaseAmount instanceof BN ? minBaseAmount : new BN(minBaseAmount),
-      minQuoteAmount instanceof BN ? minQuoteAmount : new BN(minQuoteAmount),
-      user ? user.publicKey : undefined
-    );
+  //   let ix = this.addLiquidityIx(
+  //     amm,
+  //     storedAmm.baseMint,
+  //     storedAmm.quoteMint,
+  //     maxBaseAmount instanceof BN ? maxBaseAmount : new BN(maxBaseAmount),
+  //     maxQuoteAmount instanceof BN ? maxQuoteAmount : new BN(maxQuoteAmount),
+  //     minBaseAmount instanceof BN ? minBaseAmount : new BN(minBaseAmount),
+  //     minQuoteAmount instanceof BN ? minQuoteAmount : new BN(minQuoteAmount),
+  //     user ? user.publicKey : undefined
+  //   );
 
-    if (user) {
-      ix = ix.signers([user]);
-    }
+  //   if (user) {
+  //     ix = ix.signers([user]);
+  //   }
 
-    return ix.rpc();
-  }
+  //   return ix.rpc();
+  // }
 
   addLiquidityIx(
     amm: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
+    quoteAmount: BN,
     maxBaseAmount: BN,
-    maxQuoteAmount: BN,
-    minBaseAmount: BN,
-    minQuoteAmount: BN,
+    minLpTokens: BN,
     user: PublicKey = this.provider.publicKey
   ) {
     const [lpMint] = getAmmLpMintAddr(this.program.programId, amm);
 
     return this.program.methods
       .addLiquidity({
+        quoteAmount,
         maxBaseAmount,
-        maxQuoteAmount,
-        minBaseAmount,
-        minQuoteAmount,
+        minLpTokens,
       })
       .accounts({
         user,

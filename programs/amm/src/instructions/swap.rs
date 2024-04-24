@@ -124,7 +124,11 @@ impl Swap<'_> {
             output_amount,
         )?;
 
-        require_gte!(output_amount, output_amount_min, AmmError::SlippageExceeded);
+        require_gte!(
+            output_amount,
+            output_amount_min,
+            AmmError::SwapSlippageExceeded
+        );
 
         Ok(())
     }

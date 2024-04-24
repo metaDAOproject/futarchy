@@ -76,7 +76,6 @@ version = "1.0.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "num-traits",
  "solana-security-txt",
 ]
 

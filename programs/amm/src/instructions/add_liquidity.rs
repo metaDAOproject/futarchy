@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, *};
-use num_traits::ToPrimitive;
 
 use crate::error::AmmError;
 use crate::AddOrRemoveLiquidity;
@@ -8,10 +7,12 @@ use crate::{generate_amm_seeds, state::*};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AddLiquidityArgs {
-    pub max_base_amount: u64,
-    pub max_quote_amount: u64,
-    pub min_base_amount: u64,
-    pub min_quote_amount: u64,
+    /// How much quote token you will deposit to the pool
+    quote_amount: u64,
+    /// The maximum base token you will deposit to the pool
+    max_base_amount: u64,
+    /// The minimum LP token you will get back
+    min_lp_tokens: u64,
 }
 
 impl AddOrRemoveLiquidity<'_> {
@@ -33,84 +34,71 @@ impl AddOrRemoveLiquidity<'_> {
         } = ctx.accounts;
 
         let AddLiquidityArgs {
+            quote_amount,
             max_base_amount,
-            max_quote_amount,
-            min_base_amount,
-            min_quote_amount,
+            min_lp_tokens,
         } = args;
 
         require_gte!(
             user_ata_base.amount,
-            min_base_amount,
+            max_base_amount,
             AmmError::InsufficientBalance
         );
         require_gte!(
             user_ata_quote.amount,
-            min_quote_amount,
+            quote_amount,
             AmmError::InsufficientBalance
         );
 
-        require_gt!(max_base_amount, 0, AmmError::ZeroLiquidityToAdd);
-        require_gt!(max_quote_amount, 0, AmmError::ZeroLiquidityToAdd);
-
         amm.update_twap(Clock::get()?.slot);
 
-        let mut temp_base_amount: u128;
-        let mut temp_quote_amount: u128;
+        // airlifted from uniswap v1:
+        // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L48
+
+        require!(max_base_amount > 0, AmmError::ZeroLiquidityToAdd);
+        require!(quote_amount > 0, AmmError::ZeroLiquidityToAdd);
+
+        let total_lp_supply = lp_mint.supply;
+
+        let (lp_tokens_to_mint, base_amount) = if total_lp_supply > 0 {
+            require!(min_lp_tokens > 0, AmmError::ZeroMinLpTokens);
+
+            let quote_reserve = amm.quote_amount as u128;
+            let base_reserve = amm.base_amount as u128;
+
+            let base_amount = (((quote_amount as u128 * base_reserve) / quote_reserve) + 1) as u64;
+
+            let lp_tokens_to_mint =
+                ((quote_amount as u128 * total_lp_supply as u128) / quote_reserve as u128) as u64;
+
+            require_gte!(
+                max_base_amount,
+                base_amount as u64,
+                AmmError::AddLiquidityMaxBaseExceeded
+            );
+            require_gte!(
+                lp_tokens_to_mint,
+                min_lp_tokens,
+                AmmError::AddLiquiditySlippageExceeded
+            );
+
+            (lp_tokens_to_mint, base_amount)
+        } else {
+            // equivalent to $100 if quote is USDC, here for rounding
+            require_gte!(quote_amount, 100000000, AmmError::InsufficientQuoteAmount);
+
+            let base_amount = max_base_amount;
+
+            let initial_lp_tokens = quote_amount;
+
+            (initial_lp_tokens, base_amount)
+        };
+
+        amm.base_amount += base_amount;
+        amm.quote_amount += quote_amount;
 
         let seeds = generate_amm_seeds!(amm);
         let signer = &[&seeds[..]];
-
-        let amount_to_mint = if amm.base_amount == 0 && amm.quote_amount == 0 {
-            // if there is no liquidity in the amm, then initialize with new ownership values
-            temp_base_amount = max_base_amount as u128;
-            temp_quote_amount = max_quote_amount as u128;
-
-            // use the higher number for ownership, to reduce rounding errors
-            std::cmp::max(max_base_amount, max_quote_amount)
-        } else {
-            temp_base_amount = max_base_amount as u128;
-
-            temp_quote_amount = temp_base_amount
-                .checked_mul(amm.quote_amount as u128)
-                .unwrap()
-                .checked_div(amm.base_amount as u128)
-                .unwrap();
-
-            // if the temp_quote_amount calculation with max_base_amount led to a value higher than max_quote_amount,
-            // then use the max_quote_amount and calculate in the other direction
-            if temp_quote_amount > max_quote_amount as u128 {
-                temp_quote_amount = max_quote_amount as u128;
-
-                temp_base_amount = temp_quote_amount
-                    .checked_mul(amm.base_amount as u128)
-                    .unwrap()
-                    .checked_div(amm.quote_amount as u128)
-                    .unwrap();
-
-                if temp_base_amount > max_base_amount as u128 {
-                    return err!(AmmError::AddLiquidityCalculationError);
-                }
-            }
-
-            let additional_ownership_base = temp_base_amount
-                .checked_mul(lp_mint.supply as u128)
-                .unwrap()
-                .checked_div(amm.base_amount as u128)
-                .unwrap()
-                .to_u64()
-                .unwrap();
-
-            let additional_ownership_quote = temp_quote_amount
-                .checked_mul(lp_mint.supply as u128)
-                .unwrap()
-                .checked_div(amm.quote_amount as u128)
-                .unwrap()
-                .to_u64()
-                .unwrap();
-
-            std::cmp::min(additional_ownership_base, additional_ownership_quote)
-        };
 
         token::mint_to(
             CpiContext::new_with_signer(
@@ -122,25 +110,12 @@ impl AddOrRemoveLiquidity<'_> {
                 },
                 signer,
             ),
-            amount_to_mint,
+            lp_tokens_to_mint,
         )?;
 
-        assert!(temp_base_amount >= min_base_amount as u128);
-        assert!(temp_quote_amount >= min_quote_amount as u128);
-
-        amm.base_amount = amm
-            .base_amount
-            .checked_add(temp_base_amount.to_u64().unwrap())
-            .unwrap();
-
-        amm.quote_amount = amm
-            .quote_amount
-            .checked_add(temp_quote_amount.to_u64().unwrap())
-            .unwrap();
-
         for (amount, from, to) in [
-            (temp_base_amount, user_ata_base, vault_ata_base),
-            (temp_quote_amount, user_ata_quote, vault_ata_quote),
+            (base_amount, user_ata_base, vault_ata_base),
+            (quote_amount, user_ata_quote, vault_ata_quote),
         ] {
             token::transfer(
                 CpiContext::new(
@@ -151,7 +126,7 @@ impl AddOrRemoveLiquidity<'_> {
                         authority: user.to_account_info(),
                     },
                 ),
-                amount as u64,
+                amount,
             )?;
         }
 

@@ -58,12 +58,12 @@ impl AddOrRemoveLiquidity<'_> {
         require_gte!(
             base_to_withdraw,
             min_base_amount,
-            AmmError::SlippageExceeded
+            AmmError::SwapSlippageExceeded
         );
         require_gte!(
             quote_to_withdraw,
             min_quote_amount,
-            AmmError::SlippageExceeded
+            AmmError::SwapSlippageExceeded
         );
 
         token::burn(

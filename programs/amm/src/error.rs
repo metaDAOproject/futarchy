@@ -15,9 +15,17 @@ pub enum AmmError {
     #[msg("You can't create an AMM pool where the token mints are the same")]
     SameTokenMints,
     #[msg("A user wouldn't have gotten back their `output_amount_min`, reverting")]
-    SlippageExceeded,
+    SwapSlippageExceeded,
     #[msg("The user had insufficient balance to do this")]
     InsufficientBalance,
     #[msg("Cannot add liquidity with 0 tokens on either side")]
     ZeroLiquidityToAdd,
+    #[msg("Must specify a non-zero `min_lp_tokens` when adding to an existing pool")]
+    ZeroMinLpTokens,
+    #[msg("LP wouldn't have gotten back `lp_token_min`")]
+    AddLiquiditySlippageExceeded,
+    #[msg("LP would have spent more than `max_base_amount`")]
+    AddLiquidityMaxBaseExceeded,
+    #[msg("`quote_amount` must be greater than 100000000 when initializing a pool")]
+    InsufficientQuoteAmount,
 }

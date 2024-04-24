@@ -193,10 +193,9 @@ describe("amm", async function () {
           amm,
           META,
           USDC,
-          new BN(10 * 10 ** 9),
           new BN(100 * 10 ** 6),
-          new BN(10 * 0.95 * 10 ** 9),
-          new BN(100 * 0.95 * 10 ** 6)
+          new BN(10 * 10 ** 9),
+          new BN(0)
         )
         .rpc();
 
@@ -231,10 +230,9 @@ describe("amm", async function () {
           amm,
           META,
           USDC,
-          new BN(10 * 10 ** 9),
           new BN(100 * 10 ** 6),
-          new BN(10 * 0.95 * 10 ** 9),
-          new BN(100 * 0.95 * 10 ** 6)
+          new BN(10 * 10 ** 9 + 10),
+          new BN(1)
         )
         .rpc();
 
@@ -290,7 +288,14 @@ describe("amm", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
       await ammClient
-        .swap(amm, META, USDC, { sell: {} }, new BN(1 * 10 ** 9), new BN(8 * 10 ** 6))
+        .swap(
+          amm,
+          META,
+          USDC,
+          { sell: {} },
+          new BN(1 * 10 ** 9),
+          new BN(8 * 10 ** 6)
+        )
         .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
@@ -314,7 +319,14 @@ describe("amm", async function () {
       let startingBaseSwapAmount = 1 * 10 ** 9;
 
       await ammClient
-        .swap(amm, META, USDC, { sell: {} }, new BN(startingBaseSwapAmount), new BN(1))
+        .swap(
+          amm,
+          META,
+          USDC,
+          { sell: {} },
+          new BN(startingBaseSwapAmount),
+          new BN(1)
+        )
         .rpc();
 
       await fastForward(context, 1n);
@@ -345,7 +357,14 @@ describe("amm", async function () {
       let startingQuoteSwapAmount = 1 * 10 ** 6;
 
       await ammClient
-        .swap(amm, META, USDC, { buy: {} }, new BN(startingQuoteSwapAmount), new BN(1))
+        .swap(
+          amm,
+          META,
+          USDC,
+          { buy: {} },
+          new BN(startingQuoteSwapAmount),
+          new BN(1)
+        )
         .rpc();
 
       await fastForward(context, 1n);
