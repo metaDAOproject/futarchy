@@ -32,6 +32,8 @@ import { AutocratMigrator } from "../target/types/autocrat_migrator";
 const { PublicKey, Keypair } = anchor.web3;
 
 import {
+  AUTOCRAT_PROGRAM_ID,
+  CONDITIONAL_VAULT_PROGRAM_ID,
   AmmClient,
   getATA,
   getAmmAddr,
@@ -60,13 +62,7 @@ export type Keypair = anchor.web3.Keypair;
 type ProposalInstruction = anchor.IdlTypes<Autocrat>["ProposalInstruction"];
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
-const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
-);
 
-const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
-);
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"

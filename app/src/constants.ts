@@ -1,13 +1,13 @@
 import { PublicKey } from "@solana/web3.js";
 
 export const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "FuTPR6ScKMPHtZFwacq9qrtf9VjscawNEFTb2wSYr1gY"
+  "5scUH1qY87Awh5D8bQkbP2uv9BaXJXiMgrqRBw1K2vVv"
 );
 export const AMM_PROGRAM_ID = new PublicKey(
-  "Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz"
+  "CsN1N8qaMJUwoGFWt3xV4u246n2cuZy9AWLws78e3a1K"
 );
 export const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP"
+  "F3RzPAtBQvUAAdDHD8AsPKFhDB1H38SULNKTW39dYrw8"
 );
 
 export const META_MINT = new PublicKey(

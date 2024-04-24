@@ -5,7 +5,7 @@ use solana_security_txt::security_txt;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
-    name: "futarchy_amm_v1",
+    name: "amm",
     project_url: "https://themetadao.org",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
@@ -22,7 +22,8 @@ pub mod state;
 use crate::instructions::*;
 use crate::state::*;
 
-declare_id!("Ens7Gx99whnA8zZm6ZiFnWgGq3x76nXbSmh5gaaJqpAz");
+declare_id!("CsN1N8qaMJUwoGFWt3xV4u246n2cuZy9AWLws78e3a1K");
+
 #[program]
 pub mod amm {
     use self::add_liquidity::AddLiquidityArgs;
