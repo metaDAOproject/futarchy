@@ -173,9 +173,8 @@ describe("autocrat", async function () {
       dao = await autocratClient.initializeDao(
         META,
         400,
-        9,
-        new BN(5).mul(new BN(10).pow(new BN(9))),
-        new BN(5000).mul(new BN(10).pow(new BN(6))),
+        5,
+        5000,
         USDC
       );
 
@@ -211,9 +210,8 @@ describe("autocrat", async function () {
       mertdDao = await autocratClient.initializeDao(
         MERTD,
         0.001,
-        9,
-        new BN(1_000_000).mul(new BN(10).pow(new BN(9))),
-        new BN(5000).mul(new BN(10).pow(new BN(6))),
+        1_000_000,
+        5_000,
         USDC
       );
 
