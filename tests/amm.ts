@@ -2,7 +2,12 @@ import * as anchor from "@coral-xyz/anchor";
 import { BN } from "@coral-xyz/anchor";
 import { BankrunProvider } from "anchor-bankrun";
 
-import { startAnchor, Clock, ProgramTestContext } from "solana-bankrun";
+import {
+  startAnchor,
+  Clock,
+  ProgramTestContext,
+  BanksClient,
+} from "solana-bankrun";
 
 import {
   createMint,
@@ -11,7 +16,6 @@ import {
   getAccount,
   getMint,
 } from "spl-token-bankrun";
-
 
 import { getAmmAddr, sleep } from "../app/src/utils";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -27,16 +31,14 @@ const USDC_DECIMALS = 6;
 describe("amm", async function () {
   let provider: BankrunProvider,
     ammClient: AmmClient,
-    payer,
-    context,
-    banksClient,
-    amm,
-    lpMint,
-    userLpAccount,
-    META,
-    USDC,
-    userMetaAccount,
-    userUsdcAccount;
+    payer: Keypair,
+    context: ProgramTestContext,
+    banksClient: BanksClient,
+    META: PublicKey,
+    USDC: PublicKey,
+    proposal: PublicKey,
+    amm: PublicKey,
+    lpMint: PublicKey;
 
   before(async function () {
     context = await startAnchor("./", [], []);
@@ -45,7 +47,10 @@ describe("amm", async function () {
     anchor.setProvider(provider);
     ammClient = await AmmClient.createClient({ provider });
     payer = provider.wallet.payer;
+  });
 
+  beforeEach(async function () {
+    await fastForward(context, 1n);
     META = await createMint(
       banksClient,
       payer,
@@ -61,13 +66,13 @@ describe("amm", async function () {
       USDC_DECIMALS
     );
 
-    userMetaAccount = await createAssociatedTokenAccount(
+    let userMetaAccount = await createAssociatedTokenAccount(
       banksClient,
       payer,
       META,
       payer.publicKey
     );
-    userUsdcAccount = await createAssociatedTokenAccount(
+    let userUsdcAccount = await createAssociatedTokenAccount(
       banksClient,
       payer,
       USDC,
@@ -90,32 +95,18 @@ describe("amm", async function () {
       payer.publicKey,
       10000 * 10 ** 6
     );
-  });
 
-  beforeEach(async function () {
-    await fastForward(context, 1n);
+    proposal = Keypair.generate().publicKey;
+    amm = await ammClient.createAmm(proposal, META, USDC, 500);
+    [lpMint] = getAmmLpMintAddr(ammClient.program.programId, amm);
   });
 
   describe("#create_amm", async function () {
-    it("create an amm", async function () {
-      let [
-        twapFirstObservationScaled,
-        twapMaxObservationChangePerUpdateScaled,
-      ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
+    it("creates an amm", async function () {
+      let expectedInitialObservation = new BN(500_000_000_000);
+      let expectedMaxObservationChangePerUpdate = new BN(10_000_000_000);
 
-      let proposal = Keypair.generate().publicKey;
-
-      await ammClient
-        .createAmmIx(
-          META,
-          USDC,
-          twapFirstObservationScaled,
-          twapMaxObservationChangePerUpdateScaled,
-          proposal
-        )
-        .rpc();
-
-      let bump;
+      let bump: number;
       [amm, bump] = getAmmAddr(
         ammClient.program.programId,
         META,
@@ -127,7 +118,6 @@ describe("amm", async function () {
 
       assert.equal(ammAcc.bump, bump);
       assert.isTrue(ammAcc.createdAtSlot.eq(ammAcc.oracle.lastUpdatedSlot));
-      [lpMint] = getAmmLpMintAddr(ammClient.program.programId, amm);
       assert.equal(ammAcc.lpMint.toBase58(), lpMint.toBase58());
       assert.equal(ammAcc.baseMint.toBase58(), META.toBase58());
       assert.equal(ammAcc.quoteMint.toBase58(), USDC.toBase58());
@@ -136,16 +126,16 @@ describe("amm", async function () {
       assert.isTrue(ammAcc.baseAmount.eqn(0));
       assert.isTrue(ammAcc.quoteAmount.eqn(0));
       assert.isTrue(
-        ammAcc.oracle.lastObservation.eq(twapFirstObservationScaled)
+        ammAcc.oracle.lastObservation.eq(expectedInitialObservation)
       );
       assert.isTrue(ammAcc.oracle.aggregator.eqn(0));
       assert.isTrue(
         ammAcc.oracle.maxObservationChangePerUpdate.eq(
-          twapMaxObservationChangePerUpdateScaled
+          expectedMaxObservationChangePerUpdate
         )
       );
       assert.isTrue(
-        ammAcc.oracle.initialObservation.eq(twapFirstObservationScaled)
+        ammAcc.oracle.initialObservation.eq(expectedInitialObservation)
       );
     });
 
@@ -176,10 +166,10 @@ describe("amm", async function () {
   });
 
   describe("#add_liquidity", async function () {
-    it("add liquidity to an amm position", async function () {
+    it("adds liquidity to an amm position", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
-      userLpAccount = await createAssociatedTokenAccount(
+      let userLpAccount = await createAssociatedTokenAccount(
         banksClient,
         payer,
         lpMint,
@@ -223,6 +213,24 @@ describe("amm", async function () {
     it("add liquidity after it's already been added", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
+      let userLpAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        lpMint,
+        payer.publicKey
+      );
+
+      await ammClient
+        .addLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(100 * 10 ** 6),
+          new BN(10 * 10 ** 9),
+          new BN(0)
+        )
+        .rpc();
+
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
 
@@ -259,6 +267,19 @@ describe("amm", async function () {
   });
 
   describe("#swap", async function () {
+    beforeEach(async function () {
+      await ammClient
+        .addLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(100 * 10 ** 6),
+          new BN(10 * 10 ** 9),
+          new BN(0)
+        )
+        .rpc();
+    });
+
     it("swap quote to base", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
@@ -388,8 +409,26 @@ describe("amm", async function () {
   });
 
   describe("#remove_liquidity", async function () {
+    beforeEach(async function () {
+      await ammClient.addLiquidity(amm, 1000, 2);
+    });
+
+    it("can't remove 0 liquidity", async function () {
+      const callbacks = expectError(
+        "ZeroLiquidityRemove",
+        "was able to remove 0 liquidity"
+      );
+
+      await ammClient
+        .removeLiquidityIx(amm, META, USDC, new BN(0), new BN(0), new BN(0))
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+    });
+
     it("remove some liquidity from an amm position", async function () {
       const ammStart = await ammClient.getAmm(amm);
+
+      let userLpAccount = getATA(lpMint, payer.publicKey)[0];
 
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
@@ -428,6 +467,8 @@ describe("amm", async function () {
 
     it("remove all liquidity from an amm position", async function () {
       const ammStart = await ammClient.getAmm(amm);
+
+      let userLpAccount = getATA(lpMint, payer.publicKey)[0];
 
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);

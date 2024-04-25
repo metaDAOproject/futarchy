@@ -18,6 +18,8 @@ pub enum AmmError {
     SwapSlippageExceeded,
     #[msg("The user had insufficient balance to do this")]
     InsufficientBalance,
+    #[msg("Must remove a non-zero amount of liquidity")]
+    ZeroLiquidityRemove,
     #[msg("Cannot add liquidity with 0 tokens on either side")]
     ZeroLiquidityToAdd,
     #[msg("Must specify a non-zero `min_lp_tokens` when adding to an existing pool")]
