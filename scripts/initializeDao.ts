@@ -1,14 +1,13 @@
-import { autocratProgram, initializeDAO } from "./main";
 import * as anchor from "@coral-xyz/anchor";
+import { AutocratClient } from "../app/src/AutocratClient";
+import { DEAN_DEVNET, DEVNET_MUSDC, FUTURE_DEVNET, META } from "./consts";
 
-const { PublicKey, Keypair, SystemProgram } = anchor.web3;
-const { BN, Program } = anchor;
-
-const META = new PublicKey("METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr");
-const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+let autocratClient: AutocratClient = AutocratClient.createClient({ provider: anchor.AnchorProvider.env() })
 
 async function main() {
-  await initializeDAO(META, USDC);
+  await autocratClient.initializeDao(DEAN_DEVNET, 0.0009, 100_000, 100, DEVNET_MUSDC);
+  await autocratClient.initializeDao(META, 500, 5, 2500, DEVNET_MUSDC);
+  await autocratClient.initializeDao(FUTURE_DEVNET, 0.0007, 500_000, 500, DEVNET_MUSDC);
 }
 
 main();
