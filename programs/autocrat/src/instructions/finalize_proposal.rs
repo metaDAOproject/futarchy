@@ -167,7 +167,7 @@ impl FinalizeProposal<'_> {
                 assert!(base_vault.status == VaultStatus::Reverted);
                 assert!(quote_vault.status == VaultStatus::Reverted);
             }
-            _ => assert!(false),
+            _ => unreachable!("Encountered an unexpected proposal state"),
         }
 
         Ok(())
