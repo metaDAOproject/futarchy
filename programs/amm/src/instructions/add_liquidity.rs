@@ -69,11 +69,11 @@ impl AddOrRemoveLiquidity<'_> {
             let base_amount = (((quote_amount as u128 * base_reserve) / quote_reserve) + 1) as u64;
 
             let lp_tokens_to_mint =
-                ((quote_amount as u128 * total_lp_supply as u128) / quote_reserve as u128) as u64;
+                ((quote_amount as u128 * total_lp_supply as u128) / quote_reserve) as u64;
 
             require_gte!(
                 max_base_amount,
-                base_amount as u64,
+                base_amount,
                 AmmError::AddLiquidityMaxBaseExceeded
             );
             require_gte!(
