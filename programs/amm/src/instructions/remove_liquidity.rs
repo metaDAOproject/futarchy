@@ -99,7 +99,7 @@ impl AddOrRemoveLiquidity<'_> {
                     },
                     &[seeds],
                 ),
-                amount_to_withdraw as u64,
+                amount_to_withdraw,
             )?;
         }
 

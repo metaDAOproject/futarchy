@@ -127,8 +127,8 @@ impl FinalizeProposal<'_> {
             amm.get_twap()
         };
 
-        let pass_market_twap = calculate_twap(&pass_amm)?;
-        let fail_market_twap = calculate_twap(&fail_amm)?;
+        let pass_market_twap = calculate_twap(pass_amm)?;
+        let fail_market_twap = calculate_twap(fail_amm)?;
 
         // this can't overflow because each twap can only be MAX_PRICE (~1e31),
         // MAX_BPS + pass_threshold_bps is at most 1e5, and a u128 can hold
@@ -167,7 +167,7 @@ impl FinalizeProposal<'_> {
                 assert!(base_vault.status == VaultStatus::Reverted);
                 assert!(quote_vault.status == VaultStatus::Reverted);
             }
-            _ => assert!(false),
+            _ => unreachable!("Encountered an unexpected proposal state"),
         }
 
         Ok(())

@@ -3,7 +3,7 @@ use anchor_lang::solana_program::clock::Slot;
 
 use crate::error::AmmError;
 use crate::{MAX_PRICE, ONE_MINUTE_IN_SLOTS, PRICE_SCALE};
-use std::cmp::{max, min};
+use std::cmp::{max, min, Ordering};
 
 #[derive(Clone, Copy, Debug, AnchorSerialize, AnchorDeserialize)]
 pub enum SwapType {
@@ -247,14 +247,18 @@ impl Amm {
 
         assert!(new_oracle.last_updated_slot > oracle.last_updated_slot);
         // assert that the new observation is between price and last observation
-        if price > oracle.last_observation {
-            assert!(new_observation > oracle.last_observation);
-            assert!(new_observation <= price);
-        } else if price == oracle.last_observation {
-            assert!(new_observation == price);
-        } else {
-            assert!(new_observation < oracle.last_observation);
-            assert!(new_observation >= price);
+        match price.cmp(&oracle.last_observation) {
+            Ordering::Greater => {
+                assert!(new_observation > oracle.last_observation);
+                assert!(new_observation <= price);
+            },
+            Ordering::Equal => {
+                assert!(new_observation == price);
+            },
+            Ordering::Less => {
+                assert!(new_observation < oracle.last_observation);
+                assert!(new_observation >= price);
+            },
         }
 
         *oracle = new_oracle;
