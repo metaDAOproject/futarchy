@@ -63,7 +63,6 @@ type ProposalInstruction = anchor.IdlTypes<Autocrat>["ProposalInstruction"];
 
 // this test file isn't 'clean' or DRY or whatever; sorry!
 
-
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );

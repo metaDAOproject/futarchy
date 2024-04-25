@@ -44,6 +44,8 @@ impl AddOrRemoveLiquidity<'_> {
             AmmError::InsufficientBalance
         );
 
+        require!(lp_tokens_to_burn > 0, AmmError::ZeroLiquidityRemove);
+
         amm.update_twap(Clock::get()?.slot);
 
         // airlifted from uniswap v1:

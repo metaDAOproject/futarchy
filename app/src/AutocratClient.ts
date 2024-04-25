@@ -294,7 +294,7 @@ export class AutocratClient {
       proposal
     );
 
-    await this.ammClient
+    let tx = await this.ammClient
       .createAmmIx(
         passBase,
         passQuote,
@@ -313,29 +313,41 @@ export class AutocratClient {
             new BN(0)
           )
           .instruction(),
+        await this.ammClient
+          .createAmmIx(
+            failBase,
+            failQuote,
+            storedDao.twapInitialObservation,
+            storedDao.twapMaxObservationChangePerUpdate,
+            proposal
+          )
+          .instruction(),
+        await this.ammClient
+          .addLiquidityIx(
+            failAmm,
+            failBase,
+            failQuote,
+            quoteTokensToLP,
+            baseTokensToLP,
+            new BN(0)
+          )
+          .instruction(),
       ])
       .rpc();
 
-    await this.ammClient
-      .createAmmIx(
-        failBase,
-        failQuote,
-        storedDao.twapInitialObservation,
-        storedDao.twapMaxObservationChangePerUpdate,
-        proposal
-      )
-      .rpc();
+    //   tx.feePayer = this.provider.publicKey;
+    // let blockhash = await this.provider.connection.banksClient.getLatestBlockhash();
+    // [tx.recentBlockhash] = blockhash;
+    // console.log(tx);
+    // let msg = tx.compileMessage();
+    // console.log(msg.serialize().length);
 
-    await this.ammClient
-      .addLiquidityIx(
-        failAmm,
-        failBase,
-        failQuote,
-        quoteTokensToLP,
-        baseTokensToLP,
-        new BN(0)
-      )
-      .rpc();
+    // return;
+    // .rpc();
+
+    // .rpc();
+
+    // .rpc();
 
     // this is how many original tokens are created
     const lpTokens = quoteTokensToLP;

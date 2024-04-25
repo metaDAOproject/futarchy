@@ -8,12 +8,21 @@ import { AMM_PROGRAM_ID } from "./constants";
 import { Amm, AmmWrapper } from "./types";
 import { getATA, getAmmLpMintAddr, getAmmAddr } from "./utils/pda";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
+import { MintLayout, unpackMint } from "@solana/spl-token";
+import { PriceMath } from "./utils/priceMath";
 
 export type SwapType = IdlTypes<AmmIDLType>["SwapType"];
 
 export type CreateAmmClientParams = {
   provider: AnchorProvider;
   ammProgramId?: PublicKey;
+};
+
+export type AddLiquiditySimulation = {
+  baseAmount: BN;
+  quoteAmount: BN;
+  expectedLpTokens: BN;
+  minLpTokens: BN;
 };
 
 export class AmmClient {
@@ -46,19 +55,39 @@ export class AmmClient {
   }
 
   async createAmm(
+    proposal: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
-    twapInitialObservation: BN,
-    twapMaxObservationChangePerUpdate: BN,
-    proposal: PublicKey
+    twapInitialObservation: number,
+    twapMaxObservationChangePerUpdate?: number
   ): Promise<PublicKey> {
+    if (!twapMaxObservationChangePerUpdate) {
+      twapMaxObservationChangePerUpdate = twapInitialObservation * 0.02;
+    }
     let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint, proposal);
+
+    let baseDecimals = unpackMint(
+      baseMint,
+      await this.provider.connection.getAccountInfo(baseMint)
+    ).decimals;
+    let quoteDecimals = unpackMint(
+      quoteMint,
+      await this.provider.connection.getAccountInfo(quoteMint)
+    ).decimals;
+
+    let [twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled] =
+      PriceMath.scalePrices(
+        baseDecimals,
+        quoteDecimals,
+        twapInitialObservation,
+        twapMaxObservationChangePerUpdate
+      );
 
     await this.createAmmIx(
       baseMint,
       quoteMint,
-      twapInitialObservation,
-      twapMaxObservationChangePerUpdate,
+      twapFirstObservationScaled,
+      twapMaxObservationChangePerUpdateScaled,
       proposal
     ).rpc();
 
@@ -98,11 +127,6 @@ export class AmmClient {
 
   // async addLiquidity(
   //   amm: PublicKey,
-  //   maxBaseAmount: BN | number,
-  //   maxQuoteAmount: BN | number,
-  //   minBaseAmount: BN | number,
-  //   minQuoteAmount: BN | number,
-  //   user?: Keypair
   // ) {
   //   let storedAmm = await this.getAmm(amm);
 
@@ -123,6 +147,83 @@ export class AmmClient {
 
   //   return ix.rpc();
   // }
+
+  async addLiquidity(
+    amm: PublicKey,
+    quoteAmount?: number,
+    baseAmount?: number
+  ) {
+    let storedAmm = await this.getAmm(amm);
+
+    let lpMintSupply = unpackMint(
+      storedAmm.lpMint,
+      await this.provider.connection.getAccountInfo(storedAmm.lpMint)
+    ).supply;
+
+    let quoteAmountCasted: BN | undefined;
+    let baseAmountCasted: BN | undefined;
+
+    if (quoteAmount != undefined) {
+      let quoteDecimals = unpackMint(
+        storedAmm.quoteMint,
+        await this.provider.connection.getAccountInfo(storedAmm.quoteMint)
+      ).decimals;
+      quoteAmountCasted = new BN(quoteAmount).mul(
+        new BN(10).pow(new BN(quoteDecimals))
+      );
+    }
+
+    if (baseAmount != undefined) {
+      let baseDecimals = unpackMint(
+        storedAmm.baseMint,
+        await this.provider.connection.getAccountInfo(storedAmm.baseMint)
+      ).decimals;
+      baseAmountCasted = new BN(baseAmount).mul(
+        new BN(10).pow(new BN(baseDecimals))
+      );
+    }
+
+    if (lpMintSupply == 0n) {
+      if (quoteAmount == undefined || baseAmount == undefined) {
+        throw new Error(
+          "No pool created yet, you need to specify both base and quote"
+        );
+      }
+
+      // console.log(quoteAmountCasted?.toString());
+      // console.log(baseAmountCasted?.toString())
+
+      return await this.addLiquidityIx(
+        amm,
+        storedAmm.baseMint,
+        storedAmm.quoteMint,
+        quoteAmountCasted as BN,
+        baseAmountCasted as BN,
+        new BN(0)
+      ).rpc();
+    }
+
+    //   quoteAmount == undefined ? undefined : new BN(quoteAmount);
+    // let baseAmountCasted: BN | undefined =
+    //   baseAmount == undefined ? undefined : new BN(baseAmount);
+
+    let sim = this.simulateAddLiquidity(
+      storedAmm.baseAmount,
+      storedAmm.quoteAmount,
+      Number(lpMintSupply),
+      baseAmountCasted,
+      quoteAmountCasted
+    );
+
+    await this.addLiquidityIx(
+      amm,
+      storedAmm.baseMint,
+      storedAmm.quoteMint,
+      sim.quoteAmount,
+      sim.baseAmount,
+      sim.minLpTokens
+    ).rpc();
+  }
 
   addLiquidityIx(
     amm: PublicKey,
@@ -242,6 +343,43 @@ export class AmmClient {
     return amm.oracle.aggregator.div(
       amm.oracle.lastUpdatedSlot.sub(amm.createdAtSlot)
     );
+  }
+
+  simulateAddLiquidity(
+    baseReserves: BN,
+    quoteReserves: BN,
+    lpMintSupply: number,
+    baseAmount?: BN,
+    quoteAmount?: BN
+  ): AddLiquiditySimulation {
+    if (lpMintSupply == 0) {
+      throw new Error(
+        "This AMM doesn't have existing liquidity so we can't fill in the blanks"
+      );
+    }
+
+    if (baseAmount == undefined && quoteAmount == undefined) {
+      throw new Error("Must specify either a base amount or a quote amount");
+    }
+
+    let expectedLpTokens: BN;
+
+    if (quoteAmount == undefined) {
+      quoteAmount = baseAmount?.mul(quoteReserves).div(baseReserves);
+    }
+    baseAmount = quoteAmount?.mul(baseReserves).div(quoteReserves).addn(1);
+
+    expectedLpTokens = quoteAmount
+      ?.mul(new BN(lpMintSupply))
+      .div(quoteReserves) as BN;
+    console.log(baseAmount?.toString());
+
+    return {
+      quoteAmount: quoteAmount as BN,
+      baseAmount: baseAmount as BN,
+      expectedLpTokens,
+      minLpTokens: expectedLpTokens.muln(99).divn(100),
+    };
   }
 
   getSwapPreview(amm: Amm, inputAmount: BN, isBuyBase: boolean): SwapPreview {
