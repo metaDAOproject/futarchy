@@ -1,6 +1,6 @@
 {
-  "name": "@themetadao/autocrat-sdk",
-  "version": "0.1.15",
+  "name": "@metadaoproject/futarchy-ts",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -17,9 +17,7 @@
     "@solana/web3.js": "^1.74.0",
     "bn.js": "^5.2.1",
     "decimal.js": "^10.4.3",
-    "esbuild": "^0.17.15",
-    "solana-bankrun": "^0.2.0",
-    "spl-token-bankrun": "0.2.3"
+    "esbuild": "^0.17.15"
   },
   "devDependencies": {
     "chai": "^4.3.4",
@@ -28,6 +26,8 @@
     "@types/bn.js": "^5.1.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.0.0",
+    "solana-bankrun": "^0.2.0",
+    "spl-token-bankrun": "0.2.3",
     "typescript": "^4.3.5",
     "prettier": "^2.6.2"
   },

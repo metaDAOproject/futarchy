@@ -566,26 +566,31 @@ export type Amm = {
     },
     {
       code: 6008;
+      name: "ZeroLiquidityRemove";
+      msg: "Must remove a non-zero amount of liquidity";
+    },
+    {
+      code: 6009;
       name: "ZeroLiquidityToAdd";
       msg: "Cannot add liquidity with 0 tokens on either side";
     },
     {
-      code: 6009;
+      code: 6010;
       name: "ZeroMinLpTokens";
       msg: "Must specify a non-zero `min_lp_tokens` when adding to an existing pool";
     },
     {
-      code: 6010;
+      code: 6011;
       name: "AddLiquiditySlippageExceeded";
       msg: "LP wouldn't have gotten back `lp_token_min`";
     },
     {
-      code: 6011;
+      code: 6012;
       name: "AddLiquidityMaxBaseExceeded";
       msg: "LP would have spent more than `max_base_amount`";
     },
     {
-      code: 6012;
+      code: 6013;
       name: "InsufficientQuoteAmount";
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool";
     }
@@ -1160,26 +1165,31 @@ export const IDL: Amm = {
     },
     {
       code: 6008,
+      name: "ZeroLiquidityRemove",
+      msg: "Must remove a non-zero amount of liquidity",
+    },
+    {
+      code: 6009,
       name: "ZeroLiquidityToAdd",
       msg: "Cannot add liquidity with 0 tokens on either side",
     },
     {
-      code: 6009,
+      code: 6010,
       name: "ZeroMinLpTokens",
       msg: "Must specify a non-zero `min_lp_tokens` when adding to an existing pool",
     },
     {
-      code: 6010,
+      code: 6011,
       name: "AddLiquiditySlippageExceeded",
       msg: "LP wouldn't have gotten back `lp_token_min`",
     },
     {
-      code: 6011,
+      code: 6012,
       name: "AddLiquidityMaxBaseExceeded",
       msg: "LP would have spent more than `max_base_amount`",
     },
     {
-      code: 6012,
+      code: 6013,
       name: "InsufficientQuoteAmount",
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool",
     },
