@@ -35,7 +35,10 @@ import {
 } from "./utils";
 import { ConditionalVaultClient } from "./ConditionalVaultClient";
 import { AmmClient } from "./AmmClient";
-import { createAssociatedTokenAccountIdempotentInstruction, unpackMint } from "@solana/spl-token";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  unpackMint,
+} from "@solana/spl-token";
 
 export type CreateClientParams = {
   provider: AnchorProvider;
@@ -189,7 +192,10 @@ export class AutocratClient {
     usdcMint: PublicKey = MAINNET_USDC,
     daoKeypair: Keypair = Keypair.generate()
   ): Promise<PublicKey> {
-    let tokenDecimals = unpackMint(tokenMint, await this.provider.connection.getAccountInfo(tokenMint)).decimals;
+    let tokenDecimals = unpackMint(
+      tokenMint,
+      await this.provider.connection.getAccountInfo(tokenMint)
+    ).decimals;
 
     let scaledPrice = PriceMath.getAmmPrice(
       tokenPriceUiAmount,
@@ -207,8 +213,12 @@ export class AutocratClient {
       {
         twapInitialObservation: scaledPrice,
         twapMaxObservationChangePerUpdate: scaledPrice.divn(50),
-        minQuoteFutarchicLiquidity: new BN(minQuoteFutarchicLiquidity).mul(new BN(10).pow(new BN(USDC_DECIMALS))),
-        minBaseFutarchicLiquidity: new BN(minBaseFutarchicLiquidity).mul(new BN(10).pow(new BN(tokenDecimals))),
+        minQuoteFutarchicLiquidity: new BN(minQuoteFutarchicLiquidity).mul(
+          new BN(10).pow(new BN(USDC_DECIMALS))
+        ),
+        minBaseFutarchicLiquidity: new BN(minBaseFutarchicLiquidity).mul(
+          new BN(10).pow(new BN(tokenDecimals))
+        ),
         passThresholdBps: null,
         slotsPerProposal: null,
       },
