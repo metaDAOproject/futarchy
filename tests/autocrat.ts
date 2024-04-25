@@ -370,7 +370,7 @@ describe("autocrat", async function () {
 
       // swap $500 in the pass market, make it pass
       await ammClient
-        .swap(
+        .swapIx(
           passAmm,
           passBaseMint,
           passQuoteMint,
@@ -450,7 +450,7 @@ describe("autocrat", async function () {
 
       // swap $500 in the fail market, make it fail
       await ammClient
-        .swap(
+        .swapIx(
           failAmm,
           failBaseMint,
           failQuoteMint,
@@ -590,7 +590,7 @@ describe("autocrat", async function () {
 
       // swap $500 in the pass market, make it pass
       await ammClient
-        .swap(
+        .swapIx(
           passAmm,
           passBaseMint,
           passQuoteMint,

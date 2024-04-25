@@ -76,6 +76,19 @@ impl Swap<'_> {
             output_amount_min,
         } = args;
 
+        match swap_type {
+            SwapType::Buy => require_gte!(
+                user_ata_quote.amount,
+                input_amount,
+                AmmError::InsufficientBalance
+            ),
+            SwapType::Sell => require_gte!(
+                user_ata_base.amount,
+                input_amount,
+                AmmError::InsufficientBalance
+            ),
+        };
+
         assert!(input_amount > 0);
 
         amm.update_twap(Clock::get()?.slot);

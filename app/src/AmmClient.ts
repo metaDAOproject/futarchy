@@ -286,7 +286,7 @@ export class AmmClient {
       });
   }
 
-  swap(
+  swapIx(
     ammAddr: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,

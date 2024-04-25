@@ -85,7 +85,7 @@ describe("amm", async function () {
       META,
       userMetaAccount,
       payer.publicKey,
-      1000 * 10 ** 9
+      10_000 * 10 ** 9
     );
     mintTo(
       banksClient,
@@ -93,7 +93,7 @@ describe("amm", async function () {
       USDC,
       userUsdcAccount,
       payer.publicKey,
-      10000 * 10 ** 6
+      1_000_000 * 10 ** 6
     );
 
     proposal = Keypair.generate().publicKey;
@@ -166,103 +166,94 @@ describe("amm", async function () {
   });
 
   describe("#add_liquidity", async function () {
-    it("adds liquidity to an amm position", async function () {
-      const ammStart = await ammClient.getAmm(amm);
-
-      let userLpAccount = await createAssociatedTokenAccount(
-        banksClient,
-        payer,
-        lpMint,
-        payer.publicKey
-      );
-
-      const userLpAccountStart = await getAccount(banksClient, userLpAccount);
-      const lpMintStart = await getMint(banksClient, lpMint);
-
+    it("adds initial liquidity to an amm", async function () {
       await ammClient
         .addLiquidityIx(
           amm,
           META,
           USDC,
-          new BN(100 * 10 ** 6),
-          new BN(10 * 10 ** 9),
+          new BN(5000 * 10 ** 6),
+          new BN(6 * 10 ** 9),
           new BN(0)
         )
         .rpc();
 
-      const ammEnd = await ammClient.getAmm(amm);
-      const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
-      const lpMintEnd = await getMint(banksClient, lpMint);
+      await validateAmmState({
+        banksClient,
+        ammClient,
+        amm,
+        base: META,
+        quote: USDC,
+        expectedBaseAmount: 6 * 10 ** 9,
+        expectedQuoteAmount: 5000 * 10 ** 6,
+        expectedLpSupply: 5000 * 10 ** 6,
+      });
 
-      assert.isAbove(Number(lpMintEnd.supply), Number(lpMintStart.supply));
-      assert.isAbove(
-        Number(userLpAccountEnd.amount),
-        Number(userLpAccountStart.amount)
-      );
+      const storedAmm = await ammClient.getAmm(amm);
 
-      assert.isAbove(
-        ammEnd.baseAmount.toNumber(),
-        ammStart.baseAmount.toNumber()
-      );
-      assert.isAbove(
-        ammEnd.quoteAmount.toNumber(),
-        ammStart.quoteAmount.toNumber()
+      assert.equal(
+        (
+          await getAccount(
+            banksClient,
+            getATA(storedAmm.lpMint, payer.publicKey)[0]
+          )
+        ).amount,
+        BigInt(5000 * 10 ** 6)
       );
     });
 
-    it("add liquidity after it's already been added", async function () {
-      const ammStart = await ammClient.getAmm(amm);
-
-      let userLpAccount = await createAssociatedTokenAccount(
-        banksClient,
-        payer,
-        lpMint,
-        payer.publicKey
-      );
-
+    it("adds liquidity after it's already been added", async function () {
       await ammClient
         .addLiquidityIx(
           amm,
           META,
           USDC,
-          new BN(100 * 10 ** 6),
-          new BN(10 * 10 ** 9),
+          new BN(5000 * 10 ** 6),
+          new BN(5 * 10 ** 9),
           new BN(0)
         )
         .rpc();
 
-      const userLpAccountStart = await getAccount(banksClient, userLpAccount);
-      const lpMintStart = await getMint(banksClient, lpMint);
+      // should receive exactly quote token LP tokens back, so it'll first fail
+
+      let callbacks = expectError(
+        "AddLiquiditySlippageExceeded",
+        "we got back more LP tokens than the first depositor, even though we put in the same amount of tokens"
+      );
 
       await ammClient
         .addLiquidityIx(
           amm,
           META,
           USDC,
-          new BN(100 * 10 ** 6),
-          new BN(10 * 10 ** 9 + 10),
-          new BN(1)
+          new BN(5000 * 10 ** 6),
+          new BN(5 * 10 ** 9 + 1),
+          new BN(5000 * 10 ** 6 + 1)
+        )
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+
+      await ammClient
+        .addLiquidityIx(
+          amm,
+          META,
+          USDC,
+          new BN(5000 * 10 ** 6),
+          new BN(5 * 10 ** 9 + 1),
+          new BN(5000 * 10 ** 6)
         )
         .rpc();
 
-      const ammEnd = await ammClient.getAmm(amm);
-      const userLpAccountEnd = await getAccount(banksClient, userLpAccount);
-      const lpMintEnd = await getMint(banksClient, lpMint);
-
-      assert.isAbove(Number(lpMintEnd.supply), Number(lpMintStart.supply));
-      assert.isAbove(
-        Number(userLpAccountEnd.amount),
-        Number(userLpAccountStart.amount)
-      );
-
-      assert.isAbove(
-        ammEnd.baseAmount.toNumber(),
-        ammStart.baseAmount.toNumber()
-      );
-      assert.isAbove(
-        ammEnd.quoteAmount.toNumber(),
-        ammStart.quoteAmount.toNumber()
-      );
+      await validateAmmState({
+        banksClient,
+        ammClient,
+        amm,
+        base: META,
+        quote: USDC,
+        expectedBaseAmount: 10 * 10 ** 9 + 1,
+        expectedQuoteAmount: 10000 * 10 ** 6,
+        expectedLpSupply: 10000 * 10 ** 6,
+      });
     });
   });
 
@@ -273,7 +264,7 @@ describe("amm", async function () {
           amm,
           META,
           USDC,
-          new BN(100 * 10 ** 6),
+          new BN(10_000 * 10 ** 6),
           new BN(10 * 10 ** 9),
           new BN(0)
         )
@@ -283,16 +274,32 @@ describe("amm", async function () {
     it("swap quote to base", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
+      // k = 100000000000000000000
+      // swap amount = 100 * 10 ** 6
+      // swap amount after fees = 99 * 10 ** 6
+      //
+
       await ammClient
-        .swap(
+        .swapIx(
           amm,
           META,
           USDC,
           { buy: {} },
-          new BN(10 * 10 ** 6),
+          new BN(100 * 10 ** 6),
           new BN(0.8 * 10 ** 9)
         )
         .rpc();
+
+      await validateAmmState({
+        banksClient,
+        ammClient,
+        amm,
+        base: META,
+        quote: USDC,
+        expectedBaseAmount: 10 * 10 ** 9,
+        expectedQuoteAmount: 10_000 * 10 ** 6,
+        expectedLpSupply: 10_000 * 10 ** 6,
+      });
 
       const ammEnd = await ammClient.getAmm(amm);
 
@@ -310,7 +317,7 @@ describe("amm", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
       await ammClient
-        .swap(
+        .swapIx(
           amm,
           META,
           USDC,
@@ -341,7 +348,7 @@ describe("amm", async function () {
       let startingBaseSwapAmount = 1 * 10 ** 9;
 
       await ammClient
-        .swap(
+        .swapIx(
           amm,
           META,
           USDC,
@@ -359,7 +366,7 @@ describe("amm", async function () {
         ammMiddle.quoteAmount.toNumber();
 
       await ammClient
-        .swap(amm, META, USDC, { buy: {} }, new BN(quoteReceived), new BN(1))
+        .swapIx(amm, META, USDC, { buy: {} }, new BN(quoteReceived), new BN(1))
         .rpc();
 
       const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(
@@ -379,7 +386,7 @@ describe("amm", async function () {
       let startingQuoteSwapAmount = 1 * 10 ** 6;
 
       await ammClient
-        .swap(
+        .swapIx(
           amm,
           META,
           USDC,
@@ -396,7 +403,7 @@ describe("amm", async function () {
         ammStart.baseAmount.toNumber() - ammMiddle.baseAmount.toNumber();
 
       await ammClient
-        .swap(amm, META, USDC, { sell: {} }, new BN(baseReceived), new BN(1))
+        .swapIx(amm, META, USDC, { sell: {} }, new BN(baseReceived), new BN(1))
         .rpc();
 
       const ammEnd = await ammClient.getAmm(amm);
@@ -506,3 +513,44 @@ describe("amm", async function () {
     });
   });
 });
+
+async function validateAmmState({
+  banksClient,
+  ammClient,
+  amm,
+  base,
+  quote,
+  expectedBaseAmount,
+  expectedQuoteAmount,
+  expectedLpSupply,
+}: {
+  banksClient: BanksClient;
+  ammClient: AmmClient;
+  amm: PublicKey;
+  base: PublicKey;
+  quote: PublicKey;
+  expectedBaseAmount: number;
+  expectedQuoteAmount: number;
+  expectedLpSupply: number;
+}) {  
+  const storedAmm = await ammClient.getAmm(amm);
+
+  assert.equal(storedAmm.baseAmount.toString(), expectedBaseAmount.toString());
+  assert.equal(
+    storedAmm.quoteAmount.toString(),
+    expectedQuoteAmount.toString()
+  );
+
+  assert.equal(
+    (await getAccount(banksClient, getATA(base, amm)[0])).amount,
+    BigInt(expectedBaseAmount)
+  );
+  assert.equal(
+    (await getAccount(banksClient, getATA(quote, amm)[0])).amount,
+    BigInt(expectedQuoteAmount)
+  );
+  assert.equal(
+    (await getMint(banksClient, storedAmm.lpMint)).supply,
+    BigInt(expectedLpSupply)
+  );
+}
