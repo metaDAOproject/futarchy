@@ -48,14 +48,14 @@ pub struct CreateAmm<'info> {
         associated_token::authority = amm,
         associated_token::mint = base_mint
     )]
-    pub vault_ata_base: Account<'info, TokenAccount>,
+    pub vault_ata_base: Box<Account<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         payer = user,
         associated_token::authority = amm,
         associated_token::mint = quote_mint
     )]
-    pub vault_ata_quote: Account<'info, TokenAccount>,
+    pub vault_ata_quote: Box<Account<'info, TokenAccount>>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
