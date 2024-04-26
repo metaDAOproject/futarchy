@@ -22,7 +22,7 @@ export const META = new PublicKey(
 // Base Tokens
 // Meta USDC (created for use in our contracts)
 export const DEVNET_MUSDC = new PublicKey(
-  "B9CZDrwg7d34MiPiWoUSmddriCtQB5eB2h9EUSDHt48b"
+  "ABizbp4pXowKQJ1pWgPeWPYDfSKwg34A7Xy1fxTu7No9"
 );
 // Circle Devnet USDC (from faucet)
 export const DEVNET_USDC = new PublicKey(
