@@ -76,7 +76,7 @@ export class AmmClient {
     ).decimals;
 
     let [twapFirstObservationScaled, twapMaxObservationChangePerUpdateScaled] =
-      PriceMath.scalePrices(
+      PriceMath.getAmmPrices(
         baseDecimals,
         quoteDecimals,
         twapInitialObservation,
@@ -286,8 +286,39 @@ export class AmmClient {
       });
   }
 
+  async swap(
+    amm: PublicKey,
+    swapType: SwapType,
+    inputAmount: number,
+    outputAmountMin: number
+  ) {
+    const storedAmm = await this.getAmm(amm);
+
+    let quoteDecimals = await this.getDecimals(storedAmm.quoteMint);
+    let baseDecimals = await this.getDecimals(storedAmm.baseMint);
+
+    let inputAmountScaled: BN;
+    let outputAmountMinScaled: BN;
+    if (swapType.buy) {
+      inputAmountScaled = PriceMath.scale(inputAmount, quoteDecimals);
+      outputAmountMinScaled = PriceMath.scale(outputAmountMin, baseDecimals);
+    } else {
+      inputAmountScaled = PriceMath.scale(inputAmount, baseDecimals);
+      outputAmountMinScaled = PriceMath.scale(outputAmountMin, quoteDecimals);
+    }
+
+    return await this.swapIx(
+      amm,
+      storedAmm.baseMint,
+      storedAmm.quoteMint,
+      swapType,
+      inputAmountScaled,
+      outputAmountMinScaled
+    ).rpc();
+  }
+
   swapIx(
-    ammAddr: PublicKey,
+    amm: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
     swapType: SwapType,
@@ -302,13 +333,13 @@ export class AmmClient {
       })
       .accounts({
         user: this.provider.publicKey,
-        amm: ammAddr,
+        amm: amm,
         baseMint,
         quoteMint,
         userAtaBase: getATA(baseMint, this.provider.publicKey)[0],
         userAtaQuote: getATA(quoteMint, this.provider.publicKey)[0],
-        vaultAtaBase: getATA(baseMint, ammAddr)[0],
-        vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
+        vaultAtaBase: getATA(baseMint, amm)[0],
+        vaultAtaQuote: getATA(quoteMint, amm)[0],
       });
   }
 
@@ -454,6 +485,11 @@ export class AmmClient {
         priceImpact,
       };
     }
+  }
+
+  async getDecimals(mint: PublicKey): Promise<number> {
+    return unpackMint(mint, await this.provider.connection.getAccountInfo(mint))
+      .decimals;
   }
 }
 

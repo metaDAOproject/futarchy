@@ -143,7 +143,7 @@ describe("amm", async function () {
       let [
         twapFirstObservationScaled,
         twapMaxObservationChangePerUpdateScaled,
-      ] = PriceMath.scalePrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
+      ] = PriceMath.getAmmPrices(META_DECIMALS, USDC_DECIMALS, 100, 1);
 
       const callbacks = expectError(
         "SameTokenMints",
@@ -271,9 +271,32 @@ describe("amm", async function () {
         .rpc();
     });
 
-    it("swap quote to base", async function () {
-      const ammStart = await ammClient.getAmm(amm);
+    it("fails when you have insufficient balance", async () => {
+      let callbacks = expectError(
+        "InsufficientBalance",
+        "we should have caught a user not having enough balance"
+      );
 
+      await ammClient
+        .swap(
+          amm,
+          { buy: {} },
+          10_000_000,
+          1
+        )
+        .then(callbacks[0], callbacks[1]);
+
+      await ammClient
+        .swap(
+          amm,
+          { sell: {} },
+          100_000,
+          1
+        )
+        .then(callbacks[0], callbacks[1])
+    });
+
+    it("swap quote to base", async function () {
       // USDC amount = 10,000
       // META amount = 10
       // k = (10,000 * 10) = 100,000
@@ -320,7 +343,7 @@ describe("amm", async function () {
         amm,
         base: META,
         quote: USDC,
-        expectedBaseAmount: (10 * 10 ** 9) - expectedOut,
+        expectedBaseAmount: 10 * 10 ** 9 - expectedOut,
         expectedQuoteAmount: 10_100 * 10 ** 6,
         expectedLpSupply: 10_000 * 10 ** 6,
       });

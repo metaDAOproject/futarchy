@@ -35,7 +35,7 @@ export class PriceMath {
     return scaledPrice;
   }
 
-  public static scalePrices(
+  public static getAmmPrices(
     baseDecimals: number,
     quoteDecimals: number,
     ...prices: number[]
@@ -44,5 +44,9 @@ export class PriceMath {
     return prices.map((price) =>
       this.getAmmPrice(price, baseDecimals, quoteDecimals)
     );
+  }
+
+  public static scale(number: number, decimals: number): BN {
+    return new BN(number).mul(new BN(10).pow(new BN(decimals)));
   }
 }

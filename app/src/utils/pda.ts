@@ -1,6 +1,5 @@
 import { AccountMeta, PublicKey } from "@solana/web3.js";
 import { utils } from "@coral-xyz/anchor";
-import { numToBytes32LE, numToBytes64LE } from "./numbers";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -49,28 +48,11 @@ const getVaultMintAddr = (
   );
 };
 
-export const getDaoAddr = (programId: PublicKey): [PublicKey, number] => {
-  return PublicKey.findProgramAddressSync(
-    [utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
-    programId
-  );
-};
-
 export const getDaoTreasuryAddr = (
   programId: PublicKey,
   dao: PublicKey
 ): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync([dao.toBuffer()], programId);
-};
-
-export const getProposalAddr = (
-  programId: PublicKey,
-  proposalNumber: number
-): [PublicKey, number] => {
-  return PublicKey.findProgramAddressSync(
-    [utils.bytes.utf8.encode("proposal__"), numToBytes64LE(proposalNumber)],
-    programId
-  );
 };
 
 export const getProposalInstructionsAddr = (
