@@ -274,10 +274,22 @@ describe("amm", async function () {
     it("swap quote to base", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
-      // k = 100000000000000000000
-      // swap amount = 100 * 10 ** 6
-      // swap amount after fees = 99 * 10 ** 6
-      //
+      // USDC amount = 10,000
+      // META amount = 10
+      // k = (10,000 * 10) = 100,000
+      // swap amount = 100
+      // swap amount after fees = 99
+      // new USDC amount = 10,099
+      // new META amount = 100,000 / 10,099 = 9.9019...
+      // meta out = 10 - 9.9019 = 0.098029507
+
+      const expectedOut = 0.098029507 * 10 ** 9;
+
+      // first, show that it fails when we expect 1 hanson too much
+      let callbacks = expectError(
+        "SwapSlippageExceeded",
+        "we got back too many tokens from the AMM"
+      );
 
       await ammClient
         .swapIx(
@@ -286,7 +298,19 @@ describe("amm", async function () {
           USDC,
           { buy: {} },
           new BN(100 * 10 ** 6),
-          new BN(0.8 * 10 ** 9)
+          new BN(expectedOut + 1)
+        )
+        .rpc()
+        .then(callbacks[0], callbacks[1]);
+
+      await ammClient
+        .swapIx(
+          amm,
+          META,
+          USDC,
+          { buy: {} },
+          new BN(100 * 10 ** 6),
+          new BN(expectedOut)
         )
         .rpc();
 
@@ -296,21 +320,10 @@ describe("amm", async function () {
         amm,
         base: META,
         quote: USDC,
-        expectedBaseAmount: 10 * 10 ** 9,
-        expectedQuoteAmount: 10_000 * 10 ** 6,
+        expectedBaseAmount: (10 * 10 ** 9) - expectedOut,
+        expectedQuoteAmount: 10_100 * 10 ** 6,
         expectedLpSupply: 10_000 * 10 ** 6,
       });
-
-      const ammEnd = await ammClient.getAmm(amm);
-
-      assert.isBelow(
-        ammEnd.baseAmount.toNumber(),
-        ammStart.baseAmount.toNumber()
-      );
-      assert.isAbove(
-        ammEnd.quoteAmount.toNumber(),
-        ammStart.quoteAmount.toNumber()
-      );
     });
 
     it("swap base to quote", async function () {
@@ -532,7 +545,7 @@ async function validateAmmState({
   expectedBaseAmount: number;
   expectedQuoteAmount: number;
   expectedLpSupply: number;
-}) {  
+}) {
   const storedAmm = await ammClient.getAmm(amm);
 
   assert.equal(storedAmm.baseAmount.toString(), expectedBaseAmount.toString());
