@@ -296,7 +296,7 @@ describe("amm", async function () {
         .then(callbacks[0], callbacks[1])
     });
 
-    it("swap quote to base", async function () {
+    it("buys", async function () {
       // USDC amount = 10,000
       // META amount = 10
       // k = (10,000 * 10) = 100,000
@@ -306,7 +306,7 @@ describe("amm", async function () {
       // new META amount = 100,000 / 10,099 = 9.9019...
       // meta out = 10 - 9.9019 = 0.098029507
 
-      const expectedOut = 0.098029507 * 10 ** 9;
+      const expectedOut = 0.098029507;
 
       // first, show that it fails when we expect 1 hanson too much
       let callbacks = expectError(
@@ -315,27 +315,21 @@ describe("amm", async function () {
       );
 
       await ammClient
-        .swapIx(
+        .swap(
           amm,
-          META,
-          USDC,
           { buy: {} },
-          new BN(100 * 10 ** 6),
-          new BN(expectedOut + 1)
+          100,
+          expectedOut + 0.000000001
         )
-        .rpc()
         .then(callbacks[0], callbacks[1]);
 
       await ammClient
-        .swapIx(
+        .swap(
           amm,
-          META,
-          USDC,
           { buy: {} },
-          new BN(100 * 10 ** 6),
-          new BN(expectedOut)
-        )
-        .rpc();
+          100,
+          expectedOut
+        );
 
       await validateAmmState({
         banksClient,
@@ -343,36 +337,56 @@ describe("amm", async function () {
         amm,
         base: META,
         quote: USDC,
-        expectedBaseAmount: 10 * 10 ** 9 - expectedOut,
+        expectedBaseAmount: (10 - expectedOut) * 10 ** 9,
         expectedQuoteAmount: 10_100 * 10 ** 6,
         expectedLpSupply: 10_000 * 10 ** 6,
       });
     });
 
-    it("swap base to quote", async function () {
-      const ammStart = await ammClient.getAmm(amm);
+    it("sells", async function () {
+      // USDC amount = 10,000
+      // META amount = 10
+      // k = (10,000 * 10) = 100,000
+      // swap amount = 1
+      // swap amount after fees = 0.99
+      // new META amount = 10.99
+      // new USDC amount = 100,000 / 10.99 = 9099.181074
+      // usdc out = 10,000 - 9099.181074 = 900.818926
+
+      const expectedOut = 900.818926;
+
+      let callbacks = expectError(
+        "SwapSlippageExceeded",
+        "we got back too many tokens from the AMM"
+      );
 
       await ammClient
-        .swapIx(
+        .swap(
           amm,
-          META,
-          USDC,
           { sell: {} },
-          new BN(1 * 10 ** 9),
-          new BN(8 * 10 ** 6)
+          1,
+          expectedOut + 0.000001,
         )
-        .rpc();
+        .then(callbacks[0], callbacks[1]);
 
-      const ammEnd = await ammClient.getAmm(amm);
+      await ammClient
+        .swap(
+          amm,
+          { sell: {} },
+          1,
+          expectedOut
+        );
 
-      assert.isAbove(
-        ammEnd.baseAmount.toNumber(),
-        ammStart.baseAmount.toNumber()
-      );
-      assert.isBelow(
-        ammEnd.quoteAmount.toNumber(),
-        ammStart.quoteAmount.toNumber()
-      );
+      await validateAmmState({
+        banksClient,
+        ammClient,
+        amm,
+        base: META,
+        quote: USDC,
+        expectedBaseAmount: 11 * 10 ** 9,
+        expectedQuoteAmount: (10_000 - expectedOut) * 10 ** 6,
+        expectedLpSupply: 10_000 * 10 ** 6,
+      });
     });
 
     it("swap base to quote and back, should not be profitable", async function () {

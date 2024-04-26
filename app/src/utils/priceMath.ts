@@ -47,6 +47,7 @@ export class PriceMath {
   }
 
   public static scale(number: number, decimals: number): BN {
-    return new BN(number).mul(new BN(10).pow(new BN(decimals)));
+    return new BN(number * 10 ** decimals);
+    // return new BN(number).mul(new BN(10).pow(new BN(decimals)));
   }
 }
