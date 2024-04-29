@@ -251,14 +251,14 @@ impl Amm {
             Ordering::Greater => {
                 assert!(new_observation > oracle.last_observation);
                 assert!(new_observation <= price);
-            },
+            }
             Ordering::Equal => {
                 assert!(new_observation == price);
-            },
+            }
             Ordering::Less => {
                 assert!(new_observation < oracle.last_observation);
                 assert!(new_observation >= price);
-            },
+            }
         }
 
         *oracle = new_oracle;
