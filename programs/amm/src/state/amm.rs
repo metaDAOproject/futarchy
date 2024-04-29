@@ -123,12 +123,12 @@ impl Amm {
 
         match swap_type {
             SwapType::Buy => {
-                self.quote_amount = self.quote_amount.checked_add(input_amount).unwrap();
-                self.base_amount = self.base_amount.checked_sub(output_amount).unwrap();
+                self.quote_amount += input_amount;
+                self.base_amount -= output_amount;
             }
             SwapType::Sell => {
-                self.base_amount = self.base_amount.checked_add(input_amount).unwrap();
-                self.quote_amount = self.quote_amount.checked_sub(output_amount).unwrap();
+                self.base_amount += input_amount;
+                self.quote_amount -= output_amount;
             }
         }
 
