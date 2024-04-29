@@ -170,13 +170,7 @@ describe("autocrat", async function () {
 
   describe("#initialize_dao", async function () {
     it("initializes the DAO", async function () {
-      dao = await autocratClient.initializeDao(
-        META,
-        400,
-        5,
-        5000,
-        USDC
-      );
+      dao = await autocratClient.initializeDao(META, 400, 5, 5000, USDC);
 
       let treasuryPdaBump;
       [daoTreasury, treasuryPdaBump] = PublicKey.findProgramAddressSync(
