@@ -4,6 +4,13 @@ const BN_TEN = new BN(10);
 const PRICE_SCALE = BN_TEN.pow(new BN(12));
 
 export class PriceMath {
+  public static getAmmPriceFromReserves(
+    baseReserves: BN,
+    quoteReserves: BN
+  ): BN {
+    return quoteReserves.mul(PRICE_SCALE).div(baseReserves);
+  }
+
   public static getHumanPrice(
     ammPrice: BN,
     baseDecimals: number,
@@ -18,6 +25,7 @@ export class PriceMath {
 
     return price1e12.toNumber() / 1e12;
   }
+
   public static getAmmPrice(
     humanPrice: number,
     baseDecimals: number,
