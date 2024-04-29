@@ -132,7 +132,7 @@ impl Amm {
             }
         }
 
-        let new_k = self.base_amount as u128 * self.quote_amount as u128;
+        let new_k = self.k();
 
         assert!(new_k >= k);
 
