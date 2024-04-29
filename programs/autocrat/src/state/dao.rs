@@ -1,7 +1,7 @@
 pub use super::*;
 
 #[account]
-pub struct DAO {
+pub struct Dao {
     pub treasury_pda_bump: u8,
     pub treasury: Pubkey,
     pub token_mint: Pubkey,

@@ -20,9 +20,11 @@ import {
 import { getAmmAddr, sleep } from "../futarchy-ts/src/utils";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
-import { AmmClient } from "../futarchy-ts/src/AmmClient";
+// import { AmmClient } from "../futarchy-ts/src/AmmClient";
+import { AmmClient } from "@metadaoproject/futarchy-ts";
 import { expectError, fastForward } from "./utils/utils";
 import { PriceMath } from "../futarchy-ts/src/utils/priceMath";
+// import { PriceMath } from "@metadaoproject/futarchy-ts";
 import { getATA, getAmmLpMintAddr } from "../futarchy-ts/src/utils/pda";
 
 const META_DECIMALS = 9;

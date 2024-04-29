@@ -13,7 +13,7 @@ pub struct FinalizeProposal<'info> {
     pub pass_amm: Account<'info, Amm>,
     pub fail_amm: Account<'info, Amm>,
     #[account(has_one = treasury)]
-    pub dao: Box<Account<'info, DAO>>,
+    pub dao: Box<Account<'info, Dao>>,
     #[account(mut)]
     pub base_vault: Box<Account<'info, ConditionalVaultAccount>>,
     #[account(mut)]
