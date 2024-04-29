@@ -39,8 +39,8 @@ import {
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
-} from "../app/src";
-import { ConditionalVaultClient } from "../app/src/ConditionalVaultClient";
+} from "../futarchy-ts/src";
+import { ConditionalVaultClient } from "../futarchy-ts/src/ConditionalVaultClient";
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;

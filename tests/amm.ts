@@ -17,13 +17,13 @@ import {
   getMint,
 } from "spl-token-bankrun";
 
-import { getAmmAddr, sleep } from "../app/src/utils";
+import { getAmmAddr, sleep } from "../futarchy-ts/src/utils";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
-import { AmmClient } from "../app/src/AmmClient";
+import { AmmClient } from "../futarchy-ts/src/AmmClient";
 import { expectError, fastForward } from "./utils/utils";
-import { PriceMath } from "../app/src/utils/priceMath";
-import { getATA, getAmmLpMintAddr } from "../app/src/utils/pda";
+import { PriceMath } from "../futarchy-ts/src/utils/priceMath";
+import { getATA, getAmmLpMintAddr } from "../futarchy-ts/src/utils/pda";
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -278,22 +278,12 @@ describe("amm", async function () {
       );
 
       await ammClient
-        .swap(
-          amm,
-          { buy: {} },
-          10_000_000,
-          1
-        )
+        .swap(amm, { buy: {} }, 10_000_000, 1)
         .then(callbacks[0], callbacks[1]);
 
       await ammClient
-        .swap(
-          amm,
-          { sell: {} },
-          100_000,
-          1
-        )
-        .then(callbacks[0], callbacks[1])
+        .swap(amm, { sell: {} }, 100_000, 1)
+        .then(callbacks[0], callbacks[1]);
     });
 
     it("buys", async function () {
@@ -308,6 +298,18 @@ describe("amm", async function () {
 
       const expectedOut = 0.098029507;
 
+      const storedAmm = await ammClient.getAmm(amm);
+      let sim = ammClient.simulateSwap(
+        new BN(100 * 10 ** 6),
+        { buy: {} },
+        storedAmm.baseAmount,
+        storedAmm.quoteAmount
+      );
+      assert.equal(
+        sim.expectedOut.toString(),
+        new BN(expectedOut * 10 ** 9).toString()
+      );
+
       // first, show that it fails when we expect 1 hanson too much
       let callbacks = expectError(
         "SwapSlippageExceeded",
@@ -315,21 +317,10 @@ describe("amm", async function () {
       );
 
       await ammClient
-        .swap(
-          amm,
-          { buy: {} },
-          100,
-          expectedOut + 0.000000001
-        )
+        .swap(amm, { buy: {} }, 100, expectedOut + 0.000000001)
         .then(callbacks[0], callbacks[1]);
 
-      await ammClient
-        .swap(
-          amm,
-          { buy: {} },
-          100,
-          expectedOut
-        );
+      await ammClient.swap(amm, { buy: {} }, 100, expectedOut);
 
       await validateAmmState({
         banksClient,
@@ -361,21 +352,10 @@ describe("amm", async function () {
       );
 
       await ammClient
-        .swap(
-          amm,
-          { sell: {} },
-          1,
-          expectedOut + 0.000001,
-        )
+        .swap(amm, { sell: {} }, 1, expectedOut + 0.000001)
         .then(callbacks[0], callbacks[1]);
 
-      await ammClient
-        .swap(
-          amm,
-          { sell: {} },
-          1,
-          expectedOut
-        );
+      await ammClient.swap(amm, { sell: {} }, 1, expectedOut);
 
       await validateAmmState({
         banksClient,
