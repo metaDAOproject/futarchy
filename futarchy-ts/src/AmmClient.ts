@@ -408,7 +408,6 @@ export class AmmClient {
     expectedLpTokens = quoteAmount
       ?.mul(new BN(lpMintSupply))
       .div(quoteReserves) as BN;
-    console.log(baseAmount?.toString());
 
     return {
       quoteAmount: quoteAmount as BN,
