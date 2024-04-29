@@ -4,7 +4,7 @@ use super::*;
 pub struct ExecuteProposal<'info> {
     #[account(mut, has_one = dao)]
     pub proposal: Account<'info, Proposal>,
-    pub dao: Box<Account<'info, DAO>>,
+    pub dao: Box<Account<'info, Dao>>,
 }
 
 impl ExecuteProposal<'_> {

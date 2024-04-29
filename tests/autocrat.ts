@@ -41,7 +41,8 @@ import {
   getVaultAddr,
 } from "../futarchy-ts/src";
 import { PriceMath } from "../futarchy-ts/src/utils/priceMath";
-import { AutocratClient } from "../futarchy-ts/src/AutocratClient";
+// import { AutocratClient } from "../futarchy-ts/src/AutocratClient";
+import {AutocratClient} from "@metadaoproject/futarchy-ts";
 import {
   ComputeBudgetInstruction,
   ComputeBudgetProgram,

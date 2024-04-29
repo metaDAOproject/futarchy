@@ -20,7 +20,7 @@ import {
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
 
-export type CreateClientParams = {
+export type CreateVaultClientParams = {
   provider: AnchorProvider;
   conditionalVaultProgramId?: PublicKey;
 };
@@ -45,7 +45,7 @@ export class ConditionalVaultClient {
   }
 
   public static createClient(
-    createVaultClientParams: CreateClientParams
+    createVaultClientParams: CreateVaultClientParams
   ): ConditionalVaultClient {
     let { provider, conditionalVaultProgramId } = createVaultClientParams;
 

@@ -17,13 +17,16 @@ import {
   getMint,
 } from "spl-token-bankrun";
 
-import { getAmmAddr, sleep } from "../futarchy-ts/src/utils";
+import {
+  getAmmAddr,
+  AmmClient,
+  PriceMath,
+  getATA,
+  getAmmLpMintAddr,
+} from "@metadaoproject/futarchy-ts";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
-import { AmmClient } from "../futarchy-ts/src/AmmClient";
 import { expectError, fastForward } from "./utils/utils";
-import { PriceMath } from "../futarchy-ts/src/utils/priceMath";
-import { getATA, getAmmLpMintAddr } from "../futarchy-ts/src/utils/pda";
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;

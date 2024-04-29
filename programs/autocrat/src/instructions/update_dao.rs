@@ -11,7 +11,7 @@ pub struct UpdateDaoParams {
 #[derive(Accounts)]
 pub struct UpdateDao<'info> {
     #[account(mut, has_one = treasury)]
-    pub dao: Account<'info, DAO>,
+    pub dao: Account<'info, Dao>,
     pub treasury: Signer<'info>,
 }
 

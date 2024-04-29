@@ -15,9 +15,9 @@ pub struct InitializeDAO<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + std::mem::size_of::<DAO>()
+        space = 8 + std::mem::size_of::<Dao>()
     )]
-    pub dao: Account<'info, DAO>,
+    pub dao: Account<'info, Dao>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -43,7 +43,7 @@ impl InitializeDAO<'_> {
         let (treasury, treasury_pda_bump) =
             Pubkey::find_program_address(&[dao.key().as_ref()], ctx.program_id);
 
-        dao.set_inner(DAO {
+        dao.set_inner(Dao {
             token_mint: ctx.accounts.token_mint.key(),
             usdc_mint: ctx.accounts.usdc_mint.key(),
             treasury_pda_bump,

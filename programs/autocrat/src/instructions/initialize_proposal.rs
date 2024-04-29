@@ -16,7 +16,7 @@ pub struct InitializeProposal<'info> {
     #[account(zero, signer)]
     pub proposal: Box<Account<'info, Proposal>>,
     #[account(mut)]
-    pub dao: Account<'info, DAO>,
+    pub dao: Account<'info, Dao>,
     #[account(
         has_one = proposal,
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,

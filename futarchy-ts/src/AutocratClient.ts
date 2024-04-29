@@ -7,9 +7,9 @@ import {
   PublicKey,
 } from "@solana/web3.js";
 import { PriceMath } from "./utils/priceMath";
+import { ProposalInstruction, InitializeDaoParams } from "./types";
 
-import { Autocrat } from "./types/autocrat";
-const AutocratIDL: Autocrat = require("./idl/autocrat.json");
+import { Autocrat, IDL as AutocratIDL } from "./types/autocrat";
 import {
   ConditionalVault,
   IDL as ConditionalVaultIDL,
@@ -23,7 +23,6 @@ import {
   MAINNET_USDC,
   USDC_DECIMALS,
 } from "./constants";
-import { Amm, AmmWrapper } from "./types";
 import {
   getATA,
   getAmmAddr,
@@ -46,9 +45,6 @@ export type CreateClientParams = {
   conditionalVaultProgramId?: PublicKey;
   ammProgramId?: PublicKey;
 };
-
-export type ProposalInstruction = IdlTypes<Autocrat>["ProposalInstruction"];
-export type InitializeDaoParams = IdlTypes<Autocrat>["InitializeDaoParams"];
 
 export class AutocratClient {
   public readonly provider: AnchorProvider;

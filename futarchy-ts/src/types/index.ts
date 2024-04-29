@@ -4,6 +4,8 @@ import { Amm as AmmIDLType } from "./amm";
 import type { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 
+export type InitializeDaoParams =
+  IdlTypes<AutocratIDLType>["InitializeDaoParams"];
 export type UpdateDaoParams = IdlTypes<AutocratIDLType>["UpdateDaoParams"];
 export type ProposalInstruction =
   IdlTypes<AutocratIDLType>["ProposalInstruction"];
@@ -14,15 +16,6 @@ export type ProposalWrapper = {
   publicKey: PublicKey;
 };
 
-// export type ProposalVault = IdlAccounts<AutocratIDLType>["proposalVault"];
-// export type ProposalInstructions =
-//   IdlAccounts<AutocratIDLType>["proposalInstructions"];
-
 export type Dao = IdlAccounts<AutocratIDLType>["dao"];
-// export type DaoTreasury = IdlAccounts<AutocratIDLType>["daoTreasury"];
 
 export type Amm = IdlAccounts<AmmIDLType>["amm"];
-export type AmmWrapper = {
-  account: Amm;
-  publicKey: PublicKey;
-};

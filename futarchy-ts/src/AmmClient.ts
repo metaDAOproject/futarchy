@@ -5,7 +5,7 @@ import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
 
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants";
-import { Amm, AmmWrapper } from "./types";
+import { Amm } from "./types";
 import { getATA, getAmmLpMintAddr, getAmmAddr } from "./utils/pda";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
 import { MintLayout, unpackMint } from "@solana/spl-token";
@@ -369,10 +369,6 @@ export class AmmClient {
 
   async getAmm(ammAddr: PublicKey): Promise<Amm> {
     return await this.program.account.amm.fetch(ammAddr);
-  }
-
-  async getAllAmms(): Promise<AmmWrapper[]> {
-    return await this.program.account.amm.all();
   }
 
   getTwap(amm: Amm): BN {
