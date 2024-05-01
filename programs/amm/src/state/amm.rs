@@ -111,13 +111,13 @@ impl Amm {
         require!(input_reserve != 0, AmmError::NoReserves);
         require!(output_reserve != 0, AmmError::NoReserves);
 
-        let input_amount_with_fee = input_amount as u128 * 990;
+        let input_amount_with_fee = input_amount as u128 * 99;
 
         let numerator = input_amount_with_fee
             .checked_mul(output_reserve)
             .ok_or(error!(AmmError::InputAmountOverflow))?;
 
-        let denominator = (input_reserve * 1000) + input_amount_with_fee;
+        let denominator = (input_reserve * 100) + input_amount_with_fee;
 
         let output_amount = (numerator / denominator) as u64;
 
