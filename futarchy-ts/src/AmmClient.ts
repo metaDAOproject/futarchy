@@ -12,6 +12,7 @@ import {
   MintLayout,
   unpackMint,
   getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
 import { PriceMath } from "./utils/priceMath";
 
@@ -343,6 +344,8 @@ export class AmmClient {
     inputAmount: BN,
     outputAmountMin: BN
   ) {
+    const receivingToken = swapType.buy ? baseMint : quoteMint;
+
     return this.program.methods
       .swap({
         swapType,
@@ -366,7 +369,19 @@ export class AmmClient {
         ),
         vaultAtaBase: getAssociatedTokenAddressSync(baseMint, amm, true),
         vaultAtaQuote: getAssociatedTokenAddressSync(quoteMint, amm, true),
-      });
+      })
+      .preInstructions([
+        // create the receiving token account if it doesn't exist
+        createAssociatedTokenAccountIdempotentInstruction(
+          this.provider.publicKey,
+          getAssociatedTokenAddressSync(
+            receivingToken,
+            this.provider.publicKey
+          ),
+          this.provider.publicKey,
+          receivingToken
+        ),
+      ]);
   }
 
   async crankThatTwap(amm: PublicKey) {
