@@ -1,8 +1,8 @@
-import { initializeProposal, daoTreasury, META } from "./main";
 import * as anchor from "@coral-xyz/anchor";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import * as token from "@solana/spl-token";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { AutocratClient } from "@metadaoproject/futarchy-ts";
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
@@ -10,13 +10,17 @@ const { BN, Program } = anchor;
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
+let autocratClient: AutocratClient = AutocratClient.createClient({
+  provider: anchor.AnchorProvider.env(),
+});
+
 const payer = provider.wallet["payer"];
 
 const PANTERA_PUBKEY = new PublicKey(
   "BtNPTBX1XkFCwazDJ6ZkK3hcUsomm1RPcfmtUrP6wd2K"
 );
 
-const COST_DEPLOY = 4 * LAMPORTS_PER_SOL;
+const COST_DEPLOY = 0.1 * LAMPORTS_PER_SOL;
 
 // Transfer
 const buildTreasuryTransferInstruction = async (
@@ -173,10 +177,6 @@ async function main() {
 
   console.log("Account has enough SOL (4) to continue");
 
-  // const proposalIx = await buildTreasuryBurnInstruction(daoTreasury, META, 1337);
-
-  // const proposalIx = await buildTreasuryTransferInstruction(daoTreasury, PANTERA_PUBKEY, META, 342)
-
   const proposalIx = await buildMemoInstruction("TESTING DEVNET");
 
   const ix = {
@@ -192,7 +192,18 @@ async function main() {
   console.log("Sleeping for 60s, press ctrl + c to cancel");
   await new Promise((f) => setTimeout(f, 60000));
 
-  await initializeProposal(ix, "https://google.com");
+  const dao = new PublicKey("DM3sz2qH5LS5KHKpiwZVXNe69YeM3bJzsmNs5VmKLHEv");
+  const storedDao = await autocratClient.getDao(dao);
+
+  const proposal = await autocratClient.initializeProposal(
+    dao,
+    "http://google.com",
+    ix,
+    storedDao.minBaseFutarchicLiquidity,
+    storedDao.minQuoteFutarchicLiquidity
+  );
+
+  console.log(proposal);
 }
 
 main();
