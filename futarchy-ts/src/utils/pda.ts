@@ -101,17 +101,3 @@ export const getAmmLpMintAddr = (
     programId
   );
 };
-
-export const getAmmAuthAddr = (programId: PublicKey): [PublicKey, number] => {
-  return PublicKey.findProgramAddressSync(
-    [utils.bytes.utf8.encode("amm_auth")],
-    programId
-  );
-};
-
-export const getATA = (mint: PublicKey, owner: PublicKey) => {
-  return PublicKey.findProgramAddressSync(
-    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  );
-};

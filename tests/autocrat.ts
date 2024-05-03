@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import { BankrunProvider } from "anchor-bankrun";
 import { assert } from "chai";
@@ -35,14 +36,13 @@ import {
   AUTOCRAT_PROGRAM_ID,
   CONDITIONAL_VAULT_PROGRAM_ID,
   AmmClient,
-  getATA,
   getAmmAddr,
   getAmmLpMintAddr,
   getVaultAddr,
 } from "../futarchy-ts/src";
 import { PriceMath } from "../futarchy-ts/src/utils/priceMath";
 // import { AutocratClient } from "../futarchy-ts/src/AutocratClient";
-import {AutocratClient} from "@metadaoproject/futarchy-ts";
+import { AutocratClient } from "@metadaoproject/futarchy-ts";
 import {
   ComputeBudgetInstruction,
   ComputeBudgetProgram,
@@ -158,13 +158,13 @@ describe("autocrat", async function () {
     // 1000 META
     await mintToOverride(
       context,
-      getATA(META, payer.publicKey)[0],
+      getAssociatedTokenAddressSync(META, payer.publicKey),
       1_000n * 1_000_000_000n
     );
     // 200,000 USDC
     await mintToOverride(
       context,
-      getATA(USDC, payer.publicKey)[0],
+      getAssociatedTokenAddressSync(USDC, payer.publicKey),
       200_000n * 1_000_000n
     );
   });
@@ -255,10 +255,16 @@ describe("autocrat", async function () {
       };
 
       const preMetaBalance = (
-        await getAccount(banksClient, getATA(META, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(META, payer.publicKey)
+        )
       ).amount;
       const preUsdcBalance = (
-        await getAccount(banksClient, getATA(USDC, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(USDC, payer.publicKey)
+        )
       ).amount;
 
       await autocratClient.initializeProposal(
@@ -270,10 +276,16 @@ describe("autocrat", async function () {
       );
 
       const postMetaBalance = (
-        await getAccount(banksClient, getATA(META, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(META, payer.publicKey)
+        )
       ).amount;
       const postUsdcBalance = (
-        await getAccount(banksClient, getATA(USDC, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(USDC, payer.publicKey)
+        )
       ).amount;
 
       assert.equal(postMetaBalance, preMetaBalance - BigInt(5 * 10 ** 9));
@@ -391,19 +403,31 @@ describe("autocrat", async function () {
       }
 
       const prePassLpBalance = (
-        await getAccount(banksClient, getATA(passLp, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(passLp, payer.publicKey)
+        )
       ).amount;
       const preFailLpBalance = (
-        await getAccount(banksClient, getATA(failLp, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(failLp, payer.publicKey)
+        )
       ).amount;
 
       await autocratClient.finalizeProposal(proposal);
 
       const postPassLpBalance = (
-        await getAccount(banksClient, getATA(passLp, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(passLp, payer.publicKey)
+        )
       ).amount;
       const postFailLpBalance = (
-        await getAccount(banksClient, getATA(failLp, payer.publicKey)[0])
+        await getAccount(
+          banksClient,
+          getAssociatedTokenAddressSync(failLp, payer.publicKey)
+        )
       ).amount;
 
       assert(postPassLpBalance > prePassLpBalance);

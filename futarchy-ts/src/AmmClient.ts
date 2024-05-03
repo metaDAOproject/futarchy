@@ -6,9 +6,13 @@ import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants";
 import { AmmAccount } from "./types";
-import { getATA, getAmmLpMintAddr, getAmmAddr } from "./utils/pda";
+import { getAmmLpMintAddr, getAmmAddr } from "./utils/pda";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
-import { MintLayout, unpackMint } from "@solana/spl-token";
+import {
+  MintLayout,
+  unpackMint,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 import { PriceMath } from "./utils/priceMath";
 
 export type SwapType = IdlTypes<AmmIDLType>["SwapType"];
@@ -110,8 +114,8 @@ export class AmmClient {
     let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint, proposal);
     let [lpMint] = getAmmLpMintAddr(this.getProgramId(), amm);
 
-    let [vaultAtaBase] = getATA(baseMint, amm);
-    let [vaultAtaQuote] = getATA(quoteMint, amm);
+    let vaultAtaBase = getAssociatedTokenAddressSync(baseMint, amm, true);
+    let vaultAtaQuote = getAssociatedTokenAddressSync(quoteMint, amm, true);
 
     return this.program.methods
       .createAmm({
@@ -253,11 +257,11 @@ export class AmmClient {
         baseMint,
         quoteMint,
         lpMint,
-        userAtaLp: getATA(lpMint, user)[0],
-        userAtaBase: getATA(baseMint, user)[0],
-        userAtaQuote: getATA(quoteMint, user)[0],
-        vaultAtaBase: getATA(baseMint, amm)[0],
-        vaultAtaQuote: getATA(quoteMint, amm)[0],
+        userAtaLp: getAssociatedTokenAddressSync(lpMint, user),
+        userAtaBase: getAssociatedTokenAddressSync(baseMint, user),
+        userAtaQuote: getAssociatedTokenAddressSync(quoteMint, user),
+        vaultAtaBase: getAssociatedTokenAddressSync(baseMint, amm, true),
+        vaultAtaQuote: getAssociatedTokenAddressSync(quoteMint, amm, true),
       });
   }
 
@@ -283,11 +287,20 @@ export class AmmClient {
         lpMint,
         baseMint,
         quoteMint,
-        userAtaLp: getATA(lpMint, this.provider.publicKey)[0],
-        userAtaBase: getATA(baseMint, this.provider.publicKey)[0],
-        userAtaQuote: getATA(quoteMint, this.provider.publicKey)[0],
-        vaultAtaBase: getATA(baseMint, ammAddr)[0],
-        vaultAtaQuote: getATA(quoteMint, ammAddr)[0],
+        userAtaLp: getAssociatedTokenAddressSync(
+          lpMint,
+          this.provider.publicKey
+        ),
+        userAtaBase: getAssociatedTokenAddressSync(
+          baseMint,
+          this.provider.publicKey
+        ),
+        userAtaQuote: getAssociatedTokenAddressSync(
+          quoteMint,
+          this.provider.publicKey
+        ),
+        vaultAtaBase: getAssociatedTokenAddressSync(baseMint, ammAddr, true),
+        vaultAtaQuote: getAssociatedTokenAddressSync(quoteMint, ammAddr, true),
       });
   }
 
@@ -341,10 +354,18 @@ export class AmmClient {
         amm: amm,
         baseMint,
         quoteMint,
-        userAtaBase: getATA(baseMint, this.provider.publicKey)[0],
-        userAtaQuote: getATA(quoteMint, this.provider.publicKey)[0],
-        vaultAtaBase: getATA(baseMint, amm)[0],
-        vaultAtaQuote: getATA(quoteMint, amm)[0],
+        userAtaBase: getAssociatedTokenAddressSync(
+          baseMint,
+          this.provider.publicKey,
+          true
+        ),
+        userAtaQuote: getAssociatedTokenAddressSync(
+          quoteMint,
+          this.provider.publicKey,
+          true
+        ),
+        vaultAtaBase: getAssociatedTokenAddressSync(baseMint, amm, true),
+        vaultAtaQuote: getAssociatedTokenAddressSync(quoteMint, amm, true),
       });
   }
 

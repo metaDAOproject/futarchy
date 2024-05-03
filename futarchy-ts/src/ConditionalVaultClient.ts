@@ -9,7 +9,6 @@ import {
 import BN from "bn.js";
 import { CONDITIONAL_VAULT_PROGRAM_ID } from "./constants";
 import {
-  getATA,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
@@ -18,6 +17,7 @@ import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/met
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 
 export type CreateVaultClientParams = {
@@ -107,23 +107,31 @@ export class ConditionalVaultClient {
       vault
     );
 
-    let userConditionalOnFinalizeTokenAccount = getATA(
+    let userConditionalOnFinalizeTokenAccount = getAssociatedTokenAddressSync(
       conditionalOnFinalizeTokenMint,
       userPubkey
-    )[0];
+    );
 
-    let userConditionalOnRevertTokenAccount = getATA(
+    let userConditionalOnRevertTokenAccount = getAssociatedTokenAddressSync(
       conditionalOnRevertTokenMint,
       userPubkey
-    )[0];
+    );
 
     let ix = this.vaultProgram.methods
       .mintConditionalTokens(amount)
       .accounts({
         authority: userPubkey,
         vault,
-        vaultUnderlyingTokenAccount: getATA(underlyingTokenMint, vault)[0],
-        userUnderlyingTokenAccount: getATA(underlyingTokenMint, userPubkey)[0],
+        vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          vault,
+          true
+        ),
+        userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          userPubkey,
+          true
+        ),
         conditionalOnFinalizeTokenMint,
         userConditionalOnFinalizeTokenAccount,
         conditionalOnRevertTokenMint,
@@ -171,7 +179,11 @@ export class ConditionalVaultClient {
       vault
     );
 
-    const vaultUnderlyingTokenAccount = getATA(underlyingTokenMint, vault)[0];
+    const vaultUnderlyingTokenAccount = getAssociatedTokenAddressSync(
+      underlyingTokenMint,
+      vault,
+      true
+    );
 
     return this.vaultProgram.methods
       .initializeConditionalVault({ settlementAuthority, proposal })

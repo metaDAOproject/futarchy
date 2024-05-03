@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN } from "@coral-xyz/anchor";
 import { BankrunProvider } from "anchor-bankrun";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 
 import {
   startAnchor,
@@ -21,7 +22,6 @@ import {
   getAmmAddr,
   AmmClient,
   PriceMath,
-  getATA,
   getAmmLpMintAddr,
 } from "@metadaoproject/futarchy-ts";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -198,7 +198,7 @@ describe("amm", async function () {
         (
           await getAccount(
             banksClient,
-            getATA(storedAmm.lpMint, payer.publicKey)[0]
+            getAssociatedTokenAddressSync(storedAmm.lpMint, payer.publicKey)
           )
         ).amount,
         BigInt(5000 * 10 ** 6)
@@ -468,7 +468,10 @@ describe("amm", async function () {
     it("remove some liquidity from an amm position", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
-      let userLpAccount = getATA(lpMint, payer.publicKey)[0];
+      let userLpAccount = getAssociatedTokenAddressSync(
+        lpMint,
+        payer.publicKey
+      );
 
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
@@ -508,7 +511,10 @@ describe("amm", async function () {
     it("remove all liquidity from an amm position", async function () {
       const ammStart = await ammClient.getAmm(amm);
 
-      let userLpAccount = getATA(lpMint, payer.publicKey)[0];
+      let userLpAccount = getAssociatedTokenAddressSync(
+        lpMint,
+        payer.publicKey
+      );
 
       const userLpAccountStart = await getAccount(banksClient, userLpAccount);
       const lpMintStart = await getMint(banksClient, lpMint);
@@ -575,11 +581,21 @@ async function validateAmmState({
   );
 
   assert.equal(
-    (await getAccount(banksClient, getATA(base, amm)[0])).amount,
+    (
+      await getAccount(
+        banksClient,
+        getAssociatedTokenAddressSync(base, amm, true)
+      )
+    ).amount,
     BigInt(expectedBaseAmount)
   );
   assert.equal(
-    (await getAccount(banksClient, getATA(quote, amm)[0])).amount,
+    (
+      await getAccount(
+        banksClient,
+        getAssociatedTokenAddressSync(quote, amm, true)
+      )
+    ).amount,
     BigInt(expectedQuoteAmount)
   );
   assert.equal(
