@@ -24,7 +24,6 @@ import {
   USDC_DECIMALS,
 } from "./constants";
 import {
-  getATA,
   getAmmAddr,
   getAmmLpMintAddr,
   getDaoTreasuryAddr,
@@ -36,6 +35,7 @@ import { ConditionalVaultClient } from "./ConditionalVaultClient";
 import { AmmClient } from "./AmmClient";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddressSync,
   unpackMint,
 } from "@solana/spl-token";
 
@@ -462,8 +462,16 @@ export class AutocratClient {
       failAmm
     );
 
-    const passLpVaultAccount = getATA(passLp, daoTreasury)[0];
-    const failLpVaultAccount = getATA(failLp, daoTreasury)[0];
+    const passLpVaultAccount = getAssociatedTokenAddressSync(
+      passLp,
+      daoTreasury,
+      true
+    );
+    const failLpVaultAccount = getAssociatedTokenAddressSync(
+      failLp,
+      daoTreasury,
+      true
+    );
 
     return (
       this.autocrat.methods
@@ -485,8 +493,14 @@ export class AutocratClient {
           failAmm,
           passLpMint: passLp,
           failLpMint: failLp,
-          passLpUserAccount: getATA(passLp, this.provider.publicKey)[0],
-          failLpUserAccount: getATA(failLp, this.provider.publicKey)[0],
+          passLpUserAccount: getAssociatedTokenAddressSync(
+            passLp,
+            this.provider.publicKey
+          ),
+          failLpUserAccount: getAssociatedTokenAddressSync(
+            failLp,
+            this.provider.publicKey
+          ),
           passLpVaultAccount,
           failLpVaultAccount,
           proposer: this.provider.publicKey,
@@ -580,10 +594,24 @@ export class AutocratClient {
       dao,
       baseVault,
       quoteVault,
-      passLpUserAccount: getATA(passLp, this.provider.publicKey)[0],
-      failLpUserAccount: getATA(failLp, this.provider.publicKey)[0],
-      passLpVaultAccount: getATA(passLp, daoTreasury)[0],
-      failLpVaultAccount: getATA(failLp, daoTreasury)[0],
+      passLpUserAccount: getAssociatedTokenAddressSync(
+        passLp,
+        this.provider.publicKey
+      ),
+      failLpUserAccount: getAssociatedTokenAddressSync(
+        failLp,
+        this.provider.publicKey
+      ),
+      passLpVaultAccount: getAssociatedTokenAddressSync(
+        passLp,
+        daoTreasury,
+        true
+      ),
+      failLpVaultAccount: getAssociatedTokenAddressSync(
+        failLp,
+        daoTreasury,
+        true
+      ),
       vaultProgram: this.vaultClient.vaultProgram.programId,
       treasury: daoTreasury,
     });
