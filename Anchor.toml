@@ -18,17 +18,8 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-airdrop = "yarn run ts-node scripts/airdrop.ts"
-autocrat_v0 = "yarn run ts-node scripts/autocratV0.ts"
-clob = "yarn run tsc scripts/clob.ts --esModuleInterop --resolveJsonModule && node scripts/clob.js && rm scripts/clob.js"
-crank = "yarn run ts-node scripts/crank.ts"
-crank_twap = "yarn run ts-node scripts/crankTwap.ts"
-initialize_dao = "yarn run ts-node scripts/initializeDao.ts"
-initialize_vault = "yarn run tsc scripts/initializeVault.ts --esModuleInterop --resolveJsonModule && node scripts/initializeVault.js"
-main = "yarn run ts-node scripts/main.ts"
-multisig = "yarn run tsx scripts/multisig.ts"
-place_order = "yarn run ts-node scripts/placeOrder.ts"
 propose = "yarn run ts-node scripts/initializeProposal.ts"
+finalize = "yarn run ts-node scripts/finalizeProposal.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]
