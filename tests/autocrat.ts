@@ -271,8 +271,8 @@ describe("autocrat", async function () {
         dao,
         "",
         instruction,
-        ONE_META.muln(5),
-        ONE_USDC.muln(5000)
+        PriceMath.getChainAmount(5, 9),
+        PriceMath.getChainAmount(5000, 6)
       );
 
       const postMetaBalance = (

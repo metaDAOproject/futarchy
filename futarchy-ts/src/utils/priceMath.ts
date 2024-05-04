@@ -11,6 +11,10 @@ export class PriceMath {
     return quoteReserves.mul(PRICE_SCALE).div(baseReserves);
   }
 
+  public static getChainAmount(humanAmount: number, decimals: number): BN {
+    return new BN(humanAmount * 10 ** decimals);
+  }
+
   public static getHumanPrice(
     ammPrice: BN,
     baseDecimals: number,
