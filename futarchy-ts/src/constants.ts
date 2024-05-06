@@ -10,6 +10,10 @@ export const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
   "F3RzPAtBQvUAAdDHD8AsPKFhDB1H38SULNKTW39dYrw8"
 );
 
+export const MPL_TOKEN_METADATA_PROGRAM_ID = new PublicKey(
+  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+);
+
 export const META_MINT = new PublicKey(
   "3gN1WVEJwSHNWjo7hr87DgZp6zkf8kWgAJD29DmfE2Gr"
 );

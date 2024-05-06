@@ -5,6 +5,11 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import BN from "bn.js";
+import {
+  fromWeb3JsPublicKey,
+  toWeb3JsPublicKey,
+} from "@metaplex-foundation/umi-web3js-adapters";
+import { MPL_TOKEN_METADATA_PROGRAM_ID } from "../constants";
 
 export const getVaultAddr = (
   programId: PublicKey,
@@ -28,6 +33,17 @@ export const getVaultFinalizeMintAddr = (
   vault: PublicKey
 ) => {
   return getVaultMintAddr(programId, vault, "conditional_on_finalize_mint");
+};
+
+export const getMetadataAddr = (mint: PublicKey) => {
+  return PublicKey.findProgramAddressSync(
+    [
+      utils.bytes.utf8.encode("metadata"),
+      MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      mint.toBuffer(),
+    ],
+    MPL_TOKEN_METADATA_PROGRAM_ID
+  );
 };
 
 export const getVaultRevertMintAddr = (
