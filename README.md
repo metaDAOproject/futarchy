@@ -31,15 +31,18 @@ where `P_URI` and `F_URI` are replaced with their respective values.
 
 ## Deployments
 
-| program           | tag  | program ID                                  |
-| ----------------- | ---- | ------------------------------------------- |
-| autocrat_v0       | v0.2 | metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp |
-| autocrat_migrator | v0.2 | MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt |
-| conditional_vault | v0.2 | vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP |
-| autocrat_v0       | v0.1 | metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq |
-| autocrat_migrator | v0.1 | migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3 |
-| autocrat_v0       | v0   | meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi |
-| conditional_vault | v0   | vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe |
+| program           | tag  | program ID                                   |
+| ----------------- | ---- | -------------------------------------------- |
+| autocrat          | v1.0 | 5scUH1qY87Awh5D8bQkbP2uv9BaXJXiMgrqRBw1K2vVv |
+| amm               | v1.0 | CsN1N8qaMJUwoGFWt3xV4u246n2cuZy9AWLws78e3a1K |
+| conditional_vault | v1.0 | F3RzPAtBQvUAAdDHD8AsPKFhDB1H38SULNKTW39dYrw8 |
+| autocrat_v0       | v0.2 | metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp  |
+| autocrat_migrator | v0.2 | MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt  |
+| conditional_vault | v0.2 | vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP  |
+| autocrat_v0       | v0.1 | metaX99LHn3A7Gr7VAcCfXhpfocvpMpqQ3eyp3PGUUq  |
+| autocrat_migrator | v0.1 | migkwAXrXFN34voCYQUhFQBXZJjHrWnpEXbSGTqZdB3  |
+| autocrat_v0       | v0   | meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi  |
+| conditional_vault | v0   | vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe  |
 
 All programs are immutable and verifiable, and have been verified with the OtterSec API.
 
