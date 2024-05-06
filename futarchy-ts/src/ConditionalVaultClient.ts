@@ -7,8 +7,12 @@ import {
 } from "./types/conditional_vault";
 
 import BN from "bn.js";
-import { CONDITIONAL_VAULT_PROGRAM_ID } from "./constants";
 import {
+  CONDITIONAL_VAULT_PROGRAM_ID,
+  MPL_TOKEN_METADATA_PROGRAM_ID,
+} from "./constants";
+import {
+  getMetadataAddr,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
@@ -202,6 +206,51 @@ export class ConditionalVaultClient {
           underlyingTokenMint
         ),
       ]);
+  }
+
+  addMetadataToConditionalTokensIx(
+    vault: PublicKey,
+    underlyingTokenMint: PublicKey,
+    proposalNumber: number,
+    onFinalizeUri: string,
+    onRevertUri: string
+  ) {
+    const [underlyingTokenMetadata] = getMetadataAddr(underlyingTokenMint);
+
+    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
+      this.vaultProgram.programId,
+      vault
+    );
+    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
+      this.vaultProgram.programId,
+      vault
+    );
+
+    const [conditionalOnFinalizeTokenMetadata] = getMetadataAddr(
+      conditionalOnFinalizeTokenMint
+    );
+
+    const [conditionalOnRevertTokenMetadata] = getMetadataAddr(
+      conditionalOnRevertTokenMint
+    );
+
+    return this.vaultProgram.methods
+      .addMetadataToConditionalTokens({
+        proposalNumber: new BN(proposalNumber),
+        onFinalizeUri,
+        onRevertUri,
+      })
+      .accounts({
+        payer: this.provider.publicKey,
+        vault,
+        underlyingTokenMint,
+        underlyingTokenMetadata,
+        conditionalOnFinalizeTokenMint,
+        conditionalOnRevertTokenMint,
+        conditionalOnFinalizeTokenMetadata,
+        conditionalOnRevertTokenMetadata,
+        tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+      });
   }
 
   async initializeVault(
