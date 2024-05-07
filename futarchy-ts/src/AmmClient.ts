@@ -35,6 +35,11 @@ export type SwapSimulation = {
   newQuoteReserves: BN;
 };
 
+export type RemoveLiquiditySimulation = {
+  expectedBaseOut: BN;
+  expectedQuoteOut: BN;
+};
+
 export class AmmClient {
   public readonly provider: AnchorProvider;
   public readonly program: Program<AmmIDLType>;
@@ -487,6 +492,23 @@ export class AmmClient {
       expectedOut,
       newBaseReserves,
       newQuoteReserves,
+    };
+  }
+
+  simulateRemoveLiquidity(
+    lpTokensToBurn: BN,
+    baseReserves: BN,
+    quoteReserves: BN,
+    lpTotalSupply: BN
+  ): RemoveLiquiditySimulation {
+    const expectedBaseOut = lpTokensToBurn.mul(baseReserves).div(lpTotalSupply);
+    const expectedQuoteOut = lpTokensToBurn
+      .mul(quoteReserves)
+      .div(lpTotalSupply);
+
+    return {
+      expectedBaseOut,
+      expectedQuoteOut,
     };
   }
 
