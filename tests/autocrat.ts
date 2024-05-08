@@ -246,6 +246,9 @@ describe("autocrat", async function () {
           burnDecayPerSlotLamports: null,
           slotsPerProposal: null,
           marketTakerFee: null,
+          // minQuoteFutarchicLiquidity: new BN(10),
+          // minBaseFutarchicLiquidity: new BN(100),
+
         },
       });
       const instruction = {
@@ -528,10 +531,33 @@ describe("autocrat", async function () {
       await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
       await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
 
-      instruction = {
-        programId: MEMO_PROGRAM_ID,
-        accounts: [],
-        data: Buffer.from("hello, world"),
+      const accounts = [
+        {
+          pubkey: dao,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: daoTreasury,
+          isSigner: true,
+          isWritable: false,
+        }
+      ];
+
+      const data = autocrat.coder.instruction.encode("update_dao", {
+        daoParams: {
+          passThresholdBps: 500,
+          slotsPerProposal: new BN(10),
+          twapInitialObservation: null,
+          twapMaxObservationChangePerUpdate: null,
+          minQuoteFutarchicLiquidity: new BN(10),
+          minBaseFutarchicLiquidity: new BN(100),
+        },
+      });
+      const instruction = {
+        programId: autocrat.programId,
+        accounts,
+        data,
       };
 
       proposal = await autocratClient.initializeProposal(
@@ -638,8 +664,17 @@ describe("autocrat", async function () {
 
       const storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
+      
+      const beforeDao = await autocratClient.getDao(dao);
+      assert.equal(beforeDao.passThresholdBps, 300);
 
       await autocratClient.executeProposal(proposal);
+
+      let afterDao = await autocratClient.getDao(dao);
+      assert.equal(afterDao.passThresholdBps, 500);
+      assert.ok(afterDao.slotsPerProposal.eqn(10));
+      assert.equal(afterDao.minQuoteFutarchicLiquidity.toString(), "10");
+      assert.equal(afterDao.minBaseFutarchicLiquidity.toString(), "100");
 
       const callbacks = expectError(
         "ProposalNotPassed",

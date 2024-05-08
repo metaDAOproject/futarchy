@@ -6,6 +6,8 @@ pub struct UpdateDaoParams {
     pub slots_per_proposal: Option<u64>,
     pub twap_initial_observation: Option<u128>,
     pub twap_max_observation_change_per_update: Option<u128>,
+    pub min_quote_futarchic_liquidity: Option<u64>,
+    pub min_base_futarchic_liquidity: Option<u64>,
 }
 
 #[derive(Accounts)]
@@ -31,6 +33,8 @@ impl UpdateDao<'_> {
         update_dao_if_passed!(slots_per_proposal);
         update_dao_if_passed!(twap_initial_observation);
         update_dao_if_passed!(twap_max_observation_change_per_update);
+        update_dao_if_passed!(min_quote_futarchic_liquidity);
+        update_dao_if_passed!(min_base_futarchic_liquidity);
 
         Ok(())
     }
