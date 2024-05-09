@@ -19,6 +19,7 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 propose = "yarn run ts-node scripts/initializeProposal.ts"
+initialize-dao = "yarn run ts-node scripts/initializeDao.ts"
 finalize = "yarn run ts-node scripts/finalizeProposal.ts"
 metadata = "yarn run ts-node scripts/uploadMetadata.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"

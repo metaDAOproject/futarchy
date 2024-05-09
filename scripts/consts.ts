@@ -32,3 +32,15 @@ export const DEVNET_USDC = new PublicKey(
 export const USDC = new PublicKey(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 );
+
+export const DEVNET_DARK = new PublicKey(
+  "FfCGxfj1NQdPZpukoEgdX427NEjNdCuh3gpFi6oEf6Ka"
+);
+
+export const DEVNET_DRIFT = new PublicKey(
+  "Hy9aVik24Uy92FuJd8d1hTH6LRCLmquipeTLBGnXqWr1"
+);
+
+export const DEVNET_ORE = new PublicKey(
+  "Et9wvs9gEBQtFY2RkvLw2XVLaBqjotHPvQBDvqkKxDR8"
+);
