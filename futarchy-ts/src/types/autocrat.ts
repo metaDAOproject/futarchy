@@ -467,6 +467,18 @@ export type Autocrat = {
             type: {
               option: "u128";
             };
+          },
+          {
+            name: "minQuoteFutarchicLiquidity";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "minBaseFutarchicLiquidity";
+            type: {
+              option: "u64";
+            };
           }
         ];
       };
@@ -1063,6 +1075,18 @@ export const IDL: Autocrat = {
             name: "twapMaxObservationChangePerUpdate",
             type: {
               option: "u128",
+            },
+          },
+          {
+            name: "minQuoteFutarchicLiquidity",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "minBaseFutarchicLiquidity",
+            type: {
+              option: "u64",
             },
           },
         ],

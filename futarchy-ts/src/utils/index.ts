@@ -2,6 +2,7 @@ export * from "./filters";
 export * from "./pda";
 export * from "./priceMath";
 export * from "./metadata";
+export * from "./cu";
 
 import { AccountMeta, ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
 
