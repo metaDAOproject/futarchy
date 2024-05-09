@@ -10,7 +10,7 @@
 
 ## Futarchy
 
-* [TL;DR](futarchy/tl-dr.md)
+* [ELI5](futarchy/eli5.md)
 * [Overview](futarchy/overview.md)
 * [Benefits](futarchy/benefits.md)
 * [Drawbacks](futarchy/drawbacks.md)
