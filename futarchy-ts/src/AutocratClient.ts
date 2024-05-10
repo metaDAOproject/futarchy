@@ -532,7 +532,8 @@ export class AutocratClient {
       storedProposal.instruction,
       storedProposal.dao,
       storedDao.tokenMint,
-      storedDao.usdcMint
+      storedDao.usdcMint,
+      storedProposal.proposer
     ).rpc();
   }
 
@@ -541,7 +542,8 @@ export class AutocratClient {
     instruction: any,
     dao: PublicKey,
     daoToken: PublicKey,
-    usdc: PublicKey
+    usdc: PublicKey,
+    proposer: PublicKey
   ) {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
 
@@ -596,11 +598,11 @@ export class AutocratClient {
       quoteVault,
       passLpUserAccount: getAssociatedTokenAddressSync(
         passLp,
-        this.provider.publicKey
+        proposer
       ),
       failLpUserAccount: getAssociatedTokenAddressSync(
         failLp,
-        this.provider.publicKey
+        proposer
       ),
       passLpVaultAccount: getAssociatedTokenAddressSync(
         passLp,
