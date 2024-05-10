@@ -16,9 +16,6 @@ pub struct ConditionalVault {
     pub settlement_authority: Pubkey,
     /// The mint of the tokens that are deposited into the vault.
     pub underlying_token_mint: Pubkey,
-    /// We need to be able to create multiple vault for a single underlying token
-    /// account, so we use proposal as a PDA seed.
-    pub proposal: Pubkey,
     /// The vault's storage account for deposited funds.
     pub underlying_token_account: Pubkey,
     pub conditional_on_finalize_token_mint: Pubkey,
@@ -34,7 +31,6 @@ macro_rules! generate_vault_seeds {
             b"conditional_vault",
             $vault.settlement_authority.as_ref(),
             $vault.underlying_token_mint.as_ref(),
-            $vault.proposal.as_ref(),
             &[$vault.pda_bump],
         ]
     }};

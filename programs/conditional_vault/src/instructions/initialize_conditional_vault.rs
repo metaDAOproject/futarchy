@@ -3,7 +3,6 @@ use super::*;
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct InitializeConditionalVaultArgs {
     pub settlement_authority: Pubkey,
-    pub proposal: Pubkey,
 }
 
 #[derive(Accounts)]
@@ -17,7 +16,6 @@ pub struct InitializeConditionalVault<'info> {
             b"conditional_vault", 
             args.settlement_authority.key().as_ref(),
             underlying_token_mint.key().as_ref(),
-            args.proposal.as_ref()
         ],
         bump
     )]
@@ -60,7 +58,6 @@ impl InitializeConditionalVault<'_> {
         let vault = &mut ctx.accounts.vault;
 
         let InitializeConditionalVaultArgs {
-            proposal,
             settlement_authority,
         } = args;
 
@@ -68,7 +65,6 @@ impl InitializeConditionalVault<'_> {
             status: VaultStatus::Active,
             settlement_authority,
             underlying_token_mint: ctx.accounts.underlying_token_mint.key(),
-            proposal,
             underlying_token_account: ctx.accounts.vault_underlying_token_account.key(),
             conditional_on_finalize_token_mint: ctx
                 .accounts

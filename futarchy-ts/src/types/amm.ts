@@ -533,6 +533,16 @@ export type Amm = {
       code: 6013;
       name: "InsufficientQuoteAmount";
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool";
+    },
+    {
+      code: 6014;
+      name: "ZeroSwapAmount";
+      msg: "Users must swap a non-zero amount";
+    },
+    {
+      code: 6015;
+      name: "ConstantProductInvariantFailed";
+      msg: "K should always be increasing";
     }
   ];
 };
@@ -1072,6 +1082,16 @@ export const IDL: Amm = {
       code: 6013,
       name: "InsufficientQuoteAmount",
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool",
+    },
+    {
+      code: 6014,
+      name: "ZeroSwapAmount",
+      msg: "Users must swap a non-zero amount",
+    },
+    {
+      code: 6015,
+      name: "ConstantProductInvariantFailed",
+      msg: "K should always be increasing",
     },
   ],
 };

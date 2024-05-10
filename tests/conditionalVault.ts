@@ -169,7 +169,6 @@ describe("conditional_vault", async function () {
         storedVault.settlementAuthority.equals(settlementAuthority.publicKey)
       );
       assert.ok(storedVault.underlyingTokenMint.equals(underlyingTokenMint));
-      assert.ok(storedVault.proposal.equals(proposal));
       assert.ok(
         storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount)
       );

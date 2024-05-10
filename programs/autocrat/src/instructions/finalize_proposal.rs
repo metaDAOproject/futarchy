@@ -82,9 +82,14 @@ impl FinalizeProposal<'_> {
             token_program,
         } = ctx.accounts;
 
+        let proposer_key = proposal.proposer;
+        let nonce = proposal.nonce;
+        let proposal_seeds = &[b"proposal", proposer_key.as_ref(), &nonce.to_le_bytes(), &[proposal.pda_bump]];
+        let proposal_signer = &[&proposal_seeds[..]];
+
         let dao_key = dao.key();
         let treasury_seeds = &[dao_key.as_ref(), &[dao.treasury_pda_bump]];
-        let signer = &[&treasury_seeds[..]];
+        let treasury_signer = &[&treasury_seeds[..]];
 
         for (lp_tokens_to_unlock, from, to) in [
             (
@@ -111,7 +116,7 @@ impl FinalizeProposal<'_> {
                         authority: treasury.to_account_info(),
                     },
                 )
-                .with_signer(signer),
+                .with_signer(treasury_signer),
                 lp_tokens_to_unlock,
             )?;
         }
@@ -148,10 +153,10 @@ impl FinalizeProposal<'_> {
         for vault in [base_vault.to_account_info(), quote_vault.to_account_info()] {
             let vault_program = vault_program.to_account_info();
             let cpi_accounts = SettleConditionalVault {
-                settlement_authority: treasury.to_account_info(),
+                settlement_authority: proposal.to_account_info(),
                 vault,
             };
-            let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(signer);
+            let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(proposal_signer);
             conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_vault_state)?;
         }
 

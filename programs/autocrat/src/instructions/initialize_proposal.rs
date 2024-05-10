@@ -9,24 +9,30 @@ pub struct InitializeProposalParams {
     pub instruction: ProposalInstruction,
     pub pass_lp_tokens_to_lock: u64,
     pub fail_lp_tokens_to_lock: u64,
+    pub nonce: u64,
 }
 
 #[derive(Accounts)]
+#[instruction(args: InitializeProposalParams)]
 pub struct InitializeProposal<'info> {
-    #[account(zero, signer)]
+    #[account(
+        init,
+        payer = proposer,
+        space = 2000,
+        seeds = [b"proposal", proposer.key().as_ref(), &args.nonce.to_le_bytes()],
+        bump
+    )]
     pub proposal: Box<Account<'info, Proposal>>,
     #[account(mut)]
-    pub dao: Account<'info, Dao>,
+    pub dao: Box<Account<'info, Dao>>,
     #[account(
-        has_one = proposal,
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
-        constraint = quote_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
+        constraint = quote_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        has_one = proposal,
         constraint = base_vault.underlying_token_mint == dao.token_mint,
-        constraint = base_vault.settlement_authority == dao.treasury @ AutocratError::InvalidSettlementAuthority,
+        constraint = base_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
@@ -72,6 +78,7 @@ pub struct InitializeProposal<'info> {
     #[account(mut)]
     pub proposer: Signer<'info>,
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
 
 impl InitializeProposal<'_> {
@@ -117,6 +124,7 @@ impl InitializeProposal<'_> {
             fail_lp_vault_account,
             proposer,
             token_program,
+            system_program: _,
         } = ctx.accounts;
 
         let InitializeProposalParams {
@@ -124,6 +132,7 @@ impl InitializeProposal<'_> {
             instruction,
             pass_lp_tokens_to_lock,
             fail_lp_tokens_to_lock,
+            nonce,
         } = params;
 
         require_gte!(
@@ -201,6 +210,8 @@ impl InitializeProposal<'_> {
             dao: dao.key(),
             pass_lp_tokens_locked: pass_lp_tokens_to_lock,
             fail_lp_tokens_locked: fail_lp_tokens_to_lock,
+            nonce,
+            pda_bump: ctx.bumps.proposal,
         });
 
         Ok(())

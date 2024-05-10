@@ -46,7 +46,7 @@ export type Autocrat = {
         {
           name: "proposal";
           isMut: true;
-          isSigner: true;
+          isSigner: false;
         },
         {
           name: "dao";
@@ -110,6 +110,11 @@ export type Autocrat = {
         },
         {
           name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
           isMut: false;
           isSigner: false;
         }
@@ -371,6 +376,20 @@ export type Autocrat = {
           {
             name: "failLpTokensLocked";
             type: "u64";
+          },
+          {
+            name: "nonce";
+            docs: [
+              "We need to include a per-proposer nonce to prevent some weird proposal",
+              "front-running edge cases. Using a `u64` means that proposers are unlikely",
+              "to run into collisions, even if they generate nonces randomly - I've run",
+              "the math :D"
+            ];
+            type: "u64";
+          },
+          {
+            name: "pdaBump";
+            type: "u8";
           }
         ];
       };
@@ -434,6 +453,10 @@ export type Autocrat = {
           },
           {
             name: "failLpTokensToLock";
+            type: "u64";
+          },
+          {
+            name: "nonce";
             type: "u64";
           }
         ];
@@ -655,7 +678,7 @@ export const IDL: Autocrat = {
         {
           name: "proposal",
           isMut: true,
-          isSigner: true,
+          isSigner: false,
         },
         {
           name: "dao",
@@ -719,6 +742,11 @@ export const IDL: Autocrat = {
         },
         {
           name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
           isMut: false,
           isSigner: false,
         },
@@ -981,6 +1009,20 @@ export const IDL: Autocrat = {
             name: "failLpTokensLocked",
             type: "u64",
           },
+          {
+            name: "nonce",
+            docs: [
+              "We need to include a per-proposer nonce to prevent some weird proposal",
+              "front-running edge cases. Using a `u64` means that proposers are unlikely",
+              "to run into collisions, even if they generate nonces randomly - I've run",
+              "the math :D",
+            ],
+            type: "u64",
+          },
+          {
+            name: "pdaBump",
+            type: "u8",
+          },
         ],
       },
     },
@@ -1043,6 +1085,10 @@ export const IDL: Autocrat = {
           },
           {
             name: "failLpTokensToLock",
+            type: "u64",
+          },
+          {
+            name: "nonce",
             type: "u64",
           },
         ],

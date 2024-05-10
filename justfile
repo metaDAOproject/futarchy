@@ -1,5 +1,5 @@
 test:
-    find programs tests futarchy-ts | entr -s 'clear && RUST_LOG= anchor test'
+    find programs tests futarchy-ts | entr -sc '(cd futarchy-ts && yarn build) && RUST_LOG= anchor test'
 
 test-no-build:
     find programs tests futarchy-ts | entr -sc '(cd futarchy-ts && yarn build) && RUST_LOG= anchor test --skip-build'

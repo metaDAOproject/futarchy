@@ -14,15 +14,13 @@ import { MPL_TOKEN_METADATA_PROGRAM_ID } from "../constants";
 export const getVaultAddr = (
   programId: PublicKey,
   settlementAuthority: PublicKey,
-  underlyingTokenMint: PublicKey,
-  proposal: PublicKey
+  underlyingTokenMint: PublicKey
 ) => {
   return PublicKey.findProgramAddressSync(
     [
       utils.bytes.utf8.encode("conditional_vault"),
       settlementAuthority.toBuffer(),
       underlyingTokenMint.toBuffer(),
-      proposal.toBuffer(),
     ],
     programId
   );
@@ -71,22 +69,17 @@ export const getDaoTreasuryAddr = (
   return PublicKey.findProgramAddressSync([dao.toBuffer()], programId);
 };
 
-export const getProposalInstructionsAddr = (
+export const getProposalAddr = (
   programId: PublicKey,
-  proposal: PublicKey
+  proposer: PublicKey,
+  nonce: BN
 ): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
-    [utils.bytes.utf8.encode("proposal_instructions"), proposal.toBuffer()],
-    programId
-  );
-};
-
-export const getProposalVaultAddr = (
-  programId: PublicKey,
-  proposal: PublicKey
-): [PublicKey, number] => {
-  return PublicKey.findProgramAddressSync(
-    [utils.bytes.utf8.encode("proposal_vault"), proposal.toBuffer()],
+    [
+      utils.bytes.utf8.encode("proposal"),
+      proposer.toBuffer(),
+      nonce.toBuffer("le", 8),
+    ],
     programId
   );
 };
