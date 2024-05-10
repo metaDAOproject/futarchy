@@ -134,7 +134,7 @@ impl Amm {
 
         let new_k = self.k();
 
-        assert!(new_k >= k);
+        require_gte!(new_k, k, AmmError::ConstantProductInvariantFailed);
 
         Ok(output_amount)
     }

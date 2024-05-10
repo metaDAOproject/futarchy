@@ -76,7 +76,7 @@ impl Swap<'_> {
             ),
         };
 
-        assert!(input_amount > 0);
+        require!(input_amount > 0, AmmError::ZeroSwapAmount);
 
         amm.update_twap(Clock::get()?.slot);
 
