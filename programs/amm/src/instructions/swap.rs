@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, *};
 
 use crate::error::AmmError;
@@ -17,41 +16,33 @@ pub struct SwapArgs {
 pub struct Swap<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(
-        mut,
-        has_one = base_mint,
-        has_one = quote_mint,
-    )]
+    #[account(mut)]
     pub amm: Account<'info, Amm>,
-    pub base_mint: Account<'info, Mint>,
-    pub quote_mint: Account<'info, Mint>,
     #[account(
         mut,
-        associated_token::mint = base_mint,
-        associated_token::authority = user,
+        token::mint = amm.base_mint,
+        token::authority = user,
     )]
-    pub user_ata_base: Account<'info, TokenAccount>,
+    pub user_base_account: Account<'info, TokenAccount>,
     #[account(
         mut,
-        associated_token::mint = quote_mint,
-        associated_token::authority = user,
+        token::mint = amm.quote_mint,
+        token::authority = user,
     )]
-    pub user_ata_quote: Account<'info, TokenAccount>,
+    pub user_quote_account: Account<'info, TokenAccount>,
     #[account(
         mut,
-        associated_token::mint = base_mint,
+        associated_token::mint = amm.base_mint,
         associated_token::authority = amm,
     )]
     pub vault_ata_base: Account<'info, TokenAccount>,
     #[account(
         mut,
-        associated_token::mint = quote_mint,
+        associated_token::mint = amm.quote_mint,
         associated_token::authority = amm,
     )]
     pub vault_ata_quote: Account<'info, TokenAccount>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
 }
 
 impl Swap<'_> {
@@ -59,15 +50,11 @@ impl Swap<'_> {
         let Swap {
             user,
             amm,
-            base_mint: _,
-            quote_mint: _,
-            user_ata_base,
-            user_ata_quote,
+            user_base_account,
+            user_quote_account,
             vault_ata_base,
             vault_ata_quote,
-            associated_token_program: _,
             token_program,
-            system_program: _,
         } = ctx.accounts;
 
         let SwapArgs {
@@ -78,12 +65,12 @@ impl Swap<'_> {
 
         match swap_type {
             SwapType::Buy => require_gte!(
-                user_ata_quote.amount,
+                user_quote_account.amount,
                 input_amount,
                 AmmError::InsufficientBalance
             ),
             SwapType::Sell => require_gte!(
-                user_ata_base.amount,
+                user_base_account.amount,
                 input_amount,
                 AmmError::InsufficientBalance
             ),
@@ -99,16 +86,16 @@ impl Swap<'_> {
 
         let (user_from, vault_to, vault_from, user_to) = match swap_type {
             SwapType::Buy => (
-                user_ata_quote,
+                user_quote_account,
                 vault_ata_quote,
                 vault_ata_base,
-                user_ata_base,
+                user_base_account,
             ),
             SwapType::Sell => (
-                user_ata_base,
+                user_base_account,
                 vault_ata_base,
                 vault_ata_quote,
-                user_ata_quote,
+                user_quote_account,
             ),
         };
 

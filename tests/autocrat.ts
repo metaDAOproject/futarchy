@@ -248,7 +248,6 @@ describe("autocrat", async function () {
           marketTakerFee: null,
           // minQuoteFutarchicLiquidity: new BN(10),
           // minBaseFutarchicLiquidity: new BN(100),
-
         },
       });
       const instruction = {
@@ -541,7 +540,7 @@ describe("autocrat", async function () {
           pubkey: daoTreasury,
           isSigner: true,
           isWritable: false,
-        }
+        },
       ];
 
       const data = autocrat.coder.instruction.encode("update_dao", {
@@ -664,7 +663,7 @@ describe("autocrat", async function () {
 
       const storedProposal = await autocrat.account.proposal.fetch(proposal);
       assert.exists(storedProposal.state.passed);
-      
+
       const beforeDao = await autocratClient.getDao(dao);
       assert.equal(beforeDao.passThresholdBps, 300);
 

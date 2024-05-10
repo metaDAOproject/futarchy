@@ -84,27 +84,17 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "baseMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "quoteMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "userAtaLp";
+          name: "userLpAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaBase";
+          name: "userBaseAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaQuote";
+          name: "userQuoteAccount";
           isMut: true;
           isSigner: false;
         },
@@ -119,17 +109,7 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "associatedTokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "systemProgram";
           isMut: false;
           isSigner: false;
         }
@@ -162,27 +142,17 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "baseMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "quoteMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "userAtaLp";
+          name: "userLpAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaBase";
+          name: "userBaseAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaQuote";
+          name: "userQuoteAccount";
           isMut: true;
           isSigner: false;
         },
@@ -197,17 +167,7 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "associatedTokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "systemProgram";
           isMut: false;
           isSigner: false;
         }
@@ -235,22 +195,12 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "baseMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "quoteMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "userAtaBase";
+          name: "userBaseAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaQuote";
+          name: "userQuoteAccount";
           isMut: true;
           isSigner: false;
         },
@@ -265,17 +215,7 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "associatedTokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "systemProgram";
           isMut: false;
           isSigner: false;
         }
@@ -683,27 +623,17 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "baseMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "quoteMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "userAtaLp",
+          name: "userLpAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaBase",
+          name: "userBaseAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaQuote",
+          name: "userQuoteAccount",
           isMut: true,
           isSigner: false,
         },
@@ -718,17 +648,7 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "associatedTokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
           name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "systemProgram",
           isMut: false,
           isSigner: false,
         },
@@ -761,27 +681,17 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "baseMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "quoteMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "userAtaLp",
+          name: "userLpAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaBase",
+          name: "userBaseAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaQuote",
+          name: "userQuoteAccount",
           isMut: true,
           isSigner: false,
         },
@@ -796,17 +706,7 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "associatedTokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
           name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "systemProgram",
           isMut: false,
           isSigner: false,
         },
@@ -834,22 +734,12 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "baseMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "quoteMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "userAtaBase",
+          name: "userBaseAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaQuote",
+          name: "userQuoteAccount",
           isMut: true,
           isSigner: false,
         },
@@ -864,17 +754,7 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "associatedTokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
           name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "systemProgram",
           isMut: false,
           isSigner: false,
         },

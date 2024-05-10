@@ -251,6 +251,8 @@ export class AmmClient {
   ) {
     const [lpMint] = getAmmLpMintAddr(this.program.programId, amm);
 
+    const userLpAccount = getAssociatedTokenAddressSync(lpMint, user);
+
     return this.program.methods
       .addLiquidity({
         quoteAmount,
@@ -260,15 +262,21 @@ export class AmmClient {
       .accounts({
         user,
         amm,
-        baseMint,
-        quoteMint,
         lpMint,
-        userAtaLp: getAssociatedTokenAddressSync(lpMint, user),
-        userAtaBase: getAssociatedTokenAddressSync(baseMint, user),
-        userAtaQuote: getAssociatedTokenAddressSync(quoteMint, user),
+        userLpAccount,
+        userBaseAccount: getAssociatedTokenAddressSync(baseMint, user),
+        userQuoteAccount: getAssociatedTokenAddressSync(quoteMint, user),
         vaultAtaBase: getAssociatedTokenAddressSync(baseMint, amm, true),
         vaultAtaQuote: getAssociatedTokenAddressSync(quoteMint, amm, true),
-      });
+      })
+      .preInstructions([
+        createAssociatedTokenAccountIdempotentInstruction(
+          this.provider.publicKey,
+          userLpAccount,
+          this.provider.publicKey,
+          lpMint
+        ),
+      ]);
   }
 
   removeLiquidityIx(
@@ -291,17 +299,15 @@ export class AmmClient {
         user: this.provider.publicKey,
         amm: ammAddr,
         lpMint,
-        baseMint,
-        quoteMint,
-        userAtaLp: getAssociatedTokenAddressSync(
+        userLpAccount: getAssociatedTokenAddressSync(
           lpMint,
           this.provider.publicKey
         ),
-        userAtaBase: getAssociatedTokenAddressSync(
+        userBaseAccount: getAssociatedTokenAddressSync(
           baseMint,
           this.provider.publicKey
         ),
-        userAtaQuote: getAssociatedTokenAddressSync(
+        userQuoteAccount: getAssociatedTokenAddressSync(
           quoteMint,
           this.provider.publicKey
         ),
@@ -359,15 +365,13 @@ export class AmmClient {
       })
       .accounts({
         user: this.provider.publicKey,
-        amm: amm,
-        baseMint,
-        quoteMint,
-        userAtaBase: getAssociatedTokenAddressSync(
+        amm,
+        userBaseAccount: getAssociatedTokenAddressSync(
           baseMint,
           this.provider.publicKey,
           true
         ),
-        userAtaQuote: getAssociatedTokenAddressSync(
+        userQuoteAccount: getAssociatedTokenAddressSync(
           quoteMint,
           this.provider.publicKey,
           true

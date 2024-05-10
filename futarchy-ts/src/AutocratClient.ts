@@ -310,16 +310,18 @@ export class AutocratClient {
         proposal
       )
       .postInstructions([
-        await this.ammClient
-          .addLiquidityIx(
-            passAmm,
-            passBase,
-            passQuote,
-            quoteTokensToLP,
-            baseTokensToLP,
-            new BN(0)
-          )
-          .instruction(),
+        ...(
+          await this.ammClient
+            .addLiquidityIx(
+              passAmm,
+              passBase,
+              passQuote,
+              quoteTokensToLP,
+              baseTokensToLP,
+              new BN(0)
+            )
+            .transaction()
+        ).instructions,
         await this.ammClient
           .createAmmIx(
             failBase,
@@ -329,16 +331,18 @@ export class AutocratClient {
             proposal
           )
           .instruction(),
-        await this.ammClient
-          .addLiquidityIx(
-            failAmm,
-            failBase,
-            failQuote,
-            quoteTokensToLP,
-            baseTokensToLP,
-            new BN(0)
-          )
-          .instruction(),
+        ...(
+          await this.ammClient
+            .addLiquidityIx(
+              failAmm,
+              failBase,
+              failQuote,
+              quoteTokensToLP,
+              baseTokensToLP,
+              new BN(0)
+            )
+            .transaction()
+        ).instructions,
       ])
       .rpc();
 
