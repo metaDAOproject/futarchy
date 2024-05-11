@@ -67,9 +67,6 @@ impl TwapOracle {
 #[derive(Default)]
 pub struct Amm {
     pub bump: u8,
-    /// We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.
-    /// So we can use proposal as a PDA seed.
-    pub proposal: Pubkey,
 
     pub created_at_slot: u64,
 
@@ -283,7 +280,6 @@ macro_rules! generate_amm_seeds {
             AMM_SEED_PREFIX,
             $amm.base_mint.as_ref(),
             $amm.quote_mint.as_ref(),
-            $amm.proposal.as_ref(),
             &[$amm.bump],
         ]
     }};

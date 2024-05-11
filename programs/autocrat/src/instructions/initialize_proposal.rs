@@ -38,7 +38,6 @@ pub struct InitializeProposal<'info> {
     #[account(
         constraint = pass_amm.base_mint == base_vault.conditional_on_finalize_token_mint,
         constraint = pass_amm.quote_mint == quote_vault.conditional_on_finalize_token_mint,
-        has_one = proposal
     )]
     pub pass_amm: Box<Account<'info, Amm>>,
     #[account(constraint = pass_amm.lp_mint == pass_lp_mint.key())]
@@ -48,7 +47,6 @@ pub struct InitializeProposal<'info> {
     #[account(
         constraint = fail_amm.base_mint == base_vault.conditional_on_revert_token_mint,
         constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint,
-        has_one = proposal
     )]
     pub fail_amm: Box<Account<'info, Amm>>,
     #[account(

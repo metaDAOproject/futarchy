@@ -79,7 +79,7 @@ export class AmmClient {
     if (!twapMaxObservationChangePerUpdate) {
       twapMaxObservationChangePerUpdate = twapInitialObservation * 0.02;
     }
-    let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint, proposal);
+    let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint);
 
     let baseDecimals = unpackMint(
       baseMint,
@@ -117,7 +117,7 @@ export class AmmClient {
     twapMaxObservationChangePerUpdate: BN,
     proposal: PublicKey
   ): MethodsBuilder<AmmIDLType, any> {
-    let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint, proposal);
+    let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint);
     let [lpMint] = getAmmLpMintAddr(this.getProgramId(), amm);
 
     let vaultAtaBase = getAssociatedTokenAddressSync(baseMint, amm, true);
