@@ -84,7 +84,12 @@ impl FinalizeProposal<'_> {
 
         let proposer_key = proposal.proposer;
         let nonce = proposal.nonce;
-        let proposal_seeds = &[b"proposal", proposer_key.as_ref(), &nonce.to_le_bytes(), &[proposal.pda_bump]];
+        let proposal_seeds = &[
+            b"proposal",
+            proposer_key.as_ref(),
+            &nonce.to_le_bytes(),
+            &[proposal.pda_bump],
+        ];
         let proposal_signer = &[&proposal_seeds[..]];
 
         let dao_key = dao.key();

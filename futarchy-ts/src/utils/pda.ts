@@ -87,15 +87,13 @@ export const getProposalAddr = (
 export const getAmmAddr = (
   programId: PublicKey,
   baseMint: PublicKey,
-  quoteMint: PublicKey,
-  proposal: PublicKey
+  quoteMint: PublicKey
 ): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [
       utils.bytes.utf8.encode("amm__"),
       baseMint.toBuffer(),
       quoteMint.toBuffer(),
-      proposal.toBuffer(),
     ],
     programId
   );

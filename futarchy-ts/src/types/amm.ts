@@ -252,14 +252,6 @@ export type Amm = {
             type: "u8";
           },
           {
-            name: "proposal";
-            docs: [
-              "We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.",
-              "So we can use proposal as a PDA seed."
-            ];
-            type: "publicKey";
-          },
-          {
             name: "createdAtSlot";
             type: "u64";
           },
@@ -799,14 +791,6 @@ export const IDL: Amm = {
           {
             name: "bump",
             type: "u8",
-          },
-          {
-            name: "proposal",
-            docs: [
-              "We need to create multiple AMMs for a single asset pair, but AMMs are PDAs.",
-              "So we can use proposal as a PDA seed.",
-            ],
-            type: "publicKey",
           },
           {
             name: "createdAtSlot",
