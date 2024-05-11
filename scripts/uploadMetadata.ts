@@ -1,5 +1,8 @@
 import * as anchor from "@coral-xyz/anchor";
-import { ConditionalVaultClient, uploadConditionalTokenMetadataJson } from "@metadaoproject/futarchy-ts";
+import {
+  ConditionalVaultClient,
+  uploadConditionalTokenMetadataJson,
+} from "@metadaoproject/futarchy-ts";
 import { AutocratClient, assetImageMap } from "@metadaoproject/futarchy-ts";
 import { keypairIdentity } from "@metaplex-foundation/umi";
 
@@ -25,16 +28,34 @@ async function main() {
   //   (proposal) => proposal.account.number == PROPOSAL_NUMBER
   // );
   const storedProposal = await autocratClient.getProposal(proposal);
-//   const baseVault = new PublicKey("DXWDLrDxqVn1b7F2jtWMRdg1rUYf1XmhwwTbiUUTcSru");
+  //   const baseVault = new PublicKey("DXWDLrDxqVn1b7F2jtWMRdg1rUYf1XmhwwTbiUUTcSru");
   const DEAN = new PublicKey("DEANPaCEAfW2SCJCdEtGvV1nT9bAShWrajnieSzUcWzh");
   const mUSDC = new PublicKey("ABizbp4pXowKQJ1pWgPeWPYDfSKwg34A7Xy1fxTu7No9");
 
-  const passUri = await uploadConditionalTokenMetadataJson(provider.connection, keypairIdentity(autocratClient.provider.wallet['payer']), 1, "pMETA");
-  const failUri = await uploadConditionalTokenMetadataJson(provider.connection, keypairIdentity(autocratClient.provider.wallet['payer']), 1, "fMETA");
+  const passUri = await uploadConditionalTokenMetadataJson(
+    provider.connection,
+    keypairIdentity(autocratClient.provider.wallet["payer"]),
+    1,
+    "pMETA"
+  );
+  const failUri = await uploadConditionalTokenMetadataJson(
+    provider.connection,
+    keypairIdentity(autocratClient.provider.wallet["payer"]),
+    1,
+    "fMETA"
+  );
 
   // console.log(await uploadImageJson(autocratClient.provider.connection, keypairIdentity(autocratClient.provider.wallet['payer'])));
-  const tx = await vaultClient.addMetadataToConditionalTokensIx(storedProposal.quoteVault, mUSDC, 1, passUri, failUri).rpc();
-  console.log(tx)
+  const tx = await vaultClient
+    .addMetadataToConditionalTokensIx(
+      storedProposal.quoteVault,
+      mUSDC,
+      1,
+      passUri,
+      failUri
+    )
+    .rpc();
+  console.log(tx);
 
   // await autocratClient.finalizeProposal(proposal);
 }

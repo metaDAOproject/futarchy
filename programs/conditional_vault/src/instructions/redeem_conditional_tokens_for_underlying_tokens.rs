@@ -52,10 +52,10 @@ impl InteractWithVault<'_> {
             )?;
         }
 
-        let redeemable = if vault_status == VaultStatus::Finalized {
-            pre_conditional_on_finalize_balance
-        } else {
-            pre_conditional_on_revert_balance
+        let redeemable = match vault_status {
+            VaultStatus::Finalized => pre_conditional_on_finalize_balance,
+            VaultStatus::Reverted => pre_conditional_on_revert_balance,
+            _ => unreachable!(),
         };
 
         token::transfer(
@@ -100,17 +100,21 @@ impl InteractWithVault<'_> {
         assert!(
             post_revert_mint_supply == pre_revert_mint_supply - pre_conditional_on_revert_balance
         );
-        if vault_status == VaultStatus::Finalized {
-            assert!(
-                post_vault_underlying_balance
-                    == pre_vault_underlying_balance - pre_conditional_on_finalize_balance
-            );
-        } else {
-            assert!(vault_status == VaultStatus::Reverted);
-            assert!(
-                post_vault_underlying_balance
-                    == pre_vault_underlying_balance - pre_conditional_on_revert_balance
-            );
+        match vault_status {
+            VaultStatus::Finalized => {
+                assert!(
+                    post_vault_underlying_balance
+                        == pre_vault_underlying_balance - pre_conditional_on_finalize_balance
+                );
+            }
+            VaultStatus::Reverted => {
+                assert!(vault_status == VaultStatus::Reverted);
+                assert!(
+                    post_vault_underlying_balance
+                        == pre_vault_underlying_balance - pre_conditional_on_revert_balance
+                );
+            }
+            _ => unreachable!(),
         }
 
         Ok(())

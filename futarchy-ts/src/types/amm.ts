@@ -84,27 +84,17 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "baseMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "quoteMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "userAtaLp";
+          name: "userLpAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaBase";
+          name: "userBaseAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaQuote";
+          name: "userQuoteAccount";
           isMut: true;
           isSigner: false;
         },
@@ -119,17 +109,7 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "associatedTokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "systemProgram";
           isMut: false;
           isSigner: false;
         }
@@ -162,27 +142,17 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "baseMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "quoteMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "userAtaLp";
+          name: "userLpAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaBase";
+          name: "userBaseAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaQuote";
+          name: "userQuoteAccount";
           isMut: true;
           isSigner: false;
         },
@@ -197,17 +167,7 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "associatedTokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "systemProgram";
           isMut: false;
           isSigner: false;
         }
@@ -235,22 +195,12 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "baseMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "quoteMint";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "userAtaBase";
+          name: "userBaseAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "userAtaQuote";
+          name: "userQuoteAccount";
           isMut: true;
           isSigner: false;
         },
@@ -265,17 +215,7 @@ export type Amm = {
           isSigner: false;
         },
         {
-          name: "associatedTokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "systemProgram";
           isMut: false;
           isSigner: false;
         }
@@ -593,6 +533,16 @@ export type Amm = {
       code: 6013;
       name: "InsufficientQuoteAmount";
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool";
+    },
+    {
+      code: 6014;
+      name: "ZeroSwapAmount";
+      msg: "Users must swap a non-zero amount";
+    },
+    {
+      code: 6015;
+      name: "ConstantProductInvariantFailed";
+      msg: "K should always be increasing";
     }
   ];
 };
@@ -683,27 +633,17 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "baseMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "quoteMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "userAtaLp",
+          name: "userLpAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaBase",
+          name: "userBaseAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaQuote",
+          name: "userQuoteAccount",
           isMut: true,
           isSigner: false,
         },
@@ -718,17 +658,7 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "associatedTokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
           name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "systemProgram",
           isMut: false,
           isSigner: false,
         },
@@ -761,27 +691,17 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "baseMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "quoteMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "userAtaLp",
+          name: "userLpAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaBase",
+          name: "userBaseAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaQuote",
+          name: "userQuoteAccount",
           isMut: true,
           isSigner: false,
         },
@@ -796,17 +716,7 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "associatedTokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
           name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "systemProgram",
           isMut: false,
           isSigner: false,
         },
@@ -834,22 +744,12 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "baseMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "quoteMint",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "userAtaBase",
+          name: "userBaseAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "userAtaQuote",
+          name: "userQuoteAccount",
           isMut: true,
           isSigner: false,
         },
@@ -864,17 +764,7 @@ export const IDL: Amm = {
           isSigner: false,
         },
         {
-          name: "associatedTokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
           name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "systemProgram",
           isMut: false,
           isSigner: false,
         },
@@ -1192,6 +1082,16 @@ export const IDL: Amm = {
       code: 6013,
       name: "InsufficientQuoteAmount",
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool",
+    },
+    {
+      code: 6014,
+      name: "ZeroSwapAmount",
+      msg: "Users must swap a non-zero amount",
+    },
+    {
+      code: 6015,
+      name: "ConstantProductInvariantFailed",
+      msg: "K should always be increasing",
     },
   ],
 };

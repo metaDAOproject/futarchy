@@ -30,4 +30,8 @@ pub enum AmmError {
     AddLiquidityMaxBaseExceeded,
     #[msg("`quote_amount` must be greater than 100000000 when initializing a pool")]
     InsufficientQuoteAmount,
+    #[msg("Users must swap a non-zero amount")]
+    ZeroSwapAmount,
+    #[msg("K should always be increasing")]
+    ConstantProductInvariantFailed,
 }

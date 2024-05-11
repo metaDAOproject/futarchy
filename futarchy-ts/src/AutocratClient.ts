@@ -27,6 +27,7 @@ import {
   getAmmAddr,
   getAmmLpMintAddr,
   getDaoTreasuryAddr,
+  getProposalAddr,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
@@ -44,6 +45,11 @@ export type CreateClientParams = {
   autocratProgramId?: PublicKey;
   conditionalVaultProgramId?: PublicKey;
   ammProgramId?: PublicKey;
+};
+
+export type ProposalVaults = {
+  baseVault: PublicKey;
+  quoteVault: PublicKey;
 };
 
 export class AutocratClient {
@@ -124,15 +130,13 @@ export class AutocratClient {
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
     const [baseVault] = getVaultAddr(
       this.vaultClient.vaultProgram.programId,
-      daoTreasury,
-      baseMint,
-      proposal
+      proposal,
+      baseMint
     );
     const [quoteVault] = getVaultAddr(
       this.vaultClient.vaultProgram.programId,
-      daoTreasury,
-      quoteMint,
-      proposal
+      proposal,
+      quoteMint
     );
 
     const [passBaseMint] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
@@ -248,34 +252,36 @@ export class AutocratClient {
     quoteTokensToLP: BN
   ): Promise<PublicKey> {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
-    const proposalKP = Keypair.generate();
-    const proposal = proposalKP.publicKey;
-
     const storedDao = await this.getDao(dao);
+
+    const nonce = new BN(Math.random() * 2 ** 50);
+
+    let [proposal] = getProposalAddr(
+      this.autocrat.programId,
+      this.provider.publicKey,
+      nonce
+    );
+
     const daoTreasury = storedDao.treasury;
 
     await this.vaultClient
-      .initializeVaultIx(storedDao.treasury, storedDao.tokenMint, proposal)
+      .initializeVaultIx(proposal, storedDao.tokenMint)
       .rpc();
     await this.vaultClient
-      .initializeVaultIx(storedDao.treasury, storedDao.usdcMint, proposal)
+      .initializeVaultIx(proposal, storedDao.usdcMint)
       .rpc();
 
     const [baseVault] = getVaultAddr(
       this.vaultClient.vaultProgram.programId,
-      daoTreasury,
-      storedDao.tokenMint,
-      proposal
+      proposal,
+      storedDao.tokenMint
     );
     const [quoteVault] = getVaultAddr(
       this.vaultClient.vaultProgram.programId,
-      daoTreasury,
-      storedDao.usdcMint,
-      proposal
+      proposal,
+      storedDao.usdcMint
     );
 
-    // await this.vaultClient.mintConditionalTokens(baseVault, 10);
-    // await this.vaultClient.mintConditionalTokens(quoteVault, 10_000);
     await this.vaultClient
       .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
       .rpc();
@@ -310,16 +316,18 @@ export class AutocratClient {
         proposal
       )
       .postInstructions([
-        await this.ammClient
-          .addLiquidityIx(
-            passAmm,
-            passBase,
-            passQuote,
-            quoteTokensToLP,
-            baseTokensToLP,
-            new BN(0)
-          )
-          .instruction(),
+        ...(
+          await this.ammClient
+            .addLiquidityIx(
+              passAmm,
+              passBase,
+              passQuote,
+              quoteTokensToLP,
+              baseTokensToLP,
+              new BN(0)
+            )
+            .transaction()
+        ).instructions,
         await this.ammClient
           .createAmmIx(
             failBase,
@@ -329,110 +337,71 @@ export class AutocratClient {
             proposal
           )
           .instruction(),
-        await this.ammClient
-          .addLiquidityIx(
-            failAmm,
-            failBase,
-            failQuote,
-            quoteTokensToLP,
-            baseTokensToLP,
-            new BN(0)
-          )
-          .instruction(),
+        ...(
+          await this.ammClient
+            .addLiquidityIx(
+              failAmm,
+              failBase,
+              failQuote,
+              quoteTokensToLP,
+              baseTokensToLP,
+              new BN(0)
+            )
+            .transaction()
+        ).instructions,
       ])
       .rpc();
-
-    //   tx.feePayer = this.provider.publicKey;
-    // let blockhash = await this.provider.connection.banksClient.getLatestBlockhash();
-    // [tx.recentBlockhash] = blockhash;
-    // console.log(tx);
-    // let msg = tx.compileMessage();
-    // console.log(msg.serialize().length);
-
-    // return;
-    // .rpc();
-
-    // .rpc();
-
-    // .rpc();
 
     // this is how many original tokens are created
     const lpTokens = quoteTokensToLP;
 
-    // let tx = await this.initializeProposalIx(
-    //   proposalKP,
-    //   descriptionUrl,
-    //   instruction,
-    //   dao,
-    //   storedDao.tokenMint,
-    //   storedDao.usdcMint,
-    //   lpTokens,
-    //   lpTokens
-    // )
-    //   .preInstructions([
-    //     await this.autocrat.account.proposal.createInstruction(
-    //       proposalKP,
-    //       2500
-    //     ),
-    //   ])
-    //   .transaction();
-
-    // tx.feePayer = this.provider.publicKey;
-    // console.log(await this.provider.connection.banksClient.getLatestBlockhash());
-    // let blockhash = await this.provider.connection.banksClient.getLatestBlockhash();
-    // [tx.recentBlockhash] = blockhash;
-    // let msg = tx.compileMessage();
-    // console.log(msg.serialize().length);
-    // console.log(msg.recentBlockhash = );
-    // Connection
-
-    // console.log(tx.feePayer = payer.publicKey);
-
     await this.initializeProposalIx(
-      proposalKP,
       descriptionUrl,
       instruction,
       dao,
       storedDao.tokenMint,
       storedDao.usdcMint,
       lpTokens,
-      lpTokens
-    )
-      .preInstructions([
-        await this.autocrat.account.proposal.createInstruction(
-          proposalKP,
-          2500
-        ),
-      ])
-      .rpc();
+      lpTokens,
+      nonce
+    ).rpc();
 
     return proposal;
   }
 
   initializeProposalIx(
-    proposalKeypair: Keypair,
     descriptionUrl: string,
     instruction: ProposalInstruction,
     dao: PublicKey,
     baseMint: PublicKey,
     quoteMint: PublicKey,
     passLpTokensToLock: BN,
-    failLpTokensToLock: BN
+    failLpTokensToLock: BN,
+    nonce: BN
   ) {
+    let [proposal] = getProposalAddr(
+      this.autocrat.programId,
+      this.provider.publicKey,
+      nonce
+    );
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
-    const [baseVault] = getVaultAddr(
-      this.vaultClient.vaultProgram.programId,
-      daoTreasury,
+    const { baseVault, quoteVault } = this.getProposalPdas(
+      proposal,
       baseMint,
-      proposalKeypair.publicKey
-    );
-    const [quoteVault] = getVaultAddr(
-      this.vaultClient.vaultProgram.programId,
-      daoTreasury,
       quoteMint,
-      proposalKeypair.publicKey
+      dao
     );
+    // const [baseVault] = getVaultAddr(
+    //   this.vaultClient.vaultProgram.programId,
+    //   daoTreasury,
+    //   baseMint
+    // );
+    // const [quoteVault] = getVaultAddr(
+    //   this.vaultClient.vaultProgram.programId,
+    //   daoTreasury,
+    //   quoteMint
+    // );
 
     const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
     const [passQuote] = getVaultFinalizeMintAddr(vaultProgramId, quoteVault);
@@ -444,13 +413,13 @@ export class AutocratClient {
       this.ammClient.program.programId,
       passBase,
       passQuote,
-      proposalKeypair.publicKey
+      proposal
     );
     const [failAmm] = getAmmAddr(
       this.ammClient.program.programId,
       failBase,
       failQuote,
-      proposalKeypair.publicKey
+      proposal
     );
 
     const [passLp] = getAmmLpMintAddr(
@@ -473,54 +442,49 @@ export class AutocratClient {
       true
     );
 
-    return (
-      this.autocrat.methods
-        .initializeProposal({
-          descriptionUrl,
-          instruction,
-          passLpTokensToLock,
-          failLpTokensToLock,
-        })
-        // .preInstructions([
-        //   await this.autocrat.account.proposal.createInstruction(proposalKeypair, 2500),
-        // ])
-        .accounts({
-          proposal: proposalKeypair.publicKey,
-          dao,
-          baseVault,
-          quoteVault,
-          passAmm,
-          failAmm,
-          passLpMint: passLp,
-          failLpMint: failLp,
-          passLpUserAccount: getAssociatedTokenAddressSync(
-            passLp,
-            this.provider.publicKey
-          ),
-          failLpUserAccount: getAssociatedTokenAddressSync(
-            failLp,
-            this.provider.publicKey
-          ),
+    return this.autocrat.methods
+      .initializeProposal({
+        descriptionUrl,
+        instruction,
+        passLpTokensToLock,
+        failLpTokensToLock,
+        nonce,
+      })
+      .accounts({
+        proposal,
+        dao,
+        baseVault,
+        quoteVault,
+        passAmm,
+        failAmm,
+        passLpMint: passLp,
+        failLpMint: failLp,
+        passLpUserAccount: getAssociatedTokenAddressSync(
+          passLp,
+          this.provider.publicKey
+        ),
+        failLpUserAccount: getAssociatedTokenAddressSync(
+          failLp,
+          this.provider.publicKey
+        ),
+        passLpVaultAccount,
+        failLpVaultAccount,
+        proposer: this.provider.publicKey,
+      })
+      .preInstructions([
+        createAssociatedTokenAccountIdempotentInstruction(
+          this.provider.publicKey,
           passLpVaultAccount,
+          daoTreasury,
+          passLp
+        ),
+        createAssociatedTokenAccountIdempotentInstruction(
+          this.provider.publicKey,
           failLpVaultAccount,
-          proposer: this.provider.publicKey,
-        })
-        .preInstructions([
-          createAssociatedTokenAccountIdempotentInstruction(
-            this.provider.publicKey,
-            passLpVaultAccount,
-            daoTreasury,
-            passLp
-          ),
-          createAssociatedTokenAccountIdempotentInstruction(
-            this.provider.publicKey,
-            failLpVaultAccount,
-            daoTreasury,
-            failLp
-          ),
-        ])
-        .signers([proposalKeypair])
-    );
+          daoTreasury,
+          failLp
+        ),
+      ]);
   }
 
   async finalizeProposal(proposal: PublicKey) {
@@ -548,17 +512,11 @@ export class AutocratClient {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
 
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
-    const [baseVault] = getVaultAddr(
-      this.vaultClient.vaultProgram.programId,
-      daoTreasury,
+    const { baseVault, quoteVault } = this.getProposalPdas(
+      proposal,
       daoToken,
-      proposal
-    );
-    const [quoteVault] = getVaultAddr(
-      this.vaultClient.vaultProgram.programId,
-      daoTreasury,
       usdc,
-      proposal
+      dao
     );
 
     const [passBase] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);

@@ -21,16 +21,12 @@ impl AddOrRemoveLiquidity<'_> {
             user,
             amm,
             lp_mint,
-            base_mint: _,
-            quote_mint: _,
-            user_ata_lp,
-            user_ata_base,
-            user_ata_quote,
+            user_lp_account,
+            user_base_account,
+            user_quote_account,
             vault_ata_base,
             vault_ata_quote,
-            associated_token_program: _,
             token_program,
-            system_program: _,
         } = ctx.accounts;
 
         let AddLiquidityArgs {
@@ -40,12 +36,12 @@ impl AddOrRemoveLiquidity<'_> {
         } = args;
 
         require_gte!(
-            user_ata_base.amount,
+            user_base_account.amount,
             max_base_amount,
             AmmError::InsufficientBalance
         );
         require_gte!(
-            user_ata_quote.amount,
+            user_quote_account.amount,
             quote_amount,
             AmmError::InsufficientBalance
         );
@@ -105,7 +101,7 @@ impl AddOrRemoveLiquidity<'_> {
                 token_program.to_account_info(),
                 MintTo {
                     mint: lp_mint.to_account_info(),
-                    to: user_ata_lp.to_account_info(),
+                    to: user_lp_account.to_account_info(),
                     authority: amm.to_account_info(),
                 },
                 signer,
@@ -114,8 +110,8 @@ impl AddOrRemoveLiquidity<'_> {
         )?;
 
         for (amount, from, to) in [
-            (base_amount, user_ata_base, vault_ata_base),
-            (quote_amount, user_ata_quote, vault_ata_quote),
+            (base_amount, user_base_account, vault_ata_base),
+            (quote_amount, user_quote_account, vault_ata_quote),
         ] {
             token::transfer(
                 CpiContext::new(

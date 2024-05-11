@@ -164,14 +164,12 @@ export class ConditionalVaultClient {
 
   initializeVaultIx(
     settlementAuthority: PublicKey,
-    underlyingTokenMint: PublicKey,
-    proposal: PublicKey
+    underlyingTokenMint: PublicKey
   ): MethodsBuilder<ConditionalVault, any> {
     const [vault] = getVaultAddr(
       this.vaultProgram.programId,
       settlementAuthority,
-      underlyingTokenMint,
-      proposal
+      underlyingTokenMint
     );
 
     const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
@@ -190,7 +188,7 @@ export class ConditionalVaultClient {
     );
 
     return this.vaultProgram.methods
-      .initializeConditionalVault({ settlementAuthority, proposal })
+      .initializeConditionalVault({ settlementAuthority })
       .accounts({
         vault,
         underlyingTokenMint,
@@ -255,20 +253,17 @@ export class ConditionalVaultClient {
 
   async initializeVault(
     settlementAuthority: PublicKey,
-    underlyingTokenMint: PublicKey,
-    proposal: PublicKey
+    underlyingTokenMint: PublicKey
   ): Promise<PublicKey> {
     const [vault] = getVaultAddr(
       this.vaultProgram.programId,
       settlementAuthority,
-      underlyingTokenMint,
-      proposal
+      underlyingTokenMint
     );
 
     await this.initializeVaultIx(
       settlementAuthority,
-      underlyingTokenMint,
-      proposal
+      underlyingTokenMint
     ).rpc();
 
     return vault;
