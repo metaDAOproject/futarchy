@@ -18,4 +18,4 @@
 ## Implementation
 
 * [Program Architecture](implementation/program-architecture.md)
-* [TWAP Oracle](implementation/twap-oracle.md)
+* [Price Oracle](implementation/price-oracle.md)
