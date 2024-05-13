@@ -18,13 +18,13 @@ Conditional tokens are tied to _conditional vaults_. Each conditional vault has 
 
 Once a vault is created, anyone can deposit underlying tokens in exchange for conditional tokens. You receive two types of conditional tokens: ones that are redeemable for underlying tokens if the vault is finalized and ones that are redeemable for underlying tokens if the vault is reverted. For example, if you deposit 10 USDC into a vault, you will receive 10 conditional-on-finalize USDC and 10 conditional-on-revert USDC.
 
-<figure><img src="../.gitbook/assets/image (1).png" alt="" width="563"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1).png" alt="" width="563"><figcaption></figcaption></figure>
 
 The settlement authority can either _finalize_ or _revert_ a vault.
 
 If the settlement authority finalizes a vault, users can redeem their conditional-on-finalize tokens for underlying tokens. Conversely, if the settlement authority reverts a vault, users can redeem their conditional-on-revert tokens for underlying tokens.
 
-<figure><img src="../.gitbook/assets/image (1) (1).png" alt="" width="563"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1) (1).png" alt="" width="563"><figcaption></figcaption></figure>
 
 There are two vaults for each proposal: a base vault and a quote vault. The base vault uses the DAO's token as the underlying token, and the quote vault uses USDC as the underlying token. For example, MetaDAO proposals have vaults for META and USDC.
 
@@ -58,7 +58,7 @@ Anyone can interact with autocrat to create a _proposal_, which contains fields 
 
 The requisite conditional vaults and markets are created at the same time.
 
-<figure><img src="../.gitbook/assets/image.png" alt="" width="563"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1).png" alt="" width="563"><figcaption></figcaption></figure>
 
 After a configurable amount of time (3 days by default), anyone can trigger proposal finalization. In finalization, autocrat checks if the TWAP of the pass market is x% higher than the TWAP of the fail market, where x is a DAO-configured threshold.
 
