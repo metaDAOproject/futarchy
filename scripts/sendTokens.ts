@@ -33,14 +33,21 @@ async function main() {
         `Airdroppping ${scaledAmount} ${mint.toString()} to ${dev.toString()}`
       );
 
-      let destination = (await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, mint, dev)).address;
+      let destination = (
+        await token.getOrCreateAssociatedTokenAccount(
+          provider.connection,
+          payer,
+          mint,
+          dev
+        )
+      ).address;
       await token.transfer(
         provider.connection,
         payer,
         token.getAssociatedTokenAddressSync(mint, payer.publicKey),
         destination,
         payer,
-        scaledAmount,
+        scaledAmount
       );
     }
   }

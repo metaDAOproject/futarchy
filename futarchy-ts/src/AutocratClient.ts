@@ -2,9 +2,12 @@ import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
 import {
   AccountMeta,
   AddressLookupTableAccount,
+  ComputeBudgetProgram,
   Connection,
   Keypair,
   PublicKey,
+  Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import { PriceMath } from "./utils/priceMath";
 import { ProposalInstruction, InitializeDaoParams } from "./types";
@@ -567,5 +570,43 @@ export class AutocratClient {
               : meta
           )
       );
+  }
+
+  // cranks the TWAPs of multiple proposals' markets. there's a limit on the
+  // number of proposals you can pass in, which I can't determine rn because
+  // there aren't enough proposals on devnet
+  async crankProposalMarkets(
+    proposals: PublicKey[],
+    priorityFeeMicroLamports: number
+  ) {
+    const amms: PublicKey[] = [];
+
+    for (const proposal of proposals) {
+      const storedProposal = await this.getProposal(proposal);
+      amms.push(storedProposal.passAmm);
+      amms.push(storedProposal.failAmm);
+    }
+
+    while (true) {
+      let ixs: TransactionInstruction[] = [];
+
+      for (const amm of amms) {
+        ixs.push(await this.ammClient.crankThatTwapIx(amm).instruction());
+      }
+
+      let tx = new Transaction();
+      tx.add(
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 4_000 * ixs.length })
+      );
+      tx.add(
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: priorityFeeMicroLamports,
+        })
+      );
+      tx.add(...ixs);
+      await this.provider.sendAndConfirm(tx);
+
+      await new Promise((resolve) => setTimeout(resolve, 65 * 1000)); // 65,000 milliseconds = 1 minute and 5 seconds
+    }
   }
 }

@@ -127,7 +127,6 @@ export class AmmClient {
       .createAmm({
         twapInitialObservation,
         twapMaxObservationChangePerUpdate,
-        proposal,
       })
       .accounts({
         user: this.provider.publicKey,
@@ -412,8 +411,8 @@ export class AmmClient {
   //     .toNumber();
   // }
 
-  async getAmm(ammAddr: PublicKey): Promise<AmmAccount> {
-    return await this.program.account.amm.fetch(ammAddr);
+  async getAmm(amm: PublicKey): Promise<AmmAccount> {
+    return await this.program.account.amm.fetch(amm);
   }
 
   getTwap(amm: AmmAccount): BN {

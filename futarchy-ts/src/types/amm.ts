@@ -329,10 +329,6 @@ export type Amm = {
           {
             name: "twapMaxObservationChangePerUpdate";
             type: "u128";
-          },
-          {
-            name: "proposal";
-            type: "publicKey";
           }
         ];
       };
@@ -870,10 +866,6 @@ export const IDL: Amm = {
           {
             name: "twapMaxObservationChangePerUpdate",
             type: "u128",
-          },
-          {
-            name: "proposal",
-            type: "publicKey",
           },
         ],
       },
