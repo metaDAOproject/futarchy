@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "amm"
-version = "1.0.0"
+version = "0.3.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -402,7 +402,7 @@ checksum = "f1fdabc7756949593fe60f30ec81974b613357de856987752631dea1e3394c80"
 
 [[package]]
 name = "autocrat"
-version = "1.0.0"
+version = "0.3.0"
 dependencies = [
  "amm",
  "anchor-lang",
@@ -687,7 +687,7 @@ dependencies = [
 
 [[package]]
 name = "conditional_vault"
-version = "1.0.0"
+version = "0.3.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
