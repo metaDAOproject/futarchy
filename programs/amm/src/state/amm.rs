@@ -116,7 +116,9 @@ impl Amm {
 
         let denominator = (input_reserve * 100) + input_amount_with_fee;
 
-        let output_amount = (numerator / denominator) as u64;
+        let output_amount = (numerator / denominator)
+            .try_into()
+            .map_err(|_| AmmError::CastingOverflow)?;
 
         match swap_type {
             SwapType::Buy => {

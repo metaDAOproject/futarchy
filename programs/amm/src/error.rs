@@ -34,4 +34,6 @@ pub enum AmmError {
     ZeroSwapAmount,
     #[msg("K should always be increasing")]
     ConstantProductInvariantFailed,
+    #[msg("Casting has caused an overflow")]
+    CastingOverflow,
 }
