@@ -49,12 +49,12 @@ use std::borrow::Borrow;
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     name: "autocrat",
-    project_url: "https://themetadao.org",
+    project_url: "https://metadao.fi",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
     source_code: "https://github.com/metaDAOproject/futarchy",
-    source_release: "v1",
-    auditors: "None",
+    source_release: "v0.3",
+    auditors: "Neodyme",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
