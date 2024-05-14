@@ -2,7 +2,7 @@
 
 ### The problem
 
-Traditional DAO governance systems don't work. In theory, voting is a rational process where voters select the best option for the group. In practice, that's not the case. Voting systems suffer many problems, including:
+Traditional DAO governance systems don't work. In theory, voting should be a rational process where voters select the best option. In practice, that's not the case. Voting systems suffer many problems, including:
 
 * **Low participation:** most people don't vote.
 * **Uninformed voters**: most voters don't have a deep understanding of the decision at hand.

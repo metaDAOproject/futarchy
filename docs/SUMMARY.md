@@ -2,11 +2,11 @@
 
 * [Introduction](README.md)
 
-## Using Atrium
+## Using the platform
 
-* [Creating a DAO](using-atrium/creating-a-dao.md)
-* [Creating Proposals](using-atrium/creating-proposals.md)
-* [Trading Proposals](using-atrium/trading-proposals.md)
+* [Creating a DAO](using-the-platform/creating-a-dao.md)
+* [Creating Proposals](using-the-platform/creating-proposals.md)
+* [Trading Proposals](using-the-platform/trading-proposals.md)
 
 ## Futarchy
 
