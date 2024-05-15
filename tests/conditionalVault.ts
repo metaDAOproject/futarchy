@@ -36,11 +36,11 @@ import { ConditionalVault } from "../target/types/conditional_vault";
 import { expectError } from "./utils/utils";
 import {
   CONDITIONAL_VAULT_PROGRAM_ID,
+  ConditionalVaultClient,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
-} from "../futarchy-ts/src";
-import { ConditionalVaultClient } from "../futarchy-ts/src/ConditionalVaultClient";
+} from "@metadaoproject/futarchy";
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;

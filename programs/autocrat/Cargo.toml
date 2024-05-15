@@ -1,6 +1,6 @@
 [package]
 name = "autocrat"
-version = "1.0.0"
+version = "0.3.0"
 description = "SVM-based program for running futarchy"
 edition = "2021"
 

@@ -1,6 +1,6 @@
 [package]
 name = "amm"
-version = "1.0.0"
+version = "0.3.0"
 description = "Created with Anchor"
 edition = "2021"
 

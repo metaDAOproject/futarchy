@@ -23,7 +23,7 @@ import {
   AmmClient,
   PriceMath,
   getAmmLpMintAddr,
-} from "@metadaoproject/futarchy-ts";
+} from "@metadaoproject/futarchy";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { expectError, fastForward } from "./utils/utils";

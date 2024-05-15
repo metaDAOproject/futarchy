@@ -49,16 +49,16 @@ use std::borrow::Borrow;
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     name: "autocrat",
-    project_url: "https://themetadao.org",
+    project_url: "https://metadao.fi",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
     source_code: "https://github.com/metaDAOproject/futarchy",
-    source_release: "v1",
-    auditors: "None",
+    source_release: "v0.3",
+    auditors: "Neodyme",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("5scUH1qY87Awh5D8bQkbP2uv9BaXJXiMgrqRBw1K2vVv");
+declare_id!("autoQP9RmUNkzzKRXsMkWicDVZ3h29vvyMDcAYjCxxg");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;

@@ -1,5 +1,5 @@
 export type ConditionalVault = {
-  version: "1.0.0";
+  version: "0.3.0";
   name: "conditional_vault";
   instructions: [
     {
@@ -447,7 +447,7 @@ export type ConditionalVault = {
 };
 
 export const IDL: ConditionalVault = {
-  version: "1.0.0",
+  version: "0.3.0",
   name: "conditional_vault",
   instructions: [
     {

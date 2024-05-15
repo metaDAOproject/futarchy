@@ -1,5 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-import { AutocratClient } from "@metadaoproject/futarchy-ts";
+import { AutocratClient } from "@metadaoproject/futarchy";
 import {
   DEAN_DEVNET,
   DEVNET_DARK,
@@ -15,6 +15,14 @@ let autocratClient: AutocratClient = AutocratClient.createClient({
 });
 
 async function main() {
+  await autocratClient.initializeDao(META, 500, 5, 2500, DEVNET_MUSDC);
+  await autocratClient.initializeDao(
+    DEAN_DEVNET,
+    0.001,
+    1_000_000,
+    500,
+    DEVNET_MUSDC
+  );
   await autocratClient.initializeDao(
     DEVNET_DARK,
     0.2,
