@@ -62,10 +62,15 @@ impl AddOrRemoveLiquidity<'_> {
             let quote_reserve = amm.quote_amount as u128;
             let base_reserve = amm.base_amount as u128;
 
-            let base_amount = (((quote_amount as u128 * base_reserve) / quote_reserve) + 1) as u64;
+            // this should only panic in an extreme scenario: when (quote_amount * base_reserve) / quote_reserve > u64::MAX
+            let base_amount: u64 = (((quote_amount as u128 * base_reserve) / quote_reserve) + 1)
+                .try_into()
+                .map_err(|_| AmmError::CastingOverflow)?;
 
-            let lp_tokens_to_mint =
-                ((quote_amount as u128 * total_lp_supply as u128) / quote_reserve) as u64;
+            let lp_tokens_to_mint: u64 = ((quote_amount as u128 * total_lp_supply as u128)
+                / quote_reserve)
+                .try_into()
+                .map_err(|_| AmmError::CastingOverflow)?;
 
             require_gte!(
                 max_base_amount,

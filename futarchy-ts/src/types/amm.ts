@@ -531,6 +531,11 @@ export type Amm = {
       code: 6015;
       name: "ConstantProductInvariantFailed";
       msg: "K should always be increasing";
+    },
+    {
+      code: 6016;
+      name: "CastingOverflow";
+      msg: "Casting has caused an overflow";
     }
   ];
 };
@@ -1068,6 +1073,11 @@ export const IDL: Amm = {
       code: 6015,
       name: "ConstantProductInvariantFailed",
       msg: "K should always be increasing",
+    },
+    {
+      code: 6016,
+      name: "CastingOverflow",
+      msg: "Casting has caused an overflow",
     },
   ],
 };
