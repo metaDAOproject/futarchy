@@ -289,15 +289,13 @@ export class AutocratClient {
             passBaseMint,
             passQuoteMint,
             storedDao.twapInitialObservation,
-            storedDao.twapMaxObservationChangePerUpdate,
-            proposal
+            storedDao.twapMaxObservationChangePerUpdate
           ),
           this.ammClient.createAmmIx(
             failBaseMint,
             failQuoteMint,
             storedDao.twapInitialObservation,
-            storedDao.twapMaxObservationChangePerUpdate,
-            proposal
+            storedDao.twapMaxObservationChangePerUpdate
           )
         )
       )
