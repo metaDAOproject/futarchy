@@ -102,8 +102,7 @@ export class AmmClient {
       baseMint,
       quoteMint,
       twapFirstObservationScaled,
-      twapMaxObservationChangePerUpdateScaled,
-      proposal
+      twapMaxObservationChangePerUpdateScaled
     ).rpc();
 
     return amm;
@@ -114,8 +113,7 @@ export class AmmClient {
     baseMint: PublicKey,
     quoteMint: PublicKey,
     twapInitialObservation: BN,
-    twapMaxObservationChangePerUpdate: BN,
-    proposal: PublicKey
+    twapMaxObservationChangePerUpdate: BN
   ): MethodsBuilder<AmmIDLType, any> {
     let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint);
     let [lpMint] = getAmmLpMintAddr(this.getProgramId(), amm);
@@ -138,29 +136,6 @@ export class AmmClient {
         vaultAtaQuote,
       });
   }
-
-  // async addLiquidity(
-  //   amm: PublicKey,
-  // ) {
-  //   let storedAmm = await this.getAmm(amm);
-
-  //   let ix = this.addLiquidityIx(
-  //     amm,
-  //     storedAmm.baseMint,
-  //     storedAmm.quoteMint,
-  //     maxBaseAmount instanceof BN ? maxBaseAmount : new BN(maxBaseAmount),
-  //     maxQuoteAmount instanceof BN ? maxQuoteAmount : new BN(maxQuoteAmount),
-  //     minBaseAmount instanceof BN ? minBaseAmount : new BN(minBaseAmount),
-  //     minQuoteAmount instanceof BN ? minQuoteAmount : new BN(minQuoteAmount),
-  //     user ? user.publicKey : undefined
-  //   );
-
-  //   if (user) {
-  //     ix = ix.signers([user]);
-  //   }
-
-  //   return ix.rpc();
-  // }
 
   async addLiquidity(
     amm: PublicKey,

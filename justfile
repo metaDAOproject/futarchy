@@ -1,8 +1,8 @@
 test:
-    find programs tests futarchy-ts | entr -sc '(cd futarchy-ts && yarn build) && RUST_LOG= anchor test'
+    find programs tests sdk | entr -sc '(cd sdk && yarn build) && RUST_LOG= anchor test'
 
 test-no-build:
-    find programs tests futarchy-ts | entr -sc '(cd futarchy-ts && yarn build) && RUST_LOG= anchor test --skip-build'
+    find programs tests sdk | entr -sc '(cd sdk && yarn build) && RUST_LOG= anchor test --skip-build'
 
 # build-verifiable autocrat_v0
 build-verifiable PROGRAM_NAME:
