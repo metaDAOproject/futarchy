@@ -15,6 +15,10 @@ export class PriceMath {
     return new BN(humanAmount * 10 ** decimals);
   }
 
+  public static getHumanAmount(chainAmount: BN, decimals: number): number {
+    return chainAmount.toNumber() / 10 ** decimals
+  }
+
   public static getHumanPrice(
     ammPrice: BN,
     baseDecimals: number,
