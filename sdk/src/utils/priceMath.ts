@@ -12,7 +12,14 @@ export class PriceMath {
   }
 
   public static getChainAmount(humanAmount: number, decimals: number): BN {
-    return new BN(humanAmount * 10 ** decimals);
+    // you have to do it this weird way because BN can't be constructed with
+    // numbers larger than 2**50
+    const [integerPart, fractionalPart = ""] = humanAmount
+      .toString()
+      .split(".");
+    return new BN(integerPart + fractionalPart)
+      .mul(new BN(10).pow(new BN(decimals)))
+      .div(new BN(10).pow(new BN(fractionalPart.length)));
   }
 
   public static getHumanAmount(chainAmount: BN, decimals: number): number {
