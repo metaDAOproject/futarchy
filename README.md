@@ -1,9 +1,8 @@
-# Futarchy Monorepo
+# Futarchy
 
 ![License BSLv1.1](https://img.shields.io/badge/License-BSLv1.1-lightgray.svg)
 
-Monorepo that houses programs helpful for futarchy. A description of these programs
-and what they do can be found at [docs.themetadao.org](https://docs.themetadao.org).
+Programs for market-driven governance.
 
 ## Scripts
 
@@ -33,9 +32,9 @@ where `P_URI` and `F_URI` are replaced with their respective values.
 
 | program           | tag  | program ID                                   |
 | ----------------- | ---- | -------------------------------------------- |
-| autocrat          | v1.0 | 5scUH1qY87Awh5D8bQkbP2uv9BaXJXiMgrqRBw1K2vVv |
-| amm               | v1.0 | CsN1N8qaMJUwoGFWt3xV4u246n2cuZy9AWLws78e3a1K |
-| conditional_vault | v1.0 | F3RzPAtBQvUAAdDHD8AsPKFhDB1H38SULNKTW39dYrw8 |
+| autocrat          | v0.3 | autoQP9RmUNkzzKRXsMkWicDVZ3h29vvyMDcAYjCxxg  |
+| amm               | v0.3 | AMM5G2nxuKUwCLRYTW7qqEwuoqCtNSjtbipwEmm2g8bH |
+| conditional_vault | v0.3 | VAU1T7S5UuEHmMvXtXMVmpEoQtZ2ya7eRb7gcN47wDp  |
 | autocrat_v0       | v0.2 | metaRK9dUBnrAdZN6uUDKvxBVKW5pyCbPVmLtUZwtBp  |
 | autocrat_migrator | v0.2 | MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt  |
 | conditional_vault | v0.2 | vAuLTQjV5AZx5f3UgE75wcnkxnQowWxThn1hGjfCVwP  |
