@@ -2,17 +2,19 @@
 
 ### The problem
 
-Traditional DAO governance systems don't work. In theory, voting should be a rational process where voters select the best option. In practice, that's not the case. Voting systems suffer many problems, including:
+Voting doesn't work. In theory, voting should be a rational process where voters select the best option. In practice, voting systems suffer three big issues:
 
-* **Low participation:** most people don't vote.
-* **Uninformed voters**: most voters don't have a deep understanding of the decision at hand.
-* **Whale and insider influence**: votes are often no more than rubber stamps than what's already been decided by insiders. In DAO votes, it's common to see a single wallet determine an entire vote.
+* **Low participation:** it's hard to get people to vote.
+* **Uninformed voters**: even when you can get people to vote, they often very limited understanding of the decision at hand.
+* **Whale and insider influence**: insiders can have huge sway on the vote outcome. Crypto abounds with "governance theater."
 
-### The solution: replace votes with markets
+Over the last 7 millennia, many attempts have been made to fix voting. So far, none of these have delivered substantial improvements.
+
+### Futarchy
 
 It's long been said that people buy with their head but vote with their heart. What if we could flip that on its head and use market processes to make decisions? That is the central idea behind **futarchy**_._
 
-In futarchy, proposals don't go to votes: they get traded. When the market speculates that a proposal is good, it passes. When the market speculates that a proposal is bad, it fails.
+In a futarchy, proposals don't go to votes: they get traded. When the market speculates that a proposal is good, it passes. When the market speculates that a proposal is bad, it fails.
 
 MetaDAO is the first known futarchy. It provides governance infrastructure to create, manage, and participate in futarchies.
 
