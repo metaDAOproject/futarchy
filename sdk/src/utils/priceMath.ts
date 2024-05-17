@@ -73,4 +73,12 @@ export class PriceMath {
     return new BN(number * 10 ** decimals);
     // return new BN(number).mul(new BN(10).pow(new BN(decimals)));
   }
+
+  public static addSlippage(chainAmount: BN, slippageBps: BN): BN {
+    return chainAmount.mul(slippageBps.addn(10_000)).divn(10_000);
+  }
+
+  public static subtractSlippage(chainAmount: BN, slippageBps: BN): BN {
+    return chainAmount.mul(new BN(10_000).sub(slippageBps)).divn(10_000);
+  }
 }

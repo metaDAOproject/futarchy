@@ -27,17 +27,22 @@ export type AddLiquiditySimulation = {
   baseAmount: BN;
   quoteAmount: BN;
   expectedLpTokens: BN;
+  minLpTokens?: BN;
+  maxBaseAmount?: BN;
 };
 
 export type SwapSimulation = {
   expectedOut: BN;
   newBaseReserves: BN;
   newQuoteReserves: BN;
+  minExpectedOut?: BN;
 };
 
 export type RemoveLiquiditySimulation = {
   expectedBaseOut: BN;
   expectedQuoteOut: BN;
+  minBaseOut?: BN;
+  minQuoteOut?: BN;
 };
 
 export class AmmClient {
@@ -401,7 +406,8 @@ export class AmmClient {
     quoteReserves: BN,
     lpMintSupply: number,
     baseAmount?: BN,
-    quoteAmount?: BN
+    quoteAmount?: BN,
+    slippageBps?: BN
   ): AddLiquiditySimulation {
     if (lpMintSupply == 0) {
       throw new Error(
@@ -424,10 +430,18 @@ export class AmmClient {
       ?.mul(new BN(lpMintSupply))
       .div(quoteReserves) as BN;
 
+    let minLpTokens, maxBaseAmount;
+    if (slippageBps) {
+      minLpTokens = PriceMath.subtractSlippage(expectedLpTokens, slippageBps);
+      maxBaseAmount = PriceMath.addSlippage(baseAmount as BN, slippageBps);
+    }
+
     return {
       quoteAmount: quoteAmount as BN,
       baseAmount: baseAmount as BN,
       expectedLpTokens,
+      minLpTokens,
+      maxBaseAmount,
     };
   }
 
@@ -435,7 +449,8 @@ export class AmmClient {
     inputAmount: BN,
     swapType: SwapType,
     baseReserves: BN,
-    quoteReserves: BN
+    quoteReserves: BN,
+    slippageBps?: BN
   ): SwapSimulation {
     if (baseReserves.eqn(0) || quoteReserves.eqn(0)) {
       throw new Error("reserves must be non-zero");
@@ -456,6 +471,10 @@ export class AmmClient {
     let denominator: BN = inputReserves.muln(1000).add(inputAmountWithFee);
 
     let expectedOut = numerator.div(denominator);
+    let minExpectedOut;
+    if (slippageBps) {
+      minExpectedOut = PriceMath.subtractSlippage(expectedOut, slippageBps);
+    }
 
     let newBaseReserves, newQuoteReserves: BN;
     if (swapType.buy) {
@@ -470,6 +489,7 @@ export class AmmClient {
       expectedOut,
       newBaseReserves,
       newQuoteReserves,
+      minExpectedOut,
     };
   }
 
@@ -477,16 +497,25 @@ export class AmmClient {
     lpTokensToBurn: BN,
     baseReserves: BN,
     quoteReserves: BN,
-    lpTotalSupply: BN
+    lpTotalSupply: BN,
+    slippageBps?: BN
   ): RemoveLiquiditySimulation {
     const expectedBaseOut = lpTokensToBurn.mul(baseReserves).div(lpTotalSupply);
     const expectedQuoteOut = lpTokensToBurn
       .mul(quoteReserves)
       .div(lpTotalSupply);
 
+    let minBaseOut, minQuoteOut;
+    if (slippageBps) {
+      minBaseOut = PriceMath.subtractSlippage(expectedBaseOut, slippageBps);
+      minQuoteOut = PriceMath.subtractSlippage(expectedQuoteOut, slippageBps);
+    }
+
     return {
       expectedBaseOut,
       expectedQuoteOut,
+      minBaseOut,
+      minQuoteOut,
     };
   }
 
