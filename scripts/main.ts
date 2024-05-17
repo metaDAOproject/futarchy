@@ -476,7 +476,7 @@ export async function initializeProposal(
     microLamports: 100,
   });
   const cuLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 150_000
+    units: 150_000,
   });
 
   let tx1 = new Transaction();

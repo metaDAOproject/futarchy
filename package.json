@@ -15,10 +15,11 @@
         "@solana/spl-token": "^0.3.7",
         "@solana/web3.js": "^1.90.0",
         "@sqds/multisig": "^2.0.0",
-        "anchor-bankrun": "^0.2.0",
+        "anchor-bankrun": "^0.3.0",
         "arweave": "^1.14.4",
-        "solana-bankrun": "^0.2.0",
-        "spl-token-bankrun": "0.2.3"
+        "solana-bankrun": "^0.3.0",
+        "spl-token-bankrun": "0.2.5",
+        "@metadaoproject/futarchy": "0.3.0-alpha.0"
     },
     "devDependencies": {
         "@mercurial-finance/dynamic-amm-sdk": "^0.4.19",

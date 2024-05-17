@@ -1,7 +1,7 @@
 [package]
 name = "conditional_vault"
-version = "0.1.0"
-description = "Created with Anchor"
+version = "0.3.0"
+description = "SVM-based program for minting conditional tokens"
 edition = "2021"
 
 [lib]
@@ -16,8 +16,6 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.28.0"
-anchor-spl = { version = "0.28.0", features = ["metadata"] }
-mpl-token-metadata = { version = "^1.6.5", features = ["no-entrypoint"] }
-solana-program = "1.16.1"
+anchor-lang = { version = "0.29.0", features = ["init-if-needed"] }
+anchor-spl = { version = "0.29.0", features = ["metadata"] }
 solana-security-txt = "1.1.1"

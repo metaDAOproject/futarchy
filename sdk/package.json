@@ -1,0 +1,35 @@
+{
+  "name": "@metadaoproject/futarchy",
+  "version": "0.3.0-alpha.2",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+    "build": "rm -rf ./dist && cp ../target/types/* ./src/types && yarn lint:fix && yarn tsc"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@solana/spl-token": "^0.3.7",
+    "@solana/web3.js": "^1.74.0",
+    "bn.js": "^5.2.1",
+    "decimal.js": "^10.4.3",
+    "esbuild": "^0.17.15"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^9.0.3",
+    "ts-mocha": "^10.0.0",
+    "@types/bn.js": "^5.1.0",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^9.0.0",
+    "solana-bankrun": "^0.2.0",
+    "spl-token-bankrun": "0.2.3",
+    "typescript": "^4.3.5",
+    "prettier": "^2.6.2"
+  },
+  "packageManager": "yarn@3.3.1"
+}
