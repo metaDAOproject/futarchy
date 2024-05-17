@@ -9,7 +9,7 @@ build-verifiable PROGRAM_NAME:
 	solana-verify build --library-name {{ PROGRAM_NAME }} -b ellipsislabs/solana:1.16.10
 
 deploy PROGRAM_NAME CLUSTER:
-	solana program deploy -u {{ CLUSTER }} --program-id ./target/deploy/{{ PROGRAM_NAME }}-keypair.json ./target/deploy/{{ PROGRAM_NAME }}.so --with-compute-unit-price 5 --max-sign-attempts 15 && PROGRAM_ID=$(solana-keygen pubkey ./target/deploy/{{ PROGRAM_NAME }}-keypair.json) && anchor idl init --filepath ./target/idl/{{ PROGRAM_NAME }}.json $PROGRAM_ID --provider.cluster {{ CLUSTER }}
+	solana program deploy --use-rpc -u {{ CLUSTER }} --program-id ./target/deploy/{{ PROGRAM_NAME }}-keypair.json ./target/deploy/{{ PROGRAM_NAME }}.so --with-compute-unit-price 5 --max-sign-attempts 15 && PROGRAM_ID=$(solana-keygen pubkey ./target/deploy/{{ PROGRAM_NAME }}-keypair.json) && anchor idl init --filepath ./target/idl/{{ PROGRAM_NAME }}.json $PROGRAM_ID --provider.cluster {{ CLUSTER }}
 
 upgrade PROGRAM_NAME PROGRAM_ID CLUSTER:
 	anchor upgrade ./target/deploy/{{ PROGRAM_NAME }}.so -p {{ PROGRAM_ID }} --provider.cluster {{ CLUSTER }}
