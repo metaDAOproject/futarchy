@@ -1,5 +1,7 @@
 # Introduction
 
+<figure><img src=".gitbook/assets/Frame_345-no-bg.png" alt=""><figcaption></figcaption></figure>
+
 ### The problem
 
 Voting doesn't work. In theory, voting should be a rational process where voters select the best option. In practice, voting systems suffer three big issues:
@@ -19,5 +21,3 @@ In a futarchy, decisions don't go to votes: they get traded. Proposals pass when
 ### MetaDAO
 
 Even though futarchy was invented by economist Robin Hanson in 2000, MetaDAO is the first project to put it into practice. It provides a platform to create, manage, and participate in futarchies, and is itself governed by a futarchy.
-
-<figure><img src=".gitbook/assets/futarchy-protocol-diagram.png" alt=""><figcaption></figcaption></figure>
