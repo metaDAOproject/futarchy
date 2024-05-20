@@ -19,3 +19,9 @@
 
 * [Program Architecture](implementation/program-architecture.md)
 * [Price Oracle](implementation/price-oracle.md)
+
+## MetaDAO
+
+* [Overview](metadao/overview.md)
+* [META](metadao/meta.md)
+* [Legal](metadao/legal.md)

@@ -1,6 +1,6 @@
 # Introduction
 
-<figure><img src=".gitbook/assets/Frame_345-no-bg.png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/protocol-no-background.png" alt=""><figcaption></figcaption></figure>
 
 ### The problem
 
