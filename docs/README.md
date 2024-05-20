@@ -14,7 +14,8 @@ Over the last 7 millennia, many attempts have been made to fix voting. So far, n
 
 It's long been said that people buy with their head but vote with their heart. What if we could flip that on its head and use market processes to make decisions? That is the central idea behind **futarchy**_._
 
-In a futarchy, proposals don't go to votes: they get traded. When the market speculates that a proposal is good, it passes. When the market speculates that a proposal is bad, it fails.
+In a futarchy, decisions don't go to votes: they get traded. Proposals pass when the market speculates that they're good. Proposals fail when the market speculates that they're bad.
 
-MetaDAO is the first known futarchy. It provides governance infrastructure to create, manage, and participate in futarchies.
+### MetaDAO
 
+Even though futarchy was invented by economist Robin Hanson in 2000, MetaDAO is the first project to put it into practice. It provides a platform to create, manage, and participate in futarchies, and is itself governed by a futarchy.
