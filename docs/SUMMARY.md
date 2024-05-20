@@ -25,3 +25,11 @@
 * [Overview](metadao/overview.md)
 * [META](metadao/meta.md)
 * [Legal](metadao/legal.md)
+
+## 🔗 Links
+
+* [Discord](https://discord.gg/metadao)
+* [X](https://x.com/MetaDAOProject)
+* [Blog](https://blog.themetadao.org/)
+* [GitHub](https://github.com/metaDAOproject)
+* [Whitepaper](https://github.com/metaDAOproject/Manifesto/blob/main/Manifesto.pdf)
