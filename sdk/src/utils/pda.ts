@@ -78,7 +78,7 @@ export const getProposalAddr = (
     [
       utils.bytes.utf8.encode("proposal"),
       proposer.toBuffer(),
-      nonce.toBuffer("le", 8),
+      nonce.toArrayLike(Buffer, "le", 8),
     ],
     programId
   );
