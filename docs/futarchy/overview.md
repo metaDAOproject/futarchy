@@ -5,8 +5,8 @@
 
 Futarchy was invented by economist Robin Hanson in 2000. The basic idea is to make decisions via markets.
 
-It does this through _conditional markets_. In a conditional market, you speculate on what an asset would be worth under a specified condition. Futarchic conditional markets consist of traders speculating on what an asset would be worth if a proposal passed and if it failed.
+It does this through _decision markets_. In a decision market, you speculate on what an asset would be worth if an organization took a specific decision. For example, you could speculate on what the value of AAPL would be if Apple fired Tim Cook.
 
-We can extract the sentiment of traders by looking at these conditional markets' prices. Futarchy then passes proposals when the price of an asset (e.g., a stock for a public corporation or a token for a DAO) in its conditional-on-pass markets is greater than the price of the asset in its conditional-on-fail markets. Here's Robin to explain:
+Futarchy then uses the prices in these markets to make decisions. For example, a company organized as a futarchy would fire the CEO if the decision markets say that this would increase the value of that company's stock.&#x20;
 
 {% embed url="https://youtu.be/PRog7R37MA0?si=y69R2JRbLqm5uyFH" %}

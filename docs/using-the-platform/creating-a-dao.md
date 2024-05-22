@@ -1,6 +1,6 @@
 # Creating a DAO
 
-So, you want to use futarchy for your project - great! To create a futarchy, you can specify a few parameters:
+So, you want to use futarchy for your project - great! To create a futarchy, you need to specify a few parameters:
 
 * **Proposal time**: the amount of time a proposal should be active before it can pass or fail. Three days by default. Specified in Solana slots.
 * **Pass threshold:** the percentage that the pass price needs to be above the fail price in order for a proposal to pass.

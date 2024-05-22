@@ -15,15 +15,15 @@ What this means in a futarchy is that there's an incentive for traders to correc
 
 ### Markets are hard to manipulate
 
-This also makes it hard to manipulate decisions. Any time you manipulate a market, you push it away from intrinsic value and thus create an incentive for someone to correct your manipulations. In fact, there's [evidence](https://www.sciencedirect.com/science/article/abs/pii/S0167268105001575) to indicate that manipulation _increases_ the accuracy of prices.
+This also makes it hard to manipulate decisions. Any time you manipulate a market, you push it away from intrinsic value and thus create an incentive for someone to correct your manipulations. In fact, there's [evidence](https://www.sciencedirect.com/science/article/abs/pii/S0167268105001575) to indicate that manipulation actually _increases_ the accuracy of prices.
 
-This is in contrast to voting, where votes and politicians alike can usually be bought.
+This is in contrast to voting, where votes and politicians alike can be bought.
 
 ### Over time, markets shift power from bad predictors to good predictors
 
 Markets give more power over time to those who are better predictors. This is because high returns both directly increase a trader’s capital and improve their ability to raise capital from investors.
 
-### The evidence supports markets
+### Generally, markets beat other systems of aggregating information
 
 Markets aren't perfectly efficient. But according to most empirical evidence, markets are better aggregators of information than individual experts:
 

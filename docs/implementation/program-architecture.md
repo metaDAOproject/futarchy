@@ -8,7 +8,7 @@ We implement futarchy via three programs:
 
 ### Conditional vault program <a href="#conditional-vault-program" id="conditional-vault-program"></a>
 
-For a conditional market to work, you must revert all of the market's trades when the condition isn't met. This is what allows speculators to place trades like "I would pay $5,000 for 10 META if this proposal passes."
+For a decision market to work, you must revert all of the market's trades when the condition isn't met. This is what allows speculators to place trades like "I would pay $5,000 for 10 META if this proposal passes."
 
 Blockchains like Solana don't allow you to revert transactions after they've been finalized, so we need a mechanism to _simulate_ reverting transactions. That mechanism is conditional tokens.
 
@@ -40,7 +40,7 @@ So we create two markets per proposal: one where conditional-on-pass META is tra
 
 ### AMM <a href="#conditional-vault-program" id="conditional-vault-program"></a>
 
-Conditional markets are facilitated through a constant-product AMM.&#x20;
+Decision markets are facilitated through a constant-product AMM.&#x20;
 
 Importantly, this AMM provides an on-chain time-weighted average price (TWAP) oracle that can be used by autocrat to determine when to pass or fail proposals. The oracle follows the same design as [Uniswap V2](https://docs.uniswap.org/contracts/v2/concepts/core-concepts/oracles), and uses several additional mechanisms to ensure manipulation-resistance.
 
