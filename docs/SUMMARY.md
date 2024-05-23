@@ -26,6 +26,11 @@
 * [META](metadao/meta.md)
 * [Legal](metadao/legal.md)
 
+## Media Kit
+
+* [MetaDAO](media-kit/metadao.md)
+* [FaaS](media-kit/faas.md)
+
 ## 🔗 Links
 
 * [Discord](https://discord.gg/metadao)
