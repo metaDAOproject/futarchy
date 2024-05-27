@@ -10,7 +10,7 @@ export {
   IDL as ConditionalVaultIDL,
 } from "./conditional_vault";
 
-export { LowercaseKeys } from './utils'
+export { LowercaseKeys } from "./utils";
 
 import type { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
