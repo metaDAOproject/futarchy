@@ -573,7 +573,11 @@ export class AutocratClient {
         })
       );
       tx.add(...ixs);
-      await this.provider.sendAndConfirm(tx);
+      try {
+        await this.provider.sendAndConfirm(tx);
+      } catch (err) {
+        console.log("err", err);
+      }
 
       await new Promise((resolve) => setTimeout(resolve, 65 * 1000)); // 65,000 milliseconds = 1 minute and 5 seconds
     }
