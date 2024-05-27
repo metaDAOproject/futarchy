@@ -1,5 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-import { AmmClient, AutocratClient } from "@metadaoproject/futarchy-ts";
+import { AmmClient, AutocratClient } from "@metadaoproject/futarchy";
 import * as token from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 
@@ -18,7 +18,7 @@ let autocratClient: AutocratClient = AutocratClient.createClient({
 
 async function crankTwap() {
   await autocratClient.crankProposalMarkets(
-    [proposal1, proposal2, proposal3],
+    [new PublicKey("BgHv9GutbnsXZLZQHqPL8BbGWwtcaRDWx82aeRMNmJbG")],
     1
   );
 }
