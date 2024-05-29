@@ -93,7 +93,7 @@ describe("timelock", async function () {
     timelockAuthority = anchor.web3.Keypair.generate();
 
     await timelock.methods
-      .createTimelock(timelockAuthority.publicKey, delayInSlots)
+      .createTimelock([], timelockAuthority.publicKey, delayInSlots)
       .accounts({
         timelock: timelockKp.publicKey,
         timelockSigner: timelockSignerPubkey,

@@ -24,10 +24,13 @@ security_txt! {
 
 declare_id!("tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF");
 
-
-
 #[account]
 pub struct Timelock {
+    /// Semi-priveleged accounts that can enqueue and veto transaction batches
+    /// with a soft commitment.
+    pub enqueuers: Vec<Pubkey>,
+    /// Fully priveleged account that can cancel any transaction batches and enqueue
+    /// transactions with a hard commitment.
     pub authority: Pubkey,
     pub signer_bump: u8,
     pub delay_in_slots: u64,
@@ -72,14 +75,18 @@ pub mod timelock {
 
     pub fn create_timelock(
         ctx: Context<CreateTimelock>,
+        enqueuers: Vec<Pubkey>,
         authority: Pubkey,
         delay_in_slots: u64,
     ) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
-        timelock.authority = authority;
-        timelock.delay_in_slots = delay_in_slots;
-        timelock.signer_bump = ctx.bumps.timelock_signer;
+        timelock.set_inner(Timelock {
+            enqueuers: vec![],
+            authority,
+            delay_in_slots,
+            signer_bump: ctx.bumps.timelock_signer,
+        });
 
         Ok(())
     }
