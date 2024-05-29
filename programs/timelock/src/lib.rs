@@ -39,6 +39,7 @@ pub struct Timelock {
 #[account]
 pub struct TransactionBatch {
     pub status: TransactionBatchStatus,
+    pub is_hard_commitment: bool,
     pub transactions: Vec<Transaction>,
     pub timelock: Pubkey,
     pub enqueued_slot: u64,
@@ -82,7 +83,7 @@ pub mod timelock {
         let timelock = &mut ctx.accounts.timelock;
 
         timelock.set_inner(Timelock {
-            enqueuers: vec![],
+            enqueuers,
             authority,
             delay_in_slots,
             signer_bump: ctx.bumps.timelock_signer,
