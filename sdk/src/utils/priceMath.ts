@@ -2,6 +2,7 @@ import BN from "bn.js";
 
 const BN_TEN = new BN(10);
 const PRICE_SCALE = BN_TEN.pow(new BN(12));
+const PRICE_SCALE_NUMBER = 1e12;
 
 export class PriceMath {
   public static getAmmPriceFromReserves(
@@ -46,7 +47,7 @@ export class PriceMath {
     baseDecimals: number,
     quoteDecimals: number
   ): BN {
-    let price1e12 = PRICE_SCALE.muln(humanPrice);
+    let price1e12 = new BN(humanPrice * PRICE_SCALE_NUMBER);
 
     let decimalScalar = BN_TEN.pow(new BN(quoteDecimals - baseDecimals).abs());
 
