@@ -27,7 +27,9 @@ import {
   USDC_DECIMALS,
 } from "./constants";
 import {
+  DEFAULT_CU_PRICE,
   InstructionUtils,
+  MaxCUs,
   getAmmAddr,
   getAmmLpMintAddr,
   getDaoTreasuryAddr,
@@ -225,7 +227,16 @@ export class AutocratClient {
         slotsPerProposal: null,
       },
       usdcMint
-    ).rpc();
+    )
+      .postInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: MaxCUs.initializeDao,
+        }),
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: DEFAULT_CU_PRICE,
+        }),
+      ])
+      .rpc({ maxRetries: 5 });
 
     return daoKeypair.publicKey;
   }

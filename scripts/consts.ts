@@ -37,6 +37,10 @@ export const DEVNET_DARK = new PublicKey(
   "FfCGxfj1NQdPZpukoEgdX427NEjNdCuh3gpFi6oEf6Ka"
 );
 
+export const DRIFT = new PublicKey(
+  "DriFtupJYLTosbwoN8koMbEYSx54aFAVLddWsbksjwg7"
+);
+
 export const DEVNET_DRIFT = new PublicKey(
   "Hy9aVik24Uy92FuJd8d1hTH6LRCLmquipeTLBGnXqWr1"
 );
