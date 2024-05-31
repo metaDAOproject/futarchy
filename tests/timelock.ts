@@ -58,7 +58,7 @@ describe("timelock", async function () {
     timelockKp: anchor.web3.Keypair,
     timelockSignerPubkey: anchor.web3.PublicKey,
     transactionBatchAuthority: anchor.web3.Keypair,
-    transactionBatch: anchor.web3.Keypair;
+    transactionBatch: PublicKey;
   // META,
   // USDC,
   // MNDE,
@@ -115,22 +115,21 @@ describe("timelock", async function () {
 
   it("Creates a transaction batch", async () => {
     transactionBatchAuthority = Keypair.generate();
-    transactionBatch = Keypair.generate();
+    const transactionBatchKp = Keypair.generate();
+    transactionBatch = transactionBatchKp.publicKey;
     const transactionBatchSize = 30000; // Adjust size as needed
 
     await (
       await timelockClient.createTransactionBatchIx({
         timelock,
-        transactionBatchKp: transactionBatch,
+        transactionBatchKp,
         transactionBatchSize,
       })
     ).rpc();
 
     const transactionBatchAccount = await timelockClient.getTransactionBatch(
-      transactionBatch.publicKey
+      transactionBatch
     );
-    console.log(transactionBatchAccount);
-    console.log(timelock);
     // Assertions to check the transaction batch creation
     assert.strictEqual(
       transactionBatchAccount.transactionBatchAuthority.toString(),
@@ -147,12 +146,7 @@ describe("timelock", async function () {
   it("Adds three transactions to the transaction batch", async () => {
     recipient = anchor.web3.Keypair.generate();
 
-    // await fakeRequestAirdrop(
-    //   banksClient,
-    //   payer,
-    //   timelockSignerPubkey,
-    //   200_000_000
-    // );
+    await fakeRequestAirdrop(banksClient, payer, timelock, 200_000_000);
 
     // Transaction 1: Transfer SOL
     let transferInstruction = anchor.web3.SystemProgram.transfer({
@@ -163,259 +157,170 @@ describe("timelock", async function () {
 
     await timelockClient
       .addTransactionIx({
-        transactionBatch: transactionBatch.publicKey,
+        transactionBatch,
         programId: transferInstruction.programId,
         accounts: transferInstruction.keys,
         data: transferInstruction.data,
       })
       .rpc();
 
-    console.log(await timelockClient.getTransactionBatch(transactionBatch.publicKey));
-
-    // await timelockProgram.methods
-    //   .addTransaction(
-    //     transferInstruction.programId,
-    //     transferInstruction.keys.map((key) => ({
-    //       pubkey: key.pubkey,
-    //       isSigner: key.isSigner,
-    //       isWritable: key.isWritable,
-    //     })),
-    //     transferInstruction.data
-    //   )
-    //   .accounts({
-    //     transactionBatch: transactionBatch.publicKey,
-    //     transactionBatchAuthority: transactionBatchAuthority.publicKey,
-    //   })
-    //   .signers([transactionBatchAuthority])
-    //   .rpc();
-
     // Transaction 2: Set Delay in Slots
-    // const newDelayInSlots = new BN(2);
-    // let setDelayInSlotsInstruction =
-    //   timelockProgram.instruction.setDelayInSlots(newDelayInSlots, {
-    //     accounts: {
-    //       timelock: timelockKp.publicKey,
-    //       timelockSigner: timelockSignerPubkey,
-    //     },
-    //   });
+    const newDelayInSlots = new BN(2);
+    let setDelayInSlotsInstruction = await timelockClient
+      .setDelayInSlotsIx({ timelock, delayInSlots: newDelayInSlots })
+      .instruction();
 
-    // await timelockProgram.methods
-    //   .addTransaction(
-    //     setDelayInSlotsInstruction.programId,
-    //     setDelayInSlotsInstruction.keys.map((key) => ({
-    //       pubkey: key.pubkey,
-    //       isSigner: key.isSigner,
-    //       isWritable: key.isWritable,
-    //     })),
-    //     setDelayInSlotsInstruction.data
-    //   )
-    //   .accounts({
-    //     transactionBatch: transactionBatch.publicKey,
-    //     transactionBatchAuthority: transactionBatchAuthority.publicKey,
-    //   })
-    //   .signers([transactionBatchAuthority])
-    //   .rpc();
+    await timelockClient.addTransaction({
+      transactionBatch,
+      instruction: setDelayInSlotsInstruction,
+    });
 
-    // // Transaction 3: Change Authority
-    // let setAuthorityInstruction = timelockProgram.instruction.setAuthority(
-    //   recipient.publicKey,
-    //   {
-    //     accounts: {
-    //       timelock: timelockKp.publicKey,
-    //       timelockSigner: timelockSignerPubkey,
-    //     },
-    //   }
-    // );
+    // Transaction 3: Change Authority
+    let setAdminIx = await timelockClient
+      .setAdminIx({ timelock, admin: recipient.publicKey })
+      .instruction();
 
-    // await timelockProgram.methods
-    //   .addTransaction(
-    //     setAuthorityInstruction.programId,
-    //     setAuthorityInstruction.keys.map((key) => ({
-    //       pubkey: key.pubkey,
-    //       isSigner: key.isSigner,
-    //       isWritable: key.isWritable,
-    //     })),
-    //     setAuthorityInstruction.data
-    //   )
-    //   .accounts({
-    //     transactionBatch: transactionBatch.publicKey,
-    //     transactionBatchAuthority: transactionBatchAuthority.publicKey,
-    //   })
-    //   .signers([transactionBatchAuthority])
-    //   .rpc();
+    await timelockClient.addTransaction({
+      transactionBatch,
+      instruction: setAdminIx,
+    });
 
-    // // Verify the transactions
-    // const transactionBatchAccount =
-    //   await timelockProgram.account.transactionBatch.fetch(
-    //     transactionBatch.publicKey
-    //   );
-    // assert.strictEqual(
-    //   transactionBatchAccount.transactions.length,
-    //   3,
-    //   "There should be three transactions in the batch."
-    // );
+    // Verify the transactions
+    const transactionBatchAccount = await timelockClient.getTransactionBatch(
+      transactionBatch
+    );
+    assert.strictEqual(
+      transactionBatchAccount.transactions.length,
+      3,
+      "There should be three transactions in the batch."
+    );
   });
 
-  // it("Fails to enqueue a non-Sealed batch", async () => {
-  //   // Assume the batch is new and not yet sealed
-  //   try {
-  //     await timelockProgram.methods
-  //       .enqueueTransactionBatch()
-  //       .accounts({
-  //         transactionBatch: transactionBatch.publicKey,
-  //         authority: timelockAuthority.publicKey,
-  //         timelock: timelockKp.publicKey,
-  //       })
-  //       .signers([timelockAuthority])
-  //       .rpc();
-  //     assert.fail(
-  //       "Should have thrown an error when enqueuing a non-Sealed batch."
-  //     );
-  //   } catch (error) {
-  //     assert.include(error.message, "CannotEnqueueTransactionBatch");
-  //   }
-  // });
+  it("Fails to enqueue a non-Sealed batch", async () => {
+    // Assume the batch is new and not yet sealed
+    try {
+      await timelockClient
+        .enqueueTransactionBatchIx({
+          timelock,
+          transactionBatch,
+          timelockAdmin: timelockAuthority.publicKey,
+        })
+        .signers([timelockAuthority])
+        .rpc();
+      assert.fail(
+        "Should have thrown an error when enqueuing a non-Sealed batch."
+      );
+    } catch (error) {
+      assert.include(error.message, "CannotEnqueueTransactionBatch");
+    }
+  });
 
-  // it("Seals the transaction batch", async () => {
-  //   await timelockProgram.methods
-  //     .sealTransactionBatch()
-  //     .accounts({
-  //       transactionBatch: transactionBatch.publicKey,
-  //       transactionBatchAuthority: transactionBatchAuthority.publicKey,
-  //     })
-  //     .signers([transactionBatchAuthority])
-  //     .rpc();
+  it("Seals the transaction batch", async () => {
+    await timelockClient.sealTransactionBatchIx({ transactionBatch }).rpc();
 
-  //   const sealedTransactionBatch =
-  //     await timelockProgram.account.transactionBatch.fetch(
-  //       transactionBatch.publicKey
-  //     );
+    const sealedTransactionBatch = await timelockClient.getTransactionBatch(
+      transactionBatch
+    );
 
-  //   // Assert the transaction batch is now sealed
-  //   assert.ok(
-  //     "sealed" in sealedTransactionBatch.status,
-  //     "The batch status should be 'Sealed' after sealing."
-  //   );
-  // });
+    // Assert the transaction batch is now sealed
+    assert.ok(
+      "sealed" in sealedTransactionBatch.status,
+      "The batch status should be 'Sealed' after sealing."
+    );
+  });
 
-  // it("Fails to cancel a batch that is not Enqueued", async () => {
-  //   // Assume the batch is new or sealed but not enqueued
-  //   try {
-  //     await timelockProgram.methods
-  //       .cancelTransactionBatch()
-  //       .accounts({
-  //         transactionBatch: transactionBatch.publicKey,
-  //         authority: timelockAuthority.publicKey,
-  //         timelock: timelockKp.publicKey,
-  //       })
-  //       .signers([timelockAuthority])
-  //       .rpc();
-  //     assert.fail(
-  //       "Should have thrown an error when canceling a batch that is not Enqueued."
-  //     );
-  //   } catch (error) {
-  //     assert.include(error.message, "CannotCancelTimelock");
-  //   }
-  // });
+  it("Fails to cancel a batch that is not Enqueued", async () => {
+    // Assume the batch is new or sealed but not enqueued
+    try {
+      await timelockClient
+        .cancelTransactionBatchIx({
+          timelock,
+          transactionBatch,
+          timelockAdmin: timelockAuthority.publicKey,
+        })
+        .signers([timelockAuthority])
+        .rpc();
+      assert.fail(
+        "Should have thrown an error when canceling a batch that is not Enqueued."
+      );
+    } catch (error) {
+      assert.include(error.message, "CannotCancelTimelock");
+    }
+  });
 
-  // it("Fails to execute transactions in a batch not in Enqueued state", async () => {
-  //   // Assume the batch is new or sealed but not enqueued
-  //   try {
-  //     await timelockProgram.methods
-  //       .executeTransactionBatch()
-  //       .accounts({
-  //         timelock: timelockKp.publicKey,
-  //         timelockSigner: timelockSignerPubkey,
-  //         transactionBatch: transactionBatch.publicKey,
-  //       })
-  //       .rpc();
-  //     assert.fail(
-  //       "Should have thrown an error when trying to execute transactions in a non-Enqueued batch."
-  //     );
-  //   } catch (error) {
-  //     assert.include(error.message, "CannotExecuteTransactions");
-  //   }
-  // });
+  it("Fails to execute transactions in a batch not in Enqueued state", async () => {
+    // Assume the batch is new or sealed but not enqueued
+    try {
+      await timelockClient
+        .executeTransactionBatchIx({ timelock, transactionBatch })
+        .rpc();
 
-  // it("Fails to add transactions to a sealed batch", async () => {
-  //   // Try adding a transaction to the sealed batch
-  //   let transferInstruction = anchor.web3.SystemProgram.transfer({
-  //     fromPubkey: timelockSignerPubkey,
-  //     toPubkey: recipient.publicKey,
-  //     lamports: 100_000_000,
-  //   });
+      assert.fail(
+        "Should have thrown an error when trying to execute transactions in a non-Enqueued batch."
+      );
+    } catch (error) {
+      assert.include(error.message, "CannotExecuteTransactions");
+    }
+  });
 
-  //   try {
-  //     await timelockProgram.methods
-  //       .addTransaction(
-  //         transferInstruction.programId,
-  //         transferInstruction.keys.map((key) => ({
-  //           pubkey: key.pubkey,
-  //           isSigner: key.isSigner,
-  //           isWritable: key.isWritable,
-  //         })),
-  //         transferInstruction.data
-  //       )
-  //       .accounts({
-  //         transactionBatch: transactionBatch.publicKey,
-  //         transactionBatchAuthority: transactionBatchAuthority.publicKey,
-  //       })
-  //       .signers([transactionBatchAuthority])
-  //       .rpc();
-  //     assert.fail(
-  //       "Should have thrown an error when adding a transaction to a sealed batch."
-  //     );
-  //   } catch (error) {
-  //     assert.include(error.message, "CannotAddTransactions");
-  //   }
-  // });
+  it("Fails to add transactions to a sealed batch", async () => {
+    // Try adding a transaction to the sealed batch
+    let transferInstruction = anchor.web3.SystemProgram.transfer({
+      fromPubkey: timelockSignerPubkey,
+      toPubkey: recipient.publicKey,
+      lamports: 100_000_000,
+    });
 
-  // it("Fails to seal a non-Created batch", async () => {
-  //   try {
-  //     await timelockProgram.methods
-  //       .sealTransactionBatch()
-  //       .accounts({
-  //         transactionBatch: transactionBatch.publicKey,
-  //         transactionBatchAuthority: transactionBatchAuthority.publicKey,
-  //       })
-  //       .signers([transactionBatchAuthority])
-  //       .rpc();
-  //     assert.fail(
-  //       "Should have thrown an error when sealing a non-Created batch."
-  //     );
-  //   } catch (error) {
-  //     assert.include(error.message, "CannotSealTransactionBatch");
-  //   }
-  // });
+    try {
+      await timelockClient.addTransaction({
+        transactionBatch,
+        instruction: transferInstruction,
+      });
+      assert.fail(
+        "Should have thrown an error when adding a transaction to a sealed batch."
+      );
+    } catch (error) {
+      assert.include(error.message, "CannotAddTransactions");
+    }
+  });
 
-  // it("Enqueues the transaction batch", async () => {
-  //   await timelockProgram.methods
-  //     .enqueueTransactionBatch()
-  //     .accounts({
-  //       transactionBatch: transactionBatch.publicKey,
-  //       authority: timelockAuthority.publicKey,
-  //       timelock: timelockKp.publicKey,
-  //     })
-  //     .signers([timelockAuthority])
-  //     .rpc();
+  it("Fails to seal a non-Created batch", async () => {
+    try {
+      await timelockClient.sealTransactionBatchIx({ transactionBatch }).rpc();
+      assert.fail(
+        "Should have thrown an error when sealing a non-Created batch."
+      );
+    } catch (error) {
+      assert.include(error.message, "CannotSealTransactionBatch");
+    }
+  });
 
-  //   const enqueuedTransactionBatch =
-  //     await timelockProgram.account.transactionBatch.fetch(
-  //       transactionBatch.publicKey
-  //     );
+  it("Enqueues the transaction batch", async () => {
+    await timelockClient
+      .enqueueTransactionBatchIx({
+        timelock,
+        transactionBatch,
+        timelockAdmin: timelockAuthority.publicKey,
+      })
+      .signers([timelockAuthority])
+      .rpc();
 
-  //   // Assert the transaction batch is now in TimelockStarted status
-  //   assert.ok(
-  //     "enqueued" in enqueuedTransactionBatch.status,
-  //     "The batch status should be 'Enqueued' after enqueueing."
-  //   );
+    const enqueuedTransactionBatch = await timelockClient.getTransactionBatch(
+      transactionBatch
+    );
 
-  //   // Assert the enqueued slot is set
-  //   assert.ok(
-  //     enqueuedTransactionBatch.enqueuedSlot.toNumber() > 0,
-  //     "The enqueued slot should be set and greater than 0."
-  //   );
-  // });
+    // Assert the transaction batch is now in TimelockStarted status
+    assert.ok(
+      "enqueued" in enqueuedTransactionBatch.status,
+      "The batch status should be 'Enqueued' after enqueueing."
+    );
+
+    // Assert the enqueued slot is set
+    assert.ok(
+      enqueuedTransactionBatch.enqueuedSlot.toNumber() > 0,
+      "The enqueued slot should be set and greater than 0."
+    );
+  });
 
   // it("Fails to execute transactions before the required delay period", async () => {
   //   // Attempt to execute before delay

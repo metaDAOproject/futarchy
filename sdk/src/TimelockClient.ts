@@ -1,6 +1,6 @@
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 import * as anchor from "@coral-xyz/anchor";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 
 import {
   Timelock as TimelockProgram,
@@ -36,6 +36,22 @@ export class TimelockClient {
     return this.timelockProgram.account.transactionBatch.fetch(
       transactionBatch
     );
+  }
+
+  setDelayInSlotsIx({
+    timelock,
+    delayInSlots,
+  }: {
+    timelock: PublicKey;
+    delayInSlots: BN;
+  }) {
+    return this.timelockProgram.methods
+      .setDelayInSlots(delayInSlots)
+      .accounts({ timelock });
+  }
+
+  setAdminIx({ timelock, admin }: { timelock: PublicKey; admin: PublicKey }) {
+    return this.timelockProgram.methods.setAdmin(admin).accounts({ timelock });
   }
 
   async createTimelock(
@@ -113,6 +129,21 @@ export class TimelockClient {
       .signers([transactionBatchKp]);
   }
 
+  async addTransaction({
+    transactionBatch,
+    instruction,
+  }: {
+    transactionBatch: PublicKey;
+    instruction: TransactionInstruction;
+  }) {
+    await this.addTransactionIx({
+      transactionBatch,
+      programId: instruction.programId,
+      accounts: instruction.keys,
+      data: instruction.data,
+    }).rpc();
+  }
+
   addTransactionIx({
     transactionBatch,
     programId,
@@ -130,5 +161,64 @@ export class TimelockClient {
         transactionBatch,
         transactionBatchAuthority: this.provider.publicKey,
       });
+  }
+
+  enqueueTransactionBatchIx({
+    timelock,
+    transactionBatch,
+    timelockAdmin,
+  }: {
+    timelock: PublicKey;
+    transactionBatch: PublicKey;
+    timelockAdmin: PublicKey;
+  }) {
+    return this.timelockProgram.methods.enqueueTransactionBatch().accounts({
+      timelock,
+      transactionBatch,
+      admin: timelockAdmin,
+    });
+  }
+
+  // copy the exact parameters from above
+  cancelTransactionBatchIx({
+    timelock,
+    transactionBatch,
+    timelockAdmin,
+  }: {
+    timelock: PublicKey;
+    transactionBatch: PublicKey;
+    timelockAdmin: PublicKey;
+  }) {
+    return this.timelockProgram.methods.cancelTransactionBatch().accounts({
+      timelock,
+      transactionBatch,
+      admin: timelockAdmin,
+    });
+  }
+
+  sealTransactionBatchIx({
+    transactionBatch,
+    transactionBatchAuthority = this.provider.publicKey,
+  }: {
+    transactionBatch: PublicKey;
+    transactionBatchAuthority?: PublicKey;
+  }) {
+    return this.timelockProgram.methods.sealTransactionBatch().accounts({
+      transactionBatch,
+      transactionBatchAuthority,
+    });
+  }
+
+  executeTransactionBatchIx({
+    transactionBatch,
+    timelock,
+  }: {
+    transactionBatch: PublicKey;
+    timelock: PublicKey;
+  }) {
+    return this.timelockProgram.methods.executeTransactionBatch().accounts({
+      transactionBatch,
+      timelock,
+    });
   }
 }

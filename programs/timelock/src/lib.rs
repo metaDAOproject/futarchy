@@ -137,10 +137,10 @@ pub mod timelock {
         Ok(())
     }
 
-    pub fn set_authority(ctx: Context<Auth>, authority: Pubkey) -> Result<()> {
+    pub fn set_admin(ctx: Context<Auth>, admin: Pubkey) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
-        timelock.admin = authority;
+        timelock.admin = admin;
 
         Ok(())
     }
@@ -257,9 +257,9 @@ pub mod timelock {
         if let Some(transaction) = tx_batch.transactions.iter_mut().find(|tx| !tx.did_execute) {
             let mut ix: Instruction = transaction.deref().into();
             for acc in ix.accounts.iter_mut() {
-                if &acc.pubkey == ctx.accounts.timelock_signer.key {
-                    acc.is_signer = true;
-                }
+                // if &acc.pubkey == ctx.accounts.timelock_signer.key {
+                //     acc.is_signer = true;
+                // }
             }
             let timelock_key = ctx.accounts.timelock.key();
             let seeds = &[b"timelock".as_ref(), &[ctx.accounts.timelock.pda_bump]];
@@ -329,7 +329,7 @@ pub struct ExecuteTransactionBatch<'info> {
     //     seeds = [timelock.key().as_ref()],
     //     bump = timelock.signer_bump,
     // )]
-    timelock_signer: SystemAccount<'info>,
+    // timelock_signer: SystemAccount<'info>,
     timelock: Box<Account<'info, Timelock>>,
     #[account(mut, has_one = timelock)]
     transaction_batch: Box<Account<'info, TransactionBatch>>

@@ -47,7 +47,7 @@ export type Timelock = {
       ];
     },
     {
-      name: "setAuthority";
+      name: "setAdmin";
       accounts: [
         {
           name: "timelock";
@@ -57,7 +57,7 @@ export type Timelock = {
       ];
       args: [
         {
-          name: "authority";
+          name: "admin";
           type: "publicKey";
         }
       ];
@@ -169,11 +169,6 @@ export type Timelock = {
     {
       name: "executeTransactionBatch";
       accounts: [
-        {
-          name: "timelockSigner";
-          isMut: false;
-          isSigner: false;
-        },
         {
           name: "timelock";
           isMut: false;
@@ -497,7 +492,7 @@ export const IDL: Timelock = {
       ],
     },
     {
-      name: "setAuthority",
+      name: "setAdmin",
       accounts: [
         {
           name: "timelock",
@@ -507,7 +502,7 @@ export const IDL: Timelock = {
       ],
       args: [
         {
-          name: "authority",
+          name: "admin",
           type: "publicKey",
         },
       ],
@@ -619,11 +614,6 @@ export const IDL: Timelock = {
     {
       name: "executeTransactionBatch",
       accounts: [
-        {
-          name: "timelockSigner",
-          isMut: false,
-          isSigner: false,
-        },
         {
           name: "timelock",
           isMut: false,
