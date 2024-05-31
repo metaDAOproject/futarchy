@@ -344,9 +344,9 @@ export type Timelock = {
             type: "publicKey";
           },
           {
-            name: "commitmentLevel";
+            name: "enqueuerType";
             type: {
-              defined: "CommitmentLevel";
+              defined: "EnqueuerType";
             };
           }
         ];
@@ -419,15 +419,15 @@ export type Timelock = {
       };
     },
     {
-      name: "CommitmentLevel";
+      name: "EnqueuerType";
       type: {
         kind: "enum";
         variants: [
           {
-            name: "Soft";
+            name: "Enqueuer";
           },
           {
-            name: "Hard";
+            name: "TimelockAuthority";
           }
         ];
       };
@@ -494,12 +494,12 @@ export type Timelock = {
     },
     {
       code: 6007;
-      name: "NoCommitmentLevel";
-      msg: "The approver is neither the timelock authority nor an enqueuer";
+      name: "NotEnqueuerOrAuthority";
+      msg: "The signer is neither the timelock authority nor an enqueuer";
     },
     {
       code: 6008;
-      name: "InsufficientCommitmentLevel";
+      name: "InsufficientPermissions";
       msg: "Enqueuers can't cancel transaction batches enqueued by the timelock authority";
     },
     {
@@ -856,9 +856,9 @@ export const IDL: Timelock = {
             type: "publicKey",
           },
           {
-            name: "commitmentLevel",
+            name: "enqueuerType",
             type: {
-              defined: "CommitmentLevel",
+              defined: "EnqueuerType",
             },
           },
         ],
@@ -931,15 +931,15 @@ export const IDL: Timelock = {
       },
     },
     {
-      name: "CommitmentLevel",
+      name: "EnqueuerType",
       type: {
         kind: "enum",
         variants: [
           {
-            name: "Soft",
+            name: "Enqueuer",
           },
           {
-            name: "Hard",
+            name: "TimelockAuthority",
           },
         ],
       },
@@ -1006,12 +1006,12 @@ export const IDL: Timelock = {
     },
     {
       code: 6007,
-      name: "NoCommitmentLevel",
-      msg: "The approver is neither the timelock authority nor an enqueuer",
+      name: "NotEnqueuerOrAuthority",
+      msg: "The signer is neither the timelock authority nor an enqueuer",
     },
     {
       code: 6008,
-      name: "InsufficientCommitmentLevel",
+      name: "InsufficientPermissions",
       msg: "Enqueuers can't cancel transaction batches enqueued by the timelock authority",
     },
     {

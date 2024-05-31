@@ -466,7 +466,7 @@ describe("timelock", async function () {
         "Should have thrown an error when enqueuing a batch with an incorrect authority."
       );
     } catch (error) {
-      assert.include(error.message, "NoCommitmentLevel");
+      assert.include(error.message, "NotEnqueuerOrAuthority");
     }
   });
 
@@ -491,8 +491,8 @@ describe("timelock", async function () {
     );
 
     assert.ok(
-      "hard" in enqueuedTransactionBatch.commitmentLevel,
-      "The batch commitment status should be 'hard' because it was enqueued by the timelock authority."
+      "timelockAuthority" in enqueuedTransactionBatch.enqueuerType,
+      "The batch should be shown as enqueued by the timelock authority."
     );
 
     // Assert the enqueued slot is set
@@ -517,7 +517,7 @@ describe("timelock", async function () {
         "Should have thrown an error when enqueuer tries to cancel transactions with a hard commitment level."
       );
     } catch (error) {
-      assert.include(error.message, "InsufficientCommitmentLevel");
+      assert.include(error.message, "InsufficientPermissions");
     }
   });
 
@@ -830,6 +830,11 @@ describe("timelock", async function () {
     assert.ok(
       "enqueued" in transactionBatchAccount.status,
       "The transaction batch should be in 'Enqueued' status after enqueueing."
+    );
+
+    assert.ok(
+      "enqueuer" in transactionBatchAccount.enqueuerType,
+      "The batch should be shown as enqueued by an enqueuer."
     );
 
     // Step 4: Cancel the Transaction Batch
