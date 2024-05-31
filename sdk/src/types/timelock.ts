@@ -30,6 +30,10 @@ export type Timelock = {
           type: {
             vec: "publicKey";
           };
+        },
+        {
+          name: "enqueuerCooldownSlots";
+          type: "u64";
         }
       ];
     },
@@ -72,6 +76,27 @@ export type Timelock = {
         {
           name: "authority";
           type: "publicKey";
+        }
+      ];
+    },
+    {
+      name: "setEnqueuerCooldownSlots";
+      accounts: [
+        {
+          name: "timelockSigner";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "timelock";
+          isMut: true;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "cooldownSlots";
+          type: "u64";
         }
       ];
     },
@@ -197,7 +222,7 @@ export type Timelock = {
         },
         {
           name: "timelock";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -218,7 +243,7 @@ export type Timelock = {
         },
         {
           name: "timelock";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -272,8 +297,17 @@ export type Timelock = {
           {
             name: "enqueuers";
             type: {
-              vec: "publicKey";
+              vec: {
+                defined: "Enqueuer";
+              };
             };
+          },
+          {
+            name: "enqueuerCooldownSlots";
+            docs: [
+              "The cooldown period for enqueuers to prevent spamming the timelock."
+            ];
+            type: "u64";
           }
         ];
       };
@@ -320,6 +354,22 @@ export type Timelock = {
     }
   ];
   types: [
+    {
+      name: "Enqueuer";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "pubkey";
+            type: "publicKey";
+          },
+          {
+            name: "lastSlotEnqueued";
+            type: "u64";
+          }
+        ];
+      };
+    },
     {
       name: "Transaction";
       type: {
@@ -451,6 +501,11 @@ export type Timelock = {
       code: 6008;
       name: "InsufficientCommitmentLevel";
       msg: "Enqueuers can't cancel transaction batches enqueued by the timelock authority";
+    },
+    {
+      code: 6009;
+      name: "EnqueuerCooldown";
+      msg: "This enqueuer is still in its cooldown period";
     }
   ];
 };
@@ -487,6 +542,10 @@ export const IDL: Timelock = {
           type: {
             vec: "publicKey",
           },
+        },
+        {
+          name: "enqueuerCooldownSlots",
+          type: "u64",
         },
       ],
     },
@@ -529,6 +588,27 @@ export const IDL: Timelock = {
         {
           name: "authority",
           type: "publicKey",
+        },
+      ],
+    },
+    {
+      name: "setEnqueuerCooldownSlots",
+      accounts: [
+        {
+          name: "timelockSigner",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "timelock",
+          isMut: true,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "cooldownSlots",
+          type: "u64",
         },
       ],
     },
@@ -654,7 +734,7 @@ export const IDL: Timelock = {
         },
         {
           name: "timelock",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -675,7 +755,7 @@ export const IDL: Timelock = {
         },
         {
           name: "timelock",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -729,8 +809,17 @@ export const IDL: Timelock = {
           {
             name: "enqueuers",
             type: {
-              vec: "publicKey",
+              vec: {
+                defined: "Enqueuer",
+              },
             },
+          },
+          {
+            name: "enqueuerCooldownSlots",
+            docs: [
+              "The cooldown period for enqueuers to prevent spamming the timelock.",
+            ],
+            type: "u64",
           },
         ],
       },
@@ -777,6 +866,22 @@ export const IDL: Timelock = {
     },
   ],
   types: [
+    {
+      name: "Enqueuer",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "pubkey",
+            type: "publicKey",
+          },
+          {
+            name: "lastSlotEnqueued",
+            type: "u64",
+          },
+        ],
+      },
+    },
     {
       name: "Transaction",
       type: {
@@ -908,6 +1013,11 @@ export const IDL: Timelock = {
       code: 6008,
       name: "InsufficientCommitmentLevel",
       msg: "Enqueuers can't cancel transaction batches enqueued by the timelock authority",
+    },
+    {
+      code: 6009,
+      name: "EnqueuerCooldown",
+      msg: "This enqueuer is still in its cooldown period",
     },
   ],
 };

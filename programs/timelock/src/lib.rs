@@ -29,7 +29,9 @@ pub struct Timelock {
     pub authority: Pubkey,
     pub signer_bump: u8,
     pub delay_in_slots: u64,
-    pub enqueuers: Vec<Pubkey>,
+    pub enqueuers: Vec<Enqueuer>,
+    /// The cooldown period for enqueuers to prevent spamming the timelock.
+    pub enqueuer_cooldown_slots: u64,
 }
 
 #[account]
@@ -40,6 +42,12 @@ pub struct TransactionBatch {
     pub enqueued_slot: u64,
     pub transaction_batch_authority: Pubkey,
     pub commitment_level: CommitmentLevel,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct Enqueuer {
+    pub pubkey: Pubkey,
+    pub last_slot_enqueued: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
@@ -80,14 +88,22 @@ pub mod timelock {
         ctx: Context<CreateTimelock>,
         authority: Pubkey,
         delay_in_slots: u64,
-        enqueuers: Vec<Pubkey>
+        enqueuers: Vec<Pubkey>,
+        enqueuer_cooldown_slots: u64,
     ) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
         timelock.authority = authority;
         timelock.delay_in_slots = delay_in_slots;
         timelock.signer_bump = ctx.bumps.timelock_signer;
-        timelock.enqueuers = enqueuers;
+        timelock.enqueuers = enqueuers
+            .iter()
+            .map(|enq| Enqueuer {
+                pubkey: *enq,
+                last_slot_enqueued: 0,
+            })
+            .collect();
+        timelock.enqueuer_cooldown_slots = enqueuer_cooldown_slots;
 
         Ok(())
     }
@@ -108,15 +124,26 @@ pub mod timelock {
         Ok(())
     }
 
+    pub fn set_enqueuer_cooldown_slots(ctx: Context<Auth>, cooldown_slots: u64) -> Result<()> {
+        let timelock = &mut ctx.accounts.timelock;
+
+        timelock.enqueuer_cooldown_slots = cooldown_slots;
+
+        Ok(())
+    }
+
     pub fn add_enqueuer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
         // idempotent
-        if timelock.enqueuers.iter().any(|enq| *enq == enqueuer) {
+        if timelock.enqueuers.iter().any(|enq| enq.pubkey == enqueuer) {
             return Ok(());
         }
 
-        timelock.enqueuers.push(enqueuer);
+        timelock.enqueuers.push(Enqueuer {
+            pubkey: enqueuer,
+            last_slot_enqueued: 0,
+        });
 
         Ok(())
     }
@@ -127,7 +154,7 @@ pub mod timelock {
         let index = timelock
             .enqueuers
             .iter()
-            .position(|enq| *enq == enqueuer);
+            .position(|enq| enq.pubkey == enqueuer);
 
         let index = match index {
             Some(index) => index,
@@ -191,6 +218,29 @@ pub mod timelock {
 
     pub fn enqueue_transaction_batch(ctx: Context<EnqueueOrCancelTransactionBatch>) -> Result<()> {
         let commitment_level = ctx.accounts.get_commitment_level()?;
+        let clock = Clock::get()?;
+
+        if commitment_level == CommitmentLevel::Soft {
+            let enqueuer_cooldown_slots = ctx.accounts.timelock.enqueuer_cooldown_slots;
+            // unwrap is safe because we know the enqueuer is an enqueuer
+            let enqueuer = ctx
+                .accounts
+                .timelock
+                .enqueuers
+                .iter_mut()
+                .find(|enq| enq.pubkey == ctx.accounts.enqueuer_or_authority.key())
+                .unwrap();
+
+            require_gte!(
+                clock.slot,
+                enqueuer.last_slot_enqueued.saturating_add(enqueuer_cooldown_slots),
+                TimelockError::EnqueuerCooldown
+            );
+
+            enqueuer.last_slot_enqueued = clock.slot;
+            msg!("CLOCK SLOT: {:?}", clock.slot);
+            msg!("{:?}", enqueuer);
+        }
 
         let tx_batch = &mut ctx.accounts.transaction_batch;
         let clock = Clock::get()?;
@@ -321,6 +371,7 @@ pub struct UpdateTransactionBatch<'info> {
 #[derive(Accounts)]
 pub struct EnqueueOrCancelTransactionBatch<'info> {
     enqueuer_or_authority: Signer<'info>,
+    #[account(mut)]
     timelock: Box<Account<'info, Timelock>>,
     #[account(mut, has_one = timelock)]
     transaction_batch: Box<Account<'info, TransactionBatch>>,
@@ -335,7 +386,7 @@ impl EnqueueOrCancelTransactionBatch<'_> {
                 self.timelock
                     .enqueuers
                     .iter()
-                    .any(|enqueuer| *enqueuer == self.enqueuer_or_authority.key()),
+                    .any(|enqueuer| enqueuer.pubkey == self.enqueuer_or_authority.key()),
                 TimelockError::NoCommitmentLevel
             );
             Ok(CommitmentLevel::Soft)
@@ -404,4 +455,6 @@ pub enum TimelockError {
     NoCommitmentLevel,
     #[msg("Enqueuers can't cancel transaction batches enqueued by the timelock authority")]
     InsufficientCommitmentLevel,
+    #[msg("This enqueuer is still in its cooldown period")]
+    EnqueuerCooldown,
 }
