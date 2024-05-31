@@ -97,6 +97,27 @@ export type Timelock = {
       ];
     },
     {
+      name: "removeEnqueuer";
+      accounts: [
+        {
+          name: "timelockSigner";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "timelock";
+          isMut: true;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "enqueuer";
+          type: "publicKey";
+        }
+      ];
+    },
+    {
       name: "createTransactionBatch";
       accounts: [
         {
@@ -513,6 +534,27 @@ export const IDL: Timelock = {
     },
     {
       name: "addEnqueuer",
+      accounts: [
+        {
+          name: "timelockSigner",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "timelock",
+          isMut: true,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "enqueuer",
+          type: "publicKey",
+        },
+      ],
+    },
+    {
+      name: "removeEnqueuer",
       accounts: [
         {
           name: "timelockSigner",

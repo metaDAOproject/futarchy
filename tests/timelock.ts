@@ -274,12 +274,40 @@ describe("timelock", async function () {
       .signers([transactionBatchAuthority])
       .rpc();
 
+    // Transaction 5: Remove enqueuer
+    let removeEnqueuerInstruction = timelock.instruction.removeEnqueuer(
+      enqueuer3.publicKey,
+      {
+        accounts: {
+          timelock: timelockKp.publicKey,
+          timelockSigner: timelockSignerPubkey,
+        },
+      }
+    );
+
+    await timelock.methods
+      .addTransaction(
+        removeEnqueuerInstruction.programId,
+        removeEnqueuerInstruction.keys.map((key) => ({
+          pubkey: key.pubkey,
+          isSigner: key.isSigner,
+          isWritable: key.isWritable,
+        })),
+        removeEnqueuerInstruction.data
+      )
+      .accounts({
+        transactionBatch: transactionBatch.publicKey,
+        transactionBatchAuthority: transactionBatchAuthority.publicKey,
+      })
+      .signers([transactionBatchAuthority])
+      .rpc();
+
     // Verify the transactions
     const transactionBatchAccount =
       await timelock.account.transactionBatch.fetch(transactionBatch.publicKey);
     assert.strictEqual(
       transactionBatchAccount.transactions.length,
-      4,
+      5,
       "There should be three transactions in the batch."
     );
   });
@@ -666,16 +694,59 @@ describe("timelock", async function () {
       "The add enqueuer transaction should have been executed."
     );
 
+
+    // Verify the enqueuer was added correctly
+    assert.ok(
+      updatedTimelockAccount.enqueuers.map(enqueuer => enqueuer.toString()).includes(enqueuer4.publicKey.toString()),
+      "The enqueuer should have been added to the timelock."
+    );
+  });
+
+  it("Executes the remove enqueuer transaction and verifies the update", async () => {
+    await timelock.methods
+      .executeTransactionBatch()
+      .accounts({
+        timelock: timelockKp.publicKey,
+        timelockSigner: timelockSignerPubkey,
+        transactionBatch: transactionBatch.publicKey,
+      })
+      .remainingAccounts([
+        { pubkey: timelockSignerPubkey, isWritable: false, isSigner: false },
+        { pubkey: timelockKp.publicKey, isWritable: true, isSigner: false },
+        { pubkey: timelock.programId, isWritable: false, isSigner: false },
+      ])
+      .preInstructions([
+        // this is to get around bankrun thinking we've processed the same transaction multiple times
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 3,
+        }),
+      ])
+      .rpc();
+
+    // Fetch the updated TransactionBatch and timelock account to verify changes
+    const updatedTransactionBatch =
+      await timelock.account.transactionBatch.fetch(transactionBatch.publicKey);
+    const updatedTimelockAccount = await timelock.account.timelock.fetch(
+      timelockKp.publicKey
+    );
+
+    // Check if the fifth transaction did execute
+    assert.strictEqual(
+      updatedTransactionBatch.transactions[4].didExecute,
+      true,
+      "The remove enqueuer transaction should have been executed."
+    );
+
     // Verify the transaction batch status is 'Executed'
     assert.ok(
       "executed" in updatedTransactionBatch.status,
       "The batch status should be 'Executed' after all transactions are processed."
     );
 
-    // Verify the enqueuer was added correctly
+    // Verify the enqueuer was removed correctly
     assert.ok(
-      updatedTimelockAccount.enqueuers.map(enqueuer => enqueuer.toString()).includes(enqueuer4.publicKey.toString()),
-      "The enqueuer should have been added to the timelock."
+      !updatedTimelockAccount.enqueuers.map(enqueuer => enqueuer.toString()).includes(enqueuer3.publicKey.toString()),
+      "The enqueuer should have been removed from the timelock."
     );
   });
 

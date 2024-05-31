@@ -111,7 +111,30 @@ pub mod timelock {
     pub fn add_enqueuer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
+        // idempotent
+        if timelock.enqueuers.iter().any(|enq| *enq == enqueuer) {
+            return Ok(());
+        }
+
         timelock.enqueuers.push(enqueuer);
+
+        Ok(())
+    }
+
+    pub fn remove_enqueuer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
+        let timelock = &mut ctx.accounts.timelock;
+
+        let index = timelock
+            .enqueuers
+            .iter()
+            .position(|enq| *enq == enqueuer);
+
+        let index = match index {
+            Some(index) => index,
+            None => return Ok(()), // idempotent
+        };
+
+        timelock.enqueuers.remove(index);
 
         Ok(())
     }
