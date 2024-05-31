@@ -93,7 +93,7 @@ describe("timelock", async function () {
     timelockAuthority = anchor.web3.Keypair.generate();
 
     await timelock.methods
-      .createTimelock(timelockAuthority.publicKey, delayInSlots)
+      .createTimelock(timelockAuthority.publicKey, delayInSlots, [payer.publicKey])
       .accounts({
         timelock: timelockKp.publicKey,
         timelockSigner: timelockSignerPubkey,
@@ -257,7 +257,7 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          authority: timelockAuthority.publicKey,
+          enqueuerOrAuthority: timelockAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([timelockAuthority])
@@ -297,7 +297,7 @@ describe("timelock", async function () {
         .cancelTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          authority: timelockAuthority.publicKey,
+          enqueuerOrAuthority: timelockAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([timelockAuthority])
@@ -380,12 +380,34 @@ describe("timelock", async function () {
     }
   });
 
+  it("Fails to enqueue the transaction batch with an incorrect authority", async () => {
+    // Assume the batch is sealed
+    try {
+      const fakeAuthority = Keypair.generate();
+
+      await timelock.methods
+        .enqueueTransactionBatch()
+        .accounts({
+          transactionBatch: transactionBatch.publicKey,
+          enqueuerOrAuthority: fakeAuthority.publicKey,
+          timelock: timelockKp.publicKey,
+        })
+        .signers([fakeAuthority])
+        .rpc();
+      assert.fail(
+        "Should have thrown an error when enqueuing a batch with an incorrect authority."
+      );
+    } catch (error) {
+      assert.include(error.message, "NoCommitmentLevel");
+    }
+  });
+
   it("Enqueues the transaction batch", async () => {
     await timelock.methods
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority: timelockAuthority.publicKey,
+        enqueuerOrAuthority: timelockAuthority.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([timelockAuthority])
@@ -400,11 +422,34 @@ describe("timelock", async function () {
       "The batch status should be 'Enqueued' after enqueueing."
     );
 
+    assert.ok(
+      "hard" in enqueuedTransactionBatch.commitmentLevel,
+      "The batch commitment status should be 'hard' because it was enqueued by the timelock authority."
+    );
+
     // Assert the enqueued slot is set
     assert.ok(
       enqueuedTransactionBatch.enqueuedSlot.toNumber() > 0,
       "The enqueued slot should be set and greater than 0."
     );
+  });
+
+  it("Enqueuers cannot cancel transactions with a hard commitment level", async () => {
+    try {
+      await timelock.methods
+        .cancelTransactionBatch()
+        .accounts({
+          transactionBatch: transactionBatch.publicKey,
+          enqueuerOrAuthority: payer.publicKey,
+          timelock: timelockKp.publicKey,
+        })
+        .rpc();
+      assert.fail(
+        "Should have thrown an error when enqueuer tries to cancel transactions with a hard commitment level."
+      );
+    } catch (error) {
+      assert.include(error.message, "InsufficientCommitmentLevel");
+    }
   });
 
   it("Fails to execute transactions before the required delay period", async () => {
@@ -620,7 +665,7 @@ describe("timelock", async function () {
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority: recipient.publicKey, // Assuming recipient as the new authority
+        enqueuerOrAuthority: recipient.publicKey, // Assuming recipient as the new authority
         timelock: timelockKp.publicKey,
       })
       .signers([recipient])
@@ -641,7 +686,7 @@ describe("timelock", async function () {
       .cancelTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority: recipient.publicKey,
+        enqueuerOrAuthority: recipient.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([recipient])
