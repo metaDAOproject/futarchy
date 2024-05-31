@@ -108,6 +108,14 @@ pub mod timelock {
         Ok(())
     }
 
+    pub fn add_enqueuer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
+        let timelock = &mut ctx.accounts.timelock;
+
+        timelock.enqueuers.push(enqueuer);
+
+        Ok(())
+    }
+
     pub fn create_transaction_batch(ctx: Context<CreateTransactionBatch>) -> Result<()> {
         let tx_batch = &mut ctx.accounts.transaction_batch;
 

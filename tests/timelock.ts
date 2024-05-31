@@ -63,7 +63,11 @@ describe("timelock", async function () {
     transactionBatchAuthority: anchor.web3.Keypair,
     transactionBatch: anchor.web3.Keypair,
     enqueuer1: anchor.web3.Keypair = anchor.web3.Keypair.generate(),
-    enqueuer2: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+    enqueuer2: anchor.web3.Keypair = anchor.web3.Keypair.generate(),
+    // only exists at the start, gets removed
+    enqueuer3: anchor.web3.Keypair = anchor.web3.Keypair.generate(), 
+    // only exists after being added
+    enqueuer4: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   // META,
   // USDC,
   // MNDE,
@@ -241,13 +245,41 @@ describe("timelock", async function () {
       })
       .signers([transactionBatchAuthority])
       .rpc();
+    
+    // Transaction 4: Add enqueuer
+    let addEnqueuerInstruction = timelock.instruction.addEnqueuer(
+      enqueuer4.publicKey,
+      {
+        accounts: {
+          timelock: timelockKp.publicKey,
+          timelockSigner: timelockSignerPubkey,
+        },
+      }
+    );
+
+    await timelock.methods
+      .addTransaction(
+        addEnqueuerInstruction.programId,
+        addEnqueuerInstruction.keys.map((key) => ({
+          pubkey: key.pubkey,
+          isSigner: key.isSigner,
+          isWritable: key.isWritable,
+        })),
+        addEnqueuerInstruction.data
+      )
+      .accounts({
+        transactionBatch: transactionBatch.publicKey,
+        transactionBatchAuthority: transactionBatchAuthority.publicKey,
+      })
+      .signers([transactionBatchAuthority])
+      .rpc();
 
     // Verify the transactions
     const transactionBatchAccount =
       await timelock.account.transactionBatch.fetch(transactionBatch.publicKey);
     assert.strictEqual(
       transactionBatchAccount.transactions.length,
-      3,
+      4,
       "There should be three transactions in the batch."
     );
   });
@@ -598,16 +630,52 @@ describe("timelock", async function () {
       "The change authority transaction should have been executed."
     );
 
+    // Verify the timelock authority was updated correctly
+    assert.ok(
+      updatedTimelockAccount.authority.equals(recipient.publicKey),
+      "The recipient should now be the authority of the timelock."
+    );
+  });
+
+  it("Executes the add enqueuer transaction and verifies the update", async () => {
+    await timelock.methods
+      .executeTransactionBatch()
+      .accounts({
+        timelock: timelockKp.publicKey,
+        timelockSigner: timelockSignerPubkey,
+        transactionBatch: transactionBatch.publicKey,
+      })
+      .remainingAccounts([
+        { pubkey: timelockSignerPubkey, isWritable: false, isSigner: false },
+        { pubkey: timelockKp.publicKey, isWritable: true, isSigner: false },
+        { pubkey: timelock.programId, isWritable: false, isSigner: false },
+      ])
+      .rpc();
+
+    // Fetch the updated TransactionBatch and timelock account to verify changes
+    const updatedTransactionBatch =
+      await timelock.account.transactionBatch.fetch(transactionBatch.publicKey);
+    const updatedTimelockAccount = await timelock.account.timelock.fetch(
+      timelockKp.publicKey
+    );
+
+    // Check if the fourth transaction did execute
+    assert.strictEqual(
+      updatedTransactionBatch.transactions[3].didExecute,
+      true,
+      "The add enqueuer transaction should have been executed."
+    );
+
     // Verify the transaction batch status is 'Executed'
     assert.ok(
       "executed" in updatedTransactionBatch.status,
       "The batch status should be 'Executed' after all transactions are processed."
     );
 
-    // Verify the timelock authority was updated correctly
+    // Verify the enqueuer was added correctly
     assert.ok(
-      updatedTimelockAccount.authority.equals(recipient.publicKey),
-      "The recipient should now be the authority of the timelock."
+      updatedTimelockAccount.enqueuers.map(enqueuer => enqueuer.toString()).includes(enqueuer4.publicKey.toString()),
+      "The enqueuer should have been added to the timelock."
     );
   });
 
