@@ -66,11 +66,6 @@ export type Timelock = {
       name: "createTransactionBatch";
       accounts: [
         {
-          name: "transactionBatchAuthority";
-          isMut: false;
-          isSigner: true;
-        },
-        {
           name: "timelock";
           isMut: false;
           isSigner: false;
@@ -81,7 +76,14 @@ export type Timelock = {
           isSigner: true;
         }
       ];
-      args: [];
+      args: [
+        {
+          name: "params";
+          type: {
+            defined: "CreateTransactionBatchParams";
+          };
+        }
+      ];
     },
     {
       name: "addTransaction";
@@ -221,6 +223,10 @@ export type Timelock = {
             };
           },
           {
+            name: "maxEnqueuers";
+            type: "u16";
+          },
+          {
             name: "admin";
             docs: [
               "Fully priveleged account that can cancel any transaction batches and enqueue",
@@ -349,6 +355,18 @@ export type Timelock = {
           {
             name: "timelockId";
             type: "u64";
+          }
+        ];
+      };
+    },
+    {
+      name: "CreateTransactionBatchParams";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "transactionBatchAuthority";
+            type: "publicKey";
           }
         ];
       };
@@ -484,11 +502,6 @@ export const IDL: Timelock = {
       name: "createTransactionBatch",
       accounts: [
         {
-          name: "transactionBatchAuthority",
-          isMut: false,
-          isSigner: true,
-        },
-        {
           name: "timelock",
           isMut: false,
           isSigner: false,
@@ -499,7 +512,14 @@ export const IDL: Timelock = {
           isSigner: true,
         },
       ],
-      args: [],
+      args: [
+        {
+          name: "params",
+          type: {
+            defined: "CreateTransactionBatchParams",
+          },
+        },
+      ],
     },
     {
       name: "addTransaction",
@@ -639,6 +659,10 @@ export const IDL: Timelock = {
             },
           },
           {
+            name: "maxEnqueuers",
+            type: "u16",
+          },
+          {
             name: "admin",
             docs: [
               "Fully priveleged account that can cancel any transaction batches and enqueue",
@@ -767,6 +791,18 @@ export const IDL: Timelock = {
           {
             name: "timelockId",
             type: "u64",
+          },
+        ],
+      },
+    },
+    {
+      name: "CreateTransactionBatchParams",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "transactionBatchAuthority",
+            type: "publicKey",
           },
         ],
       },

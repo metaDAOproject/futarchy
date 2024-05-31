@@ -35,3 +35,4 @@ export type ConditionalVaultAccount =
   IdlAccounts<ConditionalVault>["conditionalVault"];
 
 export type TimelockAccount = IdlAccounts<Timelock>["timelock"];
+export type transactionBatchAccount = IdlAccounts<Timelock>["transactionBatch"];

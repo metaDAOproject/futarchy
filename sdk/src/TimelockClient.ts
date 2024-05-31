@@ -4,7 +4,7 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 
 import { Timelock, IDL as TimelockIDL } from "./types/timelock";
 import { getTimelockAddr } from "./utils";
-import { TimelockAccount } from "./types";
+import { TimelockAccount, transactionBatchAccount } from "./types";
 
 export class TimelockClient {
   public readonly provider: AnchorProvider;
@@ -23,10 +23,19 @@ export class TimelockClient {
     return this.timelockProgram.account.timelock.fetch(timelock);
   }
 
+  async getTransactionBatch(
+    transactionBatch: PublicKey
+  ): Promise<transactionBatchAccount> {
+    return this.timelockProgram.account.transactionBatch.fetch(
+      transactionBatch
+    );
+  }
+
   async createTimelock(
     authority: PublicKey,
     enqueuers: PublicKey[],
     delayInSlots: BN,
+    maxEnqueuers: number = 10,
     timelockId: BN = new BN(Math.random() * 1e30)
   ): Promise<PublicKey> {
     const timelock = getTimelockAddr(
@@ -38,6 +47,7 @@ export class TimelockClient {
       authority,
       enqueuers,
       delayInSlots,
+      maxEnqueuers,
       timelockId
     ).rpc();
 
@@ -48,6 +58,7 @@ export class TimelockClient {
     admin: PublicKey,
     enqueuers: PublicKey[],
     delayInSlots: BN,
+    maxEnqueuers: number,
     timelockId: BN
   ) {
     const timelock = getTimelockAddr(
@@ -57,7 +68,7 @@ export class TimelockClient {
 
     return this.timelockProgram.methods
       .createTimelock({
-        maxEnqueuers: 10,
+        maxEnqueuers,
         enqueuers,
         admin,
         delayInSlots: new BN(delayInSlots),
@@ -66,5 +77,39 @@ export class TimelockClient {
       .accounts({
         timelock,
       });
+  }
+
+  async createTransactionBatchIx({
+    timelock,
+    transactionBatchKp = Keypair.generate(),
+    transactionBatchSize = 10_000, // 10 kilobytes
+    transactionBatchAuthority = this.provider.publicKey,
+  }: {
+    timelock: PublicKey;
+    transactionBatchKp?: Keypair;
+    transactionBatchSize?: number;
+    // if you pass a public key, you need to sign the instruction later
+    transactionBatchAuthority?: PublicKey;
+  }) {
+    return this.timelockProgram.methods
+      .createTransactionBatch({ transactionBatchAuthority })
+      .accounts({
+        timelock,
+        transactionBatch: transactionBatchKp.publicKey,
+      })
+      .preInstructions([
+        await this.timelockProgram.account.transactionBatch.createInstruction(
+          transactionBatchKp,
+          transactionBatchSize
+        ),
+      ])
+      .signers([transactionBatchKp]);
+
+    // if (transactionBatchAuthority instanceof Keypair) {
+    //   console.log("SIGN");
+    //   ix = ix.signers([transactionBatchAuthority]);
+    // }
+
+    // return ix;
   }
 }

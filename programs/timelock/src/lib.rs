@@ -31,6 +31,7 @@ pub struct Timelock {
     /// Semi-priveleged accounts that can enqueue and veto transaction batches
     /// with a soft commitment.
     pub enqueuers: Vec<Pubkey>,
+    pub max_enqueuers: u16,
     /// Fully priveleged account that can cancel any transaction batches and enqueue
     /// transactions with a hard commitment.
     pub admin: Pubkey,
@@ -86,6 +87,11 @@ pub struct CreateTimelockParams {
     pub timelock_id: u64,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CreateTransactionBatchParams {
+    pub transaction_batch_authority: Pubkey,
+}
+
 #[program]
 pub mod timelock {
     use super::*;
@@ -97,7 +103,7 @@ pub mod timelock {
         let timelock = &mut ctx.accounts.timelock;
         
         let CreateTimelockParams {
-            max_enqueuers: _,
+            max_enqueuers,
             enqueuers,
             admin,
             delay_in_slots,
@@ -108,6 +114,7 @@ pub mod timelock {
             id: timelock_id,
             pda_bump: ctx.bumps.timelock,
             enqueuers,
+            max_enqueuers,
             admin,
             delay_in_slots,
         });
@@ -133,11 +140,16 @@ pub mod timelock {
 
     pub fn create_transaction_batch(
         ctx: Context<CreateTransactionBatch>,
+        params: CreateTransactionBatchParams
     ) -> Result<()> {
         let tx_batch = &mut ctx.accounts.transaction_batch;
 
+        let CreateTransactionBatchParams {
+            transaction_batch_authority
+        } = params;
+
         tx_batch.timelock = ctx.accounts.timelock.key();
-        tx_batch.transaction_batch_authority = ctx.accounts.transaction_batch_authority.key();
+        tx_batch.transaction_batch_authority = transaction_batch_authority;
         tx_batch.status = TransactionBatchStatus::Created;
 
         Ok(())
@@ -274,7 +286,6 @@ pub struct Auth<'info> {
 
 #[derive(Accounts)]
 pub struct CreateTransactionBatch<'info> {
-    transaction_batch_authority: Signer<'info>,
     timelock: Box<Account<'info, Timelock>>,
     #[account(zero, signer)]
     transaction_batch: Box<Account<'info, TransactionBatch>>

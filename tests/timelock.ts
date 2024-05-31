@@ -2,8 +2,8 @@ import * as anchor from "@coral-xyz/anchor";
 import { BN, Program } from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
+import { PublicKey, Keypair } from "@solana/web3.js";
 
-const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 
 import { assert } from "chai";
 
@@ -18,10 +18,6 @@ import { ComputeBudgetProgram, Connection } from "@solana/web3.js";
 import { TimelockClient } from "@metadaoproject/futarchy/src/TimelockClient";
 import { getTimelockAddr } from "@metadaoproject/futarchy";
 const TimelockIDL: Timelock = require("../target/idl/timelock.json");
-
-export type PublicKey = anchor.web3.PublicKey;
-export type Signer = anchor.web3.Signer;
-export type Keypair = anchor.web3.Keypair;
 
 // import {
 //   createMint,
@@ -78,65 +74,73 @@ describe("timelock", async function () {
       provider as any as anchor.AnchorProvider,
       TIMELOCK_PROGRAM_ID
     );
-
   });
 
   it("Creates a new timelock", async () => {
     const delayInSlots = new anchor.BN(1);
-
     const timelockId = new BN(Math.random() * 10000000000);
+    const maxEnqueuers = 10;
 
-    const [timelock, bump] = getTimelockAddr(timelockClient.timelockProgram.programId, timelockId);
+    let bump: number;
+    [timelock, bump] = getTimelockAddr(
+      timelockClient.timelockProgram.programId,
+      timelockId
+    );
 
     await timelockClient.createTimelock(
       timelockAuthority.publicKey,
-      [],
+      [payer.publicKey],
       delayInSlots,
+      maxEnqueuers,
       timelockId
     );
 
     let storedTimelock = await timelockClient.getTimelock(timelock);
-    assert.equal(storedTimelock.delayInSlots.toString(), delayInSlots.toString());
+    assert.equal(
+      storedTimelock.delayInSlots.toString(),
+      delayInSlots.toString()
+    );
     assert.equal(storedTimelock.id.toString(), timelockId.toString());
     assert.equal(storedTimelock.pdaBump, bump);
+    assert.equal(storedTimelock.maxEnqueuers, maxEnqueuers);
+    assert.equal(storedTimelock.enqueuers.length, 1);
+    assert.equal(
+      storedTimelock.enqueuers[0].toString(),
+      payer.publicKey.toString()
+    );
+    assert.equal(storedTimelock.admin.toString(), timelockAuthority.publicKey.toString());
   });
 
-  // it("Creates a transaction batch", async () => {
-  //   transactionBatchAuthority = anchor.web3.Keypair.generate();
-  //   transactionBatch = anchor.web3.Keypair.generate();
-  //   const transactionBatchSize = 30000; // Adjust size as needed
+  it("Creates a transaction batch", async () => {
+    transactionBatchAuthority = Keypair.generate();
+    transactionBatch = Keypair.generate();
+    const transactionBatchSize = 30000; // Adjust size as needed
 
-  //   await timelockProgram.methods
-  //     .createTransactionBatch()
-  //     .accounts({
-  //       transactionBatchAuthority: transactionBatchAuthority.publicKey,
-  //       timelock: timelockKp.publicKey,
-  //       transactionBatch: transactionBatch.publicKey,
-  //     })
-  //     .preInstructions([
-  //       await timelockProgram.account.transactionBatch.createInstruction(
-  //         transactionBatch,
-  //         transactionBatchSize
-  //       ),
-  //     ])
-  //     .signers([transactionBatchAuthority, transactionBatch])
-  //     .rpc();
+    await (
+      await timelockClient.createTransactionBatchIx({
+        timelock,
+        transactionBatchKp: transactionBatch,
+        transactionBatchSize,
+        transactionBatchAuthority: transactionBatchAuthority.publicKey,
+      })
+    ).rpc();
 
-  //   const transactionBatchAccount =
-  //     await timelockProgram.account.transactionBatch.fetch(
-  //       transactionBatch.publicKey
-  //     );
-  //   // Assertions to check the transaction batch creation
-  //   assert.strictEqual(
-  //     transactionBatchAccount.transactionBatchAuthority.toString(),
-  //     transactionBatchAuthority.publicKey.toString(),
-  //     "The batch authority should match."
-  //   );
-  //   assert.ok(
-  //     "created" in transactionBatchAccount.status,
-  //     "The batch status should still be 'Created' after creating transaction batch."
-  //   );
-  // });
+    const transactionBatchAccount = await timelockClient.getTransactionBatch(
+      transactionBatch.publicKey
+    );
+    console.log(transactionBatchAccount)
+    console.log(timelock)
+    // Assertions to check the transaction batch creation
+    assert.strictEqual(
+      transactionBatchAccount.transactionBatchAuthority.toString(),
+      transactionBatchAuthority.publicKey.toString(),
+      "The batch authority should match."
+    );
+    assert.ok(
+      "created" in transactionBatchAccount.status,
+      "The batch status should still be 'Created' after creating transaction batch."
+    );
+  });
 
   // // Example additional test: "Adds three transactions to the transaction batch"
   // it("Adds three transactions to the transaction batch", async () => {
