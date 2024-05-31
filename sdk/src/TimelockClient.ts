@@ -1,7 +1,10 @@
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import * as anchor from "@coral-xyz/anchor";
 import { Keypair, PublicKey } from "@solana/web3.js";
 
 import { Timelock, IDL as TimelockIDL } from "./types/timelock";
+import { getTimelockAddr } from "./utils";
+import { TimelockAccount } from "./types";
 
 export class TimelockClient {
   public readonly provider: AnchorProvider;
@@ -16,26 +19,52 @@ export class TimelockClient {
     );
   }
 
-  async createTimelockIx(
+  async getTimelock(timelock: PublicKey): Promise<TimelockAccount> {
+    return this.timelockProgram.account.timelock.fetch(timelock);
+  }
+
+  async createTimelock(
     authority: PublicKey,
     enqueuers: PublicKey[],
-    delayInSlots: number,
-    timelockKeypair: Keypair
+    delayInSlots: BN,
+    timelockId: BN = new BN(Math.random() * 1e30)
+  ): Promise<PublicKey> {
+    const timelock = getTimelockAddr(
+      this.timelockProgram.programId,
+      timelockId
+    )[0];
+
+    await this.createTimelockIx(
+      authority,
+      enqueuers,
+      delayInSlots,
+      timelockId
+    ).rpc();
+
+    return timelock;
+  }
+
+  createTimelockIx(
+    admin: PublicKey,
+    enqueuers: PublicKey[],
+    delayInSlots: BN,
+    timelockId: BN
   ) {
-    const [timelockSigner] = PublicKey.findProgramAddressSync(
-      [timelockKeypair.publicKey.toBuffer()],
-      this.timelockProgram.programId
-    );
-    const timelockSize = 200; // Big enough.
+    const timelock = getTimelockAddr(
+      this.timelockProgram.programId,
+      timelockId
+    )[0];
+
     return this.timelockProgram.methods
-      .createTimelock(enqueuers, authority, new BN(delayInSlots))
-      .accounts({
-        timelock: timelockKeypair.publicKey,
-        timelockSigner,
+      .createTimelock({
+        maxEnqueuers: 10,
+        enqueuers,
+        admin,
+        delayInSlots: new BN(delayInSlots),
+        timelockId,
       })
-      .preInstructions([
-        await this.timelockProgram.account.timelock.createInstruction(timelockKeypair, timelockSize),
-      ])
-      .signers([timelockKeypair])
+      .accounts({
+        timelock,
+      });
   }
 }

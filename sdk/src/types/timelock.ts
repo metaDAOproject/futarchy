@@ -6,41 +6,33 @@ export type Timelock = {
       name: "createTimelock";
       accounts: [
         {
-          name: "timelockSigner";
-          isMut: false;
+          name: "timelock";
+          isMut: true;
           isSigner: false;
         },
         {
-          name: "timelock";
+          name: "payer";
           isMut: true;
           isSigner: true;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [
         {
-          name: "enqueuers";
+          name: "params";
           type: {
-            vec: "publicKey";
+            defined: "CreateTimelockParams";
           };
-        },
-        {
-          name: "authority";
-          type: "publicKey";
-        },
-        {
-          name: "delayInSlots";
-          type: "u64";
         }
       ];
     },
     {
       name: "setDelayInSlots";
       accounts: [
-        {
-          name: "timelockSigner";
-          isMut: false;
-          isSigner: true;
-        },
         {
           name: "timelock";
           isMut: true;
@@ -57,11 +49,6 @@ export type Timelock = {
     {
       name: "setAuthority";
       accounts: [
-        {
-          name: "timelockSigner";
-          isMut: false;
-          isSigner: true;
-        },
         {
           name: "timelock";
           isMut: true;
@@ -149,7 +136,7 @@ export type Timelock = {
       name: "enqueueTransactionBatch";
       accounts: [
         {
-          name: "authority";
+          name: "admin";
           isMut: false;
           isSigner: true;
         },
@@ -170,7 +157,7 @@ export type Timelock = {
       name: "cancelTransactionBatch";
       accounts: [
         {
-          name: "authority";
+          name: "admin";
           isMut: false;
           isSigner: true;
         },
@@ -216,6 +203,14 @@ export type Timelock = {
         kind: "struct";
         fields: [
           {
+            name: "id";
+            type: "u64";
+          },
+          {
+            name: "pdaBump";
+            type: "u8";
+          },
+          {
             name: "enqueuers";
             docs: [
               "Semi-priveleged accounts that can enqueue and veto transaction batches",
@@ -226,16 +221,12 @@ export type Timelock = {
             };
           },
           {
-            name: "authority";
+            name: "admin";
             docs: [
               "Fully priveleged account that can cancel any transaction batches and enqueue",
               "transactions with a hard commitment."
             ];
             type: "publicKey";
-          },
-          {
-            name: "signerBump";
-            type: "u8";
           },
           {
             name: "delayInSlots";
@@ -333,6 +324,36 @@ export type Timelock = {
       };
     },
     {
+      name: "CreateTimelockParams";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "maxEnqueuers";
+            type: "u16";
+          },
+          {
+            name: "enqueuers";
+            type: {
+              vec: "publicKey";
+            };
+          },
+          {
+            name: "admin";
+            type: "publicKey";
+          },
+          {
+            name: "delayInSlots";
+            type: "u64";
+          },
+          {
+            name: "timelockId";
+            type: "u64";
+          }
+        ];
+      };
+    },
+    {
       name: "TransactionBatchStatus";
       type: {
         kind: "enum";
@@ -403,41 +424,33 @@ export const IDL: Timelock = {
       name: "createTimelock",
       accounts: [
         {
-          name: "timelockSigner",
-          isMut: false,
+          name: "timelock",
+          isMut: true,
           isSigner: false,
         },
         {
-          name: "timelock",
+          name: "payer",
           isMut: true,
           isSigner: true,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
         },
       ],
       args: [
         {
-          name: "enqueuers",
+          name: "params",
           type: {
-            vec: "publicKey",
+            defined: "CreateTimelockParams",
           },
-        },
-        {
-          name: "authority",
-          type: "publicKey",
-        },
-        {
-          name: "delayInSlots",
-          type: "u64",
         },
       ],
     },
     {
       name: "setDelayInSlots",
       accounts: [
-        {
-          name: "timelockSigner",
-          isMut: false,
-          isSigner: true,
-        },
         {
           name: "timelock",
           isMut: true,
@@ -454,11 +467,6 @@ export const IDL: Timelock = {
     {
       name: "setAuthority",
       accounts: [
-        {
-          name: "timelockSigner",
-          isMut: false,
-          isSigner: true,
-        },
         {
           name: "timelock",
           isMut: true,
@@ -546,7 +554,7 @@ export const IDL: Timelock = {
       name: "enqueueTransactionBatch",
       accounts: [
         {
-          name: "authority",
+          name: "admin",
           isMut: false,
           isSigner: true,
         },
@@ -567,7 +575,7 @@ export const IDL: Timelock = {
       name: "cancelTransactionBatch",
       accounts: [
         {
-          name: "authority",
+          name: "admin",
           isMut: false,
           isSigner: true,
         },
@@ -613,6 +621,14 @@ export const IDL: Timelock = {
         kind: "struct",
         fields: [
           {
+            name: "id",
+            type: "u64",
+          },
+          {
+            name: "pdaBump",
+            type: "u8",
+          },
+          {
             name: "enqueuers",
             docs: [
               "Semi-priveleged accounts that can enqueue and veto transaction batches",
@@ -623,16 +639,12 @@ export const IDL: Timelock = {
             },
           },
           {
-            name: "authority",
+            name: "admin",
             docs: [
               "Fully priveleged account that can cancel any transaction batches and enqueue",
               "transactions with a hard commitment.",
             ],
             type: "publicKey",
-          },
-          {
-            name: "signerBump",
-            type: "u8",
           },
           {
             name: "delayInSlots",
@@ -725,6 +737,36 @@ export const IDL: Timelock = {
           {
             name: "isWritable",
             type: "bool",
+          },
+        ],
+      },
+    },
+    {
+      name: "CreateTimelockParams",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "maxEnqueuers",
+            type: "u16",
+          },
+          {
+            name: "enqueuers",
+            type: {
+              vec: "publicKey",
+            },
+          },
+          {
+            name: "admin",
+            type: "publicKey",
+          },
+          {
+            name: "delayInSlots",
+            type: "u64",
+          },
+          {
+            name: "timelockId",
+            type: "u64",
           },
         ],
       },

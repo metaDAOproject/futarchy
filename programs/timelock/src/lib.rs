@@ -26,14 +26,21 @@ declare_id!("tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF");
 
 #[account]
 pub struct Timelock {
+    pub id: u64,
+    pub pda_bump: u8,
     /// Semi-priveleged accounts that can enqueue and veto transaction batches
     /// with a soft commitment.
     pub enqueuers: Vec<Pubkey>,
     /// Fully priveleged account that can cancel any transaction batches and enqueue
     /// transactions with a hard commitment.
-    pub authority: Pubkey,
-    pub signer_bump: u8,
+    pub admin: Pubkey,
     pub delay_in_slots: u64,
+}
+
+impl Timelock {
+    pub fn space(max_enqueuers: usize) -> usize {
+        std::mem::size_of::<Timelock>() + max_enqueuers * std::mem::size_of::<Pubkey>()
+    }
 }
 
 #[account]
@@ -70,23 +77,39 @@ pub enum TransactionBatchStatus {
     Executed
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CreateTimelockParams {
+    pub max_enqueuers: u16,
+    pub enqueuers: Vec<Pubkey>,
+    pub admin: Pubkey,
+    pub delay_in_slots: u64,
+    pub timelock_id: u64,
+}
+
 #[program]
 pub mod timelock {
     use super::*;
 
     pub fn create_timelock(
         ctx: Context<CreateTimelock>,
-        enqueuers: Vec<Pubkey>,
-        authority: Pubkey,
-        delay_in_slots: u64,
+        params: CreateTimelockParams
     ) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
+        
+        let CreateTimelockParams {
+            max_enqueuers: _,
+            enqueuers,
+            admin,
+            delay_in_slots,
+            timelock_id,
+        } = params;
 
         timelock.set_inner(Timelock {
+            id: timelock_id,
+            pda_bump: ctx.bumps.timelock,
             enqueuers,
-            authority,
+            admin,
             delay_in_slots,
-            signer_bump: ctx.bumps.timelock_signer,
         });
 
         Ok(())
@@ -103,7 +126,7 @@ pub mod timelock {
     pub fn set_authority(ctx: Context<Auth>, authority: Pubkey) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
-        timelock.authority = authority;
+        timelock.admin = authority;
 
         Ok(())
     }
@@ -211,7 +234,7 @@ pub mod timelock {
                 }
             }
             let timelock_key = ctx.accounts.timelock.key();
-            let seeds = &[timelock_key.as_ref(), &[ctx.accounts.timelock.signer_bump]];
+            let seeds = &[b"timelock".as_ref(), &[ctx.accounts.timelock.pda_bump]];
             let signer = &[&seeds[..]];
             let accounts = ctx.remaining_accounts;
             solana_program::program::invoke_signed(&ix, accounts, signer)?;
@@ -228,23 +251,23 @@ pub mod timelock {
 }
 
 #[derive(Accounts)]
+#[instruction(params: CreateTimelockParams)]
 pub struct CreateTimelock<'info> {
     #[account(
-        seeds = [timelock.key().as_ref()],
-        bump,
+        init,
+        payer = payer,
+        space = Timelock::space(params.max_enqueuers as usize),
+        seeds = [b"timelock", params.timelock_id.to_le_bytes().as_ref()],
+        bump
     )]
-    timelock_signer: SystemAccount<'info>, 
-    #[account(zero, signer)]
-    timelock: Box<Account<'info, Timelock>>,
+    timelock: Account<'info, Timelock>,
+    #[account(mut)]
+    payer: Signer<'info>,
+    system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct Auth<'info> {
-    #[account(
-        seeds = [timelock.key().as_ref()],
-        bump = timelock.signer_bump,
-    )]
-    timelock_signer: Signer<'info>,
     #[account(mut)]
     timelock: Box<Account<'info, Timelock>>,
 }
@@ -266,8 +289,8 @@ pub struct UpdateTransactionBatch<'info> {
 
 #[derive(Accounts)]
 pub struct EnqueueOrCancelTransactionBatch<'info> {
-    authority: Signer<'info>,
-    #[account(has_one = authority)]
+    admin: Signer<'info>,
+    #[account(has_one = admin)]
     timelock: Box<Account<'info, Timelock>>,
     #[account(mut, has_one = timelock)]
     transaction_batch: Box<Account<'info, TransactionBatch>>
@@ -275,10 +298,10 @@ pub struct EnqueueOrCancelTransactionBatch<'info> {
 
 #[derive(Accounts)]
 pub struct ExecuteTransactionBatch<'info> {
-    #[account(
-        seeds = [timelock.key().as_ref()],
-        bump = timelock.signer_bump,
-    )]
+    // #[account(
+    //     seeds = [timelock.key().as_ref()],
+    //     bump = timelock.signer_bump,
+    // )]
     timelock_signer: SystemAccount<'info>,
     timelock: Box<Account<'info, Timelock>>,
     #[account(mut, has_one = timelock)]

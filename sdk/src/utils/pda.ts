@@ -108,3 +108,13 @@ export const getAmmLpMintAddr = (
     programId
   );
 };
+
+export const getTimelockAddr = (
+  programId: PublicKey,
+  timelockId: BN
+): [PublicKey, number] => {
+  return PublicKey.findProgramAddressSync(
+    [utils.bytes.utf8.encode("timelock"), timelockId.toBuffer("le", 8)],
+    programId
+  );
+};
