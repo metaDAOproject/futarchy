@@ -92,6 +92,13 @@ pub struct CreateTransactionBatchParams {
     pub transaction_batch_authority: Pubkey,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct AddTransactionParams {
+    pub program_id: Pubkey,
+    pub accounts: Vec<TransactionAccount>,
+    pub data: Vec<u8>,
+}
+
 #[program]
 pub mod timelock {
     use super::*;
@@ -148,20 +155,29 @@ pub mod timelock {
             transaction_batch_authority
         } = params;
 
-        tx_batch.timelock = ctx.accounts.timelock.key();
-        tx_batch.transaction_batch_authority = transaction_batch_authority;
-        tx_batch.status = TransactionBatchStatus::Created;
+        tx_batch.set_inner(TransactionBatch {
+            status: TransactionBatchStatus::Created,
+            is_hard_commitment: false,
+            transactions: vec![],
+            timelock: ctx.accounts.timelock.key(),
+            enqueued_slot: 0,
+            transaction_batch_authority
+        });
 
         Ok(())
     }
 
     pub fn add_transaction(
         ctx: Context<UpdateTransactionBatch>,
-        program_id: Pubkey,
-        accounts: Vec<TransactionAccount>,
-        data: Vec<u8>
+        params: AddTransactionParams
     ) -> Result<()> {
         let tx_batch = &mut ctx.accounts.transaction_batch;
+
+        let AddTransactionParams {
+            program_id,
+            accounts,
+            data
+        } = params;
 
         msg!("Current transaction batch status: {:?}", tx_batch.status);
         require!(tx_batch.status == TransactionBatchStatus::Created, TimelockError::CannotAddTransactions);

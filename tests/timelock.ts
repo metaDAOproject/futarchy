@@ -4,7 +4,6 @@ import * as token from "@solana/spl-token";
 import { BankrunProvider } from "anchor-bankrun";
 import { PublicKey, Keypair } from "@solana/web3.js";
 
-
 import { assert } from "chai";
 
 import { BanksClient, Clock, startAnchor } from "solana-bankrun";
@@ -108,7 +107,10 @@ describe("timelock", async function () {
       storedTimelock.enqueuers[0].toString(),
       payer.publicKey.toString()
     );
-    assert.equal(storedTimelock.admin.toString(), timelockAuthority.publicKey.toString());
+    assert.equal(
+      storedTimelock.admin.toString(),
+      timelockAuthority.publicKey.toString()
+    );
   });
 
   it("Creates a transaction batch", async () => {
@@ -121,19 +123,18 @@ describe("timelock", async function () {
         timelock,
         transactionBatchKp: transactionBatch,
         transactionBatchSize,
-        transactionBatchAuthority: transactionBatchAuthority.publicKey,
       })
     ).rpc();
 
     const transactionBatchAccount = await timelockClient.getTransactionBatch(
       transactionBatch.publicKey
     );
-    console.log(transactionBatchAccount)
-    console.log(timelock)
+    console.log(transactionBatchAccount);
+    console.log(timelock);
     // Assertions to check the transaction batch creation
     assert.strictEqual(
       transactionBatchAccount.transactionBatchAuthority.toString(),
-      transactionBatchAuthority.publicKey.toString(),
+      payer.publicKey.toString(),
       "The batch authority should match."
     );
     assert.ok(
@@ -142,106 +143,118 @@ describe("timelock", async function () {
     );
   });
 
-  // // Example additional test: "Adds three transactions to the transaction batch"
-  // it("Adds three transactions to the transaction batch", async () => {
-  //   recipient = anchor.web3.Keypair.generate();
+  // Example additional test: "Adds three transactions to the transaction batch"
+  it("Adds three transactions to the transaction batch", async () => {
+    recipient = anchor.web3.Keypair.generate();
 
-  //   await fakeRequestAirdrop(
-  //     banksClient,
-  //     payer,
-  //     timelockSignerPubkey,
-  //     200_000_000
-  //   );
+    // await fakeRequestAirdrop(
+    //   banksClient,
+    //   payer,
+    //   timelockSignerPubkey,
+    //   200_000_000
+    // );
 
-  //   // Transaction 1: Transfer SOL
-  //   let transferInstruction = anchor.web3.SystemProgram.transfer({
-  //     fromPubkey: timelockSignerPubkey,
-  //     toPubkey: recipient.publicKey,
-  //     lamports: 100_000_000,
-  //   });
-  //   await timelockProgram.methods
-  //     .addTransaction(
-  //       transferInstruction.programId,
-  //       transferInstruction.keys.map((key) => ({
-  //         pubkey: key.pubkey,
-  //         isSigner: key.isSigner,
-  //         isWritable: key.isWritable,
-  //       })),
-  //       transferInstruction.data
-  //     )
-  //     .accounts({
-  //       transactionBatch: transactionBatch.publicKey,
-  //       transactionBatchAuthority: transactionBatchAuthority.publicKey,
-  //     })
-  //     .signers([transactionBatchAuthority])
-  //     .rpc();
+    // Transaction 1: Transfer SOL
+    let transferInstruction = anchor.web3.SystemProgram.transfer({
+      fromPubkey: timelockSignerPubkey,
+      toPubkey: recipient.publicKey,
+      lamports: 100_000_000,
+    });
 
-  //   // Transaction 2: Set Delay in Slots
-  //   const newDelayInSlots = new BN(2);
-  //   let setDelayInSlotsInstruction =
-  //     timelockProgram.instruction.setDelayInSlots(newDelayInSlots, {
-  //       accounts: {
-  //         timelock: timelockKp.publicKey,
-  //         timelockSigner: timelockSignerPubkey,
-  //       },
-  //     });
+    await timelockClient
+      .addTransactionIx({
+        transactionBatch: transactionBatch.publicKey,
+        programId: transferInstruction.programId,
+        accounts: transferInstruction.keys,
+        data: transferInstruction.data,
+      })
+      .rpc();
 
-  //   await timelockProgram.methods
-  //     .addTransaction(
-  //       setDelayInSlotsInstruction.programId,
-  //       setDelayInSlotsInstruction.keys.map((key) => ({
-  //         pubkey: key.pubkey,
-  //         isSigner: key.isSigner,
-  //         isWritable: key.isWritable,
-  //       })),
-  //       setDelayInSlotsInstruction.data
-  //     )
-  //     .accounts({
-  //       transactionBatch: transactionBatch.publicKey,
-  //       transactionBatchAuthority: transactionBatchAuthority.publicKey,
-  //     })
-  //     .signers([transactionBatchAuthority])
-  //     .rpc();
+    console.log(await timelockClient.getTransactionBatch(transactionBatch.publicKey));
 
-  //   // Transaction 3: Change Authority
-  //   let setAuthorityInstruction = timelockProgram.instruction.setAuthority(
-  //     recipient.publicKey,
-  //     {
-  //       accounts: {
-  //         timelock: timelockKp.publicKey,
-  //         timelockSigner: timelockSignerPubkey,
-  //       },
-  //     }
-  //   );
+    // await timelockProgram.methods
+    //   .addTransaction(
+    //     transferInstruction.programId,
+    //     transferInstruction.keys.map((key) => ({
+    //       pubkey: key.pubkey,
+    //       isSigner: key.isSigner,
+    //       isWritable: key.isWritable,
+    //     })),
+    //     transferInstruction.data
+    //   )
+    //   .accounts({
+    //     transactionBatch: transactionBatch.publicKey,
+    //     transactionBatchAuthority: transactionBatchAuthority.publicKey,
+    //   })
+    //   .signers([transactionBatchAuthority])
+    //   .rpc();
 
-  //   await timelockProgram.methods
-  //     .addTransaction(
-  //       setAuthorityInstruction.programId,
-  //       setAuthorityInstruction.keys.map((key) => ({
-  //         pubkey: key.pubkey,
-  //         isSigner: key.isSigner,
-  //         isWritable: key.isWritable,
-  //       })),
-  //       setAuthorityInstruction.data
-  //     )
-  //     .accounts({
-  //       transactionBatch: transactionBatch.publicKey,
-  //       transactionBatchAuthority: transactionBatchAuthority.publicKey,
-  //     })
-  //     .signers([transactionBatchAuthority])
-  //     .rpc();
+    // Transaction 2: Set Delay in Slots
+    // const newDelayInSlots = new BN(2);
+    // let setDelayInSlotsInstruction =
+    //   timelockProgram.instruction.setDelayInSlots(newDelayInSlots, {
+    //     accounts: {
+    //       timelock: timelockKp.publicKey,
+    //       timelockSigner: timelockSignerPubkey,
+    //     },
+    //   });
 
-  //   // Verify the transactions
-  //   const transactionBatchAccount =
-  //     await timelockProgram.account.transactionBatch.fetch(
-  //       transactionBatch.publicKey
-  //     );
-  //   assert.strictEqual(
-  //     transactionBatchAccount.transactions.length,
-  //     3,
-  //     "There should be three transactions in the batch."
-  //   );
-  // });
+    // await timelockProgram.methods
+    //   .addTransaction(
+    //     setDelayInSlotsInstruction.programId,
+    //     setDelayInSlotsInstruction.keys.map((key) => ({
+    //       pubkey: key.pubkey,
+    //       isSigner: key.isSigner,
+    //       isWritable: key.isWritable,
+    //     })),
+    //     setDelayInSlotsInstruction.data
+    //   )
+    //   .accounts({
+    //     transactionBatch: transactionBatch.publicKey,
+    //     transactionBatchAuthority: transactionBatchAuthority.publicKey,
+    //   })
+    //   .signers([transactionBatchAuthority])
+    //   .rpc();
+
+    // // Transaction 3: Change Authority
+    // let setAuthorityInstruction = timelockProgram.instruction.setAuthority(
+    //   recipient.publicKey,
+    //   {
+    //     accounts: {
+    //       timelock: timelockKp.publicKey,
+    //       timelockSigner: timelockSignerPubkey,
+    //     },
+    //   }
+    // );
+
+    // await timelockProgram.methods
+    //   .addTransaction(
+    //     setAuthorityInstruction.programId,
+    //     setAuthorityInstruction.keys.map((key) => ({
+    //       pubkey: key.pubkey,
+    //       isSigner: key.isSigner,
+    //       isWritable: key.isWritable,
+    //     })),
+    //     setAuthorityInstruction.data
+    //   )
+    //   .accounts({
+    //     transactionBatch: transactionBatch.publicKey,
+    //     transactionBatchAuthority: transactionBatchAuthority.publicKey,
+    //   })
+    //   .signers([transactionBatchAuthority])
+    //   .rpc();
+
+    // // Verify the transactions
+    // const transactionBatchAccount =
+    //   await timelockProgram.account.transactionBatch.fetch(
+    //     transactionBatch.publicKey
+    //   );
+    // assert.strictEqual(
+    //   transactionBatchAccount.transactions.length,
+    //   3,
+    //   "There should be three transactions in the batch."
+    // );
+  });
 
   // it("Fails to enqueue a non-Sealed batch", async () => {
   //   // Assume the batch is new and not yet sealed

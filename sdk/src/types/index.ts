@@ -14,7 +14,7 @@ export { LowercaseKeys } from "./utils";
 
 import type { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { Timelock } from "./timelock";
+import { Timelock as TimelockIDL } from "./timelock";
 
 export type InitializeDaoParams = IdlTypes<Autocrat>["InitializeDaoParams"];
 export type UpdateDaoParams = IdlTypes<Autocrat>["UpdateDaoParams"];
@@ -34,5 +34,8 @@ export type AmmAccount = IdlAccounts<Amm>["amm"];
 export type ConditionalVaultAccount =
   IdlAccounts<ConditionalVault>["conditionalVault"];
 
-export type TimelockAccount = IdlAccounts<Timelock>["timelock"];
-export type transactionBatchAccount = IdlAccounts<Timelock>["transactionBatch"];
+export type Timelock = IdlAccounts<TimelockIDL>["timelock"];
+export type TransactionBatch = IdlAccounts<TimelockIDL>["transactionBatch"];
+
+export type TimelockTransactionAccount =
+  IdlTypes<TimelockIDL>["TransactionAccount"];

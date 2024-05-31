@@ -2,13 +2,20 @@ import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 import * as anchor from "@coral-xyz/anchor";
 import { Keypair, PublicKey } from "@solana/web3.js";
 
-import { Timelock, IDL as TimelockIDL } from "./types/timelock";
+import {
+  Timelock as TimelockProgram,
+  IDL as TimelockIDL,
+} from "./types/timelock";
 import { getTimelockAddr } from "./utils";
-import { TimelockAccount, transactionBatchAccount } from "./types";
+import {
+  Timelock,
+  TimelockTransactionAccount,
+  TransactionBatch,
+} from "./types";
 
 export class TimelockClient {
   public readonly provider: AnchorProvider;
-  public readonly timelockProgram: Program<Timelock>;
+  public readonly timelockProgram: Program<TimelockProgram>;
 
   constructor(provider: AnchorProvider, timelockProgramId: PublicKey) {
     this.provider = provider;
@@ -19,13 +26,13 @@ export class TimelockClient {
     );
   }
 
-  async getTimelock(timelock: PublicKey): Promise<TimelockAccount> {
+  async getTimelock(timelock: PublicKey): Promise<Timelock> {
     return this.timelockProgram.account.timelock.fetch(timelock);
   }
 
   async getTransactionBatch(
     transactionBatch: PublicKey
-  ): Promise<transactionBatchAccount> {
+  ): Promise<TransactionBatch> {
     return this.timelockProgram.account.transactionBatch.fetch(
       transactionBatch
     );
@@ -104,12 +111,24 @@ export class TimelockClient {
         ),
       ])
       .signers([transactionBatchKp]);
+  }
 
-    // if (transactionBatchAuthority instanceof Keypair) {
-    //   console.log("SIGN");
-    //   ix = ix.signers([transactionBatchAuthority]);
-    // }
-
-    // return ix;
+  addTransactionIx({
+    transactionBatch,
+    programId,
+    accounts,
+    data,
+  }: {
+    transactionBatch: PublicKey;
+    programId: PublicKey;
+    accounts: TimelockTransactionAccount[];
+    data: Buffer;
+  }) {
+    return this.timelockProgram.methods
+      .addTransaction({ programId, accounts, data })
+      .accounts({
+        transactionBatch,
+        transactionBatchAuthority: this.provider.publicKey,
+      });
   }
 }

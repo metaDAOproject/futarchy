@@ -101,20 +101,10 @@ export type Timelock = {
       ];
       args: [
         {
-          name: "programId";
-          type: "publicKey";
-        },
-        {
-          name: "accounts";
+          name: "params";
           type: {
-            vec: {
-              defined: "TransactionAccount";
-            };
+            defined: "AddTransactionParams";
           };
-        },
-        {
-          name: "data";
-          type: "bytes";
         }
       ];
     },
@@ -372,6 +362,30 @@ export type Timelock = {
       };
     },
     {
+      name: "AddTransactionParams";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "programId";
+            type: "publicKey";
+          },
+          {
+            name: "accounts";
+            type: {
+              vec: {
+                defined: "TransactionAccount";
+              };
+            };
+          },
+          {
+            name: "data";
+            type: "bytes";
+          }
+        ];
+      };
+    },
+    {
       name: "TransactionBatchStatus";
       type: {
         kind: "enum";
@@ -537,20 +551,10 @@ export const IDL: Timelock = {
       ],
       args: [
         {
-          name: "programId",
-          type: "publicKey",
-        },
-        {
-          name: "accounts",
+          name: "params",
           type: {
-            vec: {
-              defined: "TransactionAccount",
-            },
+            defined: "AddTransactionParams",
           },
-        },
-        {
-          name: "data",
-          type: "bytes",
         },
       ],
     },
@@ -803,6 +807,30 @@ export const IDL: Timelock = {
           {
             name: "transactionBatchAuthority",
             type: "publicKey",
+          },
+        ],
+      },
+    },
+    {
+      name: "AddTransactionParams",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "programId",
+            type: "publicKey",
+          },
+          {
+            name: "accounts",
+            type: {
+              vec: {
+                defined: "TransactionAccount",
+              },
+            },
+          },
+          {
+            name: "data",
+            type: "bytes",
           },
         ],
       },
