@@ -12,8 +12,7 @@ impl InteractWithVault<'_> {
 
     pub fn handle_redeem_conditional_tokens(ctx: Context<Self>) -> Result<()> {
         let accs = &ctx.accounts;
-        let vault = &accs.vault;
-        let vault_status = vault.status;
+        let vault_status = accs.vault.status;
 
         // storing some numbers for later invariant checks
         let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
@@ -25,7 +24,7 @@ impl InteractWithVault<'_> {
         let pre_conditional_on_revert_balance =
             accs.user_conditional_on_revert_token_account.amount;
 
-        let seeds = generate_vault_seeds!(vault);
+        let seeds = generate_vault_seeds!(accs.vault);
         let signer = &[&seeds[..]];
 
         // burn from both accounts even though we technically only need to burn from one
@@ -53,10 +52,11 @@ impl InteractWithVault<'_> {
         }
 
         let redeemable = match vault_status {
-            VaultStatus::Finalized => pre_conditional_on_finalize_balance,
-            VaultStatus::Reverted => pre_conditional_on_revert_balance,
+            VaultStatus::Finalized => accs.vault.sell_quote(pre_conditional_on_finalize_balance.into()),
+            VaultStatus::Reverted => accs.vault.sell_quote(pre_conditional_on_revert_balance.into()),
             _ => unreachable!(),
         };
+
 
         token::transfer(
             CpiContext::new_with_signer(
@@ -71,6 +71,7 @@ impl InteractWithVault<'_> {
             redeemable,
         )?;
 
+        let _ = drop(accs);
         ctx.accounts
             .user_conditional_on_finalize_token_account
             .reload()?;
@@ -104,18 +105,25 @@ impl InteractWithVault<'_> {
             VaultStatus::Finalized => {
                 assert!(
                     post_vault_underlying_balance
-                        == pre_vault_underlying_balance - pre_conditional_on_finalize_balance
+                        == pre_vault_underlying_balance - redeemable
                 );
             }
             VaultStatus::Reverted => {
                 assert!(vault_status == VaultStatus::Reverted);
                 assert!(
                     post_vault_underlying_balance
-                        == pre_vault_underlying_balance - pre_conditional_on_revert_balance
+                        == pre_vault_underlying_balance - redeemable
                 );
             }
             _ => unreachable!(),
         }
+        let vault = &mut ctx.accounts.vault;
+        let epsilon = 1e-9; // Small value to prevent reaching zero
+        let increase_factor = vault.base_reserves as f64 / vault.quote_reserves as f64;
+        vault.base_reserves = 
+            ((vault.base_reserves as f64 * increase_factor) + epsilon).ceil() as u64;
+        vault.quote_reserves = 
+            ((vault.quote_reserves as f64 - redeemable as f64) + epsilon).ceil() as u64;
 
         Ok(())
     }

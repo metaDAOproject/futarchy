@@ -27,7 +27,7 @@ pub struct CreateAmm<'info> {
         ],
         bump
     )]
-    pub amm: Account<'info, Amm>,
+    pub amm: Box<Account<'info, Amm>>,
     #[account(
         init,
         payer = user,
@@ -83,7 +83,7 @@ impl CreateAmm<'_> {
             token_program: _,
             system_program: _,
         } = ctx.accounts;
-
+        
         let current_slot = Clock::get()?.slot;
 
         let CreateAmmArgs {

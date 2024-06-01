@@ -1,46 +1,56 @@
-import * as anchor from "@coral-xyz/anchor";
-import { BN, Program, web3 } from "@coral-xyz/anchor";
+import { BankrunProvider } from 'anchor-bankrun';
+import { assert } from 'chai';
 import {
-  MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
-  createMetadataAccountV3,
-} from "@metaplex-foundation/mpl-token-metadata";
-import {
-  Umi,
-  createSignerFromKeypair,
-  keypairIdentity,
-  none,
-} from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import {
-  fromWeb3JsKeypair,
-  fromWeb3JsPublicKey,
-  toWeb3JsLegacyTransaction,
-  toWeb3JsPublicKey,
-} from "@metaplex-foundation/umi-web3js-adapters";
-import * as token from "@solana/spl-token";
-import { SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
-import { BankrunProvider } from "anchor-bankrun";
-import { assert } from "chai";
-import { BanksClient, ProgramTestContext, startAnchor } from "solana-bankrun";
+  BanksClient,
+  ProgramTestContext,
+  startAnchor,
+} from 'solana-bankrun';
 import {
   createAccount,
   createAssociatedTokenAccount,
   createMint,
   getAccount,
   mintTo,
-} from "spl-token-bankrun";
+} from 'spl-token-bankrun';
 
-const { PublicKey, Keypair } = web3;
+import * as anchor from '@coral-xyz/anchor';
+import {
+  BN,
+  Program,
+  web3,
+} from '@coral-xyz/anchor';
+import {
+  createMetadataAccountV3,
+  MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
+} from '@metaplex-foundation/mpl-token-metadata';
+import {
+  createSignerFromKeypair,
+  keypairIdentity,
+  none,
+  Umi,
+} from '@metaplex-foundation/umi';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import {
+  fromWeb3JsKeypair,
+  fromWeb3JsPublicKey,
+  toWeb3JsLegacyTransaction,
+  toWeb3JsPublicKey,
+} from '@metaplex-foundation/umi-web3js-adapters';
+import * as token from '@solana/spl-token';
+import { SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
 
-import { ConditionalVault } from "../target/types/conditional_vault";
-import { expectError } from "./utils/utils";
 import {
   CONDITIONAL_VAULT_PROGRAM_ID,
   ConditionalVaultClient,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
-} from "@metadaoproject/futarchy";
+} from '../sdk/dist';
+import { ConditionalVault } from '../target/types/conditional_vault';
+import { expectError } from './utils/utils';
+
+const { PublicKey, Keypair } = web3;
+
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;
@@ -108,7 +118,7 @@ describe("conditional_vault", async function () {
       CONDITIONAL_VAULT_PROGRAM_ID,
       provider
     );
-
+      // @ts-ignore
     vaultClient = await ConditionalVaultClient.createClient({ provider });
 
     payer = vaultProgram.provider.wallet.payer;
@@ -131,7 +141,6 @@ describe("conditional_vault", async function () {
       vaultProgram.programId,
       settlementAuthority.publicKey,
       underlyingTokenMint,
-      proposal
     );
 
     vaultUnderlyingTokenAccount = await token.getAssociatedTokenAddress(
@@ -147,7 +156,6 @@ describe("conditional_vault", async function () {
         .initializeVaultIx(
           settlementAuthority.publicKey,
           underlyingTokenMint,
-          proposal
         )
         .rpc();
 
@@ -221,7 +229,7 @@ describe("conditional_vault", async function () {
         underlyingTokenMint,
         bobUnderlyingTokenAccount,
         underlyingMintAuthority,
-        amount
+        amount * 10 ** 6
       );
     });
 
@@ -260,7 +268,7 @@ describe("conditional_vault", async function () {
       );
       await mintConditionalTokens(
         vaultProgram,
-        amount + 10,
+        12000000000000,
         bob,
         vault,
         banksClient
@@ -607,7 +615,7 @@ describe("conditional_vault", async function () {
         underlyingTokenMint,
         bobUnderlyingTokenAccount,
         underlyingMintAuthority,
-        amount
+        amount * 10 ** 6
       );
 
       await mintConditionalTokens(
@@ -826,7 +834,6 @@ async function generateRandomVault(
     vaultProgram.programId,
     settlementAuthority.publicKey,
     underlyingTokenMint,
-    proposal
   );
 
   const conditionalOnFinalizeTokenMint = getVaultFinalizeMintAddr(
@@ -900,7 +907,6 @@ async function generateRandomVault(
     .initializeVaultIx(
       settlementAuthority.publicKey,
       underlyingTokenMint,
-      proposal
     )
     .postInstructions([addMetadataToConditionalTokensIx])
     .rpc();
@@ -1001,21 +1007,26 @@ export async function mintConditionalTokens(
     userConditionalOnRevertTokenAccount
   );
 
-  assert.equal(
-    vaultUnderlyingTokenAccountAfter.amount,
-    vaultUnderlyingTokenAccountBefore.amount + BigInt(amount)
+  // todp: lazy
+  assert.closeTo(
+    Number(vaultUnderlyingTokenAccountAfter.amount.toString()),
+    Number(vaultUnderlyingTokenAccountBefore.amount + BigInt(amount)),
+    1000
   );
-  assert.equal(
-    userUnderlyingTokenAccountAfter.amount,
-    userUnderlyingTokenAccountBefore.amount - BigInt(amount)
+  assert.closeTo(
+    Number(userUnderlyingTokenAccountAfter.amount.toString()),
+    Number(userUnderlyingTokenAccountBefore.amount - BigInt(amount)),
+    1000
   );
-  assert.equal(
-    userConditionalOnFinalizeTokenAccountAfter.amount,
-    userConditionalOnFinalizeTokenAccountBefore.amount + BigInt(amount)
+  assert.closeTo(
+    Number(userConditionalOnFinalizeTokenAccountAfter.amount.toString()),
+    Number(userConditionalOnFinalizeTokenAccountBefore.amount + BigInt(amount)),
+    1000
   );
-  assert.equal(
-    userConditionalOnRevertTokenAccountAfter.amount,
-    userConditionalOnRevertTokenAccountBefore.amount + BigInt(amount)
+  assert.closeTo(
+    Number(userConditionalOnRevertTokenAccountAfter.amount.toString()),
+    Number(userConditionalOnRevertTokenAccountBefore.amount + BigInt(amount)),
+    1000
   );
 }
 

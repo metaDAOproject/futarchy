@@ -1,24 +1,23 @@
-import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
+import BN from "bn.js";
+
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddressSync,
+  unpackMint,
+} from "@solana/spl-token";
 import {
   AccountMeta,
   AddressLookupTableAccount,
   ComputeBudgetProgram,
-  Connection,
   Keypair,
   PublicKey,
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { PriceMath } from "./utils/priceMath";
-import { ProposalInstruction, InitializeDaoParams } from "./types";
 
-import { Autocrat, IDL as AutocratIDL } from "./types/autocrat";
-import {
-  ConditionalVault,
-  IDL as ConditionalVaultIDL,
-} from "./types/conditional_vault";
-
-import BN from "bn.js";
+import { AmmClient } from "./AmmClient";
+import { ConditionalVaultClient } from "./ConditionalVaultClient";
 import {
   AMM_PROGRAM_ID,
   AUTOCRAT_PROGRAM_ID,
@@ -26,10 +25,10 @@ import {
   MAINNET_USDC,
   USDC_DECIMALS,
 } from "./constants";
+import { InitializeDaoParams, ProposalInstruction } from "./types";
+import { Autocrat, IDL as AutocratIDL } from "./types/autocrat";
 import {
   DEFAULT_CU_PRICE,
-  InstructionUtils,
-  MaxCUs,
   getAmmAddr,
   getAmmLpMintAddr,
   getDaoTreasuryAddr,
@@ -37,14 +36,9 @@ import {
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
+  InstructionUtils,
 } from "./utils";
-import { ConditionalVaultClient } from "./ConditionalVaultClient";
-import { AmmClient } from "./AmmClient";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  getAssociatedTokenAddressSync,
-  unpackMint,
-} from "@solana/spl-token";
+import { PriceMath } from "./utils/priceMath";
 
 export type CreateClientParams = {
   provider: AnchorProvider;
@@ -230,7 +224,7 @@ export class AutocratClient {
     )
       .postInstructions([
         ComputeBudgetProgram.setComputeUnitLimit({
-          units: MaxCUs.initializeDao,
+          units: 1_400_000,
         }),
         ComputeBudgetProgram.setComputeUnitPrice({
           microLamports: DEFAULT_CU_PRICE,

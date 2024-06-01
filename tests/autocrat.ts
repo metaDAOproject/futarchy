@@ -1,54 +1,44 @@
-import * as anchor from "@coral-xyz/anchor";
-import { BN, Program } from "@coral-xyz/anchor";
-import * as token from "@solana/spl-token";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
-import { BankrunProvider } from "anchor-bankrun";
-import { assert } from "chai";
+import { BankrunProvider } from 'anchor-bankrun';
+import { assert } from 'chai';
 import {
-  startAnchor,
-  Clock,
   BanksClient,
+  Clock,
   ProgramTestContext,
-} from "solana-bankrun";
+  startAnchor,
+} from 'solana-bankrun';
 import {
-  createMint,
   createAccount,
   createAssociatedTokenAccount,
-  mintToOverride,
-  getMint,
+  createMint,
   getAccount,
-} from "spl-token-bankrun";
+  mintToOverride,
+} from 'spl-token-bankrun';
+
+import * as anchor from '@coral-xyz/anchor';
+import {
+  BN,
+  Program,
+} from '@coral-xyz/anchor';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { ComputeBudgetProgram } from '@solana/web3.js';
 
 import {
-  mintConditionalTokens,
-  redeemConditionalTokens,
-} from "./conditionalVault";
-
-import { advanceBySlots, expectError } from "./utils/utils";
-import { Autocrat } from "../target/types/autocrat";
-import { ConditionalVault } from "../target/types/conditional_vault";
-import { AutocratMigrator } from "../target/types/autocrat_migrator";
+  AmmClient,
+  AUTOCRAT_PROGRAM_ID,
+  AutocratClient,
+  CONDITIONAL_VAULT_PROGRAM_ID,
+  ConditionalVaultClient,
+  PriceMath,
+} from '../sdk/dist';
+import { Autocrat } from '../target/types/autocrat';
+import { AutocratMigrator } from '../target/types/autocrat_migrator';
+import { ConditionalVault } from '../target/types/conditional_vault';
+import {
+  advanceBySlots,
+  expectError,
+} from './utils/utils';
 
 const { PublicKey, Keypair } = anchor.web3;
-
-import {
-  AUTOCRAT_PROGRAM_ID,
-  CONDITIONAL_VAULT_PROGRAM_ID,
-  AmmClient,
-  getAmmAddr,
-  getAmmLpMintAddr,
-  getVaultAddr,
-} from "@metadaoproject/futarchy";
-import { PriceMath } from "@metadaoproject/futarchy";
-import { AutocratClient, ConditionalVaultClient } from "@metadaoproject/futarchy";
-import {
-  ComputeBudgetInstruction,
-  ComputeBudgetProgram,
-  SystemProgram,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
 
 const AutocratIDL: Autocrat = require("../target/idl/autocrat.json");
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
@@ -163,7 +153,7 @@ describe("autocrat", async function () {
     await mintToOverride(
       context,
       getAssociatedTokenAddressSync(USDC, payer.publicKey),
-      200_000n * 1_000_000n
+      200_000n * 1_000_000_000n
     );
   });
 
@@ -288,8 +278,8 @@ describe("autocrat", async function () {
         )
       ).amount;
 
-      assert.equal(postMetaBalance, preMetaBalance - BigInt(5 * 10 ** 9));
-      assert.equal(postUsdcBalance, preUsdcBalance - BigInt(5000 * 10 ** 6));
+      assert.equal(postMetaBalance, preMetaBalance - BigInt(5 * 10 ** 9+1));
+      assert.equal(postUsdcBalance, preUsdcBalance - BigInt(5000 * 10 ** 6+1));
     });
   });
 
@@ -298,7 +288,7 @@ describe("autocrat", async function () {
 
     beforeEach(async function () {
       await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
-      await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+      await mintToOverride(context, treasuryUsdcAccount, 1_000_000_000n);
 
       let receiver = Keypair.generate();
       let to0 = await createAccount(
@@ -347,7 +337,7 @@ describe("autocrat", async function () {
         dao
       );
       await vaultClient.mintConditionalTokens(baseVault, 10);
-      await vaultClient.mintConditionalTokens(quoteVault, 10_000);
+      await vaultClient.mintConditionalTokens(quoteVault, 12);
     });
 
     it("doesn't finalize proposals that are too young", async function () {
@@ -375,6 +365,12 @@ describe("autocrat", async function () {
         failLp,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
+    // 200,000 USDC
+    await mintToOverride(
+      context,
+      getAssociatedTokenAddressSync(passBaseMint, payer.publicKey),
+      200_000n * 1_000_000_000n
+    );
       // swap $500 in the pass market, make it pass
       await ammClient
         .swapIx(
@@ -382,7 +378,7 @@ describe("autocrat", async function () {
           passBaseMint,
           passQuoteMint,
           { buy: {} },
-          new BN(500).muln(1_000_000),
+          new BN(12000000),
           new BN(0)
         )
         .rpc();
@@ -474,7 +470,7 @@ describe("autocrat", async function () {
           failBaseMint,
           failQuoteMint,
           { buy: {} },
-          new BN(500).muln(1_000_000),
+          new BN(12000000),
           new BN(0)
         )
         .rpc();
@@ -526,7 +522,7 @@ describe("autocrat", async function () {
 
     beforeEach(async function () {
       await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
-      await mintToOverride(context, treasuryUsdcAccount, 1_000_000n);
+      await mintToOverride(context, treasuryUsdcAccount, 1_000_000_000n);
 
       const accounts = [
         {
@@ -568,7 +564,7 @@ describe("autocrat", async function () {
         await autocrat.account.proposal.fetch(proposal));
 
       await vaultClient.mintConditionalTokens(baseVault, 10);
-      await vaultClient.mintConditionalTokens(quoteVault, 10_000);
+      await vaultClient.mintConditionalTokens(quoteVault, 12);
     });
 
     it("doesn't allow pending proposals to be executed", async function () {
@@ -637,7 +633,7 @@ describe("autocrat", async function () {
           passBaseMint,
           passQuoteMint,
           { buy: {} },
-          new BN(1000).muln(1_000_000),
+          new BN(12000000),
           new BN(0)
         )
         .rpc();

@@ -1,10 +1,11 @@
-import * as anchor from "@coral-xyz/anchor";
+import * as anchor from '@coral-xyz/anchor';
+import { keypairIdentity } from '@metaplex-foundation/umi';
+
 import {
+  AutocratClient,
   ConditionalVaultClient,
   uploadConditionalTokenMetadataJson,
-} from "@metadaoproject/futarchy-ts";
-import { AutocratClient, assetImageMap } from "@metadaoproject/futarchy-ts";
-import { keypairIdentity } from "@metaplex-foundation/umi";
+} from '../sdk/dist';
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;

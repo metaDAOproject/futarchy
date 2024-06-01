@@ -29,21 +29,21 @@ pub struct InitializeProposal<'info> {
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
         constraint = quote_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
     )]
-    pub quote_vault: Account<'info, ConditionalVaultAccount>,
+    pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
     #[account(
         constraint = base_vault.underlying_token_mint == dao.token_mint,
         constraint = base_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
     )]
-    pub base_vault: Account<'info, ConditionalVaultAccount>,
+    pub base_vault: Box<Account<'info, ConditionalVaultAccount>>,
     #[account(
         constraint = pass_amm.base_mint == base_vault.conditional_on_finalize_token_mint,
         constraint = pass_amm.quote_mint == quote_vault.conditional_on_finalize_token_mint,
     )]
     pub pass_amm: Box<Account<'info, Amm>>,
     #[account(constraint = pass_amm.lp_mint == pass_lp_mint.key())]
-    pub pass_lp_mint: Account<'info, Mint>,
+    pub pass_lp_mint: Box<Account<'info, Mint>>,
     #[account(constraint = fail_amm.lp_mint == fail_lp_mint.key())]
-    pub fail_lp_mint: Account<'info, Mint>,
+    pub fail_lp_mint: Box<Account<'info, Mint>>,
     #[account(
         constraint = fail_amm.base_mint == base_vault.conditional_on_revert_token_mint,
         constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint,
@@ -54,25 +54,25 @@ pub struct InitializeProposal<'info> {
         associated_token::mint = pass_amm.lp_mint,
         associated_token::authority = proposer,
     )]
-    pub pass_lp_user_account: Account<'info, TokenAccount>,
+    pub pass_lp_user_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = fail_amm.lp_mint,
         associated_token::authority = proposer,
     )]
-    pub fail_lp_user_account: Account<'info, TokenAccount>,
+    pub fail_lp_user_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = pass_amm.lp_mint,
         associated_token::authority = dao.treasury,
     )]
-    pub pass_lp_vault_account: Account<'info, TokenAccount>,
+    pub pass_lp_vault_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = fail_amm.lp_mint,
         associated_token::authority = dao.treasury,
     )]
-    pub fail_lp_vault_account: Account<'info, TokenAccount>,
+    pub fail_lp_vault_account: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub proposer: Signer<'info>,
     pub token_program: Program<'info, Token>,

@@ -73,6 +73,10 @@ impl InitializeConditionalVault<'_> {
             conditional_on_revert_token_mint: ctx.accounts.conditional_on_revert_token_mint.key(),
             pda_bump: ctx.bumps.vault,
             decimals: ctx.accounts.underlying_token_mint.decimals,
+            base_reserves: 10_u128.pow(ctx.accounts.conditional_on_revert_token_mint.decimals as u32) as u64,
+            quote_reserves: 10_u128.pow(ctx.accounts.underlying_token_mint.decimals as u32) as u64,
+            base_decimals: ctx.accounts.conditional_on_revert_token_mint.decimals,
+            quote_decimals: ctx.accounts.underlying_token_mint.decimals,
         });
 
         Ok(())

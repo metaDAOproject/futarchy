@@ -1,19 +1,18 @@
-import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
-import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
-
-import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
-
 import BN from "bn.js";
-import { AMM_PROGRAM_ID } from "./constants";
-import { AmmAccount, LowercaseKeys } from "./types/";
-import { getAmmLpMintAddr, getAmmAddr } from "./utils/pda";
+
+import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
 import {
-  MintLayout,
-  unpackMint,
-  getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddressSync,
+  unpackMint,
 } from "@solana/spl-token";
+import { AddressLookupTableAccount, PublicKey } from "@solana/web3.js";
+
+import { AMM_PROGRAM_ID } from "./constants";
+import { AmmAccount, LowercaseKeys } from "./types/";
+import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
+import { getAmmAddr, getAmmLpMintAddr } from "./utils/pda";
 import { PriceMath } from "./utils/priceMath";
 
 export type SwapType = LowercaseKeys<IdlTypes<AmmIDLType>["SwapType"]>;
@@ -109,7 +108,6 @@ export class AmmClient {
       twapFirstObservationScaled,
       twapMaxObservationChangePerUpdateScaled
     ).rpc();
-
     return amm;
   }
 

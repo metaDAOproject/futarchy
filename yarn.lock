@@ -910,8 +910,10 @@
     decimal.js "10.3.1"
     jsbi "4.3.0"
 
-"@metadaoproject/futarchy@./sdk":
-  version "0.3.0-alpha.6"
+"@metadaoproject/futarchy@0.3.0-alpha.7":
+  version "0.3.0-alpha.7"
+  resolved "https://registry.yarnpkg.com/@metadaoproject/futarchy/-/futarchy-0.3.0-alpha.7.tgz#0c28d94b7bc10e96cd0e9addc840633640bc3420"
+  integrity sha512-2eJ6akoeSW/5pSqbjz/Yd/8I4a0k5jjHxAHjGIs7pR4NOshcWxFizB9sHPkrSyPg9u8812HT5xsCGpmt0V2Hyw==
   dependencies:
     "@coral-xyz/anchor" "^0.29.0"
     "@solana/spl-token" "^0.3.7"
@@ -1732,8 +1734,7 @@
     "@solana/buffer-layout-utils" "^0.2.0"
     buffer "^6.0.3"
 
-"@solana/spl-token@^0.2.0", "spl2@npm:@solana/spl-token@^0.2.0":
-  name spl2
+"@solana/spl-token@^0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@solana/spl-token/-/spl-token-0.2.0.tgz#329bb6babb5de0f9c40035ddb1657f01a8347acd"
   integrity sha512-RWcn31OXtdqIxmkzQfB2R+WpsJOVS6rKuvpxJFjvik2LyODd+WN58ZP3Rpjpro03fscGAkzlFuP3r42doRJgyQ==
@@ -4470,6 +4471,16 @@ spl-token-bankrun@0.2.5:
   dependencies:
     "@solana/spl-token" "^0.3.8"
     solana-bankrun "^0.3.0"
+
+"spl2@npm:@solana/spl-token@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@solana/spl-token/-/spl-token-0.2.0.tgz#329bb6babb5de0f9c40035ddb1657f01a8347acd"
+  integrity sha512-RWcn31OXtdqIxmkzQfB2R+WpsJOVS6rKuvpxJFjvik2LyODd+WN58ZP3Rpjpro03fscGAkzlFuP3r42doRJgyQ==
+  dependencies:
+    "@solana/buffer-layout" "^4.0.0"
+    "@solana/buffer-layout-utils" "^0.2.0"
+    "@solana/web3.js" "^1.32.0"
+    start-server-and-test "^1.14.0"
 
 split@0.3:
   version "0.3.3"

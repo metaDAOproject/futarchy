@@ -13,9 +13,6 @@ impl InteractWithVault<'_> {
     pub fn handle_merge_conditional_tokens(ctx: Context<Self>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
 
-        let vault = &accs.vault;
-
-        // Store Pre-operation Balances
         let pre_user_conditional_on_finalize_balance = ctx
             .accounts
             .user_conditional_on_finalize_token_account
@@ -26,9 +23,9 @@ impl InteractWithVault<'_> {
         let pre_finalize_mint_supply = ctx.accounts.conditional_on_finalize_token_mint.supply;
         let pre_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
 
-        let seeds = generate_vault_seeds!(vault);
+        let seeds = generate_vault_seeds!(accs.vault);
         let signer = &[&seeds[..]];
-
+     
         // burn `amount` from both token accounts
         for (conditional_mint, user_conditional_token_account) in [
             (
@@ -52,6 +49,7 @@ impl InteractWithVault<'_> {
                 amount,
             )?;
         }
+        let transfer_amount = accs.vault.sell_quote(amount.into());
 
         // Transfer `amount` from vault to user
         token::transfer(
@@ -64,9 +62,17 @@ impl InteractWithVault<'_> {
                 },
                 signer,
             ),
-            amount,
+            transfer_amount,
         )?;
-
+        
+        let _ = drop(accs);
+        let vault = &mut ctx.accounts.vault;
+        let epsilon = 1e-9; // Small value to prevent reaching zero
+        let increase_factor = vault.base_reserves as f64 / vault.quote_reserves as f64;
+        vault.base_reserves = 
+            ((vault.base_reserves as f64 * increase_factor) + epsilon).ceil() as u64;
+        vault.quote_reserves = 
+            ((vault.quote_reserves as f64 - transfer_amount as f64) + epsilon).ceil() as u64;
         // Reload Accounts to Reflect Changes
         ctx.accounts
             .user_conditional_on_finalize_token_account
@@ -106,7 +112,7 @@ impl InteractWithVault<'_> {
         // Check that the vault's underlying balance has been reduced by the transferred amount
         require_eq!(
             post_vault_underlying_balance,
-            pre_vault_underlying_balance - amount
+            pre_vault_underlying_balance - transfer_amount
         );
 
         Ok(())

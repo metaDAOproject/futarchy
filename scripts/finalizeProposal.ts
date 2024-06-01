@@ -1,5 +1,6 @@
-import * as anchor from "@coral-xyz/anchor";
-import { AutocratClient } from "@metadaoproject/futarchy-ts";
+import * as anchor from '@coral-xyz/anchor';
+
+import { AutocratClient } from '../sdk/dist';
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;

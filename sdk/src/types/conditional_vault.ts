@@ -156,7 +156,7 @@ export type ConditionalVault = {
       accounts: [
         {
           name: "vault";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -212,7 +212,7 @@ export type ConditionalVault = {
       accounts: [
         {
           name: "vault";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -268,7 +268,7 @@ export type ConditionalVault = {
       accounts: [
         {
           name: "vault";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -360,6 +360,22 @@ export type ConditionalVault = {
           },
           {
             name: "decimals";
+            type: "u8";
+          },
+          {
+            name: "baseReserves";
+            type: "u64";
+          },
+          {
+            name: "quoteReserves";
+            type: "u64";
+          },
+          {
+            name: "baseDecimals";
+            type: "u8";
+          },
+          {
+            name: "quoteDecimals";
             type: "u8";
           }
         ];
@@ -604,7 +620,7 @@ export const IDL: ConditionalVault = {
       accounts: [
         {
           name: "vault",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -660,7 +676,7 @@ export const IDL: ConditionalVault = {
       accounts: [
         {
           name: "vault",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -716,7 +732,7 @@ export const IDL: ConditionalVault = {
       accounts: [
         {
           name: "vault",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -808,6 +824,22 @@ export const IDL: ConditionalVault = {
           },
           {
             name: "decimals",
+            type: "u8",
+          },
+          {
+            name: "baseReserves",
+            type: "u64",
+          },
+          {
+            name: "quoteReserves",
+            type: "u64",
+          },
+          {
+            name: "baseDecimals",
+            type: "u8",
+          },
+          {
+            name: "quoteDecimals",
             type: "u8",
           },
         ],

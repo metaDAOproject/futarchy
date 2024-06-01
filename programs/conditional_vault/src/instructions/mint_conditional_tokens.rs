@@ -12,16 +12,14 @@ impl InteractWithVault<'_> {
         let pre_finalize_mint_supply = accs.conditional_on_finalize_token_mint.supply;
         let pre_revert_mint_supply = accs.conditional_on_revert_token_mint.supply;
 
+        let transfer_amount = accs.vault.buy_quote(amount.into());
         require!(
-            accs.user_underlying_token_account.amount >= amount,
+            accs.user_underlying_token_account.amount >= transfer_amount,
             VaultError::InsufficientUnderlyingTokens
         );
 
-        let vault = &accs.vault;
-
-        let seeds = generate_vault_seeds!(vault);
+        let seeds = generate_vault_seeds!(accs.vault);
         let signer = &[&seeds[..]];
-
         token::transfer(
             CpiContext::new(
                 accs.token_program.to_account_info(),
@@ -31,8 +29,9 @@ impl InteractWithVault<'_> {
                     authority: accs.authority.to_account_info(),
                 },
             ),
-            amount,
+            transfer_amount,
         )?;
+      
 
         for (conditional_mint, user_conditional_token_account) in [
             (
@@ -58,6 +57,15 @@ impl InteractWithVault<'_> {
             )?;
         }
 
+        let _ = drop(accs);
+        let vault = &mut ctx.accounts.vault;
+        let epsilon = 1e-9; // Small value to prevent reaching zero
+        let increase_factor = vault.base_reserves as f64 / vault.quote_reserves as f64;
+        vault.base_reserves = 
+            (((vault.base_reserves as f64 - epsilon) / increase_factor).floor()) as u64;
+        vault.quote_reserves = 
+            (((vault.quote_reserves as f64 + transfer_amount as f64) - epsilon).floor()) as u64;
+
         ctx.accounts
             .user_conditional_on_finalize_token_account
             .reload()?;
@@ -79,7 +87,7 @@ impl InteractWithVault<'_> {
         let post_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
 
         // Only the paranoid survive ;)
-        assert!(post_vault_underlying_balance == pre_vault_underlying_balance + amount);
+        assert!(post_vault_underlying_balance == pre_vault_underlying_balance + transfer_amount);
         assert!(
             post_user_conditional_on_finalize_balance
                 == pre_user_conditional_on_finalize_balance + amount

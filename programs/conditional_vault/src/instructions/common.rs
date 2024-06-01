@@ -3,6 +3,7 @@ use super::*;
 #[derive(Accounts)]
 pub struct InteractWithVault<'info> {
     #[account(
+        mut,
         has_one = conditional_on_finalize_token_mint @ VaultError::InvalidConditionalTokenMint,
         has_one = conditional_on_revert_token_mint @ VaultError::InvalidConditionalTokenMint,
     )]

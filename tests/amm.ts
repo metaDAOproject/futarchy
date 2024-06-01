@@ -1,32 +1,36 @@
-import * as anchor from "@coral-xyz/anchor";
-import { BN } from "@coral-xyz/anchor";
-import { BankrunProvider } from "anchor-bankrun";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-
+import { BankrunProvider } from 'anchor-bankrun';
+import { assert } from 'chai';
 import {
-  startAnchor,
-  Clock,
-  ProgramTestContext,
   BanksClient,
-} from "solana-bankrun";
-
+  ProgramTestContext,
+  startAnchor,
+} from 'solana-bankrun';
 import {
-  createMint,
   createAssociatedTokenAccount,
-  mintTo,
+  createMint,
   getAccount,
   getMint,
-} from "spl-token-bankrun";
+  mintTo,
+} from 'spl-token-bankrun';
+
+import * as anchor from '@coral-xyz/anchor';
+import { BN } from '@coral-xyz/anchor';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import {
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
 
 import {
-  getAmmAddr,
   AmmClient,
-  PriceMath,
+  getAmmAddr,
   getAmmLpMintAddr,
-} from "@metadaoproject/futarchy";
-import { Keypair, PublicKey } from "@solana/web3.js";
-import { assert } from "chai";
-import { expectError, fastForward } from "./utils/utils";
+  PriceMath,
+} from '../sdk/dist';
+import {
+  expectError,
+  fastForward,
+} from './utils/utils';
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -48,6 +52,7 @@ describe("amm", async function () {
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
+    // @ts-ignore
     ammClient = await AmmClient.createClient({ provider });
     payer = provider.wallet.payer;
   });
@@ -114,7 +119,6 @@ describe("amm", async function () {
         ammClient.program.programId,
         META,
         USDC,
-        proposal
       );
 
       const ammAcc = await ammClient.getAmm(amm);
@@ -161,7 +165,6 @@ describe("amm", async function () {
           META,
           twapFirstObservationScaled,
           twapMaxObservationChangePerUpdateScaled,
-          proposal
         )
         .rpc()
         .then(callbacks[0], callbacks[1]);

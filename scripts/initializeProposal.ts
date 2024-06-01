@@ -1,8 +1,9 @@
-import * as anchor from "@coral-xyz/anchor";
-import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
-import * as token from "@solana/spl-token";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { AutocratClient } from "@metadaoproject/futarchy-ts";
+import * as anchor from '@coral-xyz/anchor';
+import { MEMO_PROGRAM_ID } from '@solana/spl-memo';
+import * as token from '@solana/spl-token';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+
+import { AutocratClient } from '../sdk/dist';
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;

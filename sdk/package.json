@@ -30,6 +30,5 @@
     "spl-token-bankrun": "0.2.3",
     "typescript": "^4.3.5",
     "prettier": "^2.6.2"
-  },
-  "packageManager": "yarn@3.3.1"
+  }
 }

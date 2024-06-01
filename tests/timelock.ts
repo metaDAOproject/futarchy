@@ -1,21 +1,26 @@
-import * as anchor from "@coral-xyz/anchor";
-import { BN, Program } from "@coral-xyz/anchor";
-import * as token from "@solana/spl-token";
-import { BankrunProvider } from "anchor-bankrun";
+import { BankrunProvider } from 'anchor-bankrun';
+import { assert } from 'chai';
+import {
+  BanksClient,
+  Clock,
+  startAnchor,
+} from 'solana-bankrun';
+
+import * as anchor from '@coral-xyz/anchor';
+import {
+  BN,
+  Program,
+} from '@coral-xyz/anchor';
+import { ComputeBudgetProgram } from '@solana/web3.js';
+
+import { Timelock } from '../target/types/timelock';
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
-
-import { assert } from "chai";
-
-import { BanksClient, Clock, startAnchor } from "solana-bankrun";
 
 const TIMELOCK_PROGRAM_ID = new PublicKey(
   "tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF"
 );
 
-import { Timelock } from "../target/types/timelock";
-import { ComputeBudgetProgram, Connection } from "@solana/web3.js";
-import { printArgs } from "@metaplex-foundation/mpl-token-metadata";
 const TimelockIDL: Timelock = require("../target/idl/timelock.json");
 
 export type PublicKey = anchor.web3.PublicKey;

@@ -1,31 +1,28 @@
-import * as anchor from "@coral-xyz/anchor";
-import { BN, Program } from "@coral-xyz/anchor";
-import * as token from "@solana/spl-token";
-import { BankrunProvider } from "anchor-bankrun";
+import { BankrunProvider } from 'anchor-bankrun';
+import { assert } from 'chai';
+import { startAnchor } from 'solana-bankrun';
+import {
+  createAccount,
+  createMint,
+  getAccount,
+  mintTo,
+} from 'spl-token-bankrun';
+
+import * as anchor from '@coral-xyz/anchor';
+
+import { AutocratMigrator } from '../target/types/autocrat_migrator';
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
-
-import { assert } from "chai";
-
-import { startAnchor } from "solana-bankrun";
 
 const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
-import { AutocratMigrator } from "../target/types/autocrat_migrator";
 const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;
 export type Keypair = anchor.web3.Keypair;
-
-import {
-  createMint,
-  createAccount,
-  getAccount,
-  mintTo,
-} from "spl-token-bankrun";
 
 describe("autocrat_migrator", async function () {
   let provider,

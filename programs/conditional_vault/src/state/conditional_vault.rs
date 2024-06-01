@@ -22,6 +22,10 @@ pub struct ConditionalVault {
     pub conditional_on_revert_token_mint: Pubkey,
     pub pda_bump: u8,
     pub decimals: u8,
+    pub base_reserves: u64,
+    pub quote_reserves: u64,
+    pub base_decimals: u8,
+    pub quote_decimals: u8,
 }
 
 #[macro_export]
@@ -34,4 +38,32 @@ macro_rules! generate_vault_seeds {
             &[$vault.pda_bump],
         ]
     }};
+}
+
+impl ConditionalVault {
+        
+    pub fn buy_quote(&self, amount: u128) -> u64 {
+        let quote_reserves = self.quote_reserves as u128;
+        let base_reserves = self.base_reserves as u128;
+        let cost: u64 = ((amount * quote_reserves * 10_u128.pow(self.base_decimals as u32))
+            / (base_reserves * 10_u128.pow(self.quote_decimals as u32))) as u64;
+        return cost + 1; // always round up
+    }
+
+    pub fn sell_quote(&self, amount: u128) -> u64 {
+        let quote_reserves = self.quote_reserves as u128;
+        let base_reserves = self.base_reserves as u128;
+        let output: u64 = ((amount * quote_reserves * 10_u128.pow(self.base_decimals as u32))
+            / (base_reserves * 10_u128.pow(self.quote_decimals as u32))) as u64;
+
+        return output;
+    }
+    pub fn calculate_price(&self) -> Result<u128> {
+        let quote_reserves = self.quote_reserves as u128;
+        let base_reserves = self.base_reserves as u128;
+
+        let price = (quote_reserves * 10_u128.pow(self.base_decimals as u32))
+            / (base_reserves * 10_u128.pow(self.quote_decimals as u32));
+        Ok(price)
+    }
 }

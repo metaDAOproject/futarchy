@@ -1,15 +1,7 @@
-import * as anchor from "@coral-xyz/anchor";
-import { AutocratClient, PriceMath } from "@metadaoproject/futarchy";
-import {
-  DEAN_DEVNET,
-  DEVNET_DARK,
-  DEVNET_DRIFT,
-  DEVNET_MUSDC,
-  DEVNET_ORE,
-  DRIFT,
-  FUTURE_DEVNET,
-  META,
-} from "./consts";
+import * as anchor from '@coral-xyz/anchor';
+
+import { AutocratClient } from '../sdk/dist';
+import { DRIFT } from './consts';
 
 let autocratClient: AutocratClient = AutocratClient.createClient({
   provider: anchor.AnchorProvider.env(),
