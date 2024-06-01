@@ -875,26 +875,33 @@ async function generateRandomVault(
       MPL_TOKEN_METADATA_PROGRAM_ID
     );
 
-  const addMetadataToConditionalTokensIx = await vaultProgram.methods
-    .addMetadataToConditionalTokens({
-      proposalNumber: new BN(0), // nonce,
-      onFinalizeUri: METADATA_URI,
-      onRevertUri: METADATA_URI,
-    })
-    .accounts({
-      payer: payer.publicKey,
-      vault,
-      underlyingTokenMint,
-      underlyingTokenMetadata,
-      conditionalOnFinalizeTokenMint,
-      conditionalOnRevertTokenMint,
-      conditionalOnFinalizeTokenMetadata,
-      conditionalOnRevertTokenMetadata,
-      tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-      systemProgram: anchor.web3.SystemProgram.programId,
-      rent: SYSVAR_RENT_PUBKEY,
-    })
-    .instruction();
+  // const addMetadataToConditionalTokensIx = await vaultProgram.methods
+  //   .addMetadataToConditionalTokens({
+  //     proposalNumber: new BN(0), // nonce,
+  //     onFinalizeUri: METADATA_URI,
+  //     onRevertUri: METADATA_URI,
+  //   })
+  //   .accounts({
+  //     payer: payer.publicKey,
+  //     vault,
+  //     underlyingTokenMint,
+  //     underlyingTokenMetadata,
+  //     conditionalOnFinalizeTokenMint,
+  //     conditionalOnRevertTokenMint,
+  //     conditionalOnFinalizeTokenMetadata,
+  //     conditionalOnRevertTokenMetadata,
+  //     tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+  //     systemProgram: anchor.web3.SystemProgram.programId,
+  //     rent: SYSVAR_RENT_PUBKEY,
+  //   })
+  //   .instruction();
+  const addMetadataToConditionalTokensIx = await vaultClient.addMetadataToConditionalTokensIx(
+    vault,
+    underlyingTokenMint,
+    1,
+    METADATA_URI,
+    METADATA_URI
+  ).instruction();
 
   await vaultClient
     .initializeVaultIx(
