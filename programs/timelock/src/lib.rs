@@ -229,12 +229,12 @@ pub mod timelock {
     }
 
     pub fn enqueue_transaction_batch(ctx: Context<EnqueueOrCancelTransactionBatch>) -> Result<()> {
-        let enqueuer_type = ctx
+        let authority = ctx
             .accounts
             .timelock
             .check_authority(ctx.accounts.enqueuer_or_authority.key())?;
 
-        if enqueuer_type == EnqueuerType::Enqueuer {
+        if authority == EnqueuerType::Enqueuer {
             let clock = Clock::get()?;
             let enqueuer_cooldown_slots = ctx.accounts.timelock.enqueuer_cooldown_slots;
             // unwrap is safe because we know the enqueuer is an enqueuer
@@ -268,7 +268,7 @@ pub mod timelock {
 
         tx_batch.status = TransactionBatchStatus::Enqueued;
         tx_batch.enqueued_slot = clock.slot;
-        tx_batch.enqueuer_type = enqueuer_type;
+        tx_batch.enqueuer_type = authority;
 
         Ok(())
     }

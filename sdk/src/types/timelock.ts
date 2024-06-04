@@ -216,7 +216,7 @@ export type Timelock = {
       name: "enqueueTransactionBatch";
       accounts: [
         {
-          name: "enqueuerOrAuthority";
+          name: "signer";
           isMut: false;
           isSigner: true;
         },
@@ -237,7 +237,7 @@ export type Timelock = {
       name: "cancelTransactionBatch";
       accounts: [
         {
-          name: "enqueuerOrAuthority";
+          name: "signer";
           isMut: false;
           isSigner: true;
         },
@@ -728,7 +728,7 @@ export const IDL: Timelock = {
       name: "enqueueTransactionBatch",
       accounts: [
         {
-          name: "enqueuerOrAuthority",
+          name: "signer",
           isMut: false,
           isSigner: true,
         },
@@ -749,7 +749,7 @@ export const IDL: Timelock = {
       name: "cancelTransactionBatch",
       accounts: [
         {
-          name: "enqueuerOrAuthority",
+          name: "signer",
           isMut: false,
           isSigner: true,
         },
