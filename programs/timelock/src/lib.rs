@@ -13,11 +13,11 @@ use std::ops::Deref;
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     name: "timelock",
-    project_url: "https://themetadao.org",
+    project_url: "https://metadao.fi",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
-    source_code: "https://github.com/metaDAOproject/solana-timelock",
-    source_release: "v0",
+    source_code: "https://github.com/metaDAOproject/futarchy",
+    source_release: "v0.4",
     auditors: "None",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
@@ -29,19 +29,19 @@ pub struct Timelock {
     pub authority: Pubkey,
     pub signer_bump: u8,
     pub delay_in_slots: u64,
-    pub enqueuers: Vec<Enqueuer>,
+    pub optimistic_proposers: Vec<OptimisticProposer>,
     /// The cooldown period for enqueuers to prevent spamming the timelock.
-    pub enqueuer_cooldown_slots: u64,
+    pub optimistic_proposer_cooldown_slots: u64,
 }
 
 impl Timelock {
-    pub fn check_authority(&self, authority: Pubkey) -> Result<EnqueuerType> {
+    pub fn check_authority(&self, authority: Pubkey) -> Result<AuthorityType> {
         if authority == self.authority {
-            Ok(EnqueuerType::TimelockAuthority)
-        } else if self.enqueuers.iter().any(|enq| enq.pubkey == authority) {
-            Ok(EnqueuerType::Enqueuer)
+            Ok(AuthorityType::TimelockAuthority)
+        } else if self.optimistic_proposers.iter().any(|proposer| proposer.pubkey == authority) {
+            Ok(AuthorityType::OptimisticProposer)
         } else {
-            Err(TimelockError::NotEnqueuerOrAuthority.into())
+            Err(TimelockError::NoAuthority.into())
         }
     }
 }
@@ -53,18 +53,18 @@ pub struct TransactionBatch {
     pub timelock: Pubkey,
     pub enqueued_slot: u64,
     pub transaction_batch_authority: Pubkey,
-    pub enqueuer_type: EnqueuerType,
+    pub enqueuer_type: AuthorityType,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct Enqueuer {
+pub struct OptimisticProposer {
     pub pubkey: Pubkey,
     pub last_slot_enqueued: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
-pub enum EnqueuerType {
-    Enqueuer,
+pub enum AuthorityType {
+    OptimisticProposer,
     TimelockAuthority,
 }
 
@@ -108,14 +108,14 @@ pub mod timelock {
         timelock.authority = authority;
         timelock.delay_in_slots = delay_in_slots;
         timelock.signer_bump = ctx.bumps.timelock_signer;
-        timelock.enqueuers = enqueuers
+        timelock.optimistic_proposers = enqueuers
             .iter()
-            .map(|enq| Enqueuer {
+            .map(|enq| OptimisticProposer {
                 pubkey: *enq,
                 last_slot_enqueued: 0,
             })
             .collect();
-        timelock.enqueuer_cooldown_slots = enqueuer_cooldown_slots;
+        timelock.optimistic_proposer_cooldown_slots = enqueuer_cooldown_slots;
 
         Ok(())
     }
@@ -136,23 +136,23 @@ pub mod timelock {
         Ok(())
     }
 
-    pub fn set_enqueuer_cooldown_slots(ctx: Context<Auth>, cooldown_slots: u64) -> Result<()> {
+    pub fn set_optimistic_proposer_cooldown_slots(ctx: Context<Auth>, cooldown_slots: u64) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
-        timelock.enqueuer_cooldown_slots = cooldown_slots;
+        timelock.optimistic_proposer_cooldown_slots = cooldown_slots;
 
         Ok(())
     }
 
-    pub fn add_enqueuer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
+    pub fn add_optimistic_proposer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
         // idempotent
-        if timelock.enqueuers.iter().any(|enq| enq.pubkey == enqueuer) {
+        if timelock.optimistic_proposers.iter().any(|enq| enq.pubkey == enqueuer) {
             return Ok(());
         }
 
-        timelock.enqueuers.push(Enqueuer {
+        timelock.optimistic_proposers.push(OptimisticProposer {
             pubkey: enqueuer,
             last_slot_enqueued: 0,
         });
@@ -160,20 +160,20 @@ pub mod timelock {
         Ok(())
     }
 
-    pub fn remove_enqueuer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
+    pub fn remove_optimistic_proposer(ctx: Context<Auth>, optimistic_proposer: Pubkey) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
         let index = timelock
-            .enqueuers
+            .optimistic_proposers
             .iter()
-            .position(|enq| enq.pubkey == enqueuer);
+            .position(|proposer| proposer.pubkey == optimistic_proposer);
 
         let index = match index {
             Some(index) => index,
             None => return Ok(()), // idempotent
         };
 
-        timelock.enqueuers.remove(index);
+        timelock.optimistic_proposers.remove(index);
 
         Ok(())
     }
@@ -232,18 +232,18 @@ pub mod timelock {
         let authority = ctx
             .accounts
             .timelock
-            .check_authority(ctx.accounts.enqueuer_or_authority.key())?;
+            .check_authority(ctx.accounts.authority.key())?;
 
-        if authority == EnqueuerType::Enqueuer {
+        if authority == AuthorityType::OptimisticProposer {
             let clock = Clock::get()?;
-            let enqueuer_cooldown_slots = ctx.accounts.timelock.enqueuer_cooldown_slots;
+            let enqueuer_cooldown_slots = ctx.accounts.timelock.optimistic_proposer_cooldown_slots;
             // unwrap is safe because we know the enqueuer is an enqueuer
             let enqueuer = ctx
                 .accounts
                 .timelock
-                .enqueuers
+                .optimistic_proposers
                 .iter_mut()
-                .find(|enq| enq.pubkey == ctx.accounts.enqueuer_or_authority.key())
+                .find(|enq| enq.pubkey == ctx.accounts.authority.key())
                 .unwrap();
 
             require_gte!(
@@ -251,7 +251,7 @@ pub mod timelock {
                 enqueuer
                     .last_slot_enqueued
                     .saturating_add(enqueuer_cooldown_slots),
-                TimelockError::EnqueuerCooldown
+                TimelockError::OptimisticProposerCooldown
             );
 
             enqueuer.last_slot_enqueued = clock.slot;
@@ -277,13 +277,13 @@ pub mod timelock {
         let enqueuer_type = ctx
             .accounts
             .timelock
-            .check_authority(ctx.accounts.enqueuer_or_authority.key())?;
+            .check_authority(ctx.accounts.authority.key())?;
         let tx_batch = &mut ctx.accounts.transaction_batch;
 
         // only the timelock authority can cancel their transactions
-        if tx_batch.enqueuer_type == EnqueuerType::TimelockAuthority {
+        if tx_batch.enqueuer_type == AuthorityType::TimelockAuthority {
             require!(
-                enqueuer_type == EnqueuerType::TimelockAuthority,
+                enqueuer_type == AuthorityType::TimelockAuthority,
                 TimelockError::InsufficientPermissions
             );
         }
@@ -389,7 +389,7 @@ pub struct UpdateTransactionBatch<'info> {
 
 #[derive(Accounts)]
 pub struct EnqueueOrCancelTransactionBatch<'info> {
-    enqueuer_or_authority: Signer<'info>,
+    authority: Signer<'info>,
     #[account(mut)]
     timelock: Box<Account<'info, Timelock>>,
     #[account(mut, has_one = timelock)]
@@ -453,10 +453,10 @@ pub enum TimelockError {
     CanOnlyCancelDuringTimelockPeriod,
     #[msg("Can only execute the transactions if the status is `Enqueued`")]
     CannotExecuteTransactions,
-    #[msg("The signer is neither the timelock authority nor an enqueuer")]
-    NotEnqueuerOrAuthority,
-    #[msg("Enqueuers can't cancel transaction batches enqueued by the timelock authority")]
+    #[msg("The signer is neither the timelock authority nor an optimistic proposer")]
+    NoAuthority,
+    #[msg("Optimistic proposers can't cancel transaction batches enqueued by the timelock authority")]
     InsufficientPermissions,
-    #[msg("This enqueuer is still in its cooldown period")]
-    EnqueuerCooldown,
+    #[msg("This optimistic proposer is still in its cooldown period")]
+    OptimisticProposerCooldown,
 }

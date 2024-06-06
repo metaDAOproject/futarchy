@@ -253,7 +253,7 @@ describe("timelock", async function () {
       .rpc();
 
     // Transaction 4: Add enqueuer
-    let addEnqueuerInstruction = timelock.instruction.addEnqueuer(
+    let addEnqueuerInstruction = timelock.instruction.addOptimisticProposer(
       enqueuer4.publicKey,
       {
         accounts: {
@@ -281,7 +281,7 @@ describe("timelock", async function () {
       .rpc();
 
     // Transaction 5: Remove enqueuer
-    let removeEnqueuerInstruction = timelock.instruction.removeEnqueuer(
+    let removeOptimisticProposerInstruction = timelock.instruction.removeOptimisticProposer(
       enqueuer3.publicKey,
       {
         accounts: {
@@ -293,13 +293,13 @@ describe("timelock", async function () {
 
     await timelock.methods
       .addTransaction(
-        removeEnqueuerInstruction.programId,
-        removeEnqueuerInstruction.keys.map((key) => ({
+        removeOptimisticProposerInstruction.programId,
+        removeOptimisticProposerInstruction.keys.map((key) => ({
           pubkey: key.pubkey,
           isSigner: key.isSigner,
           isWritable: key.isWritable,
         })),
-        removeEnqueuerInstruction.data
+        removeOptimisticProposerInstruction.data
       )
       .accounts({
         transactionBatch: transactionBatch.publicKey,
@@ -325,7 +325,7 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          enqueuerOrAuthority: timelockAuthority.publicKey,
+          authority:timelockAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([timelockAuthority])
@@ -365,7 +365,7 @@ describe("timelock", async function () {
         .cancelTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          enqueuerOrAuthority: timelockAuthority.publicKey,
+          authority:timelockAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([timelockAuthority])
@@ -457,7 +457,7 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          enqueuerOrAuthority: fakeAuthority.publicKey,
+          authority:fakeAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([fakeAuthority])
@@ -466,7 +466,7 @@ describe("timelock", async function () {
         "Should have thrown an error when enqueuing a batch with an incorrect authority."
       );
     } catch (error) {
-      assert.include(error.message, "NotEnqueuerOrAuthority");
+      assert.include(error.message, "NoAuthority");
     }
   });
 
@@ -475,7 +475,7 @@ describe("timelock", async function () {
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        enqueuerOrAuthority: timelockAuthority.publicKey,
+        authority:timelockAuthority.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([timelockAuthority])
@@ -508,7 +508,7 @@ describe("timelock", async function () {
         .cancelTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          enqueuerOrAuthority: enqueuer1.publicKey,
+          authority:enqueuer1.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([enqueuer1])
@@ -702,7 +702,7 @@ describe("timelock", async function () {
 
     // Verify the enqueuer was added correctly
     assert.ok(
-      updatedTimelockAccount.enqueuers
+      updatedTimelockAccount.optimisticProposers
         .map((enqueuer) => enqueuer.pubkey.toString())
         .includes(enqueuer4.publicKey.toString()),
       "The enqueuer should have been added to the timelock."
@@ -752,7 +752,7 @@ describe("timelock", async function () {
 
     // Verify the enqueuer was removed correctly
     assert.ok(
-      !updatedTimelockAccount.enqueuers
+      !updatedTimelockAccount.optimisticProposers
         .map((enqueuer) => enqueuer.toString())
         .includes(enqueuer3.publicKey.toString()),
       "The enqueuer should have been removed from the timelock."
@@ -816,7 +816,7 @@ describe("timelock", async function () {
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        enqueuerOrAuthority: enqueuer1.publicKey, // Assuming recipient as the new authority
+        authority:enqueuer1.publicKey, // Assuming recipient as the new authority
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer1])
@@ -833,7 +833,7 @@ describe("timelock", async function () {
     );
 
     assert.ok(
-      "enqueuer" in transactionBatchAccount.enqueuerType,
+      "optimisticProposer" in transactionBatchAccount.enqueuerType,
       "The batch should be shown as enqueued by an enqueuer."
     );
 
@@ -842,7 +842,7 @@ describe("timelock", async function () {
       .cancelTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        enqueuerOrAuthority: enqueuer1.publicKey,
+        authority:enqueuer1.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer1])
@@ -919,14 +919,14 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          enqueuerOrAuthority: enqueuer1.publicKey, // Assuming recipient as the new authority
+          authority:enqueuer1.publicKey, // Assuming recipient as the new authority
           timelock: timelockKp.publicKey,
         })
         .signers([enqueuer1])
         .rpc();
       assert.fail("Should not allow enqueuing before cooldown.");
     } catch (err) {
-      assert.include(err.message, "EnqueuerCooldown");
+      assert.include(err.message, "OptimisticProposerCooldown");
     }
 
     let currentClock = await banksClient.getClock();
@@ -946,7 +946,7 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          enqueuerOrAuthority: enqueuer1.publicKey, // Assuming recipient as the new authority
+          authority:enqueuer1.publicKey, // Assuming recipient as the new authority
           timelock: timelockKp.publicKey,
         })
         .signers([enqueuer1])
@@ -973,7 +973,7 @@ describe("timelock", async function () {
       .cancelTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        enqueuerOrAuthority: enqueuer2.publicKey,
+        authority:enqueuer2.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer2])
@@ -1047,7 +1047,7 @@ describe("timelock", async function () {
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        enqueuerOrAuthority: enqueuer2.publicKey, // Assuming recipient as the new authority
+        authority:enqueuer2.publicKey, // Assuming recipient as the new authority
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer2])
@@ -1068,7 +1068,7 @@ describe("timelock", async function () {
       .cancelTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        enqueuerOrAuthority: recipient.publicKey,
+        authority:recipient.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([recipient])

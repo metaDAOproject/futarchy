@@ -80,7 +80,7 @@ export type Timelock = {
       ];
     },
     {
-      name: "setEnqueuerCooldownSlots";
+      name: "setOptimisticProposerCooldownSlots";
       accounts: [
         {
           name: "timelockSigner";
@@ -101,7 +101,7 @@ export type Timelock = {
       ];
     },
     {
-      name: "addEnqueuer";
+      name: "addOptimisticProposer";
       accounts: [
         {
           name: "timelockSigner";
@@ -122,7 +122,7 @@ export type Timelock = {
       ];
     },
     {
-      name: "removeEnqueuer";
+      name: "removeOptimisticProposer";
       accounts: [
         {
           name: "timelockSigner";
@@ -137,7 +137,7 @@ export type Timelock = {
       ];
       args: [
         {
-          name: "enqueuer";
+          name: "optimisticProposer";
           type: "publicKey";
         }
       ];
@@ -216,7 +216,7 @@ export type Timelock = {
       name: "enqueueTransactionBatch";
       accounts: [
         {
-          name: "signer";
+          name: "authority";
           isMut: false;
           isSigner: true;
         },
@@ -237,7 +237,7 @@ export type Timelock = {
       name: "cancelTransactionBatch";
       accounts: [
         {
-          name: "signer";
+          name: "authority";
           isMut: false;
           isSigner: true;
         },
@@ -295,15 +295,15 @@ export type Timelock = {
             type: "u64";
           },
           {
-            name: "enqueuers";
+            name: "optimisticProposers";
             type: {
               vec: {
-                defined: "Enqueuer";
+                defined: "OptimisticProposer";
               };
             };
           },
           {
-            name: "enqueuerCooldownSlots";
+            name: "optimisticProposerCooldownSlots";
             docs: [
               "The cooldown period for enqueuers to prevent spamming the timelock."
             ];
@@ -346,7 +346,7 @@ export type Timelock = {
           {
             name: "enqueuerType";
             type: {
-              defined: "EnqueuerType";
+              defined: "AuthorityType";
             };
           }
         ];
@@ -355,7 +355,7 @@ export type Timelock = {
   ];
   types: [
     {
-      name: "Enqueuer";
+      name: "OptimisticProposer";
       type: {
         kind: "struct";
         fields: [
@@ -419,12 +419,12 @@ export type Timelock = {
       };
     },
     {
-      name: "EnqueuerType";
+      name: "AuthorityType";
       type: {
         kind: "enum";
         variants: [
           {
-            name: "Enqueuer";
+            name: "OptimisticProposer";
           },
           {
             name: "TimelockAuthority";
@@ -494,18 +494,18 @@ export type Timelock = {
     },
     {
       code: 6007;
-      name: "NotEnqueuerOrAuthority";
-      msg: "The signer is neither the timelock authority nor an enqueuer";
+      name: "NoAuthority";
+      msg: "The signer is neither the timelock authority nor an optimistic proposer";
     },
     {
       code: 6008;
       name: "InsufficientPermissions";
-      msg: "Enqueuers can't cancel transaction batches enqueued by the timelock authority";
+      msg: "Optimistic proposers can't cancel transaction batches enqueued by the timelock authority";
     },
     {
       code: 6009;
-      name: "EnqueuerCooldown";
-      msg: "This enqueuer is still in its cooldown period";
+      name: "OptimisticProposerCooldown";
+      msg: "This optimistic proposer is still in its cooldown period";
     }
   ];
 };
@@ -592,7 +592,7 @@ export const IDL: Timelock = {
       ],
     },
     {
-      name: "setEnqueuerCooldownSlots",
+      name: "setOptimisticProposerCooldownSlots",
       accounts: [
         {
           name: "timelockSigner",
@@ -613,7 +613,7 @@ export const IDL: Timelock = {
       ],
     },
     {
-      name: "addEnqueuer",
+      name: "addOptimisticProposer",
       accounts: [
         {
           name: "timelockSigner",
@@ -634,7 +634,7 @@ export const IDL: Timelock = {
       ],
     },
     {
-      name: "removeEnqueuer",
+      name: "removeOptimisticProposer",
       accounts: [
         {
           name: "timelockSigner",
@@ -649,7 +649,7 @@ export const IDL: Timelock = {
       ],
       args: [
         {
-          name: "enqueuer",
+          name: "optimisticProposer",
           type: "publicKey",
         },
       ],
@@ -728,7 +728,7 @@ export const IDL: Timelock = {
       name: "enqueueTransactionBatch",
       accounts: [
         {
-          name: "signer",
+          name: "authority",
           isMut: false,
           isSigner: true,
         },
@@ -749,7 +749,7 @@ export const IDL: Timelock = {
       name: "cancelTransactionBatch",
       accounts: [
         {
-          name: "signer",
+          name: "authority",
           isMut: false,
           isSigner: true,
         },
@@ -807,15 +807,15 @@ export const IDL: Timelock = {
             type: "u64",
           },
           {
-            name: "enqueuers",
+            name: "optimisticProposers",
             type: {
               vec: {
-                defined: "Enqueuer",
+                defined: "OptimisticProposer",
               },
             },
           },
           {
-            name: "enqueuerCooldownSlots",
+            name: "optimisticProposerCooldownSlots",
             docs: [
               "The cooldown period for enqueuers to prevent spamming the timelock.",
             ],
@@ -858,7 +858,7 @@ export const IDL: Timelock = {
           {
             name: "enqueuerType",
             type: {
-              defined: "EnqueuerType",
+              defined: "AuthorityType",
             },
           },
         ],
@@ -867,7 +867,7 @@ export const IDL: Timelock = {
   ],
   types: [
     {
-      name: "Enqueuer",
+      name: "OptimisticProposer",
       type: {
         kind: "struct",
         fields: [
@@ -931,12 +931,12 @@ export const IDL: Timelock = {
       },
     },
     {
-      name: "EnqueuerType",
+      name: "AuthorityType",
       type: {
         kind: "enum",
         variants: [
           {
-            name: "Enqueuer",
+            name: "OptimisticProposer",
           },
           {
             name: "TimelockAuthority",
@@ -1006,18 +1006,18 @@ export const IDL: Timelock = {
     },
     {
       code: 6007,
-      name: "NotEnqueuerOrAuthority",
-      msg: "The signer is neither the timelock authority nor an enqueuer",
+      name: "NoAuthority",
+      msg: "The signer is neither the timelock authority nor an optimistic proposer",
     },
     {
       code: 6008,
       name: "InsufficientPermissions",
-      msg: "Enqueuers can't cancel transaction batches enqueued by the timelock authority",
+      msg: "Optimistic proposers can't cancel transaction batches enqueued by the timelock authority",
     },
     {
       code: 6009,
-      name: "EnqueuerCooldown",
-      msg: "This enqueuer is still in its cooldown period",
+      name: "OptimisticProposerCooldown",
+      msg: "This optimistic proposer is still in its cooldown period",
     },
   ],
 };
