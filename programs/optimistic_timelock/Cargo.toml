@@ -1,8 +1,8 @@
 [package]
 name = "timelock"
 version = "0.3.0"
-description = "Delayed transaction execution on Solana"
-authors = ["Proph3t <metaproph3t@protonmail.com, Henry"]
+description = "Optimistic timelock"
+authors = ["Proph3t <metaproph3t@protonmail.com>, Henry"]
 edition = "2021"
 repository = "https://github.com/metaDAOproject/futarchy"
 categories = ["cryptography::cryptocurrencies"]
@@ -10,7 +10,7 @@ keywords = ["solana", "defi", "ponzu"]
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "timelock"
+name = "optimistic_timelock"
 
 [features]
 no-entrypoint = []

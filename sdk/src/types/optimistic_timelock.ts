@@ -1,6 +1,6 @@
-export type Timelock = {
+export type OptimisticTimelock = {
   version: "0.3.0";
-  name: "timelock";
+  name: "optimistic_timelock";
   instructions: [
     {
       name: "createTimelock";
@@ -510,9 +510,9 @@ export type Timelock = {
   ];
 };
 
-export const IDL: Timelock = {
+export const IDL: OptimisticTimelock = {
   version: "0.3.0",
-  name: "timelock",
+  name: "optimistic_timelock",
   instructions: [
     {
       name: "createTimelock",

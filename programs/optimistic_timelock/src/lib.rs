@@ -12,7 +12,7 @@ use std::ops::Deref;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
-    name: "timelock",
+    name: "optimistic_timelock",
     project_url: "https://metadao.fi",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
@@ -93,7 +93,7 @@ pub enum TransactionBatchStatus {
 }
 
 #[program]
-pub mod timelock {
+pub mod optimistic_timelock {
     use super::*;
 
     pub fn create_timelock(
