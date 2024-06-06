@@ -5,32 +5,45 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_lang::solana_program::instruction::Instruction;
-use std::convert::Into;
-use std::ops::Deref;
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;
+use std::convert::Into;
+use std::ops::Deref;
 
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
-    name: "timelock",
-    project_url: "https://themetadao.org",
+    name: "optimistic_timelock",
+    project_url: "https://metadao.fi",
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
-    source_code: "https://github.com/metaDAOproject/solana-timelock",
-    source_release: "v0",
+    source_code: "https://github.com/metaDAOproject/futarchy",
+    source_release: "v0.4",
     auditors: "None",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
 declare_id!("tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF");
 
-
-
 #[account]
 pub struct Timelock {
     pub authority: Pubkey,
     pub signer_bump: u8,
     pub delay_in_slots: u64,
+    pub optimistic_proposers: Vec<OptimisticProposer>,
+    /// The cooldown period for enqueuers to prevent spamming the timelock.
+    pub optimistic_proposer_cooldown_slots: u64,
+}
+
+impl Timelock {
+    pub fn check_authority(&self, authority: Pubkey) -> Result<AuthorityType> {
+        if authority == self.authority {
+            Ok(AuthorityType::TimelockAuthority)
+        } else if self.optimistic_proposers.iter().any(|proposer| proposer.pubkey == authority) {
+            Ok(AuthorityType::OptimisticProposer)
+        } else {
+            Err(TimelockError::NoAuthority.into())
+        }
+    }
 }
 
 #[account]
@@ -39,7 +52,20 @@ pub struct TransactionBatch {
     pub transactions: Vec<Transaction>,
     pub timelock: Pubkey,
     pub enqueued_slot: u64,
-    pub transaction_batch_authority: Pubkey
+    pub transaction_batch_authority: Pubkey,
+    pub enqueuer_type: AuthorityType,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct OptimisticProposer {
+    pub pubkey: Pubkey,
+    pub last_slot_enqueued: u64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+pub enum AuthorityType {
+    OptimisticProposer,
+    TimelockAuthority,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -63,23 +89,33 @@ pub enum TransactionBatchStatus {
     Sealed,
     Enqueued,
     Cancelled,
-    Executed
+    Executed,
 }
 
 #[program]
-pub mod timelock {
+pub mod optimistic_timelock {
     use super::*;
 
     pub fn create_timelock(
         ctx: Context<CreateTimelock>,
         authority: Pubkey,
         delay_in_slots: u64,
+        enqueuers: Vec<Pubkey>,
+        enqueuer_cooldown_slots: u64,
     ) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
         timelock.authority = authority;
         timelock.delay_in_slots = delay_in_slots;
         timelock.signer_bump = ctx.bumps.timelock_signer;
+        timelock.optimistic_proposers = enqueuers
+            .iter()
+            .map(|enq| OptimisticProposer {
+                pubkey: *enq,
+                last_slot_enqueued: 0,
+            })
+            .collect();
+        timelock.optimistic_proposer_cooldown_slots = enqueuer_cooldown_slots;
 
         Ok(())
     }
@@ -100,9 +136,49 @@ pub mod timelock {
         Ok(())
     }
 
-    pub fn create_transaction_batch(
-        ctx: Context<CreateTransactionBatch>,
-    ) -> Result<()> {
+    pub fn set_optimistic_proposer_cooldown_slots(ctx: Context<Auth>, cooldown_slots: u64) -> Result<()> {
+        let timelock = &mut ctx.accounts.timelock;
+
+        timelock.optimistic_proposer_cooldown_slots = cooldown_slots;
+
+        Ok(())
+    }
+
+    pub fn add_optimistic_proposer(ctx: Context<Auth>, enqueuer: Pubkey) -> Result<()> {
+        let timelock = &mut ctx.accounts.timelock;
+
+        // idempotent
+        if timelock.optimistic_proposers.iter().any(|enq| enq.pubkey == enqueuer) {
+            return Ok(());
+        }
+
+        timelock.optimistic_proposers.push(OptimisticProposer {
+            pubkey: enqueuer,
+            last_slot_enqueued: 0,
+        });
+
+        Ok(())
+    }
+
+    pub fn remove_optimistic_proposer(ctx: Context<Auth>, optimistic_proposer: Pubkey) -> Result<()> {
+        let timelock = &mut ctx.accounts.timelock;
+
+        let index = timelock
+            .optimistic_proposers
+            .iter()
+            .position(|proposer| proposer.pubkey == optimistic_proposer);
+
+        let index = match index {
+            Some(index) => index,
+            None => return Ok(()), // idempotent
+        };
+
+        timelock.optimistic_proposers.remove(index);
+
+        Ok(())
+    }
+
+    pub fn create_transaction_batch(ctx: Context<CreateTransactionBatch>) -> Result<()> {
         let tx_batch = &mut ctx.accounts.transaction_batch;
 
         tx_batch.timelock = ctx.accounts.timelock.key();
@@ -116,18 +192,21 @@ pub mod timelock {
         ctx: Context<UpdateTransactionBatch>,
         program_id: Pubkey,
         accounts: Vec<TransactionAccount>,
-        data: Vec<u8>
+        data: Vec<u8>,
     ) -> Result<()> {
         let tx_batch = &mut ctx.accounts.transaction_batch;
 
         msg!("Current transaction batch status: {:?}", tx_batch.status);
-        require!(tx_batch.status == TransactionBatchStatus::Created, TimelockError::CannotAddTransactions);
+        require!(
+            tx_batch.status == TransactionBatchStatus::Created,
+            TimelockError::CannotAddTransactions
+        );
 
         let this_transaction = Transaction {
             program_id,
             accounts,
             data,
-            did_execute: false
+            did_execute: false,
         };
 
         tx_batch.transactions.push(this_transaction);
@@ -135,65 +214,117 @@ pub mod timelock {
         Ok(())
     }
 
-    pub fn seal_transaction_batch(
-        ctx: Context<UpdateTransactionBatch>
-    ) -> Result<()> {
+    pub fn seal_transaction_batch(ctx: Context<UpdateTransactionBatch>) -> Result<()> {
         let tx_batch = &mut ctx.accounts.transaction_batch;
 
         msg!("Current transaction batch status: {:?}", tx_batch.status);
-        require!(tx_batch.status == TransactionBatchStatus::Created, TimelockError::CannotSealTransactionBatch);
+        require!(
+            tx_batch.status == TransactionBatchStatus::Created,
+            TimelockError::CannotSealTransactionBatch
+        );
 
         tx_batch.status = TransactionBatchStatus::Sealed;
 
         Ok(())
     }
 
-    pub fn enqueue_transaction_batch(
-        ctx: Context<EnqueueOrCancelTransactionBatch>
-    ) -> Result<()> {
+    pub fn enqueue_transaction_batch(ctx: Context<EnqueueOrCancelTransactionBatch>) -> Result<()> {
+        let authority = ctx
+            .accounts
+            .timelock
+            .check_authority(ctx.accounts.authority.key())?;
+
+        if authority == AuthorityType::OptimisticProposer {
+            let clock = Clock::get()?;
+            let enqueuer_cooldown_slots = ctx.accounts.timelock.optimistic_proposer_cooldown_slots;
+            // unwrap is safe because we know the enqueuer is an enqueuer
+            let enqueuer = ctx
+                .accounts
+                .timelock
+                .optimistic_proposers
+                .iter_mut()
+                .find(|enq| enq.pubkey == ctx.accounts.authority.key())
+                .unwrap();
+
+            require_gte!(
+                clock.slot,
+                enqueuer
+                    .last_slot_enqueued
+                    .saturating_add(enqueuer_cooldown_slots),
+                TimelockError::OptimisticProposerCooldown
+            );
+
+            enqueuer.last_slot_enqueued = clock.slot;
+        }
+
         let tx_batch = &mut ctx.accounts.transaction_batch;
         let clock = Clock::get()?;
 
         msg!("Current transaction batch status: {:?}", tx_batch.status);
-        require!(tx_batch.status == TransactionBatchStatus::Sealed, TimelockError::CannotEnqueueTransactionBatch);
+        require!(
+            tx_batch.status == TransactionBatchStatus::Sealed,
+            TimelockError::CannotEnqueueTransactionBatch
+        );
 
         tx_batch.status = TransactionBatchStatus::Enqueued;
         tx_batch.enqueued_slot = clock.slot;
+        tx_batch.enqueuer_type = authority;
 
         Ok(())
     }
 
-    pub fn cancel_transaction_batch(
-        ctx: Context<EnqueueOrCancelTransactionBatch>
-    ) -> Result<()> {
+    pub fn cancel_transaction_batch(ctx: Context<EnqueueOrCancelTransactionBatch>) -> Result<()> {
+        let enqueuer_type = ctx
+            .accounts
+            .timelock
+            .check_authority(ctx.accounts.authority.key())?;
         let tx_batch = &mut ctx.accounts.transaction_batch;
 
+        // only the timelock authority can cancel their transactions
+        if tx_batch.enqueuer_type == AuthorityType::TimelockAuthority {
+            require!(
+                enqueuer_type == AuthorityType::TimelockAuthority,
+                TimelockError::InsufficientPermissions
+            );
+        }
+
         msg!("Current transaction batch status: {:?}", tx_batch.status);
-        require!(tx_batch.status == TransactionBatchStatus::Enqueued, TimelockError::CannotCancelTimelock);
+        require!(
+            tx_batch.status == TransactionBatchStatus::Enqueued,
+            TimelockError::CannotCancelTimelock
+        );
 
         let clock = Clock::get()?;
         let enqueued_slot = tx_batch.enqueued_slot;
         let required_delay = ctx.accounts.timelock.delay_in_slots;
-        require!(clock.slot - enqueued_slot < required_delay, TimelockError::CanOnlyCancelDuringTimelockPeriod);
+        require!(
+            clock.slot - enqueued_slot < required_delay,
+            TimelockError::CanOnlyCancelDuringTimelockPeriod
+        );
 
         // A fallback option that allows the timelock authority to prevent the
         // transaction batch from executing by canceling it during the timelock period.
         tx_batch.status = TransactionBatchStatus::Cancelled;
 
         Ok(())
-
     }
 
     pub fn execute_transaction_batch(ctx: Context<ExecuteTransactionBatch>) -> Result<()> {
         let tx_batch = &mut ctx.accounts.transaction_batch;
 
         msg!("Current transaction batch status: {:?}", tx_batch.status);
-        require!(tx_batch.status == TransactionBatchStatus::Enqueued, TimelockError::CannotExecuteTransactions);
+        require!(
+            tx_batch.status == TransactionBatchStatus::Enqueued,
+            TimelockError::CannotExecuteTransactions
+        );
 
         let clock = Clock::get()?;
         let enqueued_slot = tx_batch.enqueued_slot;
         let required_delay = ctx.accounts.timelock.delay_in_slots;
-        require!(clock.slot - enqueued_slot > required_delay, TimelockError::NotReady);
+        require!(
+            clock.slot - enqueued_slot > required_delay,
+            TimelockError::NotReady
+        );
 
         if let Some(transaction) = tx_batch.transactions.iter_mut().find(|tx| !tx.did_execute) {
             let mut ix: Instruction = transaction.deref().into();
@@ -207,7 +338,7 @@ pub mod timelock {
             let signer = &[&seeds[..]];
             let accounts = ctx.remaining_accounts;
             solana_program::program::invoke_signed(&ix, accounts, signer)?;
-    
+
             transaction.did_execute = true;
         }
 
@@ -225,7 +356,7 @@ pub struct CreateTimelock<'info> {
         seeds = [timelock.key().as_ref()],
         bump,
     )]
-    timelock_signer: SystemAccount<'info>, 
+    timelock_signer: SystemAccount<'info>,
     #[account(zero, signer)]
     timelock: Box<Account<'info, Timelock>>,
 }
@@ -246,23 +377,23 @@ pub struct CreateTransactionBatch<'info> {
     transaction_batch_authority: Signer<'info>,
     timelock: Box<Account<'info, Timelock>>,
     #[account(zero, signer)]
-    transaction_batch: Box<Account<'info, TransactionBatch>>
+    transaction_batch: Box<Account<'info, TransactionBatch>>,
 }
 
 #[derive(Accounts)]
 pub struct UpdateTransactionBatch<'info> {
     transaction_batch_authority: Signer<'info>,
     #[account(mut, has_one=transaction_batch_authority)]
-    transaction_batch: Box<Account<'info, TransactionBatch>>
+    transaction_batch: Box<Account<'info, TransactionBatch>>,
 }
 
 #[derive(Accounts)]
 pub struct EnqueueOrCancelTransactionBatch<'info> {
     authority: Signer<'info>,
-    #[account(has_one = authority)]
+    #[account(mut)]
     timelock: Box<Account<'info, Timelock>>,
     #[account(mut, has_one = timelock)]
-    transaction_batch: Box<Account<'info, TransactionBatch>>
+    transaction_batch: Box<Account<'info, TransactionBatch>>,
 }
 
 #[derive(Accounts)]
@@ -274,7 +405,7 @@ pub struct ExecuteTransactionBatch<'info> {
     timelock_signer: SystemAccount<'info>,
     timelock: Box<Account<'info, Timelock>>,
     #[account(mut, has_one = timelock)]
-    transaction_batch: Box<Account<'info, TransactionBatch>>
+    transaction_batch: Box<Account<'info, TransactionBatch>>,
 }
 
 impl From<&Transaction> for Instruction {
@@ -286,7 +417,6 @@ impl From<&Transaction> for Instruction {
         }
     }
 }
-
 
 impl From<&TransactionAccount> for AccountMeta {
     fn from(account: &TransactionAccount) -> AccountMeta {
@@ -322,5 +452,11 @@ pub enum TimelockError {
     #[msg("Can only cancel the transactions during the timelock period")]
     CanOnlyCancelDuringTimelockPeriod,
     #[msg("Can only execute the transactions if the status is `Enqueued`")]
-    CannotExecuteTransactions
+    CannotExecuteTransactions,
+    #[msg("The signer is neither the timelock authority nor an optimistic proposer")]
+    NoAuthority,
+    #[msg("Optimistic proposers can't cancel transaction batches enqueued by the timelock authority")]
+    InsufficientPermissions,
+    #[msg("This optimistic proposer is still in its cooldown period")]
+    OptimisticProposerCooldown,
 }
