@@ -266,13 +266,16 @@ export class AutocratClient {
   ): Promise<PublicKey> {
     const storedDao = await this.getDao(dao);
 
-    const nonce = new BN(Math.random() * 2 ** 50);
+    // const nonce = new BN(Math.random() * 2 ** 50);
+    const nonce = new BN(365359879173965);
+    console.log("NONCE: ", nonce.toString());
 
     let [proposal] = getProposalAddr(
       this.autocrat.programId,
       this.provider.publicKey,
       nonce
     );
+    console.log("PROPOSAL: ", proposal.toString());
 
     const {
       baseVault,
@@ -290,63 +293,84 @@ export class AutocratClient {
       dao
     );
 
+    //TO DO : recalculate compute units
+    const initializeVaultsAndAmmCus =
+      MaxCUs.createIdempotent * 2 + MaxCUs.initializeConditionalVault * 2;
+    const mintCus =
+      MaxCUs.createIdempotent * 4 + MaxCUs.mintConditionalTokens * 2 + 50000;
+    const addLiquidityCus = +MaxCUs.addLiquidity * 2;
+    const initializeProposalCus =
+      MaxCUs.createIdempotent + MaxCUs.initializeProposal + 50000;
+
     // it's important that these happen in a single atomic transaction
-    await this.vaultClient
-      .initializeVaultIx(proposal, storedDao.tokenMint)
-      .postInstructions(
-        await InstructionUtils.getInstructions(
-          this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint),
-          this.ammClient.createAmmIx(
-            passBaseMint,
-            passQuoteMint,
-            storedDao.twapInitialObservation,
-            storedDao.twapMaxObservationChangePerUpdate
-          ),
-          this.ammClient.createAmmIx(
-            failBaseMint,
-            failQuoteMint,
-            storedDao.twapInitialObservation,
-            storedDao.twapMaxObservationChangePerUpdate
-          )
-        )
-      )
-      .rpc();
+    // await this.vaultClient
+    //   .initializeVaultIx(proposal, storedDao.tokenMint)
+    //   .postInstructions([
+    //     ...(await InstructionUtils.getInstructions(
+    //       this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint)
+    //     )),
+    //     ComputeBudgetProgram.setComputeUnitLimit({
+    //       units: initializeVaultsAndAmmCus + 50_000,
+    //     }),
+    //     ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
+    //   ])
+    //   .rpc();
 
-    await this.vaultClient
-      .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
-      .postInstructions(
-        await InstructionUtils.getInstructions(
-          this.vaultClient.mintConditionalTokensIx(
-            quoteVault,
-            storedDao.usdcMint,
-            quoteTokensToLP
-          )
-        )
-      )
-      .rpc();
+    // await this.vaultClient
+    //   .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
+    //   .postInstructions([
+    //     ...(await InstructionUtils.getInstructions(
+    //       this.vaultClient.mintConditionalTokensIx(
+    //         quoteVault,
+    //         storedDao.usdcMint,
+    //         quoteTokensToLP
+    //       )
+    //     )),
+    //     ComputeBudgetProgram.setComputeUnitLimit({ units: mintCus }),
+    //     ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
+    //   ])
+    //   .rpc();
 
-    await this.ammClient
-      .addLiquidityIx(
-        passAmm,
-        passBaseMint,
-        passQuoteMint,
-        quoteTokensToLP,
-        baseTokensToLP,
-        new BN(0)
-      )
-      .postInstructions(
-        await InstructionUtils.getInstructions(
-          this.ammClient.addLiquidityIx(
-            failAmm,
-            failBaseMint,
-            failQuoteMint,
-            quoteTokensToLP,
-            baseTokensToLP,
-            new BN(0)
-          )
-        )
-      )
-      .rpc();
+    // await this.ammClient
+    //   .createAmmIx(
+    //     passBaseMint,
+    //     passQuoteMint,
+    //     storedDao.twapInitialObservation,
+    //     storedDao.twapMaxObservationChangePerUpdate
+    //   )
+    //   .preInstructions([
+    //     ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
+    //     ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
+    //     ...(await InstructionUtils.getInstructions(
+    //       this.ammClient.createAmmIx(
+    //         failBaseMint,
+    //         failQuoteMint,
+    //         storedDao.twapInitialObservation,
+    //         storedDao.twapMaxObservationChangePerUpdate
+    //       )
+    //     )),
+    //   ])
+    //   .postInstructions(
+    //     await InstructionUtils.getInstructions(
+    //       this.ammClient.addLiquidityIx(
+    //         failAmm,
+    //         failBaseMint,
+    //         failQuoteMint,
+    //         quoteTokensToLP,
+    //         baseTokensToLP,
+    //         new BN(0)
+    //       ),
+    //       this.ammClient.addLiquidityIx(
+    //         passAmm,
+    //         passBaseMint,
+    //         passQuoteMint,
+    //         quoteTokensToLP,
+    //         baseTokensToLP,
+    //         new BN(0)
+    //       )
+    //     )
+    //   )
+    //   .rpc();
 
     // this is how many original tokens are created
     const lpTokens = quoteTokensToLP;
@@ -360,7 +384,14 @@ export class AutocratClient {
       lpTokens,
       lpTokens,
       nonce
-    ).rpc();
+    )
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: initializeProposalCus,
+        }),
+        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
+      ])
+      .rpc();
 
     return proposal;
   }

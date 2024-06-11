@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 import * as token from "@solana/spl-token";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { AutocratClient } from "@metadaoproject/futarchy-ts";
+import { AutocratClient } from "@metadaoproject/futarchy";
 
 const { PublicKey, Keypair, SystemProgram } = anchor.web3;
 const { BN, Program } = anchor;
@@ -177,7 +177,7 @@ async function main() {
 
   console.log("Account has enough SOL (4) to continue");
 
-  const proposalIx = await buildMemoInstruction("TESTING DEVNET");
+  const proposalIx = await buildMemoInstruction("I, glorious autocrat of MetaDAO, approve the incentive plan outlined.");
 
   const ix = {
     programId: proposalIx.programId,
@@ -190,17 +190,17 @@ async function main() {
 
   // Sleep for review
   console.log("Sleeping for 60s, press ctrl + c to cancel");
-  await new Promise((f) => setTimeout(f, 60000));
+  // await new Promise((f) => setTimeout(f, 6000));
 
-  const dao = new PublicKey("DM3sz2qH5LS5KHKpiwZVXNe69YeM3bJzsmNs5VmKLHEv");
+  const dao = new PublicKey("CNMZgxYsQpygk8CLN9Su1igwXX2kHtcawaNAGuBPv3G9");
   const storedDao = await autocratClient.getDao(dao);
 
   const proposal = await autocratClient.initializeProposal(
     dao,
-    "http://google.com",
+    "https://hackmd.io/LZdDOyO8QZ2ruzlzaywubQ?view",
     ix,
-    storedDao.minBaseFutarchicLiquidity,
-    storedDao.minQuoteFutarchicLiquidity
+    new BN(48_300_000_000),
+    new BN(25_000 * 1_000_000),
   );
 
   console.log(proposal);
