@@ -26,6 +26,7 @@ metadata = "yarn run ts-node scripts/uploadMetadata.ts"
 send-tokens = "yarn run ts-node scripts/sendTokens.ts"
 crank = "yarn run ts-node scripts/crankTwap.ts"
 attach-metadata = "yarn run ts-node scripts/attachMetadata.ts"
+reclaim-tokens = "yarn run ts-node scripts/reclaimTokens.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
 
 [test]

@@ -910,8 +910,10 @@
     decimal.js "10.3.1"
     jsbi "4.3.0"
 
-"@metadaoproject/futarchy@./sdk":
-  version "0.3.0-alpha.6"
+"@metadaoproject/futarchy@0.3.0-alpha.8":
+  version "0.3.0-alpha.8"
+  resolved "https://registry.yarnpkg.com/@metadaoproject/futarchy/-/futarchy-0.3.0-alpha.8.tgz#eaf4d898129df2c8a1408bb1974fa61dacb87ade"
+  integrity sha512-5gyYsEpAMCC9x5Gij4Zlj7j33GwmVormuigilnhZTlpm0/RsKdPHxPiPoBmjQL5fHR1N8+5B9vHyQvFbc4KaZA==
   dependencies:
     "@coral-xyz/anchor" "^0.29.0"
     "@solana/spl-token" "^0.3.7"
