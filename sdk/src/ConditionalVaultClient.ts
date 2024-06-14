@@ -251,6 +251,44 @@ export class ConditionalVaultClient {
       });
   }
 
+  redeemConditionalTokensIx(vault: PublicKey, underlyingTokenMint: PublicKey) {
+    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
+      this.vaultProgram.programId,
+      vault
+    );
+    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
+      this.vaultProgram.programId,
+      vault
+    );
+
+    return this.vaultProgram.methods
+      .redeemConditionalTokensForUnderlyingTokens()
+      .accounts({
+        authority: this.provider.publicKey,
+        vault,
+        vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          vault,
+          true
+        ),
+        userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          this.provider.publicKey,
+          true
+        ),
+        conditionalOnFinalizeTokenMint,
+        userConditionalOnFinalizeTokenAccount: getAssociatedTokenAddressSync(
+          conditionalOnFinalizeTokenMint,
+          this.provider.publicKey
+        ),
+        conditionalOnRevertTokenMint,
+        userConditionalOnRevertTokenAccount: getAssociatedTokenAddressSync(
+          conditionalOnRevertTokenMint,
+          this.provider.publicKey
+        ),
+      });
+  }
+
   async initializeVault(
     settlementAuthority: PublicKey,
     underlyingTokenMint: PublicKey
