@@ -29,10 +29,11 @@ let vaultClient: ConditionalVaultClient = ConditionalVaultClient.createClient({
 
 const payer = provider.wallet["payer"];
 
-const PROPOSAL = new PublicKey("BMZbX7z2zgLuq266yskeHF5BFZoaX9j3tvsZfVQ7RUY6");
+const PROPOSAL = new PublicKey("6WyrCkZm3Ct3fpuYhAEanfGaSjTnyCyv6AkkiwQs1zjH");
 
 async function main() {
-  const { dao } = await autocratClient.getProposal(PROPOSAL);
+  // const { dao } = await autocratClient.getProposal(PROPOSAL);
+  const dao = new PublicKey("9TKh2yav4WpSNkFV2cLybrWZETBWZBkQ6WB6qV9Nt9dJ");
 
   const storedDao = await autocratClient.getDao(dao);
   console.log(storedDao);
@@ -56,15 +57,19 @@ async function main() {
   );
 
   const passLpBalance = (
-    await token.getAccount(
+    await token.getOrCreateAssociatedTokenAccount(
       provider.connection,
-      token.getAssociatedTokenAddressSync(passLp, payer.publicKey)
+      payer,
+      passLp,
+      payer.publicKey
     )
   ).amount;
   const failLpBalance = (
-    await token.getAccount(
+    await token.getOrCreateAssociatedTokenAccount(
       provider.connection,
-      token.getAssociatedTokenAddressSync(failLp, payer.publicKey)
+      payer,
+      failLp,
+      payer.publicKey
     )
   ).amount;
 
@@ -103,12 +108,40 @@ async function main() {
   }
 
   await vaultClient
-    .redeemConditionalTokensIx(baseVault, storedDao.tokenMint)
+    .mergeConditionalTokensIx(
+      baseVault,
+      storedDao.tokenMint,
+      new BN(
+        (
+          await token.getAccount(
+            provider.connection,
+            token.getAssociatedTokenAddressSync(
+              passBaseMint,
+              payer.publicKey
+            )
+          )
+        ).amount.toString()
+      )
+    )
     .preInstructions([
       ComputeBudgetProgram.setComputeUnitLimit({ units: 150_000 }),
       ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100 }),
       await vaultClient
-        .redeemConditionalTokensIx(quoteVault, storedDao.usdcMint)
+        .mergeConditionalTokensIx(
+          quoteVault,
+          storedDao.usdcMint,
+          new BN(
+            (
+              await token.getAccount(
+                provider.connection,
+                token.getAssociatedTokenAddressSync(
+                  passQuoteMint,
+                  payer.publicKey
+                )
+              )
+            ).amount.toString()
+          )
+        )
         .instruction(),
     ])
     .rpc();
