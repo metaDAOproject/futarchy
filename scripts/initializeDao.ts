@@ -10,9 +10,6 @@ import {
   FUTURE_DEVNET,
   META,
 } from "./consts";
-import { Keypair, PublicKey } from '@solana/web3.js';
-
-const provider = anchor.AnchorProvider.env();
 let autocratClient: AutocratClient = AutocratClient.createClient({
   provider: anchor.AnchorProvider.env(),
 });
