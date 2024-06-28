@@ -373,7 +373,7 @@ export class AutocratClient {
     quoteTokensToLP: BN
   ): Promise<
     [
-      Transaction,
+      Transaction[],
       {
         proposalAcct: PublicKey;
         baseCondVaultAcct: PublicKey;
@@ -410,7 +410,7 @@ export class AutocratClient {
     );
 
     // it's important that these happen in a single atomic transaction
-    await this.vaultClient
+    const initVaultTx = await this.vaultClient
       .initializeVaultIx(proposal, storedDao.tokenMint)
       .postInstructions(
         await InstructionUtils.getInstructions(
@@ -429,9 +429,9 @@ export class AutocratClient {
           )
         )
       )
-      .rpc();
+      .transaction();
 
-    await this.vaultClient
+      const mintConditionalTokensTx = await this.vaultClient
       .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
       .postInstructions(
         await InstructionUtils.getInstructions(
@@ -442,9 +442,9 @@ export class AutocratClient {
           )
         )
       )
-      .rpc();
+      .transaction();
 
-    await this.ammClient
+    const addLiquidityTx = await this.ammClient
       .addLiquidityIx(
         passAmm,
         passBaseMint,
@@ -465,12 +465,12 @@ export class AutocratClient {
           )
         )
       )
-      .rpc();
+      .transaction();
 
     // this is how many original tokens are created
     const lpTokens = quoteTokensToLP;
 
-    const tx = await this.initializeProposalIx(
+    const initTx = await this.initializeProposalIx(
       descriptionUrl,
       instruction,
       dao,
@@ -482,7 +482,12 @@ export class AutocratClient {
     ).transaction();
 
     return [
-      tx,
+      [
+        initVaultTx,
+        mintConditionalTokensTx,
+        addLiquidityTx,
+        initTx
+      ],
       {
         baseCondVaultAcct: baseVault,
         quoteCondVaultAcct: quoteVault,
