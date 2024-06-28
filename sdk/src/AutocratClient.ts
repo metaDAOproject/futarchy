@@ -365,6 +365,139 @@ export class AutocratClient {
     return proposal;
   }
 
+  async createProposalTxAndPDAs(
+    dao: PublicKey,
+    descriptionUrl: string,
+    instruction: ProposalInstruction,
+    baseTokensToLP: BN,
+    quoteTokensToLP: BN
+  ): Promise<
+    [
+      Transaction[],
+      {
+        proposalAcct: PublicKey;
+        baseCondVaultAcct: PublicKey;
+        quoteCondVaultAcct: PublicKey;
+        passMarketAcct: PublicKey;
+        failMarketAcct: PublicKey;
+      }
+    ]
+  > {
+    const storedDao = await this.getDao(dao);
+
+    const nonce = new BN(Math.random() * 2 ** 50);
+
+    let [proposal] = getProposalAddr(
+      this.autocrat.programId,
+      this.provider.publicKey,
+      nonce
+    );
+
+    const {
+      baseVault,
+      quoteVault,
+      passAmm,
+      failAmm,
+      passBaseMint,
+      passQuoteMint,
+      failBaseMint,
+      failQuoteMint,
+    } = this.getProposalPdas(
+      proposal,
+      storedDao.tokenMint,
+      storedDao.usdcMint,
+      dao
+    );
+
+    // it's important that these happen in a single atomic transaction
+    const initVaultTx = await this.vaultClient
+      .initializeVaultIx(proposal, storedDao.tokenMint)
+      .postInstructions(
+        await InstructionUtils.getInstructions(
+          this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint),
+          this.ammClient.createAmmIx(
+            passBaseMint,
+            passQuoteMint,
+            storedDao.twapInitialObservation,
+            storedDao.twapMaxObservationChangePerUpdate
+          ),
+          this.ammClient.createAmmIx(
+            failBaseMint,
+            failQuoteMint,
+            storedDao.twapInitialObservation,
+            storedDao.twapMaxObservationChangePerUpdate
+          )
+        )
+      )
+      .transaction();
+
+      const mintConditionalTokensTx = await this.vaultClient
+      .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
+      .postInstructions(
+        await InstructionUtils.getInstructions(
+          this.vaultClient.mintConditionalTokensIx(
+            quoteVault,
+            storedDao.usdcMint,
+            quoteTokensToLP
+          )
+        )
+      )
+      .transaction();
+
+    const addLiquidityTx = await this.ammClient
+      .addLiquidityIx(
+        passAmm,
+        passBaseMint,
+        passQuoteMint,
+        quoteTokensToLP,
+        baseTokensToLP,
+        new BN(0)
+      )
+      .postInstructions(
+        await InstructionUtils.getInstructions(
+          this.ammClient.addLiquidityIx(
+            failAmm,
+            failBaseMint,
+            failQuoteMint,
+            quoteTokensToLP,
+            baseTokensToLP,
+            new BN(0)
+          )
+        )
+      )
+      .transaction();
+
+    // this is how many original tokens are created
+    const lpTokens = quoteTokensToLP;
+
+    const initTx = await this.initializeProposalIx(
+      descriptionUrl,
+      instruction,
+      dao,
+      storedDao.tokenMint,
+      storedDao.usdcMint,
+      lpTokens,
+      lpTokens,
+      nonce
+    ).transaction();
+
+    return [
+      [
+        initVaultTx,
+        mintConditionalTokensTx,
+        addLiquidityTx,
+        initTx
+      ],
+      {
+        baseCondVaultAcct: baseVault,
+        quoteCondVaultAcct: quoteVault,
+        failMarketAcct: failAmm,
+        passMarketAcct: passAmm,
+        proposalAcct: proposal,
+      },
+    ];
+  }
+
   initializeProposalIx(
     descriptionUrl: string,
     instruction: ProposalInstruction,

@@ -10,7 +10,6 @@ import {
   FUTURE_DEVNET,
   META,
 } from "./consts";
-
 let autocratClient: AutocratClient = AutocratClient.createClient({
   provider: anchor.AnchorProvider.env(),
 });
