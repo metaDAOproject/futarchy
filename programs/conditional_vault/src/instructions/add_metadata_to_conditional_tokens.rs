@@ -1,5 +1,11 @@
 use super::*;
 
+pub mod proph3t_deployer {
+    use anchor_lang::declare_id;
+
+    declare_id!("HfFi634cyurmVVDr9frwu4MjGLJzz9XbAJz981HdVaNz");
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AddMetadataToConditionalTokensArgs {
     pub proposal_number: u64,
@@ -49,6 +55,11 @@ impl AddMetadataToConditionalTokens<'_> {
         require!(
             self.vault.status == VaultStatus::Active,
             VaultError::VaultAlreadySettled
+        );
+
+        #[cfg(feature = "production")]
+        require_eq!(
+            self.payer.key(), proph3t_deployer::ID
         );
 
         Ok(())
