@@ -27,11 +27,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: metadaoproject/anchor-verifiable-build@v0
+      - uses: metadaoproject/anchor-verifiable-build@v0.1
         with:
           program: conditional_vault
           anchor-version: '0.29.0'
           solana-cli-version: '1.17.16'
+          features: 'production'
       - run: 'git pull --rebase'
       - run: cp target/deploy/conditional_vault.so ./verifiable-builds
       - name: Commit verifiable build back to mainline

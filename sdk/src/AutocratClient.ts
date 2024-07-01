@@ -431,7 +431,7 @@ export class AutocratClient {
       )
       .transaction();
 
-      const mintConditionalTokensTx = await this.vaultClient
+    const mintConditionalTokensTx = await this.vaultClient
       .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
       .postInstructions(
         await InstructionUtils.getInstructions(
@@ -482,12 +482,7 @@ export class AutocratClient {
     ).transaction();
 
     return [
-      [
-        initVaultTx,
-        mintConditionalTokensTx,
-        addLiquidityTx,
-        initTx
-      ],
+      [initVaultTx, mintConditionalTokensTx, addLiquidityTx, initTx],
       {
         baseCondVaultAcct: baseVault,
         quoteCondVaultAcct: quoteVault,
