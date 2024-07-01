@@ -15,7 +15,7 @@ let autocratClient: AutocratClient = AutocratClient.createClient({
 });
 
 async function main() {
-  const testDao = await autocratClient.initializeDao(DRIFT, 0.5, 1, 1);
+  const testDao = await autocratClient.initializeDao(DRIFT, 0.5, 20_000, 10_000);
   console.log(testDao.toString());
   // await autocratClient.initializeDao(META, 500, 5, 2500, DEVNET_MUSDC);
   // await autocratClient.initializeDao(

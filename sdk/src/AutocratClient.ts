@@ -18,7 +18,7 @@ import {
   IDL as ConditionalVaultIDL,
 } from "./types/conditional_vault";
 
-import BN from "bn.js";
+import BN, { min } from "bn.js";
 import {
   AMM_PROGRAM_ID,
   AUTOCRAT_PROGRAM_ID,
@@ -267,6 +267,7 @@ export class AutocratClient {
     const storedDao = await this.getDao(dao);
 
     const nonce = new BN(Math.random() * 2 ** 50);
+    console.log("NONCE: ", nonce.toString());
 
     let [proposal] = getProposalAddr(
       this.autocrat.programId,
@@ -290,50 +291,98 @@ export class AutocratClient {
       dao
     );
 
-    // it's important that these happen in a single atomic transaction
-    await this.vaultClient
+    let initializeVaultTx = await this.vaultClient
       .initializeVaultIx(proposal, storedDao.tokenMint)
-      .postInstructions(
-        await InstructionUtils.getInstructions(
-          this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint),
-          this.ammClient.createAmmIx(
-            passBaseMint,
-            passQuoteMint,
-            storedDao.twapInitialObservation,
-            storedDao.twapMaxObservationChangePerUpdate
-          ),
+      .postInstructions([
+        ...(await InstructionUtils.getInstructions(
+          this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint)
+        )),
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units:
+            MaxCUs.initializeConditionalVault * 2 + MaxCUs.createIdempotent * 2,
+        }),
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: DEFAULT_CU_PRICE,
+        }),
+      ])
+      .transaction();
+
+    // console.log(this.provider.connection);
+
+    let mintTx = await this.vaultClient
+      .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
+      .postInstructions([
+        ...(await InstructionUtils.getInstructions(
+          this.vaultClient.mintConditionalTokensIx(
+            quoteVault,
+            storedDao.usdcMint,
+            quoteTokensToLP
+          )
+        )),
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: MaxCUs.mintConditionalTokens * 2 + MaxCUs.createIdempotent * 4,
+        }),
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: DEFAULT_CU_PRICE,
+        }),
+      ])
+      .transaction();
+
+    // this is how many original tokens are created
+    const lpTokens = quoteTokensToLP;
+
+    let recentBlockhash = await this.provider.connection.getLatestBlockhash(
+      "confirmed"
+    );
+
+    let rawTxs = [];
+    for (let tx of [initializeVaultTx, mintTx]) {
+      tx.recentBlockhash = recentBlockhash.blockhash;
+      tx.feePayer = this.provider.publicKey;
+      tx.sign((this.provider.wallet as any).payer);
+
+      rawTxs.push(tx.serialize());
+    }
+
+    let blockheight = await this.provider.connection.getBlockHeight();
+
+    while (blockheight < recentBlockhash.lastValidBlockHeight) {
+      for (const rawTx of rawTxs) {
+        try {
+          // this.provider.connection.simulateTransaction()
+          await this.provider.connection.sendRawTransaction(rawTx, {
+            skipPreflight: false,
+            preflightCommitment: "processed",
+          });
+        } catch (err) {
+          console.log("ERROR");
+          console.error(err);
+        }
+      }
+      await new Promise((f) => setTimeout(f, 200));
+      console.log("hey");
+      blockheight = await this.provider.connection.getBlockHeight();
+    }
+
+    let ammTx = await this.ammClient
+      .createAmmIx(
+        passBaseMint,
+        passQuoteMint,
+        storedDao.twapInitialObservation,
+        storedDao.twapMaxObservationChangePerUpdate
+      )
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
+        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
+        ...(await InstructionUtils.getInstructions(
           this.ammClient.createAmmIx(
             failBaseMint,
             failQuoteMint,
             storedDao.twapInitialObservation,
             storedDao.twapMaxObservationChangePerUpdate
           )
-        )
-      )
-      .rpc();
-
-    await this.vaultClient
-      .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
-      .postInstructions(
-        await InstructionUtils.getInstructions(
-          this.vaultClient.mintConditionalTokensIx(
-            quoteVault,
-            storedDao.usdcMint,
-            quoteTokensToLP
-          )
-        )
-      )
-      .rpc();
-
-    await this.ammClient
-      .addLiquidityIx(
-        passAmm,
-        passBaseMint,
-        passQuoteMint,
-        quoteTokensToLP,
-        baseTokensToLP,
-        new BN(0)
-      )
+        )),
+      ])
       .postInstructions(
         await InstructionUtils.getInstructions(
           this.ammClient.addLiquidityIx(
@@ -343,15 +392,20 @@ export class AutocratClient {
             quoteTokensToLP,
             baseTokensToLP,
             new BN(0)
+          ),
+          this.ammClient.addLiquidityIx(
+            passAmm,
+            passBaseMint,
+            passQuoteMint,
+            quoteTokensToLP,
+            baseTokensToLP,
+            new BN(0)
           )
         )
       )
-      .rpc();
+      .transaction();
 
-    // this is how many original tokens are created
-    const lpTokens = quoteTokensToLP;
-
-    await this.initializeProposalIx(
+    let proposalTx = await this.initializeProposalIx(
       descriptionUrl,
       instruction,
       dao,
@@ -360,7 +414,42 @@ export class AutocratClient {
       lpTokens,
       lpTokens,
       nonce
-    ).rpc();
+    ).transaction();
+
+    recentBlockhash = await this.provider.connection.getLatestBlockhash(
+      "confirmed"
+    );
+
+    rawTxs = [];
+    for (let tx of [ammTx, proposalTx]) {
+      tx.recentBlockhash = recentBlockhash.blockhash;
+      tx.feePayer = this.provider.publicKey;
+      tx.sign((this.provider.wallet as any).payer);
+
+      rawTxs.push(tx.serialize());
+    }
+
+    blockheight = await this.provider.connection.getBlockHeight();
+
+    while (blockheight < recentBlockhash.lastValidBlockHeight) {
+      for (const rawTx of rawTxs) {
+        try {
+          // this.provider.connection.simulateTransaction()
+          await this.provider.connection.sendRawTransaction(rawTx, {
+            skipPreflight: false,
+            preflightCommitment: "processed",
+          });
+        } catch (err) {
+          console.log("ERROR");
+          console.error(err);
+        }
+      }
+      await new Promise((f) => setTimeout(f, 200));
+      console.log("hey");
+      blockheight = await this.provider.connection.getBlockHeight();
+    }
+
+    console.log("sent AMM tx");
 
     return proposal;
   }
