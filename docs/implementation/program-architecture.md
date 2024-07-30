@@ -52,12 +52,6 @@ Anyone can interact with autocrat to create a _proposal_, which contains fields 
 
 The requisite conditional vaults and markets are created at the same time.
 
-The last piece of the puzzle is _autocrat_, the program that orchestrates futarchy.
-
-Anyone can interact with autocrat to create a _proposal_, which contains fields such as a proposal number, proposal description link, and an executable Solana Virtual Machine (SVM) instruction. For example, someone could create a proposal to transfer 150,000 USDC to a development team to improve a product that’s managed by MetaDAO.
-
-The requisite conditional vaults and markets are created at the same time.
-
 <figure><img src="../.gitbook/assets/image (1).png" alt="" width="563"><figcaption></figcaption></figure>
 
 After a configurable amount of time (3 days by default), anyone can trigger proposal finalization. In finalization, autocrat checks if the TWAP of the pass market is x% higher than the TWAP of the fail market, where x is a DAO-configured threshold.
