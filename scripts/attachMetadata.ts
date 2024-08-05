@@ -27,6 +27,15 @@ async function main() {
     const { baseVault, quoteVault } = storedProposal;
     console.log(baseVault);
 
+    
+    // Create shdw account if not provided
+    // Create 2 json for quotevault usdc w/ image
+    // Create 2 jsons for basevault <token> w/ image
+    // upload all 4 to shdw
+    // paste 4 into the function
+
+
+
     vaultClient.addMetadataToConditionalTokensIx(quoteVault, USDC, 1, pUSDC, fUSDC)
         .preInstructions([
             await vaultClient.addMetadataToConditionalTokensIx(baseVault, DRIFT, 1, pDRIFT, fDRIFT).instruction(),
