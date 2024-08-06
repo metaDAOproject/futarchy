@@ -1,7 +1,7 @@
 import { AutocratClient, ConditionalVaultClient } from "@metadaoproject/futarchy";
 import * as anchor from "@coral-xyz/anchor";
-import { ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
-import { DRIFT, USDC } from "./consts";
+import { ComputeBudgetProgram, Connection, PublicKey } from "@solana/web3.js";
+import { DRIFT, USDC, DEVNET_MUSDC, DEVNET_DRIFT } from "./consts";
 import { ShadowProvider } from "./helpers/shadowProvider";
 import * as fs from "fs"
 
@@ -10,32 +10,47 @@ let autocratClient: AutocratClient = AutocratClient.createClient({
 });
 
 let vaultClient: ConditionalVaultClient = autocratClient.vaultClient;
-/**
- *
- * @param proposal
- * @param proposalNumber
- * @param baseToken
- * @param quoteToken
- * @param assetFolderPath
- */
-async function main(
+
+type BaseToken = {
+    baseName: string,
+    basePubkey: string
+}
+
+type Config = {
     proposal: string,
-    proposalNumber: number,
-    baseToken: string,
+    baseToken: BaseToken,
+    mainnetRpc: string,
+    shdwAccount: string,
+}
+
+async function main(
+    configPath: string,
     assetFolderPath: string,
-    shdwAccount: string
 ) {
-    const shdwAccountPubkey = new PublicKey(shdwAccount)
+    const config: Config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+    const {proposal, baseToken: {baseName, basePubkey}, mainnetRpc, shdwAccount } = config
+
+
     const storedProposal = await autocratClient.getProposal(new PublicKey(proposal));
+    const { baseVault, quoteVault, number } = storedProposal;
 
-    const { baseVault, quoteVault } = storedProposal;
+    // shdw uses mainnet
+    const shdwProvider = new ShadowProvider(
+        new Connection(mainnetRpc),
+        autocratClient.provider.wallet as anchor.Wallet
+    )
+    await shdwProvider.init()
 
-    const wallet = autocratClient.provider.wallet as anchor.Wallet
-    const shdwProvider = new ShadowProvider(autocratClient.provider.connection, wallet)
-    console.log("shdw", shdwProvider)
+    let shdwAccountPubkey: PublicKey;
+    if (shdwAccount) {
+        shdwAccountPubkey = new PublicKey(shdwAccount)
+    } else {
+        const shdw = await shdwProvider.shadowAccountCreation(proposal, "10MB")
+        shdwAccountPubkey = new PublicKey(shdw)
+    }
 
-    const pUSDCstring = "pUSDC"
-    const fUSDCstring = "fUSDC"
+    const pUSDCstring = "pUSDC.json"
+    const fUSDCstring = "fUSDC.json"
     const pUSDCuri=  await shdwProvider.upsertFile({
         name: pUSDCstring,
         buffer: fs.readFileSync(`${assetFolderPath}/${pUSDCstring}`),
@@ -43,13 +58,13 @@ async function main(
     })
 
     const fUSDCuri=  await shdwProvider.upsertFile({
-        name: pUSDCstring,
+        name: fUSDCstring,
         buffer: fs.readFileSync(`${assetFolderPath}/${fUSDCstring}`),
         account: shdwAccountPubkey
     })
 
-    const pBaseString = `p${baseToken}`
-    const fBaseString = `f${baseToken}`
+    const pBaseString = `p${baseName}.json`
+    const fBaseString = `f${baseName}.json`
     const pBaseUri=  await shdwProvider.upsertFile({
         name: pBaseString,
         buffer: fs.readFileSync(`${assetFolderPath}/${pBaseString}`),
@@ -61,25 +76,74 @@ async function main(
         buffer: fs.readFileSync(`${assetFolderPath}/${fBaseString}`),
         account: shdwAccountPubkey
     })
+    console.log("p usd", pUSDCuri)
+    console.log("f usd", fUSDCuri)
+    console.log("p usd", pBaseUri)
+    console.log("f usd", fBaseUri)
 
-    vaultClient.addMetadataToConditionalTokensIx(quoteVault, USDC, proposalNumber, pUSDCuri, fUSDCuri)
+    // console.log(quoteVault,
+    //     DEVNET_MUSDC,
+    //     number,
+    //     pUSDCuri,
+    //     fUSDCuri)
+
+    try {
+        // const res = await vaultClient.addMetadataToConditionalTokensIx(
+        //     quoteVault,
+        //     DEVNET_MUSDC,
+        //     number,
+        //     pUSDCuri,
+        //     fUSDCuri
+        // )
+        // .preInstructions([
+        //     // await vaultClient.addMetadataToConditionalTokensIx(baseVault, new PublicKey(basePubkey), 1, pBaseUri, fBaseUri).instruction(),
+        //     ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
+        //     ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
+        // ])
+        // .rpc({skipPreflight: true})
+
+        const res = await vaultClient.addMetadataToConditionalTokensIx(
+            baseVault,
+            new PublicKey(basePubkey),
+            1,
+            pBaseUri,
+            fBaseUri
+        )
         .preInstructions([
-            await vaultClient.addMetadataToConditionalTokensIx(baseVault, DRIFT, 1, pBaseUri, fBaseUri).instruction(),
             ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
             ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
         ])
-        .rpc()
+        .rpc({skipPreflight: true})
+
+        console.log("res", res)
+    } catch (e) {
+        console.log("e", e);
+    }
+
 }
 
+// todo return error if not 2 passed
+// need to join paths
+
 main(
-    // Proposal pubkey
+    // config path
     process.argv[2],
-    // Proposal number
-    parseInt(process.argv[3]),
-    // Base token DRIFT
-    process.argv[4],
-    // AssetFolderPath
-    process.env[5],
-    // Shdw account key,
-    process.argv[6]
+    // asset folder
+    process.argv[3],
   );
+
+
+
+// main(
+//     // Proposal pubkey
+//     process.argv[2],
+//     // Proposal number
+//     parseInt(process.argv[3]),
+//     // Base token DRIFT
+//     process.argv[4],
+//     // AssetFolderPath
+//     process.env[5],
+//     // Shdw account key,
+//     // process.argv[6]
+//   );
+
