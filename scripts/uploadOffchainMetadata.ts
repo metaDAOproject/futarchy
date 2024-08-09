@@ -1,22 +1,21 @@
 import * as anchor from "@coral-xyz/anchor";
 import {
-  Metadata,
-  deserializeMetadata,
-  findMetadataPda,
+    Metadata,
+    deserializeMetadata,
+    findMetadataPda,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
-  GenericFile,
-  createGenericFile,
-  keypairIdentity,
-  publicKey,
-  signerIdentity,
+    GenericFile,
+    Umi,
+    createGenericFile,
+    keypairIdentity
 } from "@metaplex-foundation/umi";
-import {
-  fromWeb3JsPublicKey,
-  toWeb3JsPublicKey,
-} from "@metaplex-foundation/umi-web3js-adapters";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { bundlrUploader } from "@metaplex-foundation/umi-uploader-bundlr";
+import {
+    fromWeb3JsPublicKey,
+    toWeb3JsPublicKey,
+} from "@metaplex-foundation/umi-web3js-adapters";
 import { PublicKey } from "@solana/web3.js";
 
 import fs from "fs";
@@ -239,5 +238,60 @@ export const fetchOnchainMetadataForMint = async (
     metadata: deserializeMetadata(acct),
   };
 };
+
+export class FileUploader {
+  public umi: Umi;
+
+  constructor(private provider: anchor.AnchorProvider) {}
+
+  public init() {
+    const payer = this.provider.wallet["payer"];
+    this.umi = createUmi(this.provider.connection);
+    this.umi.use(keypairIdentity(payer));
+    this.umi.use(bundlrUploader());
+  }
+
+  async uploadImageJson(json: any) {
+    return this.umi.uploader.uploadJson(json, {
+      onProgress: (percent: number, ...args: any) => {
+        console.log(`percent metadata upload progress ${percent}`);
+        console.log("progress args: ", args);
+      },
+    });
+  }
+
+  async uploadImageFromFile(filename: string, filepath: string) {
+    const data = fs.readFileSync(`${filepath}/${filename}`);
+    const file = createGenericFile(new Uint8Array(data), filename, {
+      contentType: "image/png",
+    });
+    return await this.umi.uploader.upload([file]);
+  }
+
+  async uploadImagesFromFolder(folderName: string) {
+    const folder = fs.readdirSync(`${__dirname}/assets/${folderName}`);
+
+    const filesToUpload: Array<GenericFile> = [];
+    for (const filename of folder) {
+      if (!filename.endsWith(".png")) continue;
+
+      const data = fs.readFileSync(`${__dirname}/assets/${filename}`);
+      filesToUpload.push(
+        createGenericFile(new Uint8Array(data), filename, {
+          contentType: "image/png",
+        })
+      );
+    }
+
+    const uris = await this.umi.uploader.upload(filesToUpload);
+
+    return uris.map((uri, idx) => {
+      return {
+        uri,
+        name: filesToUpload[idx].fileName.split(".")[0],
+      };
+    });
+  }
+}
 
 // fetchOnchainMetadataForMint();
