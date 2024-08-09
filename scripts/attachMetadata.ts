@@ -1,9 +1,9 @@
 import { AutocratClient, ConditionalVaultClient } from "@metadaoproject/futarchy";
 import * as anchor from "@coral-xyz/anchor";
-import { ComputeBudgetProgram, Connection, PublicKey } from "@solana/web3.js";
-import { DRIFT, USDC, DEVNET_MUSDC, DEVNET_DRIFT } from "./consts";
-import { ShadowProvider } from "./helpers/shadowProvider";
+import { ComputeBudgetProgram, Connection, PublicKey, Transaction } from "@solana/web3.js";
 import * as fs from "fs"
+
+import { MetadataUploader } from "./uploadOffchainMetadata2";
 
 let autocratClient: AutocratClient = AutocratClient.createClient({
   provider: anchor.AnchorProvider.env(),
@@ -11,139 +11,170 @@ let autocratClient: AutocratClient = AutocratClient.createClient({
 
 let vaultClient: ConditionalVaultClient = autocratClient.vaultClient;
 
-type BaseToken = {
-    baseName: string,
-    basePubkey: string
+type Token = {
+    name: string,
+    pubkey?: string
 }
 
 type Config = {
+    dao: string,
     proposal: string,
-    baseToken: BaseToken,
-    mainnetRpc: string,
-    shdwAccount: string,
+    baseToken: Token,
+    quoteToken: Token
+}
+
+type TokenMetadata = {
+    name: string,
+    image: string,
+    symbol: string,
+    description: string
+}
+
+type ImageData = {
+    failImage: string,
+    passImage: string,
 }
 
 async function main(
-    configPath: string,
-    assetFolderPath: string,
+    config: string,
 ) {
-    const config: Config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-    const {proposal, baseToken: {baseName, basePubkey}, mainnetRpc, shdwAccount } = config
+    const {
+        proposal,
+        quoteToken: {name: quoteName},
+        baseToken: {name: baseName}
+    } = JSON.parse(
+        fs.readFileSync(`${__dirname}/.config/${config}`, 'utf8')
+    ) as Config
 
+    const { quoteVault, baseVault, number} = await autocratClient.getProposal(
+        new PublicKey(proposal)
+    );
+    const {underlyingTokenMint: quotePubkey} = await vaultClient.getVault(quoteVault)
+    const {underlyingTokenMint: basePubkey} = await vaultClient.getVault(baseVault)
 
-    const storedProposal = await autocratClient.getProposal(new PublicKey(proposal));
-    const { baseVault, quoteVault, number } = storedProposal;
+    const metadata = new MetadataUploader(autocratClient.provider);
+    metadata.init()
 
-    // shdw uses mainnet
-    const shdwProvider = new ShadowProvider(
-        new Connection(mainnetRpc),
-        autocratClient.provider.wallet as anchor.Wallet
-    )
-    await shdwProvider.init()
-
-    let shdwAccountPubkey: PublicKey;
-    if (shdwAccount) {
-        shdwAccountPubkey = new PublicKey(shdwAccount)
-    } else {
-        const shdw = await shdwProvider.shadowAccountCreation(proposal, "10MB")
-        shdwAccountPubkey = new PublicKey(shdw)
+    // 1. Read and check image
+    const quoteToken = JSON.parse(
+        fs.readFileSync(`${__dirname}/assets/${quoteName.toLowerCase()}/data.json`, 'utf8')
+    ) as ImageData
+    const baseToken = JSON.parse(
+        fs.readFileSync(`${__dirname}/assets/${baseName.toLowerCase()}/data.json`, 'utf8')
+    ) as ImageData
+    const imageMap = {
+        [`p${quoteName}`]: quoteToken.passImage,
+        [`f${quoteName}`]: quoteToken.failImage,
+        [`p${baseName}`]: baseToken.passImage,
+        [`f${baseName}`]: baseToken.failImage,
     }
 
-    const pUSDCstring = "pUSDC.json"
-    const fUSDCstring = "fUSDC.json"
-    const pUSDCuri=  await shdwProvider.upsertFile({
-        name: pUSDCstring,
-        buffer: fs.readFileSync(`${assetFolderPath}/${pUSDCstring}`),
-        account: shdwAccountPubkey
-    })
+    // TODO If not exists then upload and save
+    // uploadImageData
+    if (!Object.values(imageMap).every(x => x)) {
+        // TODO upload images
+        throw Error("Image files do not exist")
+    }
 
-    const fUSDCuri=  await shdwProvider.upsertFile({
-        name: fUSDCstring,
-        buffer: fs.readFileSync(`${assetFolderPath}/${fUSDCstring}`),
-        account: shdwAccountPubkey
-    })
+    // 2. Upload jsons
+    const [pQuoteUri, fQuoteUri, pBaseUri, fBaseUri] = await Promise.all(
+        Object.keys(imageMap)
+        .map(cToken => {
+            const market = cToken.toLowerCase().startsWith("p")
+            ? "pass"
+            : "fail";
 
-    const pBaseString = `p${baseName}.json`
-    const fBaseString = `f${baseName}.json`
-    const pBaseUri=  await shdwProvider.upsertFile({
-        name: pBaseString,
-        buffer: fs.readFileSync(`${assetFolderPath}/${pBaseString}`),
-        account: shdwAccountPubkey
-    })
+            const conditionalTokenMetadata: TokenMetadata = {
+                name: `Proposal ${number}: ${cToken}`,
+                image: imageMap[cToken],
+                symbol: cToken,
+                description: `Native token in the MetaDAO's conditional ${market} market for proposal ${number}`,
+            }
 
-    const fBaseUri=  await shdwProvider.upsertFile({
-        name: fBaseString,
-        buffer: fs.readFileSync(`${assetFolderPath}/${fBaseString}`),
-        account: shdwAccountPubkey
-    })
-    console.log("p usd", pUSDCuri)
-    console.log("f usd", fUSDCuri)
-    console.log("p usd", pBaseUri)
-    console.log("f usd", fBaseUri)
-
-    // console.log(quoteVault,
-    //     DEVNET_MUSDC,
-    //     number,
-    //     pUSDCuri,
-    //     fUSDCuri)
+            return metadata.uploadImageJson(conditionalTokenMetadata)
+        })
+    )
+    // TODO save these outputs
+    // TODO these uris cannot be null
+    console.log("sad", pQuoteUri, fQuoteUri, pBaseUri, fBaseUri)
+    console.log("pubkey", quoteVault.toString(), baseVault.toString())
+    console.log("proposal", proposal, number)
 
     try {
-        // const res = await vaultClient.addMetadataToConditionalTokensIx(
+        // const txId = await vaultClient.addMetadataToConditionalTokensIx(
         //     quoteVault,
-        //     DEVNET_MUSDC,
+        //     new PublicKey(quotePubkey),
         //     number,
-        //     pUSDCuri,
-        //     fUSDCuri
+        //     pQuoteUri,
+        //     fQuoteUri,
         // )
         // .preInstructions([
-        //     // await vaultClient.addMetadataToConditionalTokensIx(baseVault, new PublicKey(basePubkey), 1, pBaseUri, fBaseUri).instruction(),
-        //     ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
-        //     ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
+        //     ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }),
+        //     ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 }),
+        //     await vaultClient.addMetadataToConditionalTokensIx(
+        //         baseVault,
+        //         new PublicKey(basePubkey),
+        //         number,
+        //         pBaseUri,
+        //         fBaseUri,
+        //     ).instruction(),
         // ])
         // .rpc({skipPreflight: true})
+        const ixs = [
+            ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }),
+            ComputeBudgetProgram.setComputeUnitLimit({ units: 800_000 }),
+            await vaultClient.addMetadataToConditionalTokensIx(
+                baseVault,
+                new PublicKey(basePubkey),
+                number,
+                pBaseUri,
+                fBaseUri,
+            ).instruction(),
+            await vaultClient.addMetadataToConditionalTokensIx(
+                quoteVault,
+                new PublicKey(quotePubkey),
+                number,
+                pQuoteUri,
+                fQuoteUri,
+            ).instruction()
+        ]
+        let tx = new Transaction().add(...ixs)
 
-        const res = await vaultClient.addMetadataToConditionalTokensIx(
-            baseVault,
-            new PublicKey(basePubkey),
-            1,
-            pBaseUri,
-            fBaseUri
-        )
-        .preInstructions([
-            ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
-            ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
-        ])
-        .rpc({skipPreflight: true})
+        const { blockhash, lastValidBlockHeight } = await autocratClient
+            .provider.connection.getLatestBlockhash("confirmed");
+        tx.recentBlockhash = blockhash;
+        tx.lastValidBlockHeight = lastValidBlockHeight;
+        tx.feePayer = autocratClient.provider.wallet.publicKey;
+        tx = await autocratClient.provider.wallet.signTransaction(tx)
 
-        console.log("res", res)
+        const hash = await autocratClient.provider.connection.sendRawTransaction(
+            tx.serialize(),
+            {skipPreflight: true}
+        );
+        console.log("Wait for confirmation", hash);
+
+        const result = await autocratClient.provider.connection.confirmTransaction(
+            {
+            signature: hash,
+            blockhash: blockhash,
+            lastValidBlockHeight: lastValidBlockHeight,
+            },
+            "confirmed",
+        );
+
+        if (result.value.err) {
+            throw new Error(`Transaction failed: ${result.value.err}`);
+        }
+
+
+        // console.log("Signature", txId)
     } catch (e) {
-        console.log("e", e);
+        console.log("error", e);
     }
 
 }
-
-// todo return error if not 2 passed
-// need to join paths
 
 main(
     // config path
     process.argv[2],
-    // asset folder
-    process.argv[3],
-  );
-
-
-
-// main(
-//     // Proposal pubkey
-//     process.argv[2],
-//     // Proposal number
-//     parseInt(process.argv[3]),
-//     // Base token DRIFT
-//     process.argv[4],
-//     // AssetFolderPath
-//     process.env[5],
-//     // Shdw account key,
-//     // process.argv[6]
-//   );
-
+);
