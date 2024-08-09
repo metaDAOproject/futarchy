@@ -138,8 +138,8 @@ async function main(config: string) {
         fQuoteUri
       )
       .preInstructions([
-        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }),
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 }),
+        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
         await vaultClient
           .addMetadataToConditionalTokensIx(
             baseVault,
