@@ -1,0 +1,10 @@
+{
+    "dao": "MetaDAO",
+    "proposal": "7AbivixQZTrgnqpmyxW2j1dd4Jyy15K3T2T7MEgfg8DZ",
+    "quoteToken": {
+        "name": "USDC"
+    },
+    "baseToken": {
+        "name": "META"
+    }
+}
