@@ -1,6 +1,0 @@
-{
-    "name": "Fail USDC",
-    "symbol": "fUSDC",
-    "description": "Mock USDC token for the fail-market of proposals",
-    "image": "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/d9bfd8de-2937-419a-96f6-8d6a3a76d200/public"
-}
