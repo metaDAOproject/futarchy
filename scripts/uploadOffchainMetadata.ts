@@ -3,12 +3,13 @@ import {
     Metadata,
     deserializeMetadata,
     findMetadataPda,
+    fetchDigitalAsset,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
     GenericFile,
     Umi,
     createGenericFile,
-    keypairIdentity
+    keypairIdentity,
 } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { bundlrUploader } from "@metaplex-foundation/umi-uploader-bundlr";
@@ -239,12 +240,10 @@ export const fetchOnchainMetadataForMint = async (
   };
 };
 
-export class FileUploader {
+export class MetadataHelper {
   public umi: Umi;
 
-  constructor(private provider: anchor.AnchorProvider) {}
-
-  public init() {
+  constructor(private provider: anchor.AnchorProvider) {
     const payer = this.provider.wallet["payer"];
     this.umi = createUmi(this.provider.connection);
     this.umi.use(keypairIdentity(payer));
@@ -291,6 +290,11 @@ export class FileUploader {
         name: filesToUpload[idx].fileName.split(".")[0],
       };
     });
+  }
+
+  async fetchTokenMetadataSymbol(pubkey: PublicKey) {
+    const {metadata} = await fetchDigitalAsset(this.umi, fromWeb3JsPublicKey(pubkey))
+    return metadata.symbol
   }
 }
 

@@ -3,9 +3,10 @@ import {
     AutocratClient,
     ConditionalVaultClient,
 } from "@metadaoproject/futarchy";
+import {fetchMetadata} from '@metaplex-foundation/mpl-token-metadata';
 import { ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
 import * as fs from "fs";
-import { FileUploader } from "./uploadOffchainMetadata";
+import { MetadataHelper } from "./uploadOffchainMetadata";
 
 let autocratClient: AutocratClient = AutocratClient.createClient({
   provider: anchor.AnchorProvider.env(),
@@ -38,7 +39,7 @@ type ImageData = {
 };
 
 // Should prolly be put into the fileUploader class
-async function tryGetTokenImageUrls(fileUploader: FileUploader, token: string) {
+async function tryGetTokenImageUrls(fileUploader: MetadataHelper, token: string) {
   const basePath = `${__dirname}/assets/${token}`;
 
   let images: ImageData;
@@ -68,11 +69,43 @@ async function tryGetTokenImageUrls(fileUploader: FileUploader, token: string) {
   return images;
 }
 
+async function getTokenNameFromPubket(fileUploader: MetadataHelper, token: string) {
+    const basePath = `${__dirname}/assets/${token}`;
+
+    let images: ImageData;
+    try {
+      images = JSON.parse(
+        fs.readFileSync(`${basePath}/data.json`, "utf8")
+      ) as ImageData;
+    } catch (e) {
+      images = {
+        failImage: await fileUploader.uploadImageFromFile(
+          `f${token}.png`,
+          basePath
+        )[0],
+        passImage: await fileUploader.uploadImageFromFile(
+          `p${token}.png`,
+          basePath
+        )[0],
+      };
+
+      // Save the file
+      fs.writeFileSync(
+        `${basePath}/data.json`,
+        JSON.stringify(images, null, "\t")
+      );
+    }
+
+    return images;
+  }
+
+
+
+
 async function main(config: string) {
   const {
     proposal,
-    quoteToken: { name: quoteName },
-    baseToken: { name: baseName },
+
   } = JSON.parse(
     fs.readFileSync(`${__dirname}/.config/${config}`, "utf8")
   ) as Config;
@@ -87,75 +120,85 @@ async function main(config: string) {
     baseVault
   );
 
+
+//   const metadat
+//   const metadataPDA = await fetchMetadata(umi, quotePubkey);
+// const metadata = await Metadata.load(connection, metadataPDA);
+//     return metadata.data.data.name;
+
   // 1. Read and check image
-  const fileUploader = new FileUploader(autocratClient.provider);
-  fileUploader.init();
-  const quoteTokenImages = await tryGetTokenImageUrls(fileUploader, quoteName);
-  const baseTokenImages = await tryGetTokenImageUrls(fileUploader, baseName);
-  const imageMap = {
-    [`p${quoteName}`]: quoteTokenImages.passImage,
-    [`f${quoteName}`]: quoteTokenImages.failImage,
-    [`p${baseName}`]: baseTokenImages.passImage,
-    [`f${baseName}`]: baseTokenImages.failImage,
-  };
+  const fileUploader = new MetadataHelper(autocratClient.provider);
+  const quoteTokenSymbol = await fileUploader.fetchTokenMetadataSymbol(quotePubkey)
+  const baseTokenSymbol = await fileUploader.fetchTokenMetadataSymbol(basePubkey)
 
-  if (!Object.values(imageMap).every((x) => x)) {
-    throw Error("Image files do not exist");
-  }
 
-  // 2. Create metadata URI and upload it
-  // Should probably try read locally and if not exists then upload and save it
-  const uris = await Promise.all(
-    Object.keys(imageMap).map((cToken) => {
-      const market = cToken.toLowerCase().startsWith("p") ? "pass" : "fail";
+//
+//   const quoteTokenImages = await tryGetTokenImageUrls(fileUploader, quoteName);
+//   const baseTokenImages = await tryGetTokenImageUrls(fileUploader, baseName);
+//   const imageMap = {
+//     [`p${quoteName}`]: quoteTokenImages.passImage,
+//     [`f${quoteName}`]: quoteTokenImages.failImage,
+//     [`p${baseName}`]: baseTokenImages.passImage,
+//     [`f${baseName}`]: baseTokenImages.failImage,
+//   };
 
-      const conditionalTokenMetadata: TokenMetadata = {
-        name: `Proposal ${number}: ${cToken}`,
-        image: imageMap[cToken],
-        symbol: cToken,
-        description: `Native token in the MetaDAO's conditional ${market} market for proposal ${number}`,
-      };
+//   if (!Object.values(imageMap).every((x) => x)) {
+//     throw Error("Image files do not exist");
+//   }
 
-      return fileUploader.uploadImageJson(conditionalTokenMetadata);
-    })
-  );
+//   // 2. Create metadata URI and upload it
+//   // Should probably try read locally and if not exists then upload and save it
+//   const uris = await Promise.all(
+//     Object.keys(imageMap).map((cToken) => {
+//       const market = cToken.toLowerCase().startsWith("p") ? "pass" : "fail";
 
-  if (uris.some((uri) => !uri)) {
-    throw new Error(
-      "An error occurred while uploading one or more JSON metadata files"
-    );
-  }
+//       const conditionalTokenMetadata: TokenMetadata = {
+//         name: `Proposal ${number}: ${cToken}`,
+//         image: imageMap[cToken],
+//         symbol: cToken,
+//         description: `Native token in the MetaDAO's conditional ${market} market for proposal ${number}`,
+//       };
 
-  const [pQuoteUri, fQuoteUri, pBaseUri, fBaseUri] = uris;
+//       return fileUploader.uploadImageJson(conditionalTokenMetadata);
+//     })
+//   );
 
-  try {
-    const txId = await vaultClient
-      .addMetadataToConditionalTokensIx(
-        quoteVault,
-        new PublicKey(quotePubkey),
-        number,
-        pQuoteUri,
-        fQuoteUri
-      )
-      .preInstructions([
-        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
-        await vaultClient
-          .addMetadataToConditionalTokensIx(
-            baseVault,
-            new PublicKey(basePubkey),
-            number,
-            pBaseUri,
-            fBaseUri
-          )
-          .instruction(),
-      ])
-      .rpc({ skipPreflight: true });
+//   if (uris.some((uri) => !uri)) {
+//     throw new Error(
+//       "An error occurred while uploading one or more JSON metadata files"
+//     );
+//   }
 
-    console.log("Signature", txId);
-  } catch (e) {
-    console.log("error", e);
-  }
+//   const [pQuoteUri, fQuoteUri, pBaseUri, fBaseUri] = uris;
+
+//   try {
+//     const txId = await vaultClient
+//       .addMetadataToConditionalTokensIx(
+//         quoteVault,
+//         new PublicKey(quotePubkey),
+//         number,
+//         pQuoteUri,
+//         fQuoteUri
+//       )
+//       .preInstructions([
+//         ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
+//         ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
+//         await vaultClient
+//           .addMetadataToConditionalTokensIx(
+//             baseVault,
+//             new PublicKey(basePubkey),
+//             number,
+//             pBaseUri,
+//             fBaseUri
+//           )
+//           .instruction(),
+//       ])
+//       .rpc({ skipPreflight: true });
+
+//     console.log("Signature", txId);
+//   } catch (e) {
+//     console.log("error", e);
+//   }
 }
 
 // Usage: anchor run attach -- metadata.json
