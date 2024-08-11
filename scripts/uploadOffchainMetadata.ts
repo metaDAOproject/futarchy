@@ -1,21 +1,21 @@
 import * as anchor from "@coral-xyz/anchor";
 import {
-    Metadata,
-    deserializeMetadata,
-    findMetadataPda,
-    fetchDigitalAsset,
+  Metadata,
+  deserializeMetadata,
+  fetchDigitalAsset,
+  findMetadataPda,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
-    GenericFile,
-    Umi,
-    createGenericFile,
-    keypairIdentity,
+  GenericFile,
+  Umi,
+  createGenericFile,
+  keypairIdentity,
 } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { bundlrUploader } from "@metaplex-foundation/umi-uploader-bundlr";
 import {
-    fromWeb3JsPublicKey,
-    toWeb3JsPublicKey,
+  fromWeb3JsPublicKey,
+  toWeb3JsPublicKey,
 } from "@metaplex-foundation/umi-web3js-adapters";
 import { PublicKey } from "@solana/web3.js";
 
@@ -241,11 +241,10 @@ export const fetchOnchainMetadataForMint = async (
   };
 };
 
-
 type ImageData = {
-    failImage: string;
-    passImage: string;
-  };
+  failImage: string;
+  passImage: string;
+};
 
 export class MetadataHelper {
   public umi: Umi;
@@ -300,37 +299,28 @@ export class MetadataHelper {
   }
 
   async fetchTokenMetadataSymbol(pubkey: PublicKey) {
-    const {metadata} = await fetchDigitalAsset(this.umi, fromWeb3JsPublicKey(pubkey))
-    return metadata.symbol
+    const { metadata } = await fetchDigitalAsset(
+      this.umi,
+      fromWeb3JsPublicKey(pubkey)
+    );
+    return metadata.symbol;
   }
 
-  async tryGetTokenImageUrls(
-    basePath: string,
-    token: string,
-  ) {
-    const filepath = path.join(basePath, token)
-    const imageData = path.join(filepath, "data.json")
+  async tryGetTokenImageUrls(basePath: string, token: string) {
+    const filepath = path.join(basePath, token);
+    const imageData = path.join(filepath, "data.json");
 
     let images: ImageData;
     try {
-      images = JSON.parse(
-        fs.readFileSync(imageData, "utf8")
-      ) as ImageData;
+      images = JSON.parse(fs.readFileSync(imageData, "utf8")) as ImageData;
     } catch (e) {
       images = {
-        failImage: await this.uploadImageFromFile(
-          `f${token}.png`,
-          basePath
-        )[0],
-        passImage: await this.uploadImageFromFile(
-          `p${token}.png`,
-          basePath
-        )[0],
+        failImage: await this.uploadImageFromFile(`f${token}.png`, basePath)[0],
+        passImage: await this.uploadImageFromFile(`p${token}.png`, basePath)[0],
       };
 
       // Save the file
-      fs.writeFileSync(imageData, JSON.stringify(images, null, "\t")
-      );
+      fs.writeFileSync(imageData, JSON.stringify(images, null, "\t"));
     }
 
     return images;

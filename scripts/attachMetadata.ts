@@ -4,7 +4,6 @@ import {
   ConditionalVaultClient,
 } from "@metadaoproject/futarchy";
 import { ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
-import * as fs from "fs";
 import { MetadataHelper } from "./uploadOffchainMetadata";
 
 let autocratClient: AutocratClient = AutocratClient.createClient({
@@ -59,8 +58,6 @@ async function main(proposal: string) {
     [`p${baseTokenSymbol}`]: baseTokenImages.passImage,
     [`f${baseTokenSymbol}`]: baseTokenImages.failImage,
   };
-
-  console.log(imageMap)
 
   if (!Object.values(imageMap).every((x) => x)) {
     throw Error("Image files do not exist");
