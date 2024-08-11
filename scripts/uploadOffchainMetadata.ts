@@ -20,6 +20,7 @@ import {
 import { PublicKey } from "@solana/web3.js";
 
 import fs from "fs";
+import path from "path";
 
 const uploadedAssetMap: Record<string, string> = {
   fMETA: "https://arweave.net/tGxvOjMZw7B0qHsdCcIMO57oH5g5OaItOZdXo3BXKz8",
@@ -240,6 +241,12 @@ export const fetchOnchainMetadataForMint = async (
   };
 };
 
+
+type ImageData = {
+    failImage: string;
+    passImage: string;
+  };
+
 export class MetadataHelper {
   public umi: Umi;
 
@@ -260,7 +267,7 @@ export class MetadataHelper {
   }
 
   async uploadImageFromFile(filename: string, filepath: string) {
-    const data = fs.readFileSync(`${filepath}/${filename}`);
+    const data = fs.readFileSync(path.join(filepath, filename));
     const file = createGenericFile(new Uint8Array(data), filename, {
       contentType: "image/png",
     });
@@ -295,6 +302,38 @@ export class MetadataHelper {
   async fetchTokenMetadataSymbol(pubkey: PublicKey) {
     const {metadata} = await fetchDigitalAsset(this.umi, fromWeb3JsPublicKey(pubkey))
     return metadata.symbol
+  }
+
+  async tryGetTokenImageUrls(
+    basePath: string,
+    token: string,
+  ) {
+    const filepath = path.join(basePath, token)
+    const imageData = path.join(filepath, "data.json")
+
+    let images: ImageData;
+    try {
+      images = JSON.parse(
+        fs.readFileSync(imageData, "utf8")
+      ) as ImageData;
+    } catch (e) {
+      images = {
+        failImage: await this.uploadImageFromFile(
+          `f${token}.png`,
+          basePath
+        )[0],
+        passImage: await this.uploadImageFromFile(
+          `p${token}.png`,
+          basePath
+        )[0],
+      };
+
+      // Save the file
+      fs.writeFileSync(imageData, JSON.stringify(images, null, "\t")
+      );
+    }
+
+    return images;
   }
 }
 
