@@ -1,19 +1,10 @@
-import { AutocratClient, ConditionalVaultClient } from "@metadaoproject/futarchy";
 import * as anchor from "@coral-xyz/anchor";
+import {
+  AutocratClient,
+  ConditionalVaultClient,
+} from "@metadaoproject/futarchy";
 import { ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
-import { DRIFT, USDC } from "./consts";
-import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metadaoproject/futarchy";
-
-const pDRIFT = "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/7f095bfc-9f48-49b6-ca22-a5f2799c9a00/public";
-const fDRIFT = "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/cb191bce-1f8b-4faf-fdc1-f80e73b84500/public";
-
-const pFUTURE = "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/235d74f1-3750-4944-d97a-fc6d61955700/public";
-const fFUTURE = "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/e69d51c5-fcfa-405e-657e-253185b4d800/public";
-
-const pUSDC = "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/f38677ab-8ec6-4706-6606-7d4e0a3cfc00/public";
-const fUSDC = "https://imagedelivery.net/HYEnlujCFMCgj6yA728xIw/d9bfd8de-2937-419a-96f6-8d6a3a76d200/public";
-
-const proposal: PublicKey = new PublicKey("9jAnAupCdPQCFvuAMr5ZkmxDdEKqsneurgvUnx7Az9zS");
+import { MetadataHelper } from "./uploadOffchainMetadata";
 
 let autocratClient: AutocratClient = AutocratClient.createClient({
   provider: anchor.AnchorProvider.env(),
@@ -21,19 +12,111 @@ let autocratClient: AutocratClient = AutocratClient.createClient({
 
 let vaultClient: ConditionalVaultClient = autocratClient.vaultClient;
 
-async function main() {
-    const storedProposal = await autocratClient.getProposal(proposal);
+type TokenMetadata = {
+  name: string;
+  image: string;
+  symbol: string;
+  description: string;
+};
 
-    const { baseVault, quoteVault } = storedProposal;
-    console.log(baseVault);
+async function main(proposal: string) {
+  const { quoteVault, baseVault, number } = await autocratClient.getProposal(
+    new PublicKey(proposal)
+  );
+  const { underlyingTokenMint: quotePubkey } = await vaultClient.getVault(
+    quoteVault
+  );
+  const { underlyingTokenMint: basePubkey } = await vaultClient.getVault(
+    baseVault
+  );
 
-    vaultClient.addMetadataToConditionalTokensIx(quoteVault, USDC, 1, pUSDC, fUSDC)
-        .preInstructions([
-            await vaultClient.addMetadataToConditionalTokensIx(baseVault, DRIFT, 1, pDRIFT, fDRIFT).instruction(),
-            ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
-            ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
-        ])
-        .rpc()
+  // 0. Get token symbols
+  const metadataHelper = new MetadataHelper(autocratClient.provider);
+  const quoteTokenSymbol = (
+    await metadataHelper.fetchTokenMetadataSymbol(quotePubkey)
+  )
+    .toUpperCase()
+    .trim();
+  const baseTokenSymbol = (
+    await metadataHelper.fetchTokenMetadataSymbol(basePubkey)
+  )
+    .toUpperCase()
+    .trim();
+
+  // 1. Read and check image
+  const quoteTokenImages = await metadataHelper.tryGetTokenImageUrls(
+    `${__dirname}/assets/`,
+    quoteTokenSymbol
+  );
+  const baseTokenImages = await metadataHelper.tryGetTokenImageUrls(
+    `${__dirname}/assets/`,
+    baseTokenSymbol
+  );
+  const imageMap = {
+    [`p${quoteTokenSymbol}`]: quoteTokenImages.passImage,
+    [`f${quoteTokenSymbol}`]: quoteTokenImages.failImage,
+    [`p${baseTokenSymbol}`]: baseTokenImages.passImage,
+    [`f${baseTokenSymbol}`]: baseTokenImages.failImage,
+  };
+
+  if (!Object.values(imageMap).every((x) => x)) {
+    throw Error("Image files do not exist");
+  }
+
+  // 2. Create metadata URI and upload it
+  // Should probably try read locally and if not exists then upload and save it
+  const uris = await Promise.all(
+    Object.keys(imageMap).map((cToken) => {
+      const market = cToken.toLowerCase().startsWith("p") ? "pass" : "fail";
+
+      const conditionalTokenMetadata: TokenMetadata = {
+        name: `Proposal ${number}: ${cToken}`,
+        image: imageMap[cToken],
+        symbol: cToken,
+        description: `Native token in the MetaDAO's conditional ${market} market for proposal ${number}`,
+      };
+
+      return metadataHelper.uploadImageJson(conditionalTokenMetadata);
+    })
+  );
+
+  if (uris.some((uri) => !uri)) {
+    throw new Error(
+      "An error occurred while uploading one or more JSON metadata files"
+    );
+  }
+
+  const [pQuoteUri, fQuoteUri, pBaseUri, fBaseUri] = uris;
+
+  try {
+    const txId = await vaultClient
+      .addMetadataToConditionalTokensIx(
+        quoteVault,
+        new PublicKey(quotePubkey),
+        number,
+        pQuoteUri,
+        fQuoteUri
+      )
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 250_000 }),
+        await vaultClient
+          .addMetadataToConditionalTokensIx(
+            baseVault,
+            new PublicKey(basePubkey),
+            number,
+            pBaseUri,
+            fBaseUri
+          )
+          .instruction(),
+      ])
+      .rpc({ skipPreflight: true });
+
+    console.log("Signature", txId);
+  } catch (e) {
+    console.log("error", e);
+  }
 }
 
-main();
+// Usage: anchor run attach -- <proposal>
+main(process.argv[2]);

@@ -2,24 +2,25 @@ import * as anchor from "@coral-xyz/anchor";
 import {
   Metadata,
   deserializeMetadata,
+  fetchDigitalAsset,
   findMetadataPda,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
   GenericFile,
+  Umi,
   createGenericFile,
   keypairIdentity,
-  publicKey,
-  signerIdentity,
 } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { bundlrUploader } from "@metaplex-foundation/umi-uploader-bundlr";
 import {
   fromWeb3JsPublicKey,
   toWeb3JsPublicKey,
 } from "@metaplex-foundation/umi-web3js-adapters";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { bundlrUploader } from "@metaplex-foundation/umi-uploader-bundlr";
 import { PublicKey } from "@solana/web3.js";
 
 import fs from "fs";
+import path from "path";
 
 const uploadedAssetMap: Record<string, string> = {
   fMETA: "https://arweave.net/tGxvOjMZw7B0qHsdCcIMO57oH5g5OaItOZdXo3BXKz8",
@@ -239,5 +240,91 @@ export const fetchOnchainMetadataForMint = async (
     metadata: deserializeMetadata(acct),
   };
 };
+
+type ImageData = {
+  failImage: string;
+  passImage: string;
+};
+
+export class MetadataHelper {
+  public umi: Umi;
+
+  constructor(private provider: anchor.AnchorProvider) {
+    const payer = this.provider.wallet["payer"];
+    this.umi = createUmi(this.provider.connection);
+    this.umi.use(keypairIdentity(payer));
+    this.umi.use(bundlrUploader());
+  }
+
+  async uploadImageJson(json: any) {
+    return this.umi.uploader.uploadJson(json, {
+      onProgress: (percent: number, ...args: any) => {
+        console.log(`percent metadata upload progress ${percent}`);
+        console.log("progress args: ", args);
+      },
+    });
+  }
+
+  async uploadImageFromFile(filename: string, filepath: string) {
+    const data = fs.readFileSync(path.join(filepath, filename));
+    const file = createGenericFile(new Uint8Array(data), filename, {
+      contentType: "image/png",
+    });
+    return await this.umi.uploader.upload([file]);
+  }
+
+  async uploadImagesFromFolder(folderName: string) {
+    const folder = fs.readdirSync(`${__dirname}/assets/${folderName}`);
+
+    const filesToUpload: Array<GenericFile> = [];
+    for (const filename of folder) {
+      if (!filename.endsWith(".png")) continue;
+
+      const data = fs.readFileSync(`${__dirname}/assets/${filename}`);
+      filesToUpload.push(
+        createGenericFile(new Uint8Array(data), filename, {
+          contentType: "image/png",
+        })
+      );
+    }
+
+    const uris = await this.umi.uploader.upload(filesToUpload);
+
+    return uris.map((uri, idx) => {
+      return {
+        uri,
+        name: filesToUpload[idx].fileName.split(".")[0],
+      };
+    });
+  }
+
+  async fetchTokenMetadataSymbol(pubkey: PublicKey) {
+    const { metadata } = await fetchDigitalAsset(
+      this.umi,
+      fromWeb3JsPublicKey(pubkey)
+    );
+    return metadata.symbol;
+  }
+
+  async tryGetTokenImageUrls(basePath: string, token: string) {
+    const filepath = path.join(basePath, token);
+    const imageData = path.join(filepath, "data.json");
+
+    let images: ImageData;
+    try {
+      images = JSON.parse(fs.readFileSync(imageData, "utf8")) as ImageData;
+    } catch (e) {
+      images = {
+        failImage: await this.uploadImageFromFile(`f${token}.png`, basePath)[0],
+        passImage: await this.uploadImageFromFile(`p${token}.png`, basePath)[0],
+      };
+
+      // Save the file
+      fs.writeFileSync(imageData, JSON.stringify(images, null, "\t"));
+    }
+
+    return images;
+  }
+}
 
 // fetchOnchainMetadataForMint();
