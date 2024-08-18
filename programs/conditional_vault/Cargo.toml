@@ -1,6 +1,6 @@
 [package]
 name = "conditional_vault"
-version = "0.3.0"
+version = "0.4.0"
 description = "SVM-based program for minting conditional tokens"
 edition = "2021"
 
