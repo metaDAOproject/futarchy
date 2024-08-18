@@ -1,5 +1,5 @@
 export type ConditionalVault = {
-  version: "0.3.0";
+  version: "0.4.0";
   name: "conditional_vault";
   instructions: [
     {
@@ -317,6 +317,50 @@ export type ConditionalVault = {
   ];
   accounts: [
     {
+      name: "question";
+      docs: [
+        "Questions represent statements about future events.",
+        "",
+        "These statements include:",
+        '- "Will this proposal pass?"',
+        '- "Who, if anyone, will be hired?"',
+        '- "How effective will the grant committee deem this grant?"',
+        "",
+        "Questions have 2 or more conditions. For example, these conditions could be",
+        '"this proposal passes" and "this proposal fails" or "the committee deems this',
+        'grant effective" and "the committee deems this grant ineffective."',
+        "",
+        'Conditions resolve to a number between 0 and 1. Binary conditions like "will',
+        'this proposal pass" resolve to exactly 0 or 1. You can also have scalar',
+        'conditions. For example, the condition "the grant committee deems this grant',
+        'effective" could resolve to 0.5 if the committee finds the grant partially',
+        "effective. Once resolved, the sum of all condition resolutions is exactly 1."
+      ];
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "isResolved";
+            type: "bool";
+          },
+          {
+            name: "oracle";
+            type: "publicKey";
+          },
+          {
+            name: "payoutNumerators";
+            type: {
+              vec: "u32";
+            };
+          },
+          {
+            name: "payoutDenominator";
+            type: "u32";
+          }
+        ];
+      };
+    },
+    {
       name: "conditionalVault";
       type: {
         kind: "struct";
@@ -447,7 +491,7 @@ export type ConditionalVault = {
 };
 
 export const IDL: ConditionalVault = {
-  version: "0.3.0",
+  version: "0.4.0",
   name: "conditional_vault",
   instructions: [
     {
@@ -764,6 +808,50 @@ export const IDL: ConditionalVault = {
     },
   ],
   accounts: [
+    {
+      name: "question",
+      docs: [
+        "Questions represent statements about future events.",
+        "",
+        "These statements include:",
+        '- "Will this proposal pass?"',
+        '- "Who, if anyone, will be hired?"',
+        '- "How effective will the grant committee deem this grant?"',
+        "",
+        "Questions have 2 or more conditions. For example, these conditions could be",
+        '"this proposal passes" and "this proposal fails" or "the committee deems this',
+        'grant effective" and "the committee deems this grant ineffective."',
+        "",
+        'Conditions resolve to a number between 0 and 1. Binary conditions like "will',
+        'this proposal pass" resolve to exactly 0 or 1. You can also have scalar',
+        'conditions. For example, the condition "the grant committee deems this grant',
+        'effective" could resolve to 0.5 if the committee finds the grant partially',
+        "effective. Once resolved, the sum of all condition resolutions is exactly 1.",
+      ],
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "isResolved",
+            type: "bool",
+          },
+          {
+            name: "oracle",
+            type: "publicKey",
+          },
+          {
+            name: "payoutNumerators",
+            type: {
+              vec: "u32",
+            },
+          },
+          {
+            name: "payoutDenominator",
+            type: "u32",
+          },
+        ],
+      },
+    },
     {
       name: "conditionalVault",
       type: {
