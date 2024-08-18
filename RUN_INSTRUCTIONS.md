@@ -43,6 +43,13 @@ This document provides detailed run instructions for building the program and ru
 
 1. Follow the detailed installation instructions for Anchor provided in the <a href="https://www.anchor-lang.com/docs/installation" target="_blank">Anchor documentation</a>.
 
+### Solana-verify Installation (optional)
+
+1. install cargo if you don't already have it:
+   <pre><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code></pre>
+1. Install solana-verifiable-build using `cargo`:
+   <pre><code>cargo install solana-verify</code></pre>
+
 ## Installation Steps
 
 After setting up the environment and installing all prerequisites, run the following commands in your project directory:
@@ -64,3 +71,19 @@ After setting up the environment and installing all prerequisites, run the follo
 ```
 error: package regex-automata v0.4.3 cannot be built because it requires rustc 1.65 or newer, while the currently active rustc version is 1.62.0-dev
 ```
+
+## Run Tests
+
+1. Install dependencies in root and sdk sub directory:
+   ```bash
+   yarn install
+   (cd sdk && yarn install)
+   ```
+2. Run all tests with anchor:
+   ```bash
+   anchor test
+   ```
+3. Run a specific test in the `test.sh` shell script:
+   ```bash
+   ./test.sh <test_name>
+   ```
