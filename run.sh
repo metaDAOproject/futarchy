@@ -7,9 +7,10 @@ test() {
 test_vault() {
     # anchor doesn't let you past test files, so we do this weird thing where we
     # modify the Anchor.toml and then put it back
-    sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/conditionalVault.ts"/' Anchor.toml
-    sleep 1 && sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/*.ts"/' Anchor.toml &
-    find programs tests | entr -csr 'anchor build -p conditional_vault && RUST_LOG= anchor test --skip-build'
+    #sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/conditionalVault.ts"/' Anchor.toml
+    #sleep 10 && sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/*.ts"/' Anchor.toml &
+    find programs tests sdk | entr -sc \
+	    "anchor build -p conditional_vault && (cd sdk && yarn build) && sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/conditionalVault.ts\"/' Anchor.toml && (sleep 3 && sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/*.ts\"/' Anchor.toml) & RUST_LOG= anchor test --skip-build"
 }
 
 test_no_build() {

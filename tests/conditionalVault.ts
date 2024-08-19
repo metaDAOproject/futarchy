@@ -40,6 +40,7 @@ import {
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
+  sha256,
 } from "@metadaoproject/futarchy";
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
@@ -139,6 +140,18 @@ describe("conditional_vault", async function () {
       vault,
       true
     );
+  });
+
+  describe("#initialize_question", async function () {
+    it("initializes questions", async () => {
+      let digest = sha256(new Uint8Array([1, 2, 3]));
+      console.log(digest);
+      console.log(digest.length);
+
+      await vaultClient
+        .initializeQuestionIx([...digest], settlementAuthority.publicKey, 10)
+        .rpc();
+    });
   });
 
   describe("#initialize_conditional_vault", async function () {
@@ -895,13 +908,15 @@ async function generateRandomVault(
   //     rent: SYSVAR_RENT_PUBKEY,
   //   })
   //   .instruction();
-  const addMetadataToConditionalTokensIx = await vaultClient.addMetadataToConditionalTokensIx(
-    vault,
-    underlyingTokenMint,
-    1,
-    METADATA_URI,
-    METADATA_URI
-  ).instruction();
+  const addMetadataToConditionalTokensIx = await vaultClient
+    .addMetadataToConditionalTokensIx(
+      vault,
+      underlyingTokenMint,
+      1,
+      METADATA_URI,
+      METADATA_URI
+    )
+    .instruction();
 
   await vaultClient
     .initializeVaultIx(

@@ -38,6 +38,13 @@ declare_id!("VAU1T7S5UuEHmMvXtXMVmpEoQtZ2ya7eRb7gcN47wDp");
 pub mod conditional_vault {
     use super::*;
 
+    pub fn initialize_question(
+        ctx: Context<InitializeQuestion>,
+        args: InitializeQuestionArgs,
+    ) -> Result<()> {
+        InitializeQuestion::handle(ctx, args)
+    }
+
     pub fn initialize_conditional_vault(
         ctx: Context<InitializeConditionalVault>,
         args: InitializeConditionalVaultArgs,

@@ -25,8 +25,9 @@ pub enum VaultStatus {
 /// effective. Once resolved, the sum of all condition resolutions is exactly 1.
 #[account]
 pub struct Question {
-    pub is_resolved: bool,
+    pub question_id: [u8; 32],
     pub oracle: Pubkey,
+    pub is_resolved: bool,
     pub payout_numerators: Vec<u32>,
     pub payout_denominator: u32,
 }

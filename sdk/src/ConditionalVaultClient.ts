@@ -1,4 +1,4 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, utils } from "@coral-xyz/anchor";
 import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
 
 import {
@@ -12,6 +12,7 @@ import {
   MPL_TOKEN_METADATA_PROGRAM_ID,
 } from "./constants";
 import {
+  getQuestionAddr,
   getMetadataAddr,
   getVaultAddr,
   getVaultFinalizeMintAddr,
@@ -32,20 +33,14 @@ export type CreateVaultClientParams = {
 export class ConditionalVaultClient {
   public readonly provider: AnchorProvider;
   public readonly vaultProgram: Program<ConditionalVault>;
-  public readonly luts: AddressLookupTableAccount[];
 
-  constructor(
-    provider: AnchorProvider,
-    conditionalVaultProgramId: PublicKey,
-    luts: AddressLookupTableAccount[]
-  ) {
+  constructor(provider: AnchorProvider, conditionalVaultProgramId: PublicKey) {
     this.provider = provider;
     this.vaultProgram = new Program<ConditionalVault>(
       ConditionalVaultIDL,
       conditionalVaultProgramId,
       provider
     );
-    this.luts = luts;
   }
 
   public static createClient(
@@ -53,17 +48,39 @@ export class ConditionalVaultClient {
   ): ConditionalVaultClient {
     let { provider, conditionalVaultProgramId } = createVaultClientParams;
 
-    const luts: AddressLookupTableAccount[] = [];
-
     return new ConditionalVaultClient(
       provider,
-      conditionalVaultProgramId || CONDITIONAL_VAULT_PROGRAM_ID,
-      luts
+      conditionalVaultProgramId || CONDITIONAL_VAULT_PROGRAM_ID
     );
   }
 
   async getVault(vault: PublicKey) {
     return this.vaultProgram.account.conditionalVault.fetch(vault);
+  }
+
+  initializeQuestionIx(
+    questionId: number[],
+    oracle: PublicKey,
+    numConditions: number
+  ) {
+    //assert(questionId.length == 32);
+
+    const [question] = getQuestionAddr(
+      this.vaultProgram.programId,
+      questionId,
+      oracle,
+      numConditions
+    );
+
+    return this.vaultProgram.methods
+      .initializeQuestion({
+        questionId,
+        oracle,
+        numConditions,
+      })
+      .accounts({
+        question,
+      });
   }
 
   async mintConditionalTokens(
