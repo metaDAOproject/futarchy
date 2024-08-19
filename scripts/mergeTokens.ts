@@ -55,14 +55,39 @@ async function main() {
     DAO
   );
 
-  const basePassBalance = (await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, passBaseMint, payer.publicKey)).amount;
-  const quotePassBalance = (await token.getOrCreateAssociatedTokenAccount(provider.connection, payer, passQuoteMint, payer.publicKey)).amount;
+  const basePassBalance = (
+    await token.getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      payer,
+      passBaseMint,
+      payer.publicKey
+    )
+  ).amount;
+  const quotePassBalance = (
+    await token.getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      payer,
+      passQuoteMint,
+      payer.publicKey
+    )
+  ).amount;
 
-  await vaultClient.mergeConditionalTokensIx(baseVault, storedDao.tokenMint, new BN(basePassBalance.toString()))
+  await vaultClient
+    .mergeConditionalTokensIx(
+      baseVault,
+      storedDao.tokenMint,
+      new BN(basePassBalance.toString())
+    )
     .preInstructions([
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 150_000 }),
-        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100 }),
-        await vaultClient.mergeConditionalTokensIx(quoteVault, storedDao.usdcMint, new BN(quotePassBalance.toString())).instruction(),
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 150_000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100 }),
+      await vaultClient
+        .mergeConditionalTokensIx(
+          quoteVault,
+          storedDao.usdcMint,
+          new BN(quotePassBalance.toString())
+        )
+        .instruction(),
     ])
     .rpc();
 }

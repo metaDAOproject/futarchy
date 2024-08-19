@@ -3,6 +3,34 @@ export type ConditionalVault = {
   name: "conditional_vault";
   instructions: [
     {
+      name: "initializeQuestion";
+      accounts: [
+        {
+          name: "question";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "payer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "args";
+          type: {
+            defined: "InitializeQuestionArgs";
+          };
+        }
+      ];
+    },
+    {
       name: "initializeConditionalVault";
       accounts: [
         {
@@ -340,12 +368,18 @@ export type ConditionalVault = {
         kind: "struct";
         fields: [
           {
-            name: "isResolved";
-            type: "bool";
+            name: "questionId";
+            type: {
+              array: ["u8", 32];
+            };
           },
           {
             name: "oracle";
             type: "publicKey";
+          },
+          {
+            name: "isResolved";
+            type: "bool";
           },
           {
             name: "payoutNumerators";
@@ -356,6 +390,40 @@ export type ConditionalVault = {
           {
             name: "payoutDenominator";
             type: "u32";
+          }
+        ];
+      };
+    },
+    {
+      name: "newConditionalVault";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "question";
+            type: "publicKey";
+          },
+          {
+            name: "underlyingTokenMint";
+            type: "publicKey";
+          },
+          {
+            name: "underlyingTokenAccount";
+            type: "publicKey";
+          },
+          {
+            name: "conditionalTokenMints";
+            type: {
+              vec: "publicKey";
+            };
+          },
+          {
+            name: "pdaBump";
+            type: "u8";
+          },
+          {
+            name: "decimals";
+            type: "u8";
           }
         ];
       };
@@ -444,6 +512,28 @@ export type ConditionalVault = {
       };
     },
     {
+      name: "InitializeQuestionArgs";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "questionId";
+            type: {
+              array: ["u8", 32];
+            };
+          },
+          {
+            name: "oracle";
+            type: "publicKey";
+          },
+          {
+            name: "numConditions";
+            type: "u8";
+          }
+        ];
+      };
+    },
+    {
       name: "VaultStatus";
       type: {
         kind: "enum";
@@ -494,6 +584,34 @@ export const IDL: ConditionalVault = {
   version: "0.4.0",
   name: "conditional_vault",
   instructions: [
+    {
+      name: "initializeQuestion",
+      accounts: [
+        {
+          name: "question",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "payer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "args",
+          type: {
+            defined: "InitializeQuestionArgs",
+          },
+        },
+      ],
+    },
     {
       name: "initializeConditionalVault",
       accounts: [
@@ -832,12 +950,18 @@ export const IDL: ConditionalVault = {
         kind: "struct",
         fields: [
           {
-            name: "isResolved",
-            type: "bool",
+            name: "questionId",
+            type: {
+              array: ["u8", 32],
+            },
           },
           {
             name: "oracle",
             type: "publicKey",
+          },
+          {
+            name: "isResolved",
+            type: "bool",
           },
           {
             name: "payoutNumerators",
@@ -848,6 +972,40 @@ export const IDL: ConditionalVault = {
           {
             name: "payoutDenominator",
             type: "u32",
+          },
+        ],
+      },
+    },
+    {
+      name: "newConditionalVault",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "question",
+            type: "publicKey",
+          },
+          {
+            name: "underlyingTokenMint",
+            type: "publicKey",
+          },
+          {
+            name: "underlyingTokenAccount",
+            type: "publicKey",
+          },
+          {
+            name: "conditionalTokenMints",
+            type: {
+              vec: "publicKey",
+            },
+          },
+          {
+            name: "pdaBump",
+            type: "u8",
+          },
+          {
+            name: "decimals",
+            type: "u8",
           },
         ],
       },
@@ -931,6 +1089,28 @@ export const IDL: ConditionalVault = {
           {
             name: "settlementAuthority",
             type: "publicKey",
+          },
+        ],
+      },
+    },
+    {
+      name: "InitializeQuestionArgs",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "questionId",
+            type: {
+              array: ["u8", 32],
+            },
+          },
+          {
+            name: "oracle",
+            type: "publicKey",
+          },
+          {
+            name: "numConditions",
+            type: "u8",
           },
         ],
       },

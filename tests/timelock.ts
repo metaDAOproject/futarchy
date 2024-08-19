@@ -148,7 +148,9 @@ describe("timelock", async function () {
       .rpc();
 
     const transactionBatchAccount =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
     // Assertions to check the transaction batch creation
     assert.strictEqual(
       transactionBatchAccount.transactionBatchAuthority.toString(),
@@ -197,15 +199,13 @@ describe("timelock", async function () {
 
     // Transaction 2: Set Delay in Slots
     const newDelayInSlots = new BN(2);
-    let setDelayInSlotsInstruction = timelockProgram.instruction.setDelayInSlots(
-      newDelayInSlots,
-      {
+    let setDelayInSlotsInstruction =
+      timelockProgram.instruction.setDelayInSlots(newDelayInSlots, {
         accounts: {
           timelock: timelockKp.publicKey,
           timelockSigner: timelockSignerPubkey,
         },
-      }
-    );
+      });
 
     await timelockProgram.methods
       .addTransaction(
@@ -253,15 +253,13 @@ describe("timelock", async function () {
       .rpc();
 
     // Transaction 4: Add enqueuer
-    let addEnqueuerInstruction = timelockProgram.instruction.addOptimisticProposer(
-      enqueuer4.publicKey,
-      {
+    let addEnqueuerInstruction =
+      timelockProgram.instruction.addOptimisticProposer(enqueuer4.publicKey, {
         accounts: {
           timelock: timelockKp.publicKey,
           timelockSigner: timelockSignerPubkey,
         },
-      }
-    );
+      });
 
     await timelockProgram.methods
       .addTransaction(
@@ -281,15 +279,16 @@ describe("timelock", async function () {
       .rpc();
 
     // Transaction 5: Remove enqueuer
-    let removeOptimisticProposerInstruction = timelockProgram.instruction.removeOptimisticProposer(
-      enqueuer3.publicKey,
-      {
-        accounts: {
-          timelock: timelockKp.publicKey,
-          timelockSigner: timelockSignerPubkey,
-        },
-      }
-    );
+    let removeOptimisticProposerInstruction =
+      timelockProgram.instruction.removeOptimisticProposer(
+        enqueuer3.publicKey,
+        {
+          accounts: {
+            timelock: timelockKp.publicKey,
+            timelockSigner: timelockSignerPubkey,
+          },
+        }
+      );
 
     await timelockProgram.methods
       .addTransaction(
@@ -310,7 +309,9 @@ describe("timelock", async function () {
 
     // Verify the transactions
     const transactionBatchAccount =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
     assert.strictEqual(
       transactionBatchAccount.transactions.length,
       5,
@@ -325,7 +326,7 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          authority:timelockAuthority.publicKey,
+          authority: timelockAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([timelockAuthority])
@@ -349,7 +350,9 @@ describe("timelock", async function () {
       .rpc();
 
     const sealedTransactionBatch =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Assert the transaction batch is now sealed
     assert.ok(
@@ -365,7 +368,7 @@ describe("timelock", async function () {
         .cancelTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          authority:timelockAuthority.publicKey,
+          authority: timelockAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([timelockAuthority])
@@ -457,7 +460,7 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          authority:fakeAuthority.publicKey,
+          authority: fakeAuthority.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([fakeAuthority])
@@ -475,14 +478,16 @@ describe("timelock", async function () {
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority:timelockAuthority.publicKey,
+        authority: timelockAuthority.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([timelockAuthority])
       .rpc();
 
     const enqueuedTransactionBatch =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Assert the transaction batch is now in TimelockStarted status
     assert.ok(
@@ -508,7 +513,7 @@ describe("timelock", async function () {
         .cancelTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          authority:enqueuer1.publicKey,
+          authority: enqueuer1.publicKey,
           timelock: timelockKp.publicKey,
         })
         .signers([enqueuer1])
@@ -571,7 +576,9 @@ describe("timelock", async function () {
 
     // Verification step
     const transactionBatchAccount =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Check if the first transaction did execute
     assert.strictEqual(
@@ -599,13 +606,19 @@ describe("timelock", async function () {
       .remainingAccounts([
         { pubkey: timelockSignerPubkey, isWritable: false, isSigner: false },
         { pubkey: timelockKp.publicKey, isWritable: true, isSigner: false },
-        { pubkey: timelockProgram.programId, isWritable: false, isSigner: false },
+        {
+          pubkey: timelockProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        },
       ])
       .rpc();
 
     // Verification step
     const transactionBatchAccount =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Check if the second transaction did execute
     assert.strictEqual(
@@ -640,7 +653,11 @@ describe("timelock", async function () {
       .remainingAccounts([
         { pubkey: timelockSignerPubkey, isWritable: false, isSigner: false },
         { pubkey: timelockKp.publicKey, isWritable: true, isSigner: false },
-        { pubkey: timelockProgram.programId, isWritable: false, isSigner: false },
+        {
+          pubkey: timelockProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        },
       ])
       .preInstructions([
         // this is to get around bankrun thinking we've processed the same transaction multiple times
@@ -652,7 +669,9 @@ describe("timelock", async function () {
 
     // Fetch the updated TransactionBatch and timelock account to verify changes
     const updatedTransactionBatch =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
     const updatedTimelockAccount = await timelockProgram.account.timelock.fetch(
       timelockKp.publicKey
     );
@@ -682,13 +701,19 @@ describe("timelock", async function () {
       .remainingAccounts([
         { pubkey: timelockSignerPubkey, isWritable: false, isSigner: false },
         { pubkey: timelockKp.publicKey, isWritable: true, isSigner: false },
-        { pubkey: timelockProgram.programId, isWritable: false, isSigner: false },
+        {
+          pubkey: timelockProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        },
       ])
       .rpc();
 
     // Fetch the updated TransactionBatch and timelock account to verify changes
     const updatedTransactionBatch =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
     const updatedTimelockAccount = await timelockProgram.account.timelock.fetch(
       timelockKp.publicKey
     );
@@ -720,7 +745,11 @@ describe("timelock", async function () {
       .remainingAccounts([
         { pubkey: timelockSignerPubkey, isWritable: false, isSigner: false },
         { pubkey: timelockKp.publicKey, isWritable: true, isSigner: false },
-        { pubkey: timelockProgram.programId, isWritable: false, isSigner: false },
+        {
+          pubkey: timelockProgram.programId,
+          isWritable: false,
+          isSigner: false,
+        },
       ])
       .preInstructions([
         // this is to get around bankrun thinking we've processed the same transaction multiple times
@@ -732,7 +761,9 @@ describe("timelock", async function () {
 
     // Fetch the updated TransactionBatch and timelock account to verify changes
     const updatedTransactionBatch =
-      await timelockProgram.account.transactionBatch.fetch(transactionBatch.publicKey);
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
     const updatedTimelockAccount = await timelockProgram.account.timelock.fetch(
       timelockKp.publicKey
     );
@@ -781,9 +812,10 @@ describe("timelock", async function () {
       .signers([enqueuer1, transactionBatch])
       .rpc();
 
-    let transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    let transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been created
     assert.ok(
@@ -801,9 +833,10 @@ describe("timelock", async function () {
       .signers([enqueuer1])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been sealed
     assert.ok(
@@ -816,15 +849,16 @@ describe("timelock", async function () {
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority:enqueuer1.publicKey, // Assuming recipient as the new authority
+        authority: enqueuer1.publicKey, // Assuming recipient as the new authority
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer1])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been enqueued
     assert.ok(
@@ -842,15 +876,16 @@ describe("timelock", async function () {
       .cancelTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority:enqueuer1.publicKey,
+        authority: enqueuer1.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer1])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been cancelled
     assert.ok(
@@ -881,9 +916,10 @@ describe("timelock", async function () {
       .signers([enqueuer1, transactionBatch])
       .rpc();
 
-    let transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    let transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been created
     assert.ok(
@@ -901,9 +937,10 @@ describe("timelock", async function () {
       .signers([enqueuer1])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been sealed
     assert.ok(
@@ -919,7 +956,7 @@ describe("timelock", async function () {
         .enqueueTransactionBatch()
         .accounts({
           transactionBatch: transactionBatch.publicKey,
-          authority:enqueuer1.publicKey, // Assuming recipient as the new authority
+          authority: enqueuer1.publicKey, // Assuming recipient as the new authority
           timelock: timelockKp.publicKey,
         })
         .signers([enqueuer1])
@@ -943,24 +980,25 @@ describe("timelock", async function () {
 
     // now it'll succeed
     await timelockProgram.methods
-        .enqueueTransactionBatch()
-        .accounts({
-          transactionBatch: transactionBatch.publicKey,
-          authority:enqueuer1.publicKey, // Assuming recipient as the new authority
-          timelock: timelockKp.publicKey,
-        })
-        .signers([enqueuer1])
-        .preInstructions([
-          // this is to get around bankrun thinking we've processed the same transaction multiple times
-          ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 69,
-          }),
-        ])
-        .rpc();
+      .enqueueTransactionBatch()
+      .accounts({
+        transactionBatch: transactionBatch.publicKey,
+        authority: enqueuer1.publicKey, // Assuming recipient as the new authority
+        timelock: timelockKp.publicKey,
+      })
+      .signers([enqueuer1])
+      .preInstructions([
+        // this is to get around bankrun thinking we've processed the same transaction multiple times
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 69,
+        }),
+      ])
+      .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been enqueued
     assert.ok(
@@ -973,15 +1011,16 @@ describe("timelock", async function () {
       .cancelTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority:enqueuer2.publicKey,
+        authority: enqueuer2.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer2])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been cancelled
     assert.ok(
@@ -1012,9 +1051,10 @@ describe("timelock", async function () {
       .signers([enqueuer2, transactionBatch])
       .rpc();
 
-    let transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    let transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been created
     assert.ok(
@@ -1032,9 +1072,10 @@ describe("timelock", async function () {
       .signers([enqueuer2])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been sealed
     assert.ok(
@@ -1047,15 +1088,16 @@ describe("timelock", async function () {
       .enqueueTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority:enqueuer2.publicKey, // Assuming recipient as the new authority
+        authority: enqueuer2.publicKey, // Assuming recipient as the new authority
         timelock: timelockKp.publicKey,
       })
       .signers([enqueuer2])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been enqueued
     assert.ok(
@@ -1068,15 +1110,16 @@ describe("timelock", async function () {
       .cancelTransactionBatch()
       .accounts({
         transactionBatch: transactionBatch.publicKey,
-        authority:recipient.publicKey,
+        authority: recipient.publicKey,
         timelock: timelockKp.publicKey,
       })
       .signers([recipient])
       .rpc();
 
-    transactionBatchAccount = await timelockProgram.account.transactionBatch.fetch(
-      transactionBatch.publicKey
-    );
+    transactionBatchAccount =
+      await timelockProgram.account.transactionBatch.fetch(
+        transactionBatch.publicKey
+      );
 
     // Verify the transaction batch has been cancelled
     assert.ok(

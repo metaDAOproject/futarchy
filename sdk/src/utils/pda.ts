@@ -11,6 +11,23 @@ import {
 } from "@metaplex-foundation/umi-web3js-adapters";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "../constants";
 
+export const getQuestionAddr = (
+  programId: PublicKey,
+  questionId: number[],
+  oracle: PublicKey,
+  numConditions: number
+) => {
+  return PublicKey.findProgramAddressSync(
+    [
+      utils.bytes.utf8.encode("question"),
+      Buffer.from(questionId),
+      oracle.toBuffer(),
+      new BN(numConditions).toBuffer("le", 1),
+    ],
+    programId
+  );
+};
+
 export const getVaultAddr = (
   programId: PublicKey,
   settlementAuthority: PublicKey,
