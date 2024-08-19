@@ -4,6 +4,14 @@ test() {
     find programs tests sdk | entr -sc '(cd sdk && yarn build) && RUST_LOG= anchor test'
 }
 
+test_vault() {
+    # anchor doesn't let you past test files, so we do this weird thing where we
+    # modify the Anchor.toml and then put it back
+    sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/conditionalVault.ts"/' Anchor.toml
+    sleep 1 && sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/*.ts"/' Anchor.toml &
+    find programs tests | entr -csr 'anchor build -p conditional_vault && RUST_LOG= anchor test --skip-build'
+}
+
 test_no_build() {
     find programs tests sdk | entr -sc '(cd sdk && yarn build) && RUST_LOG= anchor test --skip-build'
 }
@@ -46,10 +54,6 @@ test_amm_logs() {
     find programs tests | entr -csr 'anchor build -p amm && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/amm.ts'
 }
 
-# requires solana-test-validator to be running in the background
-bankrun_vault() {
-    (find programs && find tests) | entr -csr 'anchor build -p conditional_vault && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/conditionalVault.ts'
-}
 
 bankrun_migrator() {
     (find programs && find tests) | entr -csr 'anchor build -p autocrat_migrator && RUST_LOG= yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/migrator.ts'
@@ -69,6 +73,7 @@ bankrun_logs() {
 
 case "$1" in
     test) test ;;
+    vault) test_vault ;;
     test_no_build) test_no_build ;;
     build_verifiable) build_verifiable "$2" ;;
     deploy) deploy "$2" "$3" ;;
