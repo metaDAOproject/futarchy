@@ -43,6 +43,7 @@ import {
   getVaultRevertMintAddr,
   sha256,
 } from "@metadaoproject/futarchy";
+import { set } from "@metaplex-foundation/umi/serializers";
 const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;
@@ -165,7 +166,7 @@ describe("conditional_vault", async function () {
 
   describe("#initialize_new_conditional_vault", async function () {
     it("initializes vaults", async function () {
-      const question = questions.shift();
+      const question = questions[0];
 
       await vaultClient
         .initializeNewVaultIx(
@@ -197,15 +198,28 @@ describe("conditional_vault", async function () {
       assert.ok(
         storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount)
       );
-      //assert.ok(
-      //  storedVault.conditionalOnFinalizeTokenMint.equals(
-      //    conditionalOnFinalizeMint
-      //  )
-      //);
-      //assert.ok(
-      //  storedVault.conditionalOnRevertTokenMint.equals(conditionalOnRevertMint)
-      //);
+    });
+  });
 
+  describe("#resolve_question", async function () {
+    it("resolves questions", async function () {
+      const question = questions[0];
+
+      let storedQuestion = await vaultClient.fetchQuestion(question);
+
+      assert.isFalse(storedQuestion.isResolved);
+      assert.deepEqual(storedQuestion.payoutNumerators, [0, 0]);
+      assert.equal(storedQuestion.payoutDenominator, 0);
+
+      await vaultClient
+        .resolveQuestionIx(question, settlementAuthority, [1, 0])
+        .rpc();
+
+      storedQuestion = await vaultClient.fetchQuestion(question);
+
+      assert.isTrue(storedQuestion.isResolved);
+      assert.deepEqual(storedQuestion.payoutNumerators, [1, 0]);
+      assert.equal(storedQuestion.payoutDenominator, 1);
     });
   });
 

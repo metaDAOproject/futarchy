@@ -45,6 +45,13 @@ pub mod conditional_vault {
         InitializeQuestion::handle(ctx, args)
     }
 
+    pub fn resolve_question(
+        ctx: Context<ResolveQuestion>,
+        args: ResolveQuestionArgs,
+    ) -> Result<()> {
+        ResolveQuestion::handle(ctx, args)
+    }
+
     pub fn initialize_new_conditional_vault<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, InitializeNewConditionalVault<'info>>,
     ) -> Result<()> {

@@ -126,8 +126,6 @@ export class ConditionalVaultClient {
       true
     );
 
-    // const conditionalReject = Keypair.generate();
-
     return this.vaultProgram.methods
       .initializeNewConditionalVault()
       .accounts({
@@ -160,6 +158,22 @@ export class ConditionalVaultClient {
           };
         })
       );
+  }
+
+  resolveQuestionIx(
+    question: PublicKey,
+    oracle: Keypair,
+    payoutNumerators: number[]
+  ) {
+    return this.vaultProgram.methods
+      .resolveQuestion({
+        payoutNumerators,
+      })
+      .accounts({
+        question,
+        oracle: oracle.publicKey,
+      })
+      .signers([oracle]);
   }
 
   async mintConditionalTokens(
