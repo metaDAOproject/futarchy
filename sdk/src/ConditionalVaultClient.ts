@@ -1,5 +1,10 @@
 import { AnchorProvider, Program, utils } from "@coral-xyz/anchor";
-import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  AddressLookupTableAccount,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+} from "@solana/web3.js";
 
 import {
   ConditionalVault,
@@ -17,12 +22,14 @@ import {
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
+  getConditionalTokenMintAddr,
 } from "./utils";
 import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
 export type CreateVaultClientParams = {
@@ -54,6 +61,14 @@ export class ConditionalVaultClient {
     );
   }
 
+  async fetchQuestion(question: PublicKey) {
+    return this.vaultProgram.account.question.fetch(question);
+  }
+
+  async fetchVault(vault: PublicKey) {
+    return this.vaultProgram.account.newConditionalVault.fetch(vault);
+  }
+
   async getVault(vault: PublicKey) {
     return this.vaultProgram.account.conditionalVault.fetch(vault);
   }
@@ -81,6 +96,70 @@ export class ConditionalVaultClient {
       .accounts({
         question,
       });
+  }
+
+  initializeNewVaultIx(
+    question: PublicKey,
+    underlyingTokenMint: PublicKey,
+    numConditions: number
+  ): MethodsBuilder<ConditionalVault, any> {
+    const [vault] = getVaultAddr(
+      this.vaultProgram.programId,
+      question,
+      underlyingTokenMint
+    );
+
+    let conditionalTokenMintAddrs = [];
+    for (let i = 0; i < numConditions; i++) {
+      const [conditionalTokenMint] = getConditionalTokenMintAddr(
+        this.vaultProgram.programId,
+        vault,
+        i
+      );
+      conditionalTokenMintAddrs.push(conditionalTokenMint);
+    }
+    console.log(conditionalTokenMintAddrs);
+
+    const vaultUnderlyingTokenAccount = getAssociatedTokenAddressSync(
+      underlyingTokenMint,
+      vault,
+      true
+    );
+
+    // const conditionalReject = Keypair.generate();
+
+    return this.vaultProgram.methods
+      .initializeNewConditionalVault()
+      .accounts({
+        vault,
+        question,
+        underlyingTokenMint,
+        vaultUnderlyingTokenAccount,
+      })
+      .preInstructions([
+        createAssociatedTokenAccountIdempotentInstruction(
+          this.provider.publicKey,
+          vaultUnderlyingTokenAccount,
+          vault,
+          underlyingTokenMint
+        ),
+        // SystemProgram.createAccount({
+        //   fromPubkey: this.provider.wallet.publicKey,
+        //   newAccountPubkey: conditionalReject.publicKey,
+        //   lamports: 1000000000,
+        //   space: 82,
+        //   programId: TOKEN_PROGRAM_ID,
+        // }),
+      ])
+      .remainingAccounts(
+        conditionalTokenMintAddrs.map((conditionalTokenMint) => {
+          return {
+            pubkey: conditionalTokenMint,
+            isWritable: true,
+            isSigner: false,
+          };
+        })
+      );
   }
 
   async mintConditionalTokens(
