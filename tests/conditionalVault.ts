@@ -37,6 +37,7 @@ import { expectError } from "./utils/utils";
 import {
   CONDITIONAL_VAULT_PROGRAM_ID,
   ConditionalVaultClient,
+  getQuestionAddr,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
@@ -67,6 +68,7 @@ describe("conditional_vault", async function () {
   let provider: anchor.Provider;
   let vaultClient: ConditionalVaultClient;
 
+  let questions: PublicKey[] = [];
   let vault: PublicKey;
   let proposal: PublicKey;
   let vaultUnderlyingTokenAccount: anchor.web3.PublicKey;
@@ -143,14 +145,67 @@ describe("conditional_vault", async function () {
   });
 
   describe("#initialize_question", async function () {
-    it("initializes questions", async () => {
-      let digest = sha256(new Uint8Array([1, 2, 3]));
-      console.log(digest);
-      console.log(digest.length);
+    it("initializes questions", async function () {
+      let questionId = sha256(new Uint8Array([1, 2, 3]));
 
       await vaultClient
-        .initializeQuestionIx([...digest], settlementAuthority.publicKey, 10)
+        .initializeQuestionIx([...questionId], settlementAuthority.publicKey, 2)
         .rpc();
+
+      let [question] = getQuestionAddr(
+        vaultProgram.programId,
+        questionId,
+        settlementAuthority.publicKey,
+        2
+      );
+
+      questions.push(question);
+    });
+  });
+
+  describe("#initialize_new_conditional_vault", async function () {
+    it("initializes vaults", async function () {
+      const question = questions.shift();
+
+      await vaultClient
+        .initializeNewVaultIx(
+          question,
+          underlyingTokenMint,
+          2
+        )
+        .rpc();
+
+      const [vault] = getVaultAddr(
+        vaultProgram.programId,
+        question,
+        underlyingTokenMint,
+      );
+
+      //console.log(await vaultProgram.account.newConditionalVault.fetch(vault));
+      const storedVault = await vaultClient.fetchVault(vault);
+      console.log(storedVault);
+      assert.ok(
+        storedVault.question.equals(question)
+      );
+      assert.ok(storedVault.underlyingTokenMint.equals(underlyingTokenMint));
+
+      const vaultUnderlyingTokenAccount = token.getAssociatedTokenAddressSync(
+        underlyingTokenMint,
+        vault,
+        true
+      );
+      assert.ok(
+        storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount)
+      );
+      //assert.ok(
+      //  storedVault.conditionalOnFinalizeTokenMint.equals(
+      //    conditionalOnFinalizeMint
+      //  )
+      //);
+      //assert.ok(
+      //  storedVault.conditionalOnRevertTokenMint.equals(conditionalOnRevertMint)
+      //);
+
     });
   });
 

@@ -4,6 +4,10 @@ test() {
     find programs tests sdk | entr -sc '(cd sdk && yarn build) && RUST_LOG= anchor test'
 }
 
+build_vault() {
+    find programs | entr -sc 'anchor build -p conditional_vault'
+}
+
 test_vault() {
     # anchor doesn't let you past test files, so we do this weird thing where we
     # modify the Anchor.toml and then put it back
@@ -75,6 +79,7 @@ bankrun_logs() {
 case "$1" in
     test) test ;;
     vault) test_vault ;;
+    build_vault) build_vault ;;
     test_no_build) test_no_build ;;
     build_verifiable) build_verifiable "$2" ;;
     deploy) deploy "$2" "$3" ;;

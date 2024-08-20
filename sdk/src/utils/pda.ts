@@ -43,6 +43,21 @@ export const getVaultAddr = (
   );
 };
 
+export const getConditionalTokenMintAddr = (
+  programId: PublicKey,
+  vault: PublicKey,
+  index: number
+) => {
+  return PublicKey.findProgramAddressSync(
+    [
+      utils.bytes.utf8.encode("conditional_token"),
+      vault.toBuffer(),
+      new BN(index).toBuffer("le", 1),
+    ],
+    programId
+  );
+};
+
 export const getVaultFinalizeMintAddr = (
   programId: PublicKey,
   vault: PublicKey

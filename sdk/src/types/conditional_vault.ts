@@ -31,6 +31,52 @@ export type ConditionalVault = {
       ];
     },
     {
+      name: "initializeNewConditionalVault";
+      accounts: [
+        {
+          name: "vault";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "question";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "underlyingTokenMint";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "vaultUnderlyingTokenAccount";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "payer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "associatedTokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [];
+    },
+    {
       name: "initializeConditionalVault";
       accounts: [
         {
@@ -576,6 +622,11 @@ export type ConditionalVault = {
       code: 6004;
       name: "VaultAlreadySettled";
       msg: "Once a vault has been settled, its status as either finalized or reverted cannot be changed";
+    },
+    {
+      code: 6005;
+      name: "InsufficientNumConditions";
+      msg: "Questions need 2 or more conditions";
     }
   ];
 };
@@ -611,6 +662,52 @@ export const IDL: ConditionalVault = {
           },
         },
       ],
+    },
+    {
+      name: "initializeNewConditionalVault",
+      accounts: [
+        {
+          name: "vault",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "question",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "underlyingTokenMint",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "vaultUnderlyingTokenAccount",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "payer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "associatedTokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [],
     },
     {
       name: "initializeConditionalVault",
@@ -1158,6 +1255,11 @@ export const IDL: ConditionalVault = {
       code: 6004,
       name: "VaultAlreadySettled",
       msg: "Once a vault has been settled, its status as either finalized or reverted cannot be changed",
+    },
+    {
+      code: 6005,
+      name: "InsufficientNumConditions",
+      msg: "Questions need 2 or more conditions",
     },
   ],
 };

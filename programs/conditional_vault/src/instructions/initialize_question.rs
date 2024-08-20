@@ -29,7 +29,15 @@ pub struct InitializeQuestion<'info> {
 }
 
 impl InitializeQuestion<'_> {
+    pub fn validate(&self, args: InitializeQuestionArgs) -> Result<()> {
+        require_gt!(args.num_conditions, 1);
+
+        Ok(())
+    }
+
     pub fn handle(ctx: Context<Self>, args: InitializeQuestionArgs) -> Result<()> {
+        require_gte!(args.num_conditions, 2, VaultError::InsufficientNumConditions);
+
         let question = &mut ctx.accounts.question;
 
         let InitializeQuestionArgs {
