@@ -14,4 +14,6 @@ pub enum VaultError {
     VaultAlreadySettled,
     #[msg("Questions need 2 or more conditions")]
     InsufficientNumConditions,
+    #[msg("Invalid number of payout numerators")]
+    InvalidNumPayoutNumerators,
 }

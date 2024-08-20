@@ -31,6 +31,29 @@ export type ConditionalVault = {
       ];
     },
     {
+      name: "resolveQuestion";
+      accounts: [
+        {
+          name: "question";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "oracle";
+          isMut: false;
+          isSigner: true;
+        }
+      ];
+      args: [
+        {
+          name: "args";
+          type: {
+            defined: "ResolveQuestionArgs";
+          };
+        }
+      ];
+    },
+    {
       name: "initializeNewConditionalVault";
       accounts: [
         {
@@ -580,6 +603,20 @@ export type ConditionalVault = {
       };
     },
     {
+      name: "ResolveQuestionArgs";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "payoutNumerators";
+            type: {
+              vec: "u32";
+            };
+          }
+        ];
+      };
+    },
+    {
       name: "VaultStatus";
       type: {
         kind: "enum";
@@ -627,6 +664,11 @@ export type ConditionalVault = {
       code: 6005;
       name: "InsufficientNumConditions";
       msg: "Questions need 2 or more conditions";
+    },
+    {
+      code: 6006;
+      name: "InvalidNumPayoutNumerators";
+      msg: "Invalid number of payout numerators";
     }
   ];
 };
@@ -659,6 +701,29 @@ export const IDL: ConditionalVault = {
           name: "args",
           type: {
             defined: "InitializeQuestionArgs",
+          },
+        },
+      ],
+    },
+    {
+      name: "resolveQuestion",
+      accounts: [
+        {
+          name: "question",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "oracle",
+          isMut: false,
+          isSigner: true,
+        },
+      ],
+      args: [
+        {
+          name: "args",
+          type: {
+            defined: "ResolveQuestionArgs",
           },
         },
       ],
@@ -1213,6 +1278,20 @@ export const IDL: ConditionalVault = {
       },
     },
     {
+      name: "ResolveQuestionArgs",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "payoutNumerators",
+            type: {
+              vec: "u32",
+            },
+          },
+        ],
+      },
+    },
+    {
       name: "VaultStatus",
       type: {
         kind: "enum",
@@ -1260,6 +1339,11 @@ export const IDL: ConditionalVault = {
       code: 6005,
       name: "InsufficientNumConditions",
       msg: "Questions need 2 or more conditions",
+    },
+    {
+      code: 6006,
+      name: "InvalidNumPayoutNumerators",
+      msg: "Invalid number of payout numerators",
     },
   ],
 };
