@@ -27,6 +27,7 @@ import {
   createAssociatedTokenAccount,
   createMint,
   getAccount,
+  getMint,
   mintTo,
 } from "spl-token-bankrun";
 
@@ -37,6 +38,7 @@ import { expectError } from "./utils/utils";
 import {
   CONDITIONAL_VAULT_PROGRAM_ID,
   ConditionalVaultClient,
+  getConditionalTokenMintAddr,
   getQuestionAddr,
   getVaultAddr,
   getVaultFinalizeMintAddr,
@@ -169,38 +171,74 @@ describe("conditional_vault", async function () {
   });
 
   describe("#initialize_new_conditional_vault", async function () {
-    let question: PublicKey;
+    const testCases = [
+      { name: "2-outcome question", idArray: [3, 2, 1], outcomes: 2 },
+      { name: "3-outcome question", idArray: [4, 5, 6], outcomes: 3 },
+      { name: "4-outcome question", idArray: [7, 8, 9], outcomes: 4 },
+    ];
 
-    beforeEach(async function () {
-      let questionId = sha256(new Uint8Array([3, 2, 1]));
+    testCases.forEach(({ name, idArray, outcomes }) => {
+      describe(name, function () {
+        let question: PublicKey;
 
-      question = await vaultClient.initializeQuestion(questionId, settlementAuthority.publicKey, 2);
-    });
+        beforeEach(async function () {
+          let questionId = sha256(new Uint8Array(idArray));
+          question = await vaultClient.initializeQuestion(
+            questionId,
+            settlementAuthority.publicKey,
+            outcomes
+          );
+        });
 
-    it("initializes vaults", async function () {
-      await vaultClient
-        .initializeNewVaultIx(question, underlyingTokenMint, 2)
-        .rpc();
+        it("initializes vaults correctly", async function () {
+          await vaultClient
+            .initializeNewVaultIx(question, underlyingTokenMint, outcomes)
+            .rpc();
 
-      const [vault] = getVaultAddr(
-        vaultProgram.programId,
-        question,
-        underlyingTokenMint
-      );
+          const [vault, pdaBump] = getVaultAddr(
+            vaultProgram.programId,
+            question,
+            underlyingTokenMint
+          );
 
-      const storedVault = await vaultClient.fetchVault(vault);
-      console.log(storedVault);
-      assert.ok(storedVault.question.equals(question));
-      assert.ok(storedVault.underlyingTokenMint.equals(underlyingTokenMint));
+          const storedVault = await vaultClient.fetchVault(vault);
+          assert.ok(storedVault.question.equals(question));
+          assert.ok(
+            storedVault.underlyingTokenMint.equals(underlyingTokenMint)
+          );
 
-      const vaultUnderlyingTokenAccount = token.getAssociatedTokenAddressSync(
-        underlyingTokenMint,
-        vault,
-        true
-      );
-      assert.ok(
-        storedVault.underlyingTokenAccount.equals(vaultUnderlyingTokenAccount)
-      );
+          const vaultUnderlyingTokenAccount =
+            token.getAssociatedTokenAddressSync(
+              underlyingTokenMint,
+              vault,
+              true
+            );
+          assert.ok(
+            storedVault.underlyingTokenAccount.equals(
+              vaultUnderlyingTokenAccount
+            )
+          );
+          const storedConditionalTokenMints = storedVault.conditionalTokenMints;
+          storedConditionalTokenMints.forEach((mint, i) => {
+            const [expectedMint] = getConditionalTokenMintAddr(
+              vaultProgram.programId,
+              vault,
+              i
+            );
+            assert.ok(mint.equals(expectedMint));
+          });
+          assert.equal(storedVault.pdaBump, pdaBump);
+          assert.equal(storedVault.decimals, 8);
+
+          for (let mint of storedConditionalTokenMints) {
+            const storedMint = await getMint(banksClient, mint);
+            assert.ok(storedMint.mintAuthority.equals(vault));
+            assert.equal(storedMint.supply.toString(), "0");
+            assert.equal(storedMint.decimals, 8);
+            assert.isNull(storedMint.freezeAuthority);
+          }
+        });
+      });
     });
   });
 
@@ -210,9 +248,12 @@ describe("conditional_vault", async function () {
     beforeEach(async function () {
       let questionId = sha256(new Uint8Array([4, 2, 1]));
 
-      question = await vaultClient.initializeQuestion(questionId, settlementAuthority.publicKey, 2);
+      question = await vaultClient.initializeQuestion(
+        questionId,
+        settlementAuthority.publicKey,
+        2
+      );
     });
-
 
     it("resolves questions", async function () {
       let storedQuestion = await vaultClient.fetchQuestion(question);
