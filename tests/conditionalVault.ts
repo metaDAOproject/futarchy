@@ -274,6 +274,67 @@ describe("conditional_vault", async function () {
     });
   });
 
+  describe("#split_tokens", async function () {
+    let question: PublicKey;
+    let vault: PublicKey;
+
+    beforeEach(async function () {
+      let questionId = sha256(new Uint8Array([5, 2, 1]));
+
+      question = await vaultClient.initializeQuestion(
+        questionId,
+        settlementAuthority.publicKey,
+        2
+      );
+      vault = await vaultClient.initializeNewVault(
+        question,
+        underlyingTokenMint,
+        2
+      );
+
+      let userUnderlyingTokenAccount = await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        underlyingTokenMint,
+        payer.publicKey
+      );
+
+      await mintTo(
+        banksClient,
+        payer,
+        underlyingTokenMint,
+        userUnderlyingTokenAccount,
+        underlyingMintAuthority,
+        10_000_000_000n
+      );
+    });
+
+    it("splits tokens", async function () {
+      await vaultClient
+        .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
+        .rpc();
+
+      const storedVault = await vaultClient.fetchVault(vault);
+
+      let storedVaultUnderlyingAcc = await getAccount(
+        banksClient,
+        storedVault.underlyingTokenAccount
+      );
+      assert.equal(storedVaultUnderlyingAcc.amount.toString(), "1000");
+
+      const storedConditionalTokenMints = storedVault.conditionalTokenMints;
+      for (let mint of storedConditionalTokenMints) {
+        let storedMint = await getMint(banksClient, mint);
+        assert.equal(storedMint.supply.toString(), "1000");
+        let storedTokenAcc = await getAccount(
+          banksClient,
+          token.getAssociatedTokenAddressSync(mint, payer.publicKey)
+        );
+        assert.equal(storedTokenAcc.amount.toString(), "1000");
+      }
+    });
+  });
+
   describe("#initialize_conditional_vault", async function () {
     it("initializes vaults", async function () {
       await vaultClient

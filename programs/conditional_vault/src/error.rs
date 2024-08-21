@@ -16,4 +16,10 @@ pub enum VaultError {
     InsufficientNumConditions,
     #[msg("Invalid number of payout numerators")]
     InvalidNumPayoutNumerators,
+    #[msg("Client needs to pass in the list of conditional mints for a vault followed by the user's token accounts for those tokens")]
+    InvalidConditionals,
+    #[msg("Unable to deserialize a conditional token mint")]
+    BadConditionalMint,
+    #[msg("Unable to deserialize a conditional token account")]
+    BadConditionalTokenAccount,
 }
