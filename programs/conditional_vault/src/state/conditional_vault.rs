@@ -14,15 +14,19 @@ pub enum VaultStatus {
 /// - "Who, if anyone, will be hired?"
 /// - "How effective will the grant committee deem this grant?"
 ///
-/// Questions have 2 or more conditions. For example, these conditions could be
-/// "this proposal passes" and "this proposal fails" or "the committee deems this
-/// grant effective" and "the committee deems this grant ineffective."
+/// Questions have 2 or more possible outcomes. For a question like "will this
+/// proposal pass," the outcomes are "yes" and "no." For a question like "who
+/// will be hired," the outcomes could be "Alice," "Bob," and "neither." 
 ///
-/// Conditions resolve to a number between 0 and 1. Binary conditions like "will
-/// this proposal pass" resolve to exactly 0 or 1. You can also have scalar
-/// conditions. For example, the condition "the grant committee deems this grant
-/// effective" could resolve to 0.5 if the committee finds the grant partially
-/// effective. Once resolved, the sum of all condition resolutions is exactly 1.
+/// Outcomes resolve to a number between 0 and 1. Binary questions like "will
+/// this proposal pass" have outcomes that resolve to exactly 0 or 1. You can
+/// also have questions with scalar outcomes. For example, the question "how
+/// effective will the grant committee deem this grant" could have two outcomes:
+/// "ineffective" and "effective." If the grant committee deems the grant 70%
+/// effective, the "effective" outcome would resolve to 0.7 and the "ineffective"
+/// outcome would resolve to 0.3.
+/// 
+/// Once resolved, the sum of all outcome resolutions is exactly 1.
 #[account]
 pub struct Question {
     pub question_id: [u8; 32],
@@ -33,7 +37,7 @@ pub struct Question {
 }
 
 impl Question {
-    pub fn num_conditions(&self) -> usize {
+    pub fn num_outcomes(&self) -> usize {
         self.payout_numerators.len()
     }
 }
@@ -46,6 +50,18 @@ pub struct NewConditionalVault {
     pub conditional_token_mints: Vec<Pubkey>,
     pub pda_bump: u8,
     pub decimals: u8,
+}
+
+#[macro_export]
+macro_rules! generate_new_vault_seeds {
+    ($vault:expr) => {{
+        &[
+            b"conditional_vault",
+            $vault.question.as_ref(),
+            $vault.underlying_token_mint.as_ref(),
+            &[$vault.pda_bump],
+        ]
+    }};
 }
 
 #[account]

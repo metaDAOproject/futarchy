@@ -19,7 +19,7 @@ impl ResolveQuestion<'_> {
 
         require_eq!(
             args.payout_numerators.len(),
-            question.num_conditions(),
+            question.num_outcomes(),
             VaultError::InvalidNumPayoutNumerators
         );
 
