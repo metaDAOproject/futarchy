@@ -167,6 +167,26 @@ export class ConditionalVaultClient {
       );
   }
 
+  async initializeNewVault(
+    question: PublicKey,
+    underlyingTokenMint: PublicKey,
+    numOutcomes: number
+  ): Promise<PublicKey> {
+    const [vault] = getVaultAddr(
+      this.vaultProgram.programId,
+      question,
+      underlyingTokenMint
+    );
+
+    await this.initializeNewVaultIx(
+      question,
+      underlyingTokenMint,
+      numOutcomes
+    ).rpc();
+
+    return vault;
+  }
+
   resolveQuestionIx(
     question: PublicKey,
     oracle: Keypair,
@@ -205,33 +225,37 @@ export class ConditionalVaultClient {
   }
 
   splitTokensIx(
+    question: PublicKey,
     vault: PublicKey,
     underlyingTokenMint: PublicKey,
     amount: BN,
     numOutcomes: number
   ) {
-    // const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
-    //   this.vaultProgram.programId,
-    //   vault
-    // );
-    // const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
-    //   this.vaultProgram.programId,
-    //   vault
-    // );
+    let conditionalTokenMintAddrs = [];
+    for (let i = 0; i < numOutcomes; i++) {
+      const [conditionalTokenMint] = getConditionalTokenMintAddr(
+        this.vaultProgram.programId,
+        vault,
+        i
+      );
+      conditionalTokenMintAddrs.push(conditionalTokenMint);
+    }
 
-    // let userConditionalOnFinalizeTokenAccount = getAssociatedTokenAddressSync(
-    //   conditionalOnFinalizeTokenMint,
-    //   this.provider.publicKey
-    // );
-
-    // let userConditionalOnRevertTokenAccount = getAssociatedTokenAddressSync(
-    //   conditionalOnRevertTokenMint,
-    //   this.provider.publicKey
-    // );
+    let userConditionalAccounts = [];
+    for (let conditionalTokenMint of conditionalTokenMintAddrs) {
+      userConditionalAccounts.push(
+        getAssociatedTokenAddressSync(
+          conditionalTokenMint,
+          this.provider.publicKey,
+          true
+        )
+      );
+    }
 
     let ix = this.vaultProgram.methods
       .splitTokens(amount)
       .accounts({
+        question,
         authority: this.provider.publicKey,
         vault,
         vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
@@ -244,12 +268,20 @@ export class ConditionalVaultClient {
           this.provider.publicKey,
           true
         ),
-        // conditionalOnFinalizeTokenMint,
-        // userConditionalOnFinalizeTokenAccount,
-        // conditionalOnRevertTokenMint,
-        // userConditionalOnRevertTokenAccount,
       })
-      .preInstructions([
+      .preInstructions(
+        conditionalTokenMintAddrs.map((conditionalTokenMint) => {
+          return createAssociatedTokenAccountIdempotentInstruction(
+            this.provider.publicKey,
+            getAssociatedTokenAddressSync(
+              conditionalTokenMint,
+              this.provider.publicKey
+            ),
+            this.provider.publicKey,
+            conditionalTokenMint
+          );
+        })
+
         // createAssociatedTokenAccountIdempotentInstruction(
         //   this.provider.publicKey,
         //   userConditionalOnFinalizeTokenAccount,
@@ -262,7 +294,18 @@ export class ConditionalVaultClient {
         //   this.provider.publicKey,
         //   conditionalOnRevertTokenMint
         // ),
-      ]);
+      )
+      .remainingAccounts(
+        conditionalTokenMintAddrs
+          .concat(userConditionalAccounts)
+          .map((conditionalTokenMint) => {
+            return {
+              pubkey: conditionalTokenMint,
+              isWritable: true,
+              isSigner: false,
+            };
+          })
+      );
 
     return ix;
   }

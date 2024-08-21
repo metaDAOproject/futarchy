@@ -714,6 +714,21 @@ export type ConditionalVault = {
       code: 6006;
       name: "InvalidNumPayoutNumerators";
       msg: "Invalid number of payout numerators";
+    },
+    {
+      code: 6007;
+      name: "InvalidConditionals";
+      msg: "Client needs to pass in the list of conditional mints for a vault followed by the user's token accounts for those tokens";
+    },
+    {
+      code: 6008;
+      name: "BadConditionalMint";
+      msg: "Unable to deserialize a conditional token mint";
+    },
+    {
+      code: 6009;
+      name: "BadConditionalTokenAccount";
+      msg: "Unable to deserialize a conditional token account";
     }
   ];
 };
@@ -1434,6 +1449,21 @@ export const IDL: ConditionalVault = {
       code: 6006,
       name: "InvalidNumPayoutNumerators",
       msg: "Invalid number of payout numerators",
+    },
+    {
+      code: 6007,
+      name: "InvalidConditionals",
+      msg: "Client needs to pass in the list of conditional mints for a vault followed by the user's token accounts for those tokens",
+    },
+    {
+      code: 6008,
+      name: "BadConditionalMint",
+      msg: "Unable to deserialize a conditional token mint",
+    },
+    {
+      code: 6009,
+      name: "BadConditionalTokenAccount",
+      msg: "Unable to deserialize a conditional token account",
     },
   ],
 };
