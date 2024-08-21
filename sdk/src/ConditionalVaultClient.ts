@@ -133,7 +133,6 @@ export class ConditionalVaultClient {
       );
       conditionalTokenMintAddrs.push(conditionalTokenMint);
     }
-    console.log(conditionalTokenMintAddrs);
 
     const vaultUnderlyingTokenAccount = getAssociatedTokenAddressSync(
       underlyingTokenMint,
