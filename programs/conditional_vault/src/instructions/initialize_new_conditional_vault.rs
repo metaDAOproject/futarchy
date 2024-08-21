@@ -8,7 +8,7 @@ pub struct InitializeNewConditionalVault<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + std::mem::size_of::<NewConditionalVault>() + (32 * question.num_conditions()),
+        space = 8 + std::mem::size_of::<NewConditionalVault>() + (32 * question.num_outcomes()),
         seeds = [
             b"conditional_vault", 
             question.key().as_ref(),
@@ -39,7 +39,7 @@ impl<'info, 'c: 'info> InitializeNewConditionalVault<'info> {
 
         let remaining_accs = &mut ctx.remaining_accounts.iter();
 
-        let expected_num_conditional_tokens = ctx.accounts.question.num_conditions();
+        let expected_num_conditional_tokens = ctx.accounts.question.num_outcomes();
         let mut conditional_token_mints = vec![];
 
         let mint_lamports = Rent::get()?.minimum_balance(Mint::LEN);

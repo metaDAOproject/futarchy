@@ -58,6 +58,18 @@ pub mod conditional_vault {
         InitializeNewConditionalVault::handle(ctx)
     }
 
+    pub fn split_tokens<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, InteractWithNewVault<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        InteractWithNewVault::handle_split_tokens(ctx, amount)
+    }
+
+    // pub fn split_tokens()
+    // merge tokens
+
+    // redeem tokens
+
     pub fn initialize_conditional_vault(
         ctx: Context<InitializeConditionalVault>,
         args: InitializeConditionalVaultArgs,

@@ -69,7 +69,6 @@ describe("conditional_vault", async function () {
   let provider: anchor.Provider;
   let vaultClient: ConditionalVaultClient;
 
-  let questions: PublicKey[] = [];
   let vault: PublicKey;
   let proposal: PublicKey;
   let vaultUnderlyingTokenAccount: anchor.web3.PublicKey;
@@ -146,11 +145,11 @@ describe("conditional_vault", async function () {
   });
 
   describe("#initialize_question", async function () {
-    it("initializes questions", async function () {
+    it("initializes 2-outcome questions", async function () {
       let questionId = sha256(new Uint8Array([1, 2, 3]));
 
       await vaultClient
-        .initializeQuestionIx([...questionId], settlementAuthority.publicKey, 2)
+        .initializeQuestionIx(questionId, settlementAuthority.publicKey, 2)
         .rpc();
 
       let [question] = getQuestionAddr(
@@ -160,34 +159,38 @@ describe("conditional_vault", async function () {
         2
       );
 
-      questions.push(question);
+      const storedQuestion = await vaultClient.fetchQuestion(question);
+      assert.deepEqual(storedQuestion.questionId, Array.from(questionId));
+      assert.ok(storedQuestion.oracle.equals(settlementAuthority.publicKey));
+      assert.isFalse(storedQuestion.isResolved);
+      assert.deepEqual(storedQuestion.payoutNumerators, [0, 0]);
+      assert.equal(storedQuestion.payoutDenominator, 0);
     });
   });
 
   describe("#initialize_new_conditional_vault", async function () {
-    it("initializes vaults", async function () {
-      const question = questions[0];
+    let question: PublicKey;
 
+    beforeEach(async function () {
+      let questionId = sha256(new Uint8Array([3, 2, 1]));
+
+      question = await vaultClient.initializeQuestion(questionId, settlementAuthority.publicKey, 2);
+    });
+
+    it("initializes vaults", async function () {
       await vaultClient
-        .initializeNewVaultIx(
-          question,
-          underlyingTokenMint,
-          2
-        )
+        .initializeNewVaultIx(question, underlyingTokenMint, 2)
         .rpc();
 
       const [vault] = getVaultAddr(
         vaultProgram.programId,
         question,
-        underlyingTokenMint,
+        underlyingTokenMint
       );
 
-      //console.log(await vaultProgram.account.newConditionalVault.fetch(vault));
       const storedVault = await vaultClient.fetchVault(vault);
       console.log(storedVault);
-      assert.ok(
-        storedVault.question.equals(question)
-      );
+      assert.ok(storedVault.question.equals(question));
       assert.ok(storedVault.underlyingTokenMint.equals(underlyingTokenMint));
 
       const vaultUnderlyingTokenAccount = token.getAssociatedTokenAddressSync(
@@ -202,9 +205,16 @@ describe("conditional_vault", async function () {
   });
 
   describe("#resolve_question", async function () {
-    it("resolves questions", async function () {
-      const question = questions[0];
+    let question: PublicKey;
 
+    beforeEach(async function () {
+      let questionId = sha256(new Uint8Array([4, 2, 1]));
+
+      question = await vaultClient.initializeQuestion(questionId, settlementAuthority.publicKey, 2);
+    });
+
+
+    it("resolves questions", async function () {
       let storedQuestion = await vaultClient.fetchQuestion(question);
 
       assert.isFalse(storedQuestion.isResolved);

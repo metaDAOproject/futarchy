@@ -74,12 +74,10 @@ export class ConditionalVaultClient {
   }
 
   initializeQuestionIx(
-    questionId: number[],
+    questionId: Uint8Array,
     oracle: PublicKey,
     numConditions: number
   ) {
-    //assert(questionId.length == 32);
-
     const [question] = getQuestionAddr(
       this.vaultProgram.programId,
       questionId,
@@ -89,7 +87,7 @@ export class ConditionalVaultClient {
 
     return this.vaultProgram.methods
       .initializeQuestion({
-        questionId,
+        questionId: Array.from(questionId),
         oracle,
         numConditions,
       })
@@ -98,10 +96,27 @@ export class ConditionalVaultClient {
       });
   }
 
+  async initializeQuestion(
+    questionId: Uint8Array,
+    oracle: PublicKey,
+    numConditions: number
+  ): Promise<PublicKey> {
+    const [question] = getQuestionAddr(
+      this.vaultProgram.programId,
+      questionId,
+      oracle,
+      numConditions
+    );
+
+    await this.initializeQuestionIx(questionId, oracle, numConditions).rpc();
+
+    return question;
+  }
+
   initializeNewVaultIx(
     question: PublicKey,
     underlyingTokenMint: PublicKey,
-    numConditions: number
+    numOutcomes: number
   ): MethodsBuilder<ConditionalVault, any> {
     const [vault] = getVaultAddr(
       this.vaultProgram.programId,
@@ -110,7 +125,7 @@ export class ConditionalVaultClient {
     );
 
     let conditionalTokenMintAddrs = [];
-    for (let i = 0; i < numConditions; i++) {
+    for (let i = 0; i < numOutcomes; i++) {
       const [conditionalTokenMint] = getConditionalTokenMintAddr(
         this.vaultProgram.programId,
         vault,
@@ -141,13 +156,6 @@ export class ConditionalVaultClient {
           vault,
           underlyingTokenMint
         ),
-        // SystemProgram.createAccount({
-        //   fromPubkey: this.provider.wallet.publicKey,
-        //   newAccountPubkey: conditionalReject.publicKey,
-        //   lamports: 1000000000,
-        //   space: 82,
-        //   programId: TOKEN_PROGRAM_ID,
-        // }),
       ])
       .remainingAccounts(
         conditionalTokenMintAddrs.map((conditionalTokenMint) => {
@@ -198,6 +206,69 @@ export class ConditionalVaultClient {
         `Error minting conditional tokens for ${storedVault.underlyingTokenMint} with error ${e}`
       );
     }
+  }
+
+  splitTokensIx(
+    vault: PublicKey,
+    underlyingTokenMint: PublicKey,
+    amount: BN,
+    numOutcomes: number
+  ) {
+    // const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
+    //   this.vaultProgram.programId,
+    //   vault
+    // );
+    // const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
+    //   this.vaultProgram.programId,
+    //   vault
+    // );
+
+    // let userConditionalOnFinalizeTokenAccount = getAssociatedTokenAddressSync(
+    //   conditionalOnFinalizeTokenMint,
+    //   this.provider.publicKey
+    // );
+
+    // let userConditionalOnRevertTokenAccount = getAssociatedTokenAddressSync(
+    //   conditionalOnRevertTokenMint,
+    //   this.provider.publicKey
+    // );
+
+    let ix = this.vaultProgram.methods
+      .splitTokens(amount)
+      .accounts({
+        authority: this.provider.publicKey,
+        vault,
+        vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          vault,
+          true
+        ),
+        userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          this.provider.publicKey,
+          true
+        ),
+        // conditionalOnFinalizeTokenMint,
+        // userConditionalOnFinalizeTokenAccount,
+        // conditionalOnRevertTokenMint,
+        // userConditionalOnRevertTokenAccount,
+      })
+      .preInstructions([
+        // createAssociatedTokenAccountIdempotentInstruction(
+        //   this.provider.publicKey,
+        //   userConditionalOnFinalizeTokenAccount,
+        //   this.provider.publicKey,
+        //   conditionalOnFinalizeTokenMint
+        // ),
+        // createAssociatedTokenAccountIdempotentInstruction(
+        //   this.provider.publicKey,
+        //   userConditionalOnRevertTokenAccount,
+        //   this.provider.publicKey,
+        //   conditionalOnRevertTokenMint
+        // ),
+      ]);
+
+    return ix;
   }
 
   mintConditionalTokensIx(

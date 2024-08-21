@@ -13,10 +13,14 @@ import { MPL_TOKEN_METADATA_PROGRAM_ID } from "../constants";
 
 export const getQuestionAddr = (
   programId: PublicKey,
-  questionId: number[],
+  questionId: Uint8Array,
   oracle: PublicKey,
   numConditions: number
 ) => {
+  if (questionId.length != 32) {
+    throw new Error("questionId must be 32 bytes");
+  }
+
   return PublicKey.findProgramAddressSync(
     [
       utils.bytes.utf8.encode("question"),
