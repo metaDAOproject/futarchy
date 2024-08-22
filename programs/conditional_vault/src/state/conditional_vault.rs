@@ -31,7 +31,6 @@ pub enum VaultStatus {
 pub struct Question {
     pub question_id: [u8; 32],
     pub oracle: Pubkey,
-    pub is_resolved: bool,
     pub payout_numerators: Vec<u32>,
     pub payout_denominator: u32,
 }
@@ -39,6 +38,10 @@ pub struct Question {
 impl Question {
     pub fn num_outcomes(&self) -> usize {
         self.payout_numerators.len()
+    }
+
+    pub fn is_resolved(&self) -> bool {
+        self.payout_denominator != 0
     }
 }
 

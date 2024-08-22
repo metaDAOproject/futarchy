@@ -22,4 +22,6 @@ pub enum VaultError {
     BadConditionalMint,
     #[msg("Unable to deserialize a conditional token account")]
     BadConditionalTokenAccount,
+    #[msg("Payouts must sum to 1 or more")]
+    PayoutZero,
 }

@@ -1,30 +1,37 @@
 use super::*;
 
 impl<'info, 'c: 'info> InteractWithNewVault<'info> {
-    pub fn handle_merge_tokens(ctx: Context<'_, '_, 'c, 'info, Self>, amount: u64) -> Result<()> {
+    pub fn validate_redeem_tokens(&self) -> Result<()> {
+        require!(
+            self.question.is_resolved(),
+            VaultError::CantRedeemConditionalTokens
+        );
+
+        Ok(())
+    }
+
+    pub fn handle_redeem_tokens(ctx: Context<'_, '_, 'c, 'info, Self>) -> Result<()> {
         let accs = &ctx.accounts;
 
         let (conditional_token_mints, user_conditional_token_accounts) =
             Self::get_mints_and_user_token_accounts(&ctx)?;
 
-
         let vault = &accs.vault;
+        let question = &accs.question;
 
-        // Store Pre-operation Balances
-        // let pre_user_conditional_on_finalize_balance = ctx
-        //     .accounts
-        //     .user_conditional_on_finalize_token_account
-        //     .amount;
-        // let pre_user_conditional_on_revert_balance =
-        //     ctx.accounts.user_conditional_on_revert_token_account.amount;
-        // let pre_vault_underlying_balance = ctx.accounts.vault_underlying_token_account.amount;
-        // let pre_finalize_mint_supply = ctx.accounts.conditional_on_finalize_token_mint.supply;
-        // let pre_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
+        // let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
+        // let pre_finalize_mint_supply = accs.conditional_on_finalize_token_mint.supply;
+        // let pre_revert_mint_supply = accs.conditional_on_revert_token_mint.supply;
+
+        // let pre_conditional_on_finalize_balance =
+        //     accs.user_conditional_on_finalize_token_account.amount;
+        // let pre_conditional_on_revert_balance =
+        //     accs.user_conditional_on_revert_token_account.amount;
 
         let seeds = generate_new_vault_seeds!(vault);
         let signer = &[&seeds[..]];
 
-        // burn `amount` from both token accounts
+        // burn from both accounts even though we technically only need to burn from one
         // for (conditional_mint, user_conditional_token_account) in [
         //     (
         //         &accs.conditional_on_finalize_token_mint,
@@ -39,6 +46,16 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
             .iter()
             .zip(user_conditional_token_accounts.iter())
         {
+            // this is safe because we check that every conditional mint is a part of the vault
+            let payout_index = vault
+                .conditional_token_mints
+                .iter()
+                .position(|mint| mint == &conditional_mint.key())
+                .unwrap();
+
+            let redeemable = ((user_conditional_token_account.amount as u128
+                * question.payout_numerators[payout_index] as u128)
+                / question.payout_denominator as u128) as u64;
             token::burn(
                 CpiContext::new(
                     accs.token_program.to_account_info(),
@@ -48,25 +65,29 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
                         authority: accs.authority.to_account_info(),
                     },
                 ),
-                amount,
+                user_conditional_token_account.amount,
+            )?;
+
+            token::transfer(
+                CpiContext::new_with_signer(
+                    accs.token_program.to_account_info(),
+                    Transfer {
+                        from: accs.vault_underlying_token_account.to_account_info(),
+                        to: accs.user_underlying_token_account.to_account_info(),
+                        authority: accs.vault.to_account_info(),
+                    },
+                    signer,
+                ),
+                redeemable,
             )?;
         }
 
-        // Transfer `amount` from vault to user
-        token::transfer(
-            CpiContext::new_with_signer(
-                accs.token_program.to_account_info(),
-                Transfer {
-                    from: accs.vault_underlying_token_account.to_account_info(),
-                    to: accs.user_underlying_token_account.to_account_info(),
-                    authority: accs.vault.to_account_info(),
-                },
-                signer,
-            ),
-            amount,
-        )?;
+        // let redeemable = match vault_status {
+        //     VaultStatus::Finalized => pre_conditional_on_finalize_balance,
+        //     VaultStatus::Reverted => pre_conditional_on_revert_balance,
+        //     _ => unreachable!(),
+        // };
 
-        // Reload Accounts to Reflect Changes
         // ctx.accounts
         //     .user_conditional_on_finalize_token_account
         //     .reload()?;
@@ -77,7 +98,6 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
         // ctx.accounts.conditional_on_finalize_token_mint.reload()?;
         // ctx.accounts.conditional_on_revert_token_mint.reload()?;
 
-        // // Check post-operation balances
         // let post_user_conditional_on_finalize_balance = ctx
         //     .accounts
         //     .user_conditional_on_finalize_token_account
@@ -88,26 +108,31 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
         // let post_finalize_mint_supply = ctx.accounts.conditional_on_finalize_token_mint.supply;
         // let post_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
 
-        // Check that the user's conditional token balances are unchanged (since we're not necessarily burning all tokens)
-        // require_eq!(
-        //     post_user_conditional_on_finalize_balance,
-        //     pre_user_conditional_on_finalize_balance - amount
+        // assert!(post_user_conditional_on_finalize_balance == 0);
+        // assert!(post_user_conditional_on_revert_balance == 0);
+        // assert!(
+        //     post_finalize_mint_supply
+        //         == pre_finalize_mint_supply - pre_conditional_on_finalize_balance
         // );
-        // require_eq!(
-        //     post_user_conditional_on_revert_balance,
-        //     pre_user_conditional_on_revert_balance - amount
+        // assert!(
+        //     post_revert_mint_supply == pre_revert_mint_supply - pre_conditional_on_revert_balance
         // );
-
-        // // Check that the mint supplies have been reduced by the burned amounts
-        // require_eq!(post_finalize_mint_supply, pre_finalize_mint_supply - amount);
-        // require_eq!(post_revert_mint_supply, pre_revert_mint_supply - amount);
-
-        // // Check that the vault's underlying balance has been reduced by the transferred amount
-        // require_eq!(
-        //     post_vault_underlying_balance,
-        //     pre_vault_underlying_balance - amount
-        // );
-
+        // match vault_status {
+        //     VaultStatus::Finalized => {
+        //         assert!(
+        //             post_vault_underlying_balance
+        //                 == pre_vault_underlying_balance - pre_conditional_on_finalize_balance
+        //         );
+        //     }
+        //     VaultStatus::Reverted => {
+        //         assert!(vault_status == VaultStatus::Reverted);
+        //         assert!(
+        //             post_vault_underlying_balance
+        //                 == pre_vault_underlying_balance - pre_conditional_on_revert_balance
+        //         );
+        //     }
+        //     _ => unreachable!(),
+        // }
 
         Ok(())
     }
