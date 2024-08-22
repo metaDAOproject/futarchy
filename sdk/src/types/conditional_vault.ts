@@ -141,6 +141,47 @@ export type ConditionalVault = {
       ];
     },
     {
+      name: "mergeTokens";
+      accounts: [
+        {
+          name: "question";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "vault";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "vaultUnderlyingTokenAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "authority";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "userUnderlyingTokenAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
+        }
+      ];
+    },
+    {
       name: "initializeConditionalVault";
       accounts: [
         {
@@ -836,6 +877,47 @@ export const IDL: ConditionalVault = {
     },
     {
       name: "splitTokens",
+      accounts: [
+        {
+          name: "question",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "vault",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "vaultUnderlyingTokenAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "authority",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "userUnderlyingTokenAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "amount",
+          type: "u64",
+        },
+      ],
+    },
+    {
+      name: "mergeTokens",
       accounts: [
         {
           name: "question",

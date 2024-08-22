@@ -335,6 +335,58 @@ describe("conditional_vault", async function () {
     });
   });
 
+    describe("#merge_tokens", async function () {
+    let question: PublicKey;
+    let vault: PublicKey;
+
+    beforeEach(async function () {
+      let questionId = sha256(new Uint8Array([9, 2, 1]));
+
+      question = await vaultClient.initializeQuestion(
+        questionId,
+        settlementAuthority.publicKey,
+        2
+      );
+      vault = await vaultClient.initializeNewVault(
+        question,
+        underlyingTokenMint,
+        2
+      );
+
+      // let userUnderlyingTokenAccount = await createAssociatedTokenAccount(
+      //   banksClient,
+      //   payer,
+      //   underlyingTokenMint,
+      //   payer.publicKey
+      // );
+
+      // await mintTo(
+      //   banksClient,
+      //   payer,
+      //   underlyingTokenMint,
+      //   userUnderlyingTokenAccount,
+      //   underlyingMintAuthority,
+      //   10_000_000_000n
+      // );
+
+      await vaultClient
+        .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
+        .rpc();
+
+    });
+
+    it("merges tokens", async function () {
+      const balanceBefore = await getAccount(banksClient, token.getAssociatedTokenAddressSync(underlyingTokenMint, payer.publicKey)).then(acc => acc.amount);
+      await vaultClient
+        .mergeTokensIx(question, vault, underlyingTokenMint, new BN(600), 2)
+        .rpc();
+      const balanceAfter = await getAccount(banksClient, token.getAssociatedTokenAddressSync(underlyingTokenMint, payer.publicKey)).then(acc => acc.amount);
+
+      assert.isTrue(balanceAfter > balanceBefore);
+      assert.equal(balanceAfter - balanceBefore, 600n);
+    });
+  });
+
   describe("#initialize_conditional_vault", async function () {
     it("initializes vaults", async function () {
       await vaultClient

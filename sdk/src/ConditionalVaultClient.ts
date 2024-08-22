@@ -284,19 +284,79 @@ export class ConditionalVaultClient {
             conditionalTokenMint
           );
         })
+      )
+      .remainingAccounts(
+        conditionalTokenMintAddrs
+          .concat(userConditionalAccounts)
+          .map((conditionalTokenMint) => {
+            return {
+              pubkey: conditionalTokenMint,
+              isWritable: true,
+              isSigner: false,
+            };
+          })
+      );
 
-        // createAssociatedTokenAccountIdempotentInstruction(
-        //   this.provider.publicKey,
-        //   userConditionalOnFinalizeTokenAccount,
-        //   this.provider.publicKey,
-        //   conditionalOnFinalizeTokenMint
-        // ),
-        // createAssociatedTokenAccountIdempotentInstruction(
-        //   this.provider.publicKey,
-        //   userConditionalOnRevertTokenAccount,
-        //   this.provider.publicKey,
-        //   conditionalOnRevertTokenMint
-        // ),
+    return ix;
+  }
+
+  mergeTokensIx(
+    question: PublicKey,
+    vault: PublicKey,
+    underlyingTokenMint: PublicKey,
+    amount: BN,
+    numOutcomes: number
+  ) {
+    let conditionalTokenMintAddrs = [];
+    for (let i = 0; i < numOutcomes; i++) {
+      const [conditionalTokenMint] = getConditionalTokenMintAddr(
+        this.vaultProgram.programId,
+        vault,
+        i
+      );
+      conditionalTokenMintAddrs.push(conditionalTokenMint);
+    }
+
+    let userConditionalAccounts = [];
+    for (let conditionalTokenMint of conditionalTokenMintAddrs) {
+      userConditionalAccounts.push(
+        getAssociatedTokenAddressSync(
+          conditionalTokenMint,
+          this.provider.publicKey,
+          true
+        )
+      );
+    }
+
+    let ix = this.vaultProgram.methods
+      .mergeTokens(amount)
+      .accounts({
+        question,
+        authority: this.provider.publicKey,
+        vault,
+        vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          vault,
+          true
+        ),
+        userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          this.provider.publicKey,
+          true
+        ),
+      })
+      .preInstructions(
+        conditionalTokenMintAddrs.map((conditionalTokenMint) => {
+          return createAssociatedTokenAccountIdempotentInstruction(
+            this.provider.publicKey,
+            getAssociatedTokenAddressSync(
+              conditionalTokenMint,
+              this.provider.publicKey
+            ),
+            this.provider.publicKey,
+            conditionalTokenMint
+          );
+        })
       )
       .remainingAccounts(
         conditionalTokenMintAddrs

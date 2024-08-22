@@ -12,6 +12,7 @@ pub mod settle_conditional_vault;
 pub mod resolve_question;
 pub mod new_common;
 pub mod split_tokens;
+pub mod merge_tokens;
 
 pub use initialize_question::*;
 pub use add_metadata_to_conditional_tokens::*;
@@ -22,3 +23,4 @@ pub use settle_conditional_vault::*;
 pub use resolve_question::*;
 pub use new_common::*;
 pub use split_tokens::*;
+pub use merge_tokens::*;
