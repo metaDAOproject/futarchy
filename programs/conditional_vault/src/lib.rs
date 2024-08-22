@@ -65,6 +65,19 @@ pub mod conditional_vault {
         InteractWithNewVault::handle_split_tokens(ctx, amount)
     }
 
+    pub fn merge_tokens<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, InteractWithNewVault<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        InteractWithNewVault::handle_merge_tokens(ctx, amount)
+    }
+
+    // pub fn redeem_tokens<'c: 'info, 'info>(
+    //     ctx: Context<'_, '_, 'c, 'info, InteractWithNewVault<'info>>,
+    // ) -> Result<()> {
+    //     InteractWithNewVault::handle_redeem_tokens(ctx)
+    // }
+
     // pub fn split_tokens()
     // merge tokens
 
