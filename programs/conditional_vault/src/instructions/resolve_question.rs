@@ -23,9 +23,14 @@ impl ResolveQuestion<'_> {
             VaultError::InvalidNumPayoutNumerators
         );
 
-        question.is_resolved = true;
         question.payout_denominator = args.payout_numerators.iter().sum();
         question.payout_numerators = args.payout_numerators;
+
+        require_gt!(
+            question.payout_denominator,
+            0,
+            VaultError::PayoutZero
+        );
 
         Ok(())
     }

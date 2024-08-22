@@ -43,7 +43,6 @@ impl InitializeQuestion<'_> {
         question.set_inner(Question {
             question_id,
             oracle,
-            is_resolved: false,
             payout_numerators: vec![0; num_conditions as usize],
             payout_denominator: 0,
         });

@@ -182,6 +182,42 @@ export type ConditionalVault = {
       ];
     },
     {
+      name: "redeemTokens";
+      accounts: [
+        {
+          name: "question";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "vault";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "vaultUnderlyingTokenAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "authority";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "userUnderlyingTokenAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [];
+    },
+    {
       name: "initializeConditionalVault";
       accounts: [
         {
@@ -533,10 +569,6 @@ export type ConditionalVault = {
             type: "publicKey";
           },
           {
-            name: "isResolved";
-            type: "bool";
-          },
-          {
             name: "payoutNumerators";
             type: {
               vec: "u32";
@@ -770,6 +802,11 @@ export type ConditionalVault = {
       code: 6009;
       name: "BadConditionalTokenAccount";
       msg: "Unable to deserialize a conditional token account";
+    },
+    {
+      code: 6010;
+      name: "PayoutZero";
+      msg: "Payouts must sum to 1 or more";
     }
   ];
 };
@@ -956,6 +993,42 @@ export const IDL: ConditionalVault = {
           type: "u64",
         },
       ],
+    },
+    {
+      name: "redeemTokens",
+      accounts: [
+        {
+          name: "question",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "vault",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "vaultUnderlyingTokenAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "authority",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "userUnderlyingTokenAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [],
     },
     {
       name: "initializeConditionalVault",
@@ -1309,10 +1382,6 @@ export const IDL: ConditionalVault = {
             type: "publicKey",
           },
           {
-            name: "isResolved",
-            type: "bool",
-          },
-          {
             name: "payoutNumerators",
             type: {
               vec: "u32",
@@ -1546,6 +1615,11 @@ export const IDL: ConditionalVault = {
       code: 6009,
       name: "BadConditionalTokenAccount",
       msg: "Unable to deserialize a conditional token account",
+    },
+    {
+      code: 6010,
+      name: "PayoutZero",
+      msg: "Payouts must sum to 1 or more",
     },
   ],
 };

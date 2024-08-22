@@ -31,6 +31,5 @@
     "spl-token-bankrun": "0.2.3",
     "ts-mocha": "^10.0.0",
     "typescript": "^4.3.5"
-  },
-  "packageManager": "yarn@3.3.1"
+  }
 }

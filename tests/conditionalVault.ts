@@ -164,7 +164,6 @@ describe("conditional_vault", async function () {
       const storedQuestion = await vaultClient.fetchQuestion(question);
       assert.deepEqual(storedQuestion.questionId, Array.from(questionId));
       assert.ok(storedQuestion.oracle.equals(settlementAuthority.publicKey));
-      assert.isFalse(storedQuestion.isResolved);
       assert.deepEqual(storedQuestion.payoutNumerators, [0, 0]);
       assert.equal(storedQuestion.payoutDenominator, 0);
     });
@@ -258,7 +257,6 @@ describe("conditional_vault", async function () {
     it("resolves questions", async function () {
       let storedQuestion = await vaultClient.fetchQuestion(question);
 
-      assert.isFalse(storedQuestion.isResolved);
       assert.deepEqual(storedQuestion.payoutNumerators, [0, 0]);
       assert.equal(storedQuestion.payoutDenominator, 0);
 
@@ -268,7 +266,6 @@ describe("conditional_vault", async function () {
 
       storedQuestion = await vaultClient.fetchQuestion(question);
 
-      assert.isTrue(storedQuestion.isResolved);
       assert.deepEqual(storedQuestion.payoutNumerators, [1, 0]);
       assert.equal(storedQuestion.payoutDenominator, 1);
     });
@@ -335,7 +332,7 @@ describe("conditional_vault", async function () {
     });
   });
 
-    describe("#merge_tokens", async function () {
+  describe("#merge_tokens", async function () {
     let question: PublicKey;
     let vault: PublicKey;
 
@@ -353,22 +350,6 @@ describe("conditional_vault", async function () {
         2
       );
 
-      // let userUnderlyingTokenAccount = await createAssociatedTokenAccount(
-      //   banksClient,
-      //   payer,
-      //   underlyingTokenMint,
-      //   payer.publicKey
-      // );
-
-      // await mintTo(
-      //   banksClient,
-      //   payer,
-      //   underlyingTokenMint,
-      //   userUnderlyingTokenAccount,
-      //   underlyingMintAuthority,
-      //   10_000_000_000n
-      // );
-
       await vaultClient
         .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
         .rpc();
@@ -384,6 +365,66 @@ describe("conditional_vault", async function () {
 
       assert.isTrue(balanceAfter > balanceBefore);
       assert.equal(balanceAfter - balanceBefore, 600n);
+    });
+  });
+
+  describe("#redeem_tokens", async function () {
+    let question: PublicKey;
+    let vault: PublicKey;
+
+    beforeEach(async function () {
+      let questionId = sha256(new Uint8Array([9, 28, 2, 1]));
+
+      question = await vaultClient.initializeQuestion(
+        questionId,
+        settlementAuthority.publicKey,
+        2
+      );
+      vault = await vaultClient.initializeNewVault(
+        question,
+        underlyingTokenMint,
+        2
+      );
+
+      await vaultClient
+        .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
+        .rpc();
+    });
+
+    // it("can't redeem tokens when question is not resolved", async function () {
+    //   const callbacks = expectError(
+    //     "CantRedeemConditionalTokens",
+    //     "redeemed tokens despite question not being resolved"
+    //   );
+
+    //   await vaultClient
+    //     .redeemTokensIx(question, vault, underlyingTokenMint, new BN(600), 2)
+    //     .rpc()
+    //     .then(callbacks[0], callbacks[1]);
+    // });
+
+    it("can redeem tokens when question is resolved", async function () {
+      await vaultClient
+        .resolveQuestionIx(question, settlementAuthority, [1, 0])
+        .rpc();
+
+      const underlyingTokenAccount = await token.getAssociatedTokenAddress(
+        underlyingTokenMint,
+        payer.publicKey
+      );
+
+      const balanceBefore = await getAccount(banksClient, underlyingTokenAccount)
+        .then(acc => acc.amount);
+
+      await vaultClient
+        .redeemTokensIx(question, vault, underlyingTokenMint, new BN(600), 2)
+        .rpc();
+
+      const balanceAfter = await getAccount(banksClient, underlyingTokenAccount)
+        .then(acc => acc.amount);
+
+      assert.isTrue(balanceAfter > balanceBefore);
+      assert.equal(balanceAfter - balanceBefore, 1000n);
     });
   });
 
