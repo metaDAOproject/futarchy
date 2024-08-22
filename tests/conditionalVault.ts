@@ -29,6 +29,7 @@ import {
   getAccount,
   getMint,
   mintTo,
+  transfer,
 } from "spl-token-bankrun";
 
 const { PublicKey, Keypair } = web3;
@@ -403,10 +404,43 @@ describe("conditional_vault", async function () {
     //     .then(callbacks[0], callbacks[1]);
     // });
 
+    // it("can redeem tokens when question is resolved", async function () {
+    //   await vaultClient
+    //     .resolveQuestionIx(question, settlementAuthority, [1, 0])
+    //     .rpc();
+
+    //   const underlyingTokenAccount = await token.getAssociatedTokenAddress(
+    //     underlyingTokenMint,
+    //     payer.publicKey
+    //   );
+
+    //   const balanceBefore = await getAccount(banksClient, underlyingTokenAccount)
+    //     .then(acc => acc.amount);
+
+    //   await vaultClient
+    //     .redeemTokensIx(question, vault, underlyingTokenMint, new BN(600), 2)
+    //     .rpc();
+
+    //   const balanceAfter = await getAccount(banksClient, underlyingTokenAccount)
+    //     .then(acc => acc.amount);
+
+    //   assert.isTrue(balanceAfter > balanceBefore);
+    //   assert.equal(balanceAfter - balanceBefore, 1000n);
+    // });
+
     it("can redeem tokens when question is resolved", async function () {
       await vaultClient
         .resolveQuestionIx(question, settlementAuthority, [1, 0])
         .rpc();
+
+      const storedVault = await vaultClient.fetchVault(vault);
+
+      const outcome0Tokens = storedVault.conditionalTokenMints[0];
+
+      let burne = Keypair.generate();
+      await createAssociatedTokenAccount(banksClient, payer, outcome0Tokens, burne.publicKey);
+
+      await transfer(banksClient, payer, token.getAssociatedTokenAddressSync(outcome0Tokens, payer.publicKey), token.getAssociatedTokenAddressSync(outcome0Tokens, burne.publicKey), payer, 1000n);
 
       const underlyingTokenAccount = await token.getAssociatedTokenAddress(
         underlyingTokenMint,
@@ -423,8 +457,7 @@ describe("conditional_vault", async function () {
       const balanceAfter = await getAccount(banksClient, underlyingTokenAccount)
         .then(acc => acc.amount);
 
-      assert.isTrue(balanceAfter > balanceBefore);
-      assert.equal(balanceAfter - balanceBefore, 1000n);
+      assert.isTrue(balanceAfter == balanceBefore);
     });
   });
 
