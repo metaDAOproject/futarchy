@@ -18,10 +18,14 @@ pub enum VaultError {
     InvalidNumPayoutNumerators,
     #[msg("Client needs to pass in the list of conditional mints for a vault followed by the user's token accounts for those tokens")]
     InvalidConditionals,
+    #[msg("Conditional mint not in vault")]
+    ConditionalMintMismatch,
     #[msg("Unable to deserialize a conditional token mint")]
     BadConditionalMint,
     #[msg("Unable to deserialize a conditional token account")]
     BadConditionalTokenAccount,
+    #[msg("User conditional token account mint does not match conditional mint")]
+    ConditionalTokenMintMismatch,
     #[msg("Payouts must sum to 1 or more")]
     PayoutZero,
 }
