@@ -28,7 +28,7 @@ security_txt! {
     policy: "The market will decide whether we pay a bug bounty.",
     source_code: "https://github.com/metaDAOproject/futarchy",
     source_release: "v0.4",
-    auditors: "Neodyme",
+    auditors: "Neodyme (v0.3)",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
