@@ -31,17 +31,6 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
         let seeds = generate_new_vault_seeds!(vault);
         let signer = &[&seeds[..]];
 
-        // burn from both accounts even though we technically only need to burn from one
-        // for (conditional_mint, user_conditional_token_account) in [
-        //     (
-        //         &accs.conditional_on_finalize_token_mint,
-        //         &accs.user_conditional_on_finalize_token_account,
-        //     ),
-        //     (
-        //         &accs.conditional_on_revert_token_mint,
-        //         &accs.user_conditional_on_revert_token_account,
-        //     ),
-        // ] {
         for (conditional_mint, user_conditional_token_account) in conditional_token_mints
             .iter()
             .zip(user_conditional_token_accounts.iter())

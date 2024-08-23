@@ -240,6 +240,50 @@ export class ConditionalVaultClient {
     return conditionalTokenMintAddrs;
   }
 
+  getRemainingAccounts(
+    conditionalTokenMints: PublicKey[],
+    userConditionalAccounts: PublicKey[]
+  ) {
+    return conditionalTokenMints
+      .concat(userConditionalAccounts)
+      .map((account) => ({
+        pubkey: account,
+        isWritable: true,
+        isSigner: false,
+      }));
+  }
+
+  // Helper method to get conditional token accounts and instructions
+  getConditionalTokenAccountsAndInstructions(
+    vault: PublicKey,
+    numOutcomes: number,
+    user: PublicKey
+  ) {
+    const conditionalTokenMintAddrs = this.getConditionalTokenMints(
+      vault,
+      numOutcomes
+    );
+    const userConditionalAccounts = conditionalTokenMintAddrs.map((mint) =>
+      getAssociatedTokenAddressSync(mint, user, true)
+    );
+
+    const preInstructions = conditionalTokenMintAddrs.map((mint) =>
+      createAssociatedTokenAccountIdempotentInstruction(
+        this.provider.publicKey,
+        getAssociatedTokenAddressSync(mint, user),
+        user,
+        mint
+      )
+    );
+
+    const remainingAccounts = this.getRemainingAccounts(
+      conditionalTokenMintAddrs,
+      userConditionalAccounts
+    );
+
+    return { userConditionalAccounts, preInstructions, remainingAccounts };
+  }
+
   splitTokensIx(
     question: PublicKey,
     vault: PublicKey,
@@ -248,19 +292,10 @@ export class ConditionalVaultClient {
     numOutcomes: number,
     user: PublicKey = this.provider.publicKey
   ) {
-    let conditionalTokenMintAddrs = this.getConditionalTokenMints(
-      vault,
-      numOutcomes
-    );
+    const { preInstructions, remainingAccounts } =
+      this.getConditionalTokenAccountsAndInstructions(vault, numOutcomes, user);
 
-    let userConditionalAccounts = [];
-    for (let conditionalTokenMint of conditionalTokenMintAddrs) {
-      userConditionalAccounts.push(
-        getAssociatedTokenAddressSync(conditionalTokenMint, user, true)
-      );
-    }
-
-    let ix = this.vaultProgram.methods
+    return this.vaultProgram.methods
       .splitTokens(amount)
       .accounts({
         question,
@@ -277,29 +312,8 @@ export class ConditionalVaultClient {
           true
         ),
       })
-      .preInstructions(
-        conditionalTokenMintAddrs.map((conditionalTokenMint) => {
-          return createAssociatedTokenAccountIdempotentInstruction(
-            this.provider.publicKey,
-            getAssociatedTokenAddressSync(conditionalTokenMint, user),
-            user,
-            conditionalTokenMint
-          );
-        })
-      )
-      .remainingAccounts(
-        conditionalTokenMintAddrs
-          .concat(userConditionalAccounts)
-          .map((conditionalTokenMint) => {
-            return {
-              pubkey: conditionalTokenMint,
-              isWritable: true,
-              isSigner: false,
-            };
-          })
-      );
-
-    return ix;
+      .preInstructions(preInstructions)
+      .remainingAccounts(remainingAccounts);
   }
 
   mergeTokensIx(

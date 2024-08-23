@@ -4,6 +4,7 @@ import { assert } from "chai";
 import { createAssociatedTokenAccount, createMint, getAccount, getMint, mintTo } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
+import { expectError } from "../../utils";
 
 export default function suite() {
     let vaultClient: ConditionalVaultClient;
@@ -25,11 +26,8 @@ export default function suite() {
             2
         );
 
-        underlyingTokenMint = await createMint(
-            this.banksClient,
-            this.payer,
+        underlyingTokenMint = await this.createMint(
             this.payer.publicKey,
-            null,
             8
         );
 
@@ -39,18 +37,14 @@ export default function suite() {
             2
         );
 
-        let userUnderlyingTokenAccount = await createAssociatedTokenAccount(
-            this.banksClient,
-            this.payer,
+        await this.createTokenAccount(
             underlyingTokenMint,
             this.payer.publicKey
         );
 
-        await mintTo(
-            this.banksClient,
-            this.payer,
+        await this.mintTo(
             underlyingTokenMint,
-            userUnderlyingTokenAccount,
+            this.payer.publicKey,
             this.payer,
             10_000_000_000n
         );
@@ -63,11 +57,7 @@ export default function suite() {
 
         const storedVault = await vaultClient.fetchVault(vault);
 
-        let storedVaultUnderlyingAcc = await getAccount(
-            this.banksClient,
-            storedVault.underlyingTokenAccount
-        );
-        assert.equal(storedVaultUnderlyingAcc.amount.toString(), "1000");
+        this.assertBalance(underlyingTokenMint, vault, 1000);
 
         const storedConditionalTokenMints = storedVault.conditionalTokenMints;
         for (let mint of storedConditionalTokenMints) {
@@ -76,12 +66,90 @@ export default function suite() {
                 mint
             );
             assert.equal(storedMint.supply.toString(), "1000");
-            let storedTokenAcc = await getAccount(
-                this.banksClient,
-                token.getAssociatedTokenAddressSync(mint, this.payer.publicKey)
-                // await createAssociatedTokenAccount(this.banksClient, this.payer, mint, this.payer.publicKey)
-            );
-            assert.equal(storedTokenAcc.amount.toString(), "1000");
+            await this.assertBalance(mint, this.payer.publicKey, 1000);
         }
+    });
+
+    it("throws error if conditional token accounts don't exist", async function () {
+        let { remainingAccounts } = vaultClient.getConditionalTokenAccountsAndInstructions(
+            vault,
+            2,
+            this.payer.publicKey
+        );
+
+        const callbacks = expectError(
+            "BadConditionalTokenAccount",
+            "split succeeded despite conditional token account not existing"
+        );
+
+        await vaultClient.vaultProgram.methods
+            .splitTokens(new anchor.BN(1000))
+            .accounts({
+                question,
+                authority: this.payer.publicKey,
+                vault,
+                vaultUnderlyingTokenAccount: token.getAssociatedTokenAddressSync(
+                    underlyingTokenMint,
+                    vault,
+                    true
+                ),
+                userUnderlyingTokenAccount: token.getAssociatedTokenAddressSync(
+                    underlyingTokenMint,
+                    this.payer.publicKey,
+                    true
+                ),
+            })
+            .remainingAccounts(remainingAccounts)
+            .rpc()
+            .then(callbacks[0], callbacks[1]);
+    });
+
+    it("throws error if the conditional mints are wrong", async function () {
+        const callbacks = expectError(
+            "ConditionalMintMismatch",
+            "split succeeded despite conditional mint not being in vault"
+        );
+
+        const fakeConditionalMint1 = await this.createMint(
+            vault,
+            8
+        );
+
+        const fakeConditionalMint2 = await this.createMint(
+            vault,
+            8
+        );
+
+        const fakeConditionalTokenAccount1 = await this.createTokenAccount(
+            fakeConditionalMint1,
+            this.payer.publicKey
+        );
+
+        const fakeConditionalTokenAccount2 = await this.createTokenAccount(
+            fakeConditionalMint2,
+            this.payer.publicKey
+        );
+
+        // Attempt to split tokens using the original vault but with the malicious vault's conditional token accounts
+        await vaultClient.vaultProgram.methods
+            .splitTokens(new anchor.BN(1000))
+            .accounts({
+                question,
+                authority: this.payer.publicKey,
+                vault,
+                vaultUnderlyingTokenAccount: token.getAssociatedTokenAddressSync(
+                    underlyingTokenMint,
+                    vault,
+                    true
+                ),
+                userUnderlyingTokenAccount: token.getAssociatedTokenAddressSync(
+                    underlyingTokenMint,
+                    this.payer.publicKey,
+                    true
+                ),
+            })
+            .remainingAccounts(vaultClient.getRemainingAccounts([fakeConditionalMint1, fakeConditionalMint2], [fakeConditionalTokenAccount1, fakeConditionalTokenAccount2]))
+            .rpc()
+            .then(callbacks[0], callbacks[1]);
     });
 }
