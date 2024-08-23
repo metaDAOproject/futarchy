@@ -14,7 +14,7 @@ test_vault() {
     #sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/conditionalVault.ts"/' Anchor.toml
     #sleep 10 && sed -i '2s/\(\(\S\+\s\+\)\{9\}\)\S\+/\1tests\/*.ts"/' Anchor.toml &
     find programs tests sdk | entr -sc \
-	    "anchor build -p conditional_vault && (cd sdk && yarn build) && sed -i '2s/\(\(\S\+\s\+\)\{10\}\)\S\+/\1tests\/programs\/conditionalVault.ts\"/' Anchor.toml && (sleep 3 && sed -i '2s/\(\(\S\+\s\+\)\{10\}\)\S\+/\1tests\/**/*.ts\"/' Anchor.toml) & RUST_LOG= anchor test --skip-build"
+	    "anchor build -p conditional_vault && (cd sdk && yarn build) && sed -i '2s/\(\(\S\+\s\+\)\{10\}\)\S\+/\1tests\/conditionalVault\/*.ts\"/' Anchor.toml && (sleep 3 && sed -i '2s/\(\(\S\+\s\+\)\{10\}\)\S\+/\1tests\/\**\/*.ts\"/' Anchor.toml) & RUST_LOG= anchor test --skip-build"
 }
 
 test_no_build() {
