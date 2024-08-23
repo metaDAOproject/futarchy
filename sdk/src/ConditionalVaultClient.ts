@@ -238,8 +238,6 @@ export class ConditionalVaultClient {
     const userPubkey: PublicKey =
       "publicKey" in user ? user.publicKey : (user as PublicKey);
 
-    console.log("userPubkey", userPubkey);
-
     let conditionalTokenMintAddrs = [];
     for (let i = 0; i < numOutcomes; i++) {
       const [conditionalTokenMint] = getConditionalTokenMintAddr(
@@ -308,8 +306,12 @@ export class ConditionalVaultClient {
     vault: PublicKey,
     underlyingTokenMint: PublicKey,
     amount: BN,
-    numOutcomes: number
+    numOutcomes: number,
+    user: PublicKey | Keypair = this.provider.publicKey
   ) {
+    const userPubkey: PublicKey =
+      "publicKey" in user ? user.publicKey : (user as PublicKey);
+
     let conditionalTokenMintAddrs = [];
     for (let i = 0; i < numOutcomes; i++) {
       const [conditionalTokenMint] = getConditionalTokenMintAddr(
@@ -323,11 +325,7 @@ export class ConditionalVaultClient {
     let userConditionalAccounts = [];
     for (let conditionalTokenMint of conditionalTokenMintAddrs) {
       userConditionalAccounts.push(
-        getAssociatedTokenAddressSync(
-          conditionalTokenMint,
-          this.provider.publicKey,
-          true
-        )
+        getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey, true)
       );
     }
 
@@ -335,7 +333,7 @@ export class ConditionalVaultClient {
       .mergeTokens(amount)
       .accounts({
         question,
-        authority: this.provider.publicKey,
+        authority: userPubkey,
         vault,
         vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
@@ -344,7 +342,7 @@ export class ConditionalVaultClient {
         ),
         userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
-          this.provider.publicKey,
+          userPubkey,
           true
         ),
       })
@@ -352,11 +350,8 @@ export class ConditionalVaultClient {
         conditionalTokenMintAddrs.map((conditionalTokenMint) => {
           return createAssociatedTokenAccountIdempotentInstruction(
             this.provider.publicKey,
-            getAssociatedTokenAddressSync(
-              conditionalTokenMint,
-              this.provider.publicKey
-            ),
-            this.provider.publicKey,
+            getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey),
+            userPubkey,
             conditionalTokenMint
           );
         })
