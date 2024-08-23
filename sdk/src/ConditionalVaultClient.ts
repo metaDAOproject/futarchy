@@ -224,17 +224,7 @@ export class ConditionalVaultClient {
     );
   }
 
-  splitTokensIx(
-    question: PublicKey,
-    vault: PublicKey,
-    underlyingTokenMint: PublicKey,
-    amount: BN,
-    numOutcomes: number,
-    user: PublicKey | Keypair = this.provider.publicKey
-  ) {
-    const userPubkey: PublicKey =
-      "publicKey" in user ? user.publicKey : (user as PublicKey);
-
+  getConditionalTokenMints(vault: PublicKey, numOutcomes: number): PublicKey[] {
     let conditionalTokenMintAddrs = [];
     for (let i = 0; i < numOutcomes; i++) {
       const [conditionalTokenMint] = getConditionalTokenMintAddr(
@@ -244,11 +234,26 @@ export class ConditionalVaultClient {
       );
       conditionalTokenMintAddrs.push(conditionalTokenMint);
     }
+    return conditionalTokenMintAddrs;
+  }
+
+  splitTokensIx(
+    question: PublicKey,
+    vault: PublicKey,
+    underlyingTokenMint: PublicKey,
+    amount: BN,
+    numOutcomes: number,
+    user: PublicKey = this.provider.publicKey
+  ) {
+    let conditionalTokenMintAddrs = this.getConditionalTokenMints(
+      vault,
+      numOutcomes
+    );
 
     let userConditionalAccounts = [];
     for (let conditionalTokenMint of conditionalTokenMintAddrs) {
       userConditionalAccounts.push(
-        getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey, true)
+        getAssociatedTokenAddressSync(conditionalTokenMint, user, true)
       );
     }
 
@@ -256,7 +261,7 @@ export class ConditionalVaultClient {
       .splitTokens(amount)
       .accounts({
         question,
-        authority: userPubkey,
+        authority: user,
         vault,
         vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
@@ -265,7 +270,7 @@ export class ConditionalVaultClient {
         ),
         userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
-          userPubkey,
+          user,
           true
         ),
       })
@@ -273,8 +278,8 @@ export class ConditionalVaultClient {
         conditionalTokenMintAddrs.map((conditionalTokenMint) => {
           return createAssociatedTokenAccountIdempotentInstruction(
             this.provider.publicKey,
-            getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey),
-            userPubkey,
+            getAssociatedTokenAddressSync(conditionalTokenMint, user),
+            user,
             conditionalTokenMint
           );
         })
@@ -291,10 +296,6 @@ export class ConditionalVaultClient {
           })
       );
 
-    // if (user instanceof Keypair) {
-    //   ix = ix.signers([user]);
-    // }
-
     return ix;
   }
 
@@ -304,25 +305,17 @@ export class ConditionalVaultClient {
     underlyingTokenMint: PublicKey,
     amount: BN,
     numOutcomes: number,
-    user: PublicKey | Keypair = this.provider.publicKey
+    user: PublicKey = this.provider.publicKey
   ) {
-    const userPubkey: PublicKey =
-      "publicKey" in user ? user.publicKey : (user as PublicKey);
-
-    let conditionalTokenMintAddrs = [];
-    for (let i = 0; i < numOutcomes; i++) {
-      const [conditionalTokenMint] = getConditionalTokenMintAddr(
-        this.vaultProgram.programId,
-        vault,
-        i
-      );
-      conditionalTokenMintAddrs.push(conditionalTokenMint);
-    }
+    let conditionalTokenMintAddrs = this.getConditionalTokenMints(
+      vault,
+      numOutcomes
+    );
 
     let userConditionalAccounts = [];
     for (let conditionalTokenMint of conditionalTokenMintAddrs) {
       userConditionalAccounts.push(
-        getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey, true)
+        getAssociatedTokenAddressSync(conditionalTokenMint, user, true)
       );
     }
 
@@ -330,7 +323,7 @@ export class ConditionalVaultClient {
       .mergeTokens(amount)
       .accounts({
         question,
-        authority: userPubkey,
+        authority: user,
         vault,
         vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
@@ -339,7 +332,7 @@ export class ConditionalVaultClient {
         ),
         userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
-          userPubkey,
+          user,
           true
         ),
       })
@@ -347,8 +340,8 @@ export class ConditionalVaultClient {
         conditionalTokenMintAddrs.map((conditionalTokenMint) => {
           return createAssociatedTokenAccountIdempotentInstruction(
             this.provider.publicKey,
-            getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey),
-            userPubkey,
+            getAssociatedTokenAddressSync(conditionalTokenMint, user),
+            user,
             conditionalTokenMint
           );
         })
@@ -372,8 +365,8 @@ export class ConditionalVaultClient {
     question: PublicKey,
     vault: PublicKey,
     underlyingTokenMint: PublicKey,
-    amount: BN,
-    numOutcomes: number
+    numOutcomes: number,
+    user: PublicKey = this.provider.publicKey
   ) {
     let conditionalTokenMintAddrs = [];
     for (let i = 0; i < numOutcomes; i++) {
@@ -388,11 +381,7 @@ export class ConditionalVaultClient {
     let userConditionalAccounts = [];
     for (let conditionalTokenMint of conditionalTokenMintAddrs) {
       userConditionalAccounts.push(
-        getAssociatedTokenAddressSync(
-          conditionalTokenMint,
-          this.provider.publicKey,
-          true
-        )
+        getAssociatedTokenAddressSync(conditionalTokenMint, user, true)
       );
     }
 
@@ -400,7 +389,7 @@ export class ConditionalVaultClient {
       .redeemTokens()
       .accounts({
         question,
-        authority: this.provider.publicKey,
+        authority: user,
         vault,
         vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
@@ -409,7 +398,7 @@ export class ConditionalVaultClient {
         ),
         userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
-          this.provider.publicKey,
+          user,
           true
         ),
       })
@@ -417,11 +406,8 @@ export class ConditionalVaultClient {
         conditionalTokenMintAddrs.map((conditionalTokenMint) => {
           return createAssociatedTokenAccountIdempotentInstruction(
             this.provider.publicKey,
-            getAssociatedTokenAddressSync(
-              conditionalTokenMint,
-              this.provider.publicKey
-            ),
-            this.provider.publicKey,
+            getAssociatedTokenAddressSync(conditionalTokenMint, user),
+            user,
             conditionalTokenMint
           );
         })

@@ -66,7 +66,7 @@ export default function suite() {
     it("can't redeem tokens when question is not resolved", async function () {
         try {
             await vaultClient
-                .redeemTokensIx(question, vault, underlyingTokenMint, new anchor.BN(600), 2)
+                .redeemTokensIx(question, vault, underlyingTokenMint, 2)
                 .rpc();
             assert.fail("Should have thrown an error");
         } catch (error) {
@@ -88,7 +88,7 @@ export default function suite() {
             .then(acc => acc.amount);
 
         await vaultClient
-            .redeemTokensIx(question, vault, underlyingTokenMint, new anchor.BN(600), 2)
+            .redeemTokensIx(question, vault, underlyingTokenMint, 2)
             .rpc();
 
         const balanceAfter = await getAccount(this.banksClient, underlyingTokenAccount)
