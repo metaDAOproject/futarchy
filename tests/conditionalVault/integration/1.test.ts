@@ -2,7 +2,8 @@ import { ConditionalVaultClient, sha256 } from "@metadaoproject/futarchy";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { assert } from "chai";
-import { createMint, getMint, mintTo, createAssociatedTokenAccount } from "spl-token-bankrun"
+import { createMint, getMint, mintTo, createAssociatedTokenAccount } from "spl-token-bankrun";
+import * as token from "@solana/spl-token";
 
 export default async function test() {
     // A binary prediction market test. Alice, Bob, and Charlie are betting on
@@ -68,7 +69,7 @@ export default async function test() {
 
     const vault = await vaultClient.initializeNewVault(question, USDC, 2);
 
-    await vaultClient.splitTokensIx(question, vault, USDC, new BN(100 * 10 ** 6), 2, alice).rpc();
+    await vaultClient.splitTokensIx(question, vault, USDC, new BN(100 * 10 ** 6), 2, alice).signers([alice]).rpc();
 
 
 
