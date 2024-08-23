@@ -2,7 +2,7 @@ import { ConditionalVaultClient, sha256 } from "@metadaoproject/futarchy";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { assert } from "chai";
-import { createMint, getMint, mintTo, createAssociatedTokenAccount } from "spl-token-bankrun";
+import { createMint, getMint, mintTo, createAssociatedTokenAccount, transfer } from "spl-token-bankrun";
 import * as token from "@solana/spl-token";
 
 export default async function test() {
@@ -68,8 +68,44 @@ export default async function test() {
     );
 
     const vault = await vaultClient.initializeNewVault(question, USDC, 2);
+    const storedVault = await vaultClient.fetchVault(vault);
 
     await vaultClient.splitTokensIx(question, vault, USDC, new BN(100 * 10 ** 6), 2, alice).signers([alice]).rpc();
+
+    await vaultClient.splitTokensIx(question, vault, USDC, new BN(100 * 10 ** 6), 2, bob).signers([bob]).rpc();
+
+    const TRUMP = storedVault.conditionalTokenMints[0];
+    const HARRIS = storedVault.conditionalTokenMints[1];
+
+    const aliceTRUMP = token.getAssociatedTokenAddressSync(TRUMP, alice.publicKey);
+    const aliceHARRIS = token.getAssociatedTokenAddressSync(HARRIS, alice.publicKey);
+
+    const bobTRUMP = token.getAssociatedTokenAddressSync(TRUMP, bob.publicKey);
+    const bobHARRIS = token.getAssociatedTokenAddressSync(HARRIS, bob.publicKey);
+
+    await transfer(this.banksClient, this.payer, aliceHARRIS, bobHARRIS, alice, new BN(30 * 10 ** 6));
+    await transfer(this.banksClient, this.payer, bobTRUMP, aliceTRUMP, bob, new BN(40 * 10 ** 6));
+
+    await vaultClient.mergeTokensIx(question, vault, USDC, new BN(15 * 10 ** 6), 2, alice).signers([alice]).rpc();
+
+
+
+    // const aliceHARRIS = await createAssociatedTokenAccount(this.banksClient, this.payer, HARRIS, alice.publicKey);
+
+
+
+    // storedVault.
+
+
+
+    //     banksClient: BanksClient,
+    //   payer: Signer,
+    //   source: PublicKey,
+    //   destination: PublicKey,
+    //   owner: PublicKey | Signer,
+    //   amount: number | bigint,
+
+
 
 
 
