@@ -25,7 +25,7 @@ import {
   redeemConditionalTokens,
 } from "./conditionalVault";
 
-import { advanceBySlots, expectError } from "./utils/utils";
+import { advanceBySlots, expectError } from "./utils";
 import { Autocrat } from "../target/types/autocrat";
 import { ConditionalVault } from "../target/types/conditional_vault";
 import { AutocratMigrator } from "../target/types/autocrat_migrator";

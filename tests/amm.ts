@@ -26,7 +26,7 @@ import {
 } from "@metadaoproject/futarchy";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
-import { expectError, fastForward } from "./utils/utils";
+import { expectError, fastForward } from "./utils";
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -48,7 +48,7 @@ describe("amm", async function () {
     banksClient = context.banksClient;
     provider = new BankrunProvider(context);
     anchor.setProvider(provider);
-    ammClient = await AmmClient.createClient({ provider });
+    ammClient = await AmmClient.createClient({ provider: provider as any });
     payer = provider.wallet.payer;
   });
 
@@ -114,7 +114,6 @@ describe("amm", async function () {
         ammClient.program.programId,
         META,
         USDC,
-        proposal
       );
 
       const ammAcc = await ammClient.getAmm(amm);
@@ -161,7 +160,6 @@ describe("amm", async function () {
           META,
           twapFirstObservationScaled,
           twapMaxObservationChangePerUpdateScaled,
-          proposal
         )
         .rpc()
         .then(callbacks[0], callbacks[1]);
