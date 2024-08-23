@@ -229,8 +229,19 @@ export class ConditionalVaultClient {
     vault: PublicKey,
     underlyingTokenMint: PublicKey,
     amount: BN,
-    numOutcomes: number
+    numOutcomes: number,
+    user?: PublicKey | Keypair
   ) {
+    console.log(typeof user);
+    console.log(user);
+    console.log(user instanceof Keypair);
+    const userPubkey =
+      user instanceof Keypair
+        ? user.publicKey
+        : user || this.provider.publicKey;
+
+    console.log("userPubkey", userPubkey);
+
     let conditionalTokenMintAddrs = [];
     for (let i = 0; i < numOutcomes; i++) {
       const [conditionalTokenMint] = getConditionalTokenMintAddr(
@@ -273,11 +284,8 @@ export class ConditionalVaultClient {
         conditionalTokenMintAddrs.map((conditionalTokenMint) => {
           return createAssociatedTokenAccountIdempotentInstruction(
             this.provider.publicKey,
-            getAssociatedTokenAddressSync(
-              conditionalTokenMint,
-              this.provider.publicKey
-            ),
-            this.provider.publicKey,
+            getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey),
+            userPubkey,
             conditionalTokenMint
           );
         })
@@ -293,6 +301,10 @@ export class ConditionalVaultClient {
             };
           })
       );
+
+    if (user instanceof Keypair) {
+      ix = ix.signers([user]);
+    }
 
     return ix;
   }
@@ -449,14 +461,10 @@ export class ConditionalVaultClient {
     amount: BN,
     user?: PublicKey | Keypair
   ) {
-    let userPubkey;
-    if (!user) {
-      userPubkey = this.provider.publicKey;
-    } else if (user instanceof Keypair) {
-      userPubkey = user.publicKey;
-    } else {
-      userPubkey = user;
-    }
+    const userPubkey =
+      user instanceof Keypair
+        ? user.publicKey
+        : user || this.provider.publicKey;
 
     const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
       this.vaultProgram.programId,
