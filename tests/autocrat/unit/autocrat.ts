@@ -20,10 +20,10 @@ import {
   getAccount,
 } from "spl-token-bankrun";
 
-import { advanceBySlots, expectError } from "../utils";
-import { Autocrat, IDL as AutocratIDL } from "../../target/types/autocrat";
-import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../target/types/conditional_vault";
-import { AutocratMigrator, IDL as AutocratMigratorIDL } from "../../target/types/autocrat_migrator";
+import { advanceBySlots, expectError } from "../../utils";
+import { Autocrat, IDL as AutocratIDL } from "../../../target/types/autocrat";
+import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../../target/types/conditional_vault";
+import { AutocratMigrator, IDL as AutocratMigratorIDL } from "../../../target/types/autocrat_migrator";
 
 const { PublicKey, Keypair } = anchor.web3;
 
