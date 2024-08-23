@@ -1,5 +1,5 @@
 [scripts]
-test = "npx mocha --node-option require=ts-node/register --extension ts -t 10000000 tests/**/*.ts"
+test = "npx mocha --node-option require=ts-node/register --extension ts -t 10000000 tests/main.test.ts"
 propose = "yarn run ts-node scripts/initializeProposal.ts"
 initialize-dao = "yarn run ts-node scripts/initializeDao.ts"
 finalize = "yarn run ts-node scripts/finalizeProposal.ts"

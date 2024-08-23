@@ -114,7 +114,7 @@ describe("conditional_vault", async function () {
       provider
     );
 
-    vaultClient = await ConditionalVaultClient.createClient({ provider: provider as any });
+    vaultClient = ConditionalVaultClient.createClient({ provider: provider as any });
 
     payer = vaultProgram.provider.wallet.payer;
     alice = anchor.web3.Keypair.generate();
