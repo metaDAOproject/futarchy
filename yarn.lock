@@ -910,12 +910,13 @@
     decimal.js "10.3.1"
     jsbi "4.3.0"
 
-"@metadaoproject/futarchy@0.3.0-alpha.8":
-  version "0.3.0-alpha.8"
-  resolved "https://registry.yarnpkg.com/@metadaoproject/futarchy/-/futarchy-0.3.0-alpha.8.tgz#eaf4d898129df2c8a1408bb1974fa61dacb87ade"
-  integrity sha512-5gyYsEpAMCC9x5Gij4Zlj7j33GwmVormuigilnhZTlpm0/RsKdPHxPiPoBmjQL5fHR1N8+5B9vHyQvFbc4KaZA==
+"@metadaoproject/futarchy@0.3.0-alpha.12":
+  version "0.3.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/@metadaoproject/futarchy/-/futarchy-0.3.0-alpha.12.tgz#d615cab0c3836bc0a7fa54371e1fa1973733e704"
+  integrity sha512-s6MceULSXEFMrB80CPVAOilEj5RDsVm4sh84yjh1z/1ixIqmmJZOqBgI9lb9A6NxuKzCYDonry3F90Ec5ii7PQ==
   dependencies:
     "@coral-xyz/anchor" "^0.29.0"
+    "@noble/hashes" "^1.4.0"
     "@solana/spl-token" "^0.3.7"
     "@solana/web3.js" "^1.74.0"
     bn.js "^5.2.1"
@@ -1188,7 +1189,7 @@
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.3.3.tgz#39908da56a4adc270147bb07968bf3b16cfe1699"
   integrity sha512-V7/fPHgl+jsVPXqqeOzT8egNj2iBIVt+ECeMMG8TdcnTikP3oaBtUVqpT/gYCR68aEBJSF+XbYUxStjbFMqIIA==
 
-"@noble/hashes@1.4.0":
+"@noble/hashes@1.4.0", "@noble/hashes@^1.4.0":
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.4.0.tgz#45814aa329f30e4fe0ba49426f49dfccdd066426"
   integrity sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==
@@ -4465,10 +4466,10 @@ source-map@^0.6.0:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
-spl-token-bankrun@0.2.5:
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/spl-token-bankrun/-/spl-token-bankrun-0.2.5.tgz#0a026be083a19300d593c41034c9685968dd50d3"
-  integrity sha512-1Tb0bksg5Q3r48LInbQh+uBYhekrz1OWP1XVd4zMj7FAwdQzqQ1puJHd6vJhCuIbB8Vr6CQSGf5Ke716EH0khw==
+spl-token-bankrun@0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/spl-token-bankrun/-/spl-token-bankrun-0.2.6.tgz#c820c2f8777d64966b58eb37556f0add4eeeb16d"
+  integrity sha512-tD4qpg7s4bagnjlWiDKaY158TcYq9odecM2rwqlKFjKzeVyjYnyoQq54BxwofghWD9Q+gOR/0BbWYK2KW2VbJQ==
   dependencies:
     "@solana/spl-token" "^0.3.8"
     solana-bankrun "^0.3.0"
