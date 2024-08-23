@@ -230,15 +230,10 @@ export class ConditionalVaultClient {
     underlyingTokenMint: PublicKey,
     amount: BN,
     numOutcomes: number,
-    user?: PublicKey | Keypair
+    user: PublicKey | Keypair = this.provider.publicKey
   ) {
-    console.log(typeof user);
-    console.log(user);
-    console.log(user instanceof Keypair);
-    const userPubkey =
-      user instanceof Keypair
-        ? user.publicKey
-        : user || this.provider.publicKey;
+    const userPubkey: PublicKey =
+      "publicKey" in user ? user.publicKey : (user as PublicKey);
 
     console.log("userPubkey", userPubkey);
 
@@ -255,11 +250,7 @@ export class ConditionalVaultClient {
     let userConditionalAccounts = [];
     for (let conditionalTokenMint of conditionalTokenMintAddrs) {
       userConditionalAccounts.push(
-        getAssociatedTokenAddressSync(
-          conditionalTokenMint,
-          this.provider.publicKey,
-          true
-        )
+        getAssociatedTokenAddressSync(conditionalTokenMint, userPubkey, true)
       );
     }
 
@@ -267,7 +258,7 @@ export class ConditionalVaultClient {
       .splitTokens(amount)
       .accounts({
         question,
-        authority: this.provider.publicKey,
+        authority: userPubkey,
         vault,
         vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
@@ -276,7 +267,7 @@ export class ConditionalVaultClient {
         ),
         userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
           underlyingTokenMint,
-          this.provider.publicKey,
+          userPubkey,
           true
         ),
       })
@@ -302,9 +293,9 @@ export class ConditionalVaultClient {
           })
       );
 
-    if (user instanceof Keypair) {
-      ix = ix.signers([user]);
-    }
+    // if (user instanceof Keypair) {
+    //   ix = ix.signers([user]);
+    // }
 
     return ix;
   }
