@@ -26,7 +26,7 @@ import {
 } from "@metadaoproject/futarchy";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
-import { expectError, fastForward } from "./utils";
+import { expectError, advanceBySlots } from "../utils";
 
 const META_DECIMALS = 9;
 const USDC_DECIMALS = 6;
@@ -53,7 +53,7 @@ describe("amm", async function () {
   });
 
   beforeEach(async function () {
-    await fastForward(context, 1n);
+    await advanceBySlots(context, 1n);
     META = await createMint(
       banksClient,
       payer,
@@ -389,7 +389,7 @@ describe("amm", async function () {
         )
         .rpc();
 
-      await fastForward(context, 1n);
+      await advanceBySlots(context, 1n);
 
       const ammMiddle = await ammClient.getAmm(amm);
       let quoteReceived =
@@ -427,7 +427,7 @@ describe("amm", async function () {
         )
         .rpc();
 
-      await fastForward(context, 1n);
+      await advanceBySlots(context, 1n);
 
       const ammMiddle = await ammClient.getAmm(amm);
       let baseReceived =

@@ -20,15 +20,10 @@ import {
   getAccount,
 } from "spl-token-bankrun";
 
-import {
-  mintConditionalTokens,
-  redeemConditionalTokens,
-} from "./conditionalVault";
-
-import { advanceBySlots, expectError } from "./utils";
-import { Autocrat } from "../target/types/autocrat";
-import { ConditionalVault } from "../target/types/conditional_vault";
-import { AutocratMigrator } from "../target/types/autocrat_migrator";
+import { advanceBySlots, expectError } from "../utils";
+import { Autocrat, IDL as AutocratIDL } from "../../target/types/autocrat";
+import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../target/types/conditional_vault";
+import { AutocratMigrator, IDL as AutocratMigratorIDL } from "../../target/types/autocrat_migrator";
 
 const { PublicKey, Keypair } = anchor.web3;
 
@@ -53,9 +48,9 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 
-const AutocratIDL: Autocrat = require("../target/idl/autocrat.json");
-const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
-const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
+// const AutocratIDL: Autocrat = require("../target/idl/autocrat.json");
+// const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
+// const AutocratMigratorIDL: AutocratMigrator = require("../target/idl/autocrat_migrator.json");
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;

@@ -1,19 +1,5 @@
-import { expect, assert } from "chai";
-import { Program } from "@coral-xyz/anchor";
-
-export const advanceBySlots = async (context: any, slots: BigInt) => {
-  const currentClock = await context.banksClient.getClock();
-  const slot = currentClock.slot + slots;
-  context.setClock(
-    new Clock(
-      slot,
-      currentClock.epochStartTimestamp,
-      currentClock.epoch,
-      currentClock.leaderScheduleEpoch,
-      currentClock.unixTimestamp
-    )
-  );
-};
+import { assert } from "chai";
+import { Clock, ProgramTestContext } from "solana-bankrun";
 
 export const expectError = (
   expectedError: string,
@@ -49,9 +35,7 @@ export const expectError = (
   ];
 };
 
-import { Clock, ProgramTestContext } from "solana-bankrun";
-
-export const fastForward = async (
+export const advanceBySlots = async (
   context: ProgramTestContext,
   slots: bigint
 ) => {

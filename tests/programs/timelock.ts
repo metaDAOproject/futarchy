@@ -13,10 +13,10 @@ const TIMELOCK_PROGRAM_ID = new PublicKey(
   "tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF"
 );
 
-import { OptimisticTimelock } from "../target/types/optimistic_timelock";
+import { OptimisticTimelock, IDL as OptimisticTimelockIDL } from "../../target/types/optimistic_timelock";
 import { ComputeBudgetProgram, Connection } from "@solana/web3.js";
 import { printArgs } from "@metaplex-foundation/mpl-token-metadata";
-const OptimisticTimelockIDL: OptimisticTimelock = require("../target/idl/optimistic_timelock.json");
+// const OptimisticTimelockIDL: OptimisticTimelock = require("../target/idl/optimistic_timelock.json");
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;

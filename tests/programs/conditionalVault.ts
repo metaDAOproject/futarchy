@@ -34,8 +34,8 @@ import {
 
 const { PublicKey, Keypair } = web3;
 
-import { ConditionalVault } from "../target/types/conditional_vault";
-import { expectError } from "./utils";
+import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../target/types/conditional_vault";
+import { expectError } from "../utils";
 import {
   CONDITIONAL_VAULT_PROGRAM_ID,
   ConditionalVaultClient,
@@ -47,7 +47,6 @@ import {
   sha256,
 } from "@metadaoproject/futarchy";
 import { set } from "@metaplex-foundation/umi/serializers";
-const ConditionalVaultIDL: ConditionalVault = require("../target/idl/conditional_vault.json");
 
 export type VaultProgram = anchor.Program<ConditionalVault>;
 export type PublicKey = anchor.web3.PublicKey;
