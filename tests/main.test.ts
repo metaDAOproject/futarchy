@@ -3,6 +3,10 @@ import conditionalVault from "./conditionalVault/main.test";
 import { BankrunProvider } from "anchor-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import { ConditionalVaultClient } from "@metadaoproject/futarchy";
+import { PublicKey, Keypair} from "@solana/web3.js";
+import { createAssociatedTokenAccount, createMint, mintTo, getAccount, transfer } from "spl-token-bankrun";
+import * as token from "@solana/spl-token";
+import { assert } from "chai";
 
 before(async function () {
     let context = await startAnchor(
@@ -32,10 +36,35 @@ before(async function () {
 
     this.vaultClient = ConditionalVaultClient.createClient({ provider: provider as any });
     this.payer = provider.wallet.payer;
-    // });
-    // describe("1", () => test1(vaultClient));
-    // describe("2", () => test2(vaultClient));
-    // test2();
+
+
+    this.createTokenAccount = async (mint: PublicKey, owner: PublicKey) => {
+        return await createAssociatedTokenAccount(
+            this.banksClient,
+            this.payer,
+            mint,
+            owner
+        );
+    }
+
+    this.createMint = async (mintAuthority: PublicKey, decimals: number) => {
+        return await createMint(this.banksClient, this.payer, mintAuthority, null, decimals);
+    }
+
+    this.mintTo = async (mint: PublicKey, to: PublicKey, mintAuthority: Keypair, amount: number) => {
+        const tokenAccount = token.getAssociatedTokenAddressSync(mint, to, true);
+        return await mintTo(this.banksClient, this.payer, mint, tokenAccount, mintAuthority, amount);
+    }
+
+    this.assertBalance = async (mint: PublicKey, owner: PublicKey, amount: number) => {
+        const tokenAccount = token.getAssociatedTokenAddressSync(mint, owner, true);
+        const storedTokenAccount = await getAccount(this.banksClient, tokenAccount);
+        assert.equal(storedTokenAccount.amount.toString(), amount.toString());
+    }
+
+    this.transfer = async (mint: PublicKey, from: Keypair, to: PublicKey, amount: number) => {
+        return await transfer(this.banksClient, this.payer, token.getAssociatedTokenAddressSync(mint, from.publicKey, true), token.getAssociatedTokenAddressSync(mint, to, true), from, amount);
+    }
 });
 
 describe("conditional_vault", conditionalVault);
