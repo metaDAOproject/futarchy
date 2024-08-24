@@ -4,6 +4,8 @@ use super::*;
 pub enum VaultError {
     #[msg("Insufficient underlying token balance to mint this amount of conditional tokens")]
     InsufficientUnderlyingTokens,
+    #[msg("Insufficient conditional token balance to merge this `amount`")]
+    InsufficientConditionalTokens,
     #[msg("This `vault_underlying_token_account` is not this vault's `underlying_token_account`")]
     InvalidVaultUnderlyingTokenAccount,
     #[msg("This conditional token mint is not this vault's conditional token mint")]
