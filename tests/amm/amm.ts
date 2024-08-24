@@ -88,7 +88,7 @@ describe("amm", async function () {
       META,
       userMetaAccount,
       payer.publicKey,
-      10_000 * 10 ** 9
+      100 * 10 ** 9
     );
     mintTo(
       banksClient,
@@ -96,7 +96,7 @@ describe("amm", async function () {
       USDC,
       userUsdcAccount,
       payer.publicKey,
-      1_000_000 * 10 ** 6
+      10_000 * 10 ** 6
     );
 
     proposal = Keypair.generate().publicKey;
