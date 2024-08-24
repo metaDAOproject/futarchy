@@ -4,16 +4,18 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
     pub fn handle_split_tokens(ctx: Context<'_, '_, 'c, 'info, Self>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
 
-        let (conditional_token_mints, user_conditional_token_accounts) =
+        let (mut conditional_token_mints, mut user_conditional_token_accounts) =
             Self::get_mints_and_user_token_accounts(&ctx)?;
 
         let pre_vault_underlying_balance = accs.vault_underlying_token_account.amount;
-        // let pre_user_conditional_on_finalize_balance =
-        //     accs.user_conditional_on_finalize_token_account.amount;
-        // let pre_user_conditional_on_revert_balance =
-        //     accs.user_conditional_on_revert_token_account.amount;
-        // let pre_finalize_mint_supply = accs.conditional_on_finalize_token_mint.supply;
-        // let pre_revert_mint_supply = accs.conditional_on_revert_token_mint.supply;
+        let pre_conditional_user_balances = user_conditional_token_accounts
+            .iter()
+            .map(|acc| acc.amount)
+            .collect::<Vec<u64>>();
+        let pre_conditional_mint_supplies = conditional_token_mints
+            .iter()
+            .map(|mint| mint.supply)
+            .collect::<Vec<u64>>();
 
         require!(
             accs.user_underlying_token_account.amount >= amount,
@@ -55,38 +57,21 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
             )?;
         }
 
-        // ctx.accounts
-        //     .user_conditional_on_finalize_token_account
-        //     .reload()?;
-        // ctx.accounts
-        //     .user_conditional_on_revert_token_account
-        //     .reload()?;
-        // ctx.accounts.vault_underlying_token_account.reload()?;
-        // ctx.accounts.conditional_on_finalize_token_mint.reload()?;
-        // ctx.accounts.conditional_on_revert_token_mint.reload()?;
+        ctx.accounts.vault_underlying_token_account.reload()?;
+        assert!(
+            ctx.accounts.vault_underlying_token_account.amount
+                == pre_vault_underlying_balance + amount
+        );
 
-        // let post_user_conditional_on_finalize_balance = ctx
-        //     .accounts
-        //     .user_conditional_on_finalize_token_account
-        //     .amount;
-        // let post_user_conditional_on_revert_balance =
-        //     ctx.accounts.user_conditional_on_revert_token_account.amount;
-        // let post_vault_underlying_balance = ctx.accounts.vault_underlying_token_account.amount;
-        // let post_finalize_mint_supply = ctx.accounts.conditional_on_finalize_token_mint.supply;
-        // let post_revert_mint_supply = ctx.accounts.conditional_on_revert_token_mint.supply;
+        for (i, mint) in conditional_token_mints.iter_mut().enumerate() {
+            mint.reload()?;
+            assert!(mint.supply == pre_conditional_mint_supplies[i] + amount);
+        }
 
-        // // Only the paranoid survive ;)
-        // assert!(post_vault_underlying_balance == pre_vault_underlying_balance + amount);
-        // assert!(
-        //     post_user_conditional_on_finalize_balance
-        //         == pre_user_conditional_on_finalize_balance + amount
-        // );
-        // assert!(
-        //     post_user_conditional_on_revert_balance
-        //         == pre_user_conditional_on_revert_balance + amount
-        // );
-        // assert!(post_finalize_mint_supply == pre_finalize_mint_supply + amount);
-        // assert!(post_revert_mint_supply == pre_revert_mint_supply + amount);
+        for (i, acc) in user_conditional_token_accounts.iter_mut().enumerate() {
+            acc.reload()?;
+            assert!(acc.amount == pre_conditional_user_balances[i] + amount);
+        }
 
         Ok(())
     }
