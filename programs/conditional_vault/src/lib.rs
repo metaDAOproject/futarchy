@@ -99,13 +99,13 @@ pub mod conditional_vault {
         AddMetadataToConditionalTokens::handle(ctx, args)
     }
 
-    #[access_control(ctx.accounts.validate())]
-    pub fn settle_conditional_vault(
-        ctx: Context<SettleConditionalVault>,
-        new_status: VaultStatus,
-    ) -> Result<()> {
-        SettleConditionalVault::handle(ctx, new_status)
-    }
+    // #[access_control(ctx.accounts.validate())]
+    // pub fn settle_conditional_vault(
+    //     ctx: Context<SettleConditionalVault>,
+    //     new_status: VaultStatus,
+    // ) -> Result<()> {
+    //     SettleConditionalVault::handle(ctx, new_status)
+    // }
 
     #[access_control(ctx.accounts.validate_merge_conditional_tokens())]
     pub fn merge_conditional_tokens_for_underlying_tokens(

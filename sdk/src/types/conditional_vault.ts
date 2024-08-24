@@ -344,29 +344,6 @@ export type ConditionalVault = {
       ];
     },
     {
-      name: "settleConditionalVault";
-      accounts: [
-        {
-          name: "settlementAuthority";
-          isMut: false;
-          isSigner: true;
-        },
-        {
-          name: "vault";
-          isMut: true;
-          isSigner: false;
-        }
-      ];
-      args: [
-        {
-          name: "newStatus";
-          type: {
-            defined: "VaultStatus";
-          };
-        }
-      ];
-    },
-    {
       name: "mergeConditionalTokensForUnderlyingTokens";
       accounts: [
         {
@@ -1167,29 +1144,6 @@ export const IDL: ConditionalVault = {
           name: "args",
           type: {
             defined: "AddMetadataToConditionalTokensArgs",
-          },
-        },
-      ],
-    },
-    {
-      name: "settleConditionalVault",
-      accounts: [
-        {
-          name: "settlementAuthority",
-          isMut: false,
-          isSigner: true,
-        },
-        {
-          name: "vault",
-          isMut: true,
-          isSigner: false,
-        },
-      ],
-      args: [
-        {
-          name: "newStatus",
-          type: {
-            defined: "VaultStatus",
           },
         },
       ],

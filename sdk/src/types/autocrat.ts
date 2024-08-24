@@ -54,6 +54,11 @@ export type Autocrat = {
           isSigner: false;
         },
         {
+          name: "question";
+          isMut: false;
+          isSigner: false;
+        },
+        {
           name: "quoteVault";
           isMut: false;
           isSigner: false;
@@ -152,12 +157,7 @@ export type Autocrat = {
           isSigner: false;
         },
         {
-          name: "baseVault";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "quoteVault";
+          name: "question";
           isMut: true;
           isSigner: false;
         },
@@ -390,6 +390,10 @@ export type Autocrat = {
           {
             name: "pdaBump";
             type: "u8";
+          },
+          {
+            name: "question";
+            type: "publicKey";
           }
         ];
       };
@@ -686,6 +690,11 @@ export const IDL: Autocrat = {
           isSigner: false,
         },
         {
+          name: "question",
+          isMut: false,
+          isSigner: false,
+        },
+        {
           name: "quoteVault",
           isMut: false,
           isSigner: false,
@@ -784,12 +793,7 @@ export const IDL: Autocrat = {
           isSigner: false,
         },
         {
-          name: "baseVault",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "quoteVault",
+          name: "question",
           isMut: true,
           isSigner: false,
         },
@@ -1022,6 +1026,10 @@ export const IDL: Autocrat = {
           {
             name: "pdaBump",
             type: "u8",
+          },
+          {
+            name: "question",
+            type: "publicKey",
           },
         ],
       },
