@@ -771,7 +771,7 @@ export type ConditionalVault = {
     {
       code: 6003;
       name: "CantRedeemConditionalTokens";
-      msg: "Vault needs to be settled as finalized before users can redeem conditional tokens for underlying tokens";
+      msg: "Question needs to be resolved before users can redeem conditional tokens for underlying tokens";
     },
     {
       code: 6004;
@@ -1594,7 +1594,7 @@ export const IDL: ConditionalVault = {
     {
       code: 6003,
       name: "CantRedeemConditionalTokens",
-      msg: "Vault needs to be settled as finalized before users can redeem conditional tokens for underlying tokens",
+      msg: "Question needs to be resolved before users can redeem conditional tokens for underlying tokens",
     },
     {
       code: 6004,

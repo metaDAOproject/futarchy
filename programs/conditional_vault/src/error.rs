@@ -8,7 +8,7 @@ pub enum VaultError {
     InvalidVaultUnderlyingTokenAccount,
     #[msg("This conditional token mint is not this vault's conditional token mint")]
     InvalidConditionalTokenMint,
-    #[msg("Vault needs to be settled as finalized before users can redeem conditional tokens for underlying tokens")]
+    #[msg("Question needs to be resolved before users can redeem conditional tokens for underlying tokens")]
     CantRedeemConditionalTokens,
     #[msg("Once a vault has been settled, its status as either finalized or reverted cannot be changed")]
     VaultAlreadySettled,
