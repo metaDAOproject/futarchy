@@ -1,15 +1,17 @@
-import { startAnchor } from "solana-bankrun";
 import conditionalVault from "./conditionalVault/main.test";
+import amm from "./amm/main.test";
+
+import { startAnchor } from "solana-bankrun";
 import { BankrunProvider } from "anchor-bankrun";
 import * as anchor from "@coral-xyz/anchor";
-import { ConditionalVaultClient } from "@metadaoproject/futarchy";
+import { AmmClient, AutocratClient, ConditionalVaultClient } from "@metadaoproject/futarchy";
 import { PublicKey, Keypair} from "@solana/web3.js";
 import { createAssociatedTokenAccount, createMint, mintTo, getAccount, transfer } from "spl-token-bankrun";
 import * as token from "@solana/spl-token";
 import { assert } from "chai";
 
 before(async function () {
-    let context = await startAnchor(
+    this.context = await startAnchor(
         "./",
         [],
         //   [
@@ -22,8 +24,8 @@ before(async function () {
         //   ],
         []
     );
-    this.banksClient = context.banksClient;
-    let provider = new BankrunProvider(context);
+    this.banksClient = this.context.banksClient;
+    let provider = new BankrunProvider(this.context);
     anchor.setProvider(provider);
 
     // umi = createUmi(anchor.AnchorProvider.env().connection);
@@ -35,6 +37,8 @@ before(async function () {
     // );
 
     this.vaultClient = ConditionalVaultClient.createClient({ provider: provider as any });
+    this.autocratClient = AutocratClient.createClient({ provider: provider as any });
+    this.ammClient = AmmClient.createClient({ provider: provider as any });
     this.payer = provider.wallet.payer;
 
 
@@ -68,3 +72,4 @@ before(async function () {
 });
 
 describe("conditional_vault", conditionalVault);
+describe("amm", amm);
