@@ -17,6 +17,45 @@ pub struct NewConditionalVault {
     pub decimals: u8,
 }
 
+impl NewConditionalVault {
+    /// Checks that the vault's assets are always greater than its potential
+    /// liabilities. Should be called anytime you mint or burn conditional
+    /// tokens.
+    ///
+    /// `conditional_token_supplies` should be in the same order as
+    /// `vault.conditional_token_mints`.
+    pub fn invariant(
+        &self,
+        question: &Question,
+        conditional_token_supplies: Vec<u64>,
+        vault_underlying_balance: u64,
+    ) -> Result<()> {
+        // if the question isn't resolved, the vault should have more underlying
+        // tokens than ANY conditional token mint's supply
+
+        // if the question is resolved, the vault should have more underlying
+        // tokens than the sum of the conditional token mint's supplies multiplied
+        // by their respective payouts
+
+        let max_possible_liability = if !question.is_resolved() {
+            // safe because conditional_token_supplies is non-empty
+            *conditional_token_supplies.iter().max().unwrap()
+        } else {
+            conditional_token_supplies
+                .iter()
+                .enumerate()
+                .map(|(i, supply)| {
+                    *supply * question.payout_numerators[i] as u64 / question.payout_denominator as u64
+                })
+                .sum::<u64>()
+        };
+
+        assert!(vault_underlying_balance >= max_possible_liability);
+
+        Ok(())
+    }
+}
+
 #[macro_export]
 macro_rules! generate_new_vault_seeds {
     ($vault:expr) => {{
