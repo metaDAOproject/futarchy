@@ -73,6 +73,12 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
             assert!(acc.amount == pre_conditional_user_balances[i] + amount);
         }
 
+        ctx.accounts.vault.invariant(
+            &ctx.accounts.question,
+            conditional_token_mints.iter().map(|mint| mint.supply).collect::<Vec<u64>>(),
+            ctx.accounts.vault_underlying_token_account.amount,
+        )?;
+
         Ok(())
     }
 }
