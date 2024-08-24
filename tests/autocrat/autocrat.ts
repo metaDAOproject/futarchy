@@ -99,7 +99,7 @@ export default function suite() {
 
     ammClient = AmmClient.createClient({ provider });
     vaultClient = ConditionalVaultClient.createClient({ provider });
-    autocratClient = await AutocratClient.createClient({ provider });
+    autocratClient = AutocratClient.createClient({ provider });
 
     autocrat = new anchor.Program<Autocrat>(
       AutocratIDL,
@@ -339,14 +339,14 @@ export default function suite() {
         ONE_USDC.muln(5000)
       );
 
-      let { baseVault, quoteVault } = autocratClient.getProposalPdas(
+      let { baseVault, quoteVault, question } = autocratClient.getProposalPdas(
         proposal,
         META,
         USDC,
         dao
       );
-      await vaultClient.mintConditionalTokens(baseVault, 10);
-      await vaultClient.mintConditionalTokens(quoteVault, 10_000);
+      await vaultClient.splitTokensIx(question, baseVault, META, new BN(10 * 10**9), 2).rpc();
+      await vaultClient.splitTokensIx(question, quoteVault, USDC, new BN(10_000 * 1_000_000), 2).rpc();
     });
 
     it("doesn't finalize proposals that are too young", async function () {
@@ -372,6 +372,7 @@ export default function suite() {
         quoteVault,
         passLp,
         failLp,
+        question,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
       // swap $500 in the pass market, make it pass
@@ -449,11 +450,16 @@ export default function suite() {
       console.log(PriceMath.getHumanPrice(passTwap, 9, 6));
       console.log(PriceMath.getHumanPrice(failTwap, 9, 6));
 
-      let storedBaseVault = await vaultClient.getVault(baseVault);
-      let storedQuoteVault = await vaultClient.getVault(quoteVault);
+      let storedQuestion = await vaultClient.fetchQuestion(question);
 
-      assert.exists(storedBaseVault.status.finalized);
-      assert.exists(storedQuoteVault.status.finalized);
+      assert.equal(storedQuestion.payoutDenominator, 1);
+      assert.deepEqual(storedQuestion.payoutNumerators, [0, 1]);
+
+      // let storedBaseVault = await vaultClient.fetchVault(baseVault);
+      // let storedQuoteVault = await vaultClient.fetchVault(quoteVault);
+
+      // assert.exists(storedBaseVault.status.finalized);
+      // assert.exists(storedQuoteVault.status.finalized);
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
@@ -462,8 +468,7 @@ export default function suite() {
         failAmm,
         failBaseMint,
         failQuoteMint,
-        baseVault,
-        quoteVault,
+        question,
       } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
       // swap $500 in the fail market, make it fail
@@ -512,16 +517,16 @@ export default function suite() {
       console.log(PriceMath.getHumanPrice(passTwap, 9, 6));
       console.log(PriceMath.getHumanPrice(failTwap, 9, 6));
 
-      let storedBaseVault = await vaultClient.getVault(baseVault);
-      let storedQuoteVault = await vaultClient.getVault(quoteVault);
+      let storedQuestion = await vaultClient.fetchQuestion(question);
 
-      assert.exists(storedBaseVault.status.reverted);
-      assert.exists(storedQuoteVault.status.reverted);
+      assert.equal(storedQuestion.payoutDenominator, 1);
+      assert.deepEqual(storedQuestion.payoutNumerators, [1, 0]);
+
     });
   });
 
   describe("#execute_proposal", async function () {
-    let proposal, passAmm, failAmm, baseVault, quoteVault, instruction;
+    let proposal, passAmm, failAmm, baseVault, quoteVault, question: PublicKey,instruction;
 
     beforeEach(async function () {
       await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
@@ -563,11 +568,14 @@ export default function suite() {
         ONE_META.muln(10),
         ONE_USDC.muln(6_000)
       );
-      ({ baseVault, quoteVault, passAmm, failAmm } =
+
+      // console.log(await autocrat.account.proposal.fetch(proposal));
+      ({ baseVault, quoteVault, passAmm, failAmm, question } =
         await autocrat.account.proposal.fetch(proposal));
 
-      await vaultClient.mintConditionalTokens(baseVault, 10);
-      await vaultClient.mintConditionalTokens(quoteVault, 10_000);
+
+      await vaultClient.splitTokensIx(question, baseVault, META, new BN(10 * 10**9), 2).rpc();
+      await vaultClient.splitTokensIx(question, quoteVault, USDC, new BN(10_000 * 1_000_000), 2).rpc();
     });
 
     it("doesn't allow pending proposals to be executed", async function () {

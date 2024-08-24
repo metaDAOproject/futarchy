@@ -43,6 +43,7 @@ pub struct Proposal {
     /// the math :D
     pub nonce: u64,
     pub pda_bump: u8,
+    pub question: Pubkey,
 }
 
 impl From<&ProposalInstruction> for Instruction {

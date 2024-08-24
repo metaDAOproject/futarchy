@@ -5,7 +5,7 @@ build() {
 }
 
 test() {
-    find programs tests sdk | entr -sc '(cd sdk && yarn build) && RUST_LOG= anchor test'
+    find programs tests sdk | entr -sc 'anchor build && (cd sdk && yarn build) && RUST_LOG= anchor test --skip-build'
 }
 
 build_vault() {
