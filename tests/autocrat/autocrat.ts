@@ -20,10 +20,10 @@ import {
   getAccount,
 } from "spl-token-bankrun";
 
-import { advanceBySlots, expectError } from "../../utils";
-import { Autocrat, IDL as AutocratIDL } from "../../../target/types/autocrat";
-import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../../target/types/conditional_vault";
-import { AutocratMigrator, IDL as AutocratMigratorIDL } from "../../../target/types/autocrat_migrator";
+import { advanceBySlots, expectError } from "../utils";
+import { Autocrat, IDL as AutocratIDL } from "../../target/types/autocrat";
+import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../target/types/conditional_vault";
+import { AutocratMigrator, IDL as AutocratMigratorIDL } from "../../target/types/autocrat_migrator";
 
 const { PublicKey, Keypair } = anchor.web3;
 
@@ -67,7 +67,8 @@ const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
 const ONE_META = new BN(1_000_000_000);
 const ONE_USDC = new BN(1_000_000);
 
-describe("autocrat", async function () {
+// describe("autocrat", async function () {
+export default function suite() {
   let provider,
     autocrat,
     payer,
@@ -688,4 +689,4 @@ describe("autocrat", async function () {
         .then(callbacks[0], callbacks[1]);
     });
   });
-});
+}
