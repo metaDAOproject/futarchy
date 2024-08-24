@@ -12,17 +12,14 @@
         "@metaplex-foundation/umi-uploader-bundlr": "^0.9.1",
         "@noble/ed25519": "^2.0.0",
         "@noble/secp256k1": "^2.0.0",
-        "@openbook-dex/openbook-v2": "0.1.7",
         "@solana/spl-token": "^0.3.7",
         "@solana/web3.js": "^1.90.0",
-        "@sqds/multisig": "^2.0.0",
         "anchor-bankrun": "^0.3.0",
         "arweave": "^1.14.4",
         "solana-bankrun": "^0.3.0",
         "spl-token-bankrun": "0.2.6"
     },
     "devDependencies": {
-        "@mercurial-finance/dynamic-amm-sdk": "^0.4.19",
         "@solana/spl-memo": "^0.2.3",
         "@solana/spl-token-registry": "^0.2.4574",
         "@types/bn.js": "^5.1.0",
