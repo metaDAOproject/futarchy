@@ -38,7 +38,11 @@ impl Timelock {
     pub fn check_authority(&self, authority: Pubkey) -> Result<AuthorityType> {
         if authority == self.authority {
             Ok(AuthorityType::TimelockAuthority)
-        } else if self.optimistic_proposers.iter().any(|proposer| proposer.pubkey == authority) {
+        } else if self
+            .optimistic_proposers
+            .iter()
+            .any(|proposer| proposer.pubkey == authority)
+        {
             Ok(AuthorityType::OptimisticProposer)
         } else {
             Err(TimelockError::NoAuthority.into())
@@ -136,7 +140,10 @@ pub mod optimistic_timelock {
         Ok(())
     }
 
-    pub fn set_optimistic_proposer_cooldown_slots(ctx: Context<Auth>, cooldown_slots: u64) -> Result<()> {
+    pub fn set_optimistic_proposer_cooldown_slots(
+        ctx: Context<Auth>,
+        cooldown_slots: u64,
+    ) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
         timelock.optimistic_proposer_cooldown_slots = cooldown_slots;
@@ -148,7 +155,11 @@ pub mod optimistic_timelock {
         let timelock = &mut ctx.accounts.timelock;
 
         // idempotent
-        if timelock.optimistic_proposers.iter().any(|enq| enq.pubkey == enqueuer) {
+        if timelock
+            .optimistic_proposers
+            .iter()
+            .any(|enq| enq.pubkey == enqueuer)
+        {
             return Ok(());
         }
 
@@ -160,7 +171,10 @@ pub mod optimistic_timelock {
         Ok(())
     }
 
-    pub fn remove_optimistic_proposer(ctx: Context<Auth>, optimistic_proposer: Pubkey) -> Result<()> {
+    pub fn remove_optimistic_proposer(
+        ctx: Context<Auth>,
+        optimistic_proposer: Pubkey,
+    ) -> Result<()> {
         let timelock = &mut ctx.accounts.timelock;
 
         let index = timelock
@@ -455,7 +469,9 @@ pub enum TimelockError {
     CannotExecuteTransactions,
     #[msg("The signer is neither the timelock authority nor an optimistic proposer")]
     NoAuthority,
-    #[msg("Optimistic proposers can't cancel transaction batches enqueued by the timelock authority")]
+    #[msg(
+        "Optimistic proposers can't cancel transaction batches enqueued by the timelock authority"
+    )]
     InsufficientPermissions,
     #[msg("This optimistic proposer is still in its cooldown period")]
     OptimisticProposerCooldown,

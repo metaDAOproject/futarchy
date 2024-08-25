@@ -22,8 +22,14 @@ import {
 
 import { advanceBySlots, expectError } from "../utils";
 import { Autocrat, IDL as AutocratIDL } from "../../target/types/autocrat";
-import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../target/types/conditional_vault";
-import { AutocratMigrator, IDL as AutocratMigratorIDL } from "../../target/types/autocrat_migrator";
+import {
+  ConditionalVault,
+  IDL as ConditionalVaultIDL,
+} from "../../target/types/conditional_vault";
+import {
+  AutocratMigrator,
+  IDL as AutocratMigratorIDL,
+} from "../../target/types/autocrat_migrator";
 
 const { PublicKey, Keypair } = anchor.web3;
 
@@ -345,8 +351,18 @@ export default function suite() {
         USDC,
         dao
       );
-      await vaultClient.splitTokensIx(question, baseVault, META, new BN(10 * 10**9), 2).rpc();
-      await vaultClient.splitTokensIx(question, quoteVault, USDC, new BN(10_000 * 1_000_000), 2).rpc();
+      await vaultClient
+        .splitTokensIx(question, baseVault, META, new BN(10 * 10 ** 9), 2)
+        .rpc();
+      await vaultClient
+        .splitTokensIx(
+          question,
+          quoteVault,
+          USDC,
+          new BN(10_000 * 1_000_000),
+          2
+        )
+        .rpc();
     });
 
     it("doesn't finalize proposals that are too young", async function () {
@@ -463,13 +479,8 @@ export default function suite() {
     });
 
     it("rejects proposals when pass price TWAP < fail price TWAP", async function () {
-      let {
-        passAmm,
-        failAmm,
-        failBaseMint,
-        failQuoteMint,
-        question,
-      } = autocratClient.getProposalPdas(proposal, META, USDC, dao);
+      let { passAmm, failAmm, failBaseMint, failQuoteMint, question } =
+        autocratClient.getProposalPdas(proposal, META, USDC, dao);
 
       // swap $500 in the fail market, make it fail
       await ammClient
@@ -521,12 +532,17 @@ export default function suite() {
 
       assert.equal(storedQuestion.payoutDenominator, 1);
       assert.deepEqual(storedQuestion.payoutNumerators, [1, 0]);
-
     });
   });
 
   describe("#execute_proposal", async function () {
-    let proposal, passAmm, failAmm, baseVault, quoteVault, question: PublicKey,instruction;
+    let proposal,
+      passAmm,
+      failAmm,
+      baseVault,
+      quoteVault,
+      question: PublicKey,
+      instruction;
 
     beforeEach(async function () {
       await mintToOverride(context, treasuryMetaAccount, 1_000_000_000n);
@@ -573,9 +589,18 @@ export default function suite() {
       ({ baseVault, quoteVault, passAmm, failAmm, question } =
         await autocrat.account.proposal.fetch(proposal));
 
-
-      await vaultClient.splitTokensIx(question, baseVault, META, new BN(10 * 10**9), 2).rpc();
-      await vaultClient.splitTokensIx(question, quoteVault, USDC, new BN(10_000 * 1_000_000), 2).rpc();
+      await vaultClient
+        .splitTokensIx(question, baseVault, META, new BN(10 * 10 ** 9), 2)
+        .rpc();
+      await vaultClient
+        .splitTokensIx(
+          question,
+          quoteVault,
+          USDC,
+          new BN(10_000 * 1_000_000),
+          2
+        )
+        .rpc();
     });
 
     it("doesn't allow pending proposals to be executed", async function () {

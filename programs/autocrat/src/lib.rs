@@ -28,7 +28,7 @@ use anchor_lang::solana_program;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 // use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
-use conditional_vault::NewConditionalVault as ConditionalVaultAccount;
+use conditional_vault::ConditionalVault as ConditionalVaultAccount;
 use conditional_vault::Question;
 // use conditional_vault::VaultStatus;
 

@@ -25,6 +25,9 @@ pub struct InitializeProposal<'info> {
     pub proposal: Box<Account<'info, Proposal>>,
     #[account(mut)]
     pub dao: Box<Account<'info, Dao>>,
+    #[account(
+        constraint = question.oracle == proposal.key()
+    )]
     pub question: Box<Account<'info, Question>>,
     #[account(
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,

@@ -66,7 +66,7 @@ export class ConditionalVaultClient {
   }
 
   async fetchVault(vault: PublicKey) {
-    return this.vaultProgram.account.newConditionalVault.fetch(vault);
+    return this.vaultProgram.account.conditionalVault.fetch(vault);
   }
 
   async getVault(vault: PublicKey) {
@@ -113,7 +113,7 @@ export class ConditionalVaultClient {
     return question;
   }
 
-  initializeNewVaultIx(
+  initializeVaultIx(
     question: PublicKey,
     underlyingTokenMint: PublicKey,
     numOutcomes: number
@@ -141,7 +141,7 @@ export class ConditionalVaultClient {
     );
 
     return this.vaultProgram.methods
-      .initializeNewConditionalVault()
+      .initializeConditionalVault()
       .accounts({
         vault,
         question,
@@ -167,7 +167,7 @@ export class ConditionalVaultClient {
       );
   }
 
-  async initializeNewVault(
+  async initializeVault(
     question: PublicKey,
     underlyingTokenMint: PublicKey,
     numOutcomes: number
@@ -178,7 +178,7 @@ export class ConditionalVaultClient {
       underlyingTokenMint
     );
 
-    await this.initializeNewVaultIx(
+    await this.initializeVaultIx(
       question,
       underlyingTokenMint,
       numOutcomes
@@ -201,27 +201,6 @@ export class ConditionalVaultClient {
         oracle: oracle.publicKey,
       })
       .signers([oracle]);
-  }
-
-  async mintConditionalTokens(
-    vault: PublicKey,
-    uiAmount: number,
-    user?: PublicKey | Keypair
-  ) {
-    const storedVault = await this.getVault(vault);
-
-    return (
-      this.mintConditionalTokensIx(
-        vault,
-        storedVault.underlyingTokenMint,
-        new BN(uiAmount).mul(new BN(10).pow(new BN(storedVault.decimals))),
-        user
-      )
-        // .preInstructions([
-        //   createAssociatedTokenAccountIdempotentInstruction(this.provider.publicKey, )
-        // ])
-        .rpc()
-    );
   }
 
   getConditionalTokenMints(vault: PublicKey, numOutcomes: number): PublicKey[] {
@@ -441,261 +420,48 @@ export class ConditionalVaultClient {
     return ix;
   }
 
-  mintConditionalTokensIx(
-    vault: PublicKey,
-    underlyingTokenMint: PublicKey,
-    amount: BN,
-    user?: PublicKey | Keypair
-  ) {
-    const userPubkey =
-      user instanceof Keypair
-        ? user.publicKey
-        : user || this.provider.publicKey;
+  // addMetadataToConditionalTokensIx(
+  //   vault: PublicKey,
+  //   underlyingTokenMint: PublicKey,
+  //   proposalNumber: number,
+  //   onFinalizeUri: string,
+  //   onRevertUri: string
+  // ) {
+  //   const [underlyingTokenMetadata] = getMetadataAddr(underlyingTokenMint);
 
-    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
+  //   const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
+  //     this.vaultProgram.programId,
+  //     vault
+  //   );
+  //   const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
+  //     this.vaultProgram.programId,
+  //     vault
+  //   );
 
-    let userConditionalOnFinalizeTokenAccount = getAssociatedTokenAddressSync(
-      conditionalOnFinalizeTokenMint,
-      userPubkey
-    );
+  //   const [conditionalOnFinalizeTokenMetadata] = getMetadataAddr(
+  //     conditionalOnFinalizeTokenMint
+  //   );
 
-    let userConditionalOnRevertTokenAccount = getAssociatedTokenAddressSync(
-      conditionalOnRevertTokenMint,
-      userPubkey
-    );
+  //   const [conditionalOnRevertTokenMetadata] = getMetadataAddr(
+  //     conditionalOnRevertTokenMint
+  //   );
 
-    let ix = this.vaultProgram.methods
-      .mintConditionalTokens(amount)
-      .accounts({
-        authority: userPubkey,
-        vault,
-        vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
-          underlyingTokenMint,
-          vault,
-          true
-        ),
-        userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
-          underlyingTokenMint,
-          userPubkey,
-          true
-        ),
-        conditionalOnFinalizeTokenMint,
-        userConditionalOnFinalizeTokenAccount,
-        conditionalOnRevertTokenMint,
-        userConditionalOnRevertTokenAccount,
-      })
-      .preInstructions([
-        createAssociatedTokenAccountIdempotentInstruction(
-          userPubkey,
-          userConditionalOnFinalizeTokenAccount,
-          userPubkey,
-          conditionalOnFinalizeTokenMint
-        ),
-        createAssociatedTokenAccountIdempotentInstruction(
-          userPubkey,
-          userConditionalOnRevertTokenAccount,
-          userPubkey,
-          conditionalOnRevertTokenMint
-        ),
-      ]);
-    if (user instanceof Keypair) {
-      ix = ix.signers([user]);
-    }
-
-    return ix;
-  }
-
-  initializeVaultIx(
-    settlementAuthority: PublicKey,
-    underlyingTokenMint: PublicKey
-  ): MethodsBuilder<ConditionalVault, any> {
-    const [vault] = getVaultAddr(
-      this.vaultProgram.programId,
-      settlementAuthority,
-      underlyingTokenMint
-    );
-
-    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-
-    const vaultUnderlyingTokenAccount = getAssociatedTokenAddressSync(
-      underlyingTokenMint,
-      vault,
-      true
-    );
-
-    return this.vaultProgram.methods
-      .initializeConditionalVault({ settlementAuthority })
-      .accounts({
-        vault,
-        underlyingTokenMint,
-        vaultUnderlyingTokenAccount,
-        conditionalOnFinalizeTokenMint,
-        conditionalOnRevertTokenMint,
-      })
-      .preInstructions([
-        createAssociatedTokenAccountIdempotentInstruction(
-          this.provider.publicKey,
-          vaultUnderlyingTokenAccount,
-          vault,
-          underlyingTokenMint
-        ),
-      ]);
-  }
-
-  addMetadataToConditionalTokensIx(
-    vault: PublicKey,
-    underlyingTokenMint: PublicKey,
-    proposalNumber: number,
-    onFinalizeUri: string,
-    onRevertUri: string
-  ) {
-    const [underlyingTokenMetadata] = getMetadataAddr(underlyingTokenMint);
-
-    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-
-    const [conditionalOnFinalizeTokenMetadata] = getMetadataAddr(
-      conditionalOnFinalizeTokenMint
-    );
-
-    const [conditionalOnRevertTokenMetadata] = getMetadataAddr(
-      conditionalOnRevertTokenMint
-    );
-
-    return this.vaultProgram.methods
-      .addMetadataToConditionalTokens({
-        proposalNumber: new BN(proposalNumber),
-        onFinalizeUri,
-        onRevertUri,
-      })
-      .accounts({
-        payer: this.provider.publicKey,
-        vault,
-        underlyingTokenMint,
-        underlyingTokenMetadata,
-        conditionalOnFinalizeTokenMint,
-        conditionalOnRevertTokenMint,
-        conditionalOnFinalizeTokenMetadata,
-        conditionalOnRevertTokenMetadata,
-        tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-      });
-  }
-
-  redeemConditionalTokensIx(vault: PublicKey, underlyingTokenMint: PublicKey) {
-    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-
-    return this.vaultProgram.methods
-      .redeemConditionalTokensForUnderlyingTokens()
-      .accounts({
-        authority: this.provider.publicKey,
-        vault,
-        vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
-          underlyingTokenMint,
-          vault,
-          true
-        ),
-        userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
-          underlyingTokenMint,
-          this.provider.publicKey,
-          true
-        ),
-        conditionalOnFinalizeTokenMint,
-        userConditionalOnFinalizeTokenAccount: getAssociatedTokenAddressSync(
-          conditionalOnFinalizeTokenMint,
-          this.provider.publicKey
-        ),
-        conditionalOnRevertTokenMint,
-        userConditionalOnRevertTokenAccount: getAssociatedTokenAddressSync(
-          conditionalOnRevertTokenMint,
-          this.provider.publicKey
-        ),
-      });
-  }
-
-  mergeConditionalTokensIx(
-    vault: PublicKey,
-    underlyingTokenMint: PublicKey,
-    amount: BN
-  ) {
-    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
-      this.vaultProgram.programId,
-      vault
-    );
-
-    return this.vaultProgram.methods
-      .mergeConditionalTokensForUnderlyingTokens(amount)
-      .accounts({
-        authority: this.provider.publicKey,
-        vault,
-        vaultUnderlyingTokenAccount: getAssociatedTokenAddressSync(
-          underlyingTokenMint,
-          vault,
-          true
-        ),
-        userUnderlyingTokenAccount: getAssociatedTokenAddressSync(
-          underlyingTokenMint,
-          this.provider.publicKey,
-          true
-        ),
-        conditionalOnFinalizeTokenMint,
-        userConditionalOnFinalizeTokenAccount: getAssociatedTokenAddressSync(
-          conditionalOnFinalizeTokenMint,
-          this.provider.publicKey
-        ),
-        conditionalOnRevertTokenMint,
-        userConditionalOnRevertTokenAccount: getAssociatedTokenAddressSync(
-          conditionalOnRevertTokenMint,
-          this.provider.publicKey
-        ),
-      });
-  }
-
-  async initializeVault(
-    settlementAuthority: PublicKey,
-    underlyingTokenMint: PublicKey
-  ): Promise<PublicKey> {
-    const [vault] = getVaultAddr(
-      this.vaultProgram.programId,
-      settlementAuthority,
-      underlyingTokenMint
-    );
-
-    await this.initializeVaultIx(
-      settlementAuthority,
-      underlyingTokenMint
-    ).rpc();
-
-    return vault;
-  }
+  //   return this.vaultProgram.methods
+  //     .addMetadataToConditionalTokens({
+  //       proposalNumber: new BN(proposalNumber),
+  //       onFinalizeUri,
+  //       onRevertUri,
+  //     })
+  //     .accounts({
+  //       payer: this.provider.publicKey,
+  //       vault,
+  //       underlyingTokenMint,
+  //       underlyingTokenMetadata,
+  //       conditionalOnFinalizeTokenMint,
+  //       conditionalOnRevertTokenMint,
+  //       conditionalOnFinalizeTokenMetadata,
+  //       conditionalOnRevertTokenMetadata,
+  //       tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
+  //     });
+  // }
 }

@@ -27,7 +27,7 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
         let vault = &accs.vault;
         let question = &accs.question;
 
-        let seeds = generate_new_vault_seeds!(vault);
+        let seeds = generate_vault_seeds!(vault);
         let signer = &[&seeds[..]];
 
         let user_underlying_balance_before = accs.user_underlying_token_account.amount;
@@ -103,14 +103,20 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
             assert!(acc.amount == 0);
         }
 
-        for (mint, expected_supply) in conditional_token_mints.iter_mut().zip(expected_future_supplies.iter()) {
+        for (mint, expected_supply) in conditional_token_mints
+            .iter_mut()
+            .zip(expected_future_supplies.iter())
+        {
             mint.reload()?;
             assert!(mint.supply == *expected_supply);
         }
 
         ctx.accounts.vault.invariant(
             &ctx.accounts.question,
-            conditional_token_mints.iter().map(|mint| mint.supply).collect::<Vec<u64>>(),
+            conditional_token_mints
+                .iter()
+                .map(|mint| mint.supply)
+                .collect::<Vec<u64>>(),
             ctx.accounts.vault_underlying_token_account.amount,
         )?;
 

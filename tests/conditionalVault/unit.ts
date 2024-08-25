@@ -34,7 +34,10 @@ import {
 
 const { PublicKey, Keypair } = web3;
 
-import { ConditionalVault, IDL as ConditionalVaultIDL } from "../../target/types/conditional_vault";
+import {
+  ConditionalVault,
+  IDL as ConditionalVaultIDL,
+} from "../../target/types/conditional_vault";
 import { expectError } from "../utils";
 import {
   CONDITIONAL_VAULT_PROGRAM_ID,
@@ -114,7 +117,9 @@ describe("conditional_vault", async function () {
       provider
     );
 
-    vaultClient = ConditionalVaultClient.createClient({ provider: provider as any });
+    vaultClient = ConditionalVaultClient.createClient({
+      provider: provider as any,
+    });
 
     payer = vaultProgram.provider.wallet.payer;
     alice = anchor.web3.Keypair.generate();
@@ -190,7 +195,7 @@ describe("conditional_vault", async function () {
 
         it("initializes vaults correctly", async function () {
           await vaultClient
-            .initializeNewVaultIx(question, underlyingTokenMint, outcomes)
+            .initializeVaultIx(question, underlyingTokenMint, outcomes)
             .rpc();
 
           const [vault, pdaBump] = getVaultAddr(
@@ -282,7 +287,7 @@ describe("conditional_vault", async function () {
         settlementAuthority.publicKey,
         2
       );
-      vault = await vaultClient.initializeNewVault(
+      vault = await vaultClient.initializeVault(
         question,
         underlyingTokenMint,
         2
@@ -343,7 +348,7 @@ describe("conditional_vault", async function () {
         settlementAuthority.publicKey,
         2
       );
-      vault = await vaultClient.initializeNewVault(
+      vault = await vaultClient.initializeVault(
         question,
         underlyingTokenMint,
         2
@@ -352,15 +357,26 @@ describe("conditional_vault", async function () {
       await vaultClient
         .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
         .rpc();
-
     });
 
     it("merges tokens", async function () {
-      const balanceBefore = await getAccount(banksClient, token.getAssociatedTokenAddressSync(underlyingTokenMint, payer.publicKey)).then(acc => acc.amount);
+      const balanceBefore = await getAccount(
+        banksClient,
+        token.getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          payer.publicKey
+        )
+      ).then((acc) => acc.amount);
       await vaultClient
         .mergeTokensIx(question, vault, underlyingTokenMint, new BN(600), 2)
         .rpc();
-      const balanceAfter = await getAccount(banksClient, token.getAssociatedTokenAddressSync(underlyingTokenMint, payer.publicKey)).then(acc => acc.amount);
+      const balanceAfter = await getAccount(
+        banksClient,
+        token.getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          payer.publicKey
+        )
+      ).then((acc) => acc.amount);
 
       assert.isTrue(balanceAfter > balanceBefore);
       assert.equal(balanceAfter - balanceBefore, 600);
@@ -379,7 +395,7 @@ describe("conditional_vault", async function () {
         settlementAuthority.publicKey,
         2
       );
-      vault = await vaultClient.initializeNewVault(
+      vault = await vaultClient.initializeVault(
         question,
         underlyingTokenMint,
         2
@@ -436,24 +452,40 @@ describe("conditional_vault", async function () {
       const outcome0Tokens = storedVault.conditionalTokenMints[0];
 
       let burne = Keypair.generate();
-      await createAssociatedTokenAccount(banksClient, payer, outcome0Tokens, burne.publicKey);
+      await createAssociatedTokenAccount(
+        banksClient,
+        payer,
+        outcome0Tokens,
+        burne.publicKey
+      );
 
-      await transfer(banksClient, payer, token.getAssociatedTokenAddressSync(outcome0Tokens, payer.publicKey), token.getAssociatedTokenAddressSync(outcome0Tokens, burne.publicKey), payer, 1000n);
+      await transfer(
+        banksClient,
+        payer,
+        token.getAssociatedTokenAddressSync(outcome0Tokens, payer.publicKey),
+        token.getAssociatedTokenAddressSync(outcome0Tokens, burne.publicKey),
+        payer,
+        1000n
+      );
 
       const underlyingTokenAccount = await token.getAssociatedTokenAddress(
         underlyingTokenMint,
         payer.publicKey
       );
 
-      const balanceBefore = await getAccount(banksClient, underlyingTokenAccount)
-        .then(acc => acc.amount);
+      const balanceBefore = await getAccount(
+        banksClient,
+        underlyingTokenAccount
+      ).then((acc) => acc.amount);
 
       await vaultClient
         .redeemTokensIx(question, vault, underlyingTokenMint, new BN(600), 2)
         .rpc();
 
-      const balanceAfter = await getAccount(banksClient, underlyingTokenAccount)
-        .then(acc => acc.amount);
+      const balanceAfter = await getAccount(
+        banksClient,
+        underlyingTokenAccount
+      ).then((acc) => acc.amount);
 
       assert.isTrue(balanceAfter == balanceBefore);
     });

@@ -1,4 +1,4 @@
-use conditional_vault::{ResolveQuestionArgs, cpi::accounts::ResolveQuestion};
+use conditional_vault::{cpi::accounts::ResolveQuestion, ResolveQuestionArgs};
 
 use super::*;
 
@@ -161,15 +161,16 @@ impl FinalizeProposal<'_> {
         proposal.state = new_proposal_state;
 
         // for vault in [base_vault.to_account_info(), quote_vault.to_account_info()] {
-            let vault_program = vault_program.to_account_info();
-            let cpi_accounts = ResolveQuestion {
-                question: question.to_account_info(),
-                oracle: proposal.to_account_info(),
-            };
-            let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(proposal_signer);
-            conditional_vault::cpi::resolve_question(cpi_ctx, ResolveQuestionArgs {
-                payout_numerators,
-            })?;
+        let vault_program = vault_program.to_account_info();
+        let cpi_accounts = ResolveQuestion {
+            question: question.to_account_info(),
+            oracle: proposal.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(proposal_signer);
+        conditional_vault::cpi::resolve_question(
+            cpi_ctx,
+            ResolveQuestionArgs { payout_numerators },
+        )?;
         // }
 
         // base_vault.reload()?;

@@ -26,11 +26,7 @@ impl ResolveQuestion<'_> {
         question.payout_denominator = args.payout_numerators.iter().sum();
         question.payout_numerators = args.payout_numerators;
 
-        require_gt!(
-            question.payout_denominator,
-            0,
-            VaultError::PayoutZero
-        );
+        require_gt!(question.payout_denominator, 0, VaultError::PayoutZero);
 
         Ok(())
     }
