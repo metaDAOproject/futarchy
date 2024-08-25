@@ -1,130 +1,165 @@
-import { AmmClient, getAmmAddr, getAmmLpMintAddr } from "@metadaoproject/futarchy";
+import {
+  AmmClient,
+  getAmmAddr,
+  getAmmLpMintAddr,
+} from "@metadaoproject/futarchy";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
-import { createMint, createAssociatedTokenAccount, mintTo, getAccount, getMint } from "spl-token-bankrun";
+import {
+  createMint,
+  createAssociatedTokenAccount,
+  mintTo,
+  getAccount,
+  getMint,
+} from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
 import { expectError } from "../../utils";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 
 export default function suite() {
-    let ammClient: AmmClient;
-    let META: PublicKey;
-    let USDC: PublicKey;
-    let amm: PublicKey;
+  let ammClient: AmmClient;
+  let META: PublicKey;
+  let USDC: PublicKey;
+  let amm: PublicKey;
 
-    beforeEach(async function() {
-        ammClient = this.ammClient;
-        META = await createMint(this.banksClient, this.payer, this.payer.publicKey, this.payer.publicKey, 9);
-        USDC = await createMint(this.banksClient, this.payer, this.payer.publicKey, this.payer.publicKey, 6);
-        
-        await this.createTokenAccount(META, this.payer.publicKey);
-        await this.createTokenAccount(USDC, this.payer.publicKey);
+  beforeEach(async function () {
+    ammClient = this.ammClient;
+    META = await createMint(
+      this.banksClient,
+      this.payer,
+      this.payer.publicKey,
+      this.payer.publicKey,
+      9
+    );
+    USDC = await createMint(
+      this.banksClient,
+      this.payer,
+      this.payer.publicKey,
+      this.payer.publicKey,
+      6
+    );
 
-        await this.mintTo(META, this.payer.publicKey, this.payer, 100 * 10 ** 9);
-        await this.mintTo(USDC, this.payer.publicKey, this.payer, 10_000 * 10 ** 6);
+    await this.createTokenAccount(META, this.payer.publicKey);
+    await this.createTokenAccount(USDC, this.payer.publicKey);
 
-        let proposal = Keypair.generate().publicKey;
-        amm = await ammClient.createAmm(proposal, META, USDC, 500);
+    await this.mintTo(META, this.payer.publicKey, this.payer, 100 * 10 ** 9);
+    await this.mintTo(USDC, this.payer.publicKey, this.payer, 10_000 * 10 ** 6);
 
-        await ammClient.addLiquidity(amm, 1000, 2);
-    });
+    let proposal = Keypair.generate().publicKey;
+    amm = await ammClient.createAmm(proposal, META, USDC, 500);
 
-    it("can't remove 0 liquidity", async function() {
-        const callbacks = expectError(
-            "ZeroLiquidityRemove",
-            "was able to remove 0 liquidity"
-        );
+    await ammClient.addLiquidity(amm, 1000, 2);
+  });
 
-        await ammClient
-            .removeLiquidityIx(amm, META, USDC, new anchor.BN(0), new anchor.BN(0), new anchor.BN(0))
-            .rpc()
-            .then(callbacks[0], callbacks[1]);
-    });
+  it("can't remove 0 liquidity", async function () {
+    const callbacks = expectError(
+      "ZeroLiquidityRemove",
+      "was able to remove 0 liquidity"
+    );
 
-    it("remove some liquidity from an amm position", async function() {
-        const ammStart = await ammClient.getAmm(amm);
+    await ammClient
+      .removeLiquidityIx(
+        amm,
+        META,
+        USDC,
+        new anchor.BN(0),
+        new anchor.BN(0),
+        new anchor.BN(0)
+      )
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
+  });
 
-        let userLpAccount = getAssociatedTokenAddressSync(
-            ammStart.lpMint,
-            this.payer.publicKey
-        );
+  it("remove some liquidity from an amm position", async function () {
+    const ammStart = await ammClient.getAmm(amm);
 
-        const userLpAccountStart = await getAccount(this.banksClient, userLpAccount);
-        const lpMintStart = await getMint(this.banksClient, ammStart.lpMint);
+    let userLpAccount = getAssociatedTokenAddressSync(
+      ammStart.lpMint,
+      this.payer.publicKey
+    );
 
-        await ammClient
-            .removeLiquidityIx(
-                amm,
-                META,
-                USDC,
-                new anchor.BN(userLpAccountStart.amount.toString()).divn(2),
-                new anchor.BN(0),
-                new anchor.BN(0)
-            )
-            .rpc();
+    const userLpAccountStart = await getAccount(
+      this.banksClient,
+      userLpAccount
+    );
+    const lpMintStart = await getMint(this.banksClient, ammStart.lpMint);
 
-        const userLpAccountEnd = await getAccount(this.banksClient, userLpAccount);
-        const lpMintEnd = await getMint(this.banksClient, ammStart.lpMint);
+    await ammClient
+      .removeLiquidityIx(
+        amm,
+        META,
+        USDC,
+        new anchor.BN(userLpAccountStart.amount.toString()).divn(2),
+        new anchor.BN(0),
+        new anchor.BN(0)
+      )
+      .rpc();
 
-        const ammEnd = await ammClient.getAmm(amm);
+    const userLpAccountEnd = await getAccount(this.banksClient, userLpAccount);
+    const lpMintEnd = await getMint(this.banksClient, ammStart.lpMint);
 
-        assert.isBelow(Number(lpMintEnd.supply), Number(lpMintStart.supply));
-        assert.isBelow(
-            Number(userLpAccountEnd.amount),
-            Number(userLpAccountStart.amount)
-        );
+    const ammEnd = await ammClient.getAmm(amm);
 
-        assert.isBelow(
-            ammEnd.baseAmount.toNumber(),
-            ammStart.baseAmount.toNumber()
-        );
-        assert.isBelow(
-            ammEnd.quoteAmount.toNumber(),
-            ammStart.quoteAmount.toNumber()
-        );
-    });
+    assert.isBelow(Number(lpMintEnd.supply), Number(lpMintStart.supply));
+    assert.isBelow(
+      Number(userLpAccountEnd.amount),
+      Number(userLpAccountStart.amount)
+    );
 
-    it("remove all liquidity from an amm position", async function() {
-        const ammStart = await ammClient.getAmm(amm);
+    assert.isBelow(
+      ammEnd.baseAmount.toNumber(),
+      ammStart.baseAmount.toNumber()
+    );
+    assert.isBelow(
+      ammEnd.quoteAmount.toNumber(),
+      ammStart.quoteAmount.toNumber()
+    );
+  });
 
-        let userLpAccount = getAssociatedTokenAddressSync(
-            ammStart.lpMint,
-            this.payer.publicKey
-        );
+  it("remove all liquidity from an amm position", async function () {
+    const ammStart = await ammClient.getAmm(amm);
 
-        const userLpAccountStart = await getAccount(this.banksClient, userLpAccount);
-        const lpMintStart = await getMint(this.banksClient, ammStart.lpMint);
+    let userLpAccount = getAssociatedTokenAddressSync(
+      ammStart.lpMint,
+      this.payer.publicKey
+    );
 
-        await ammClient
-            .removeLiquidityIx(
-                amm,
-                META,
-                USDC,
-                new anchor.BN(userLpAccountStart.amount.toString()),
-                new anchor.BN(1 * 10 ** 9),
-                new anchor.BN(10 * 10 ** 6)
-            )
-            .rpc();
+    const userLpAccountStart = await getAccount(
+      this.banksClient,
+      userLpAccount
+    );
+    const lpMintStart = await getMint(this.banksClient, ammStart.lpMint);
 
-        const userLpAccountEnd = await getAccount(this.banksClient, userLpAccount);
-        const lpMintEnd = await getMint(this.banksClient, ammStart.lpMint);
+    await ammClient
+      .removeLiquidityIx(
+        amm,
+        META,
+        USDC,
+        new anchor.BN(userLpAccountStart.amount.toString()),
+        new anchor.BN(1 * 10 ** 9),
+        new anchor.BN(10 * 10 ** 6)
+      )
+      .rpc();
 
-        assert.isBelow(Number(lpMintEnd.supply), Number(lpMintStart.supply));
-        assert.isBelow(
-            Number(userLpAccountEnd.amount),
-            Number(userLpAccountStart.amount)
-        );
+    const userLpAccountEnd = await getAccount(this.banksClient, userLpAccount);
+    const lpMintEnd = await getMint(this.banksClient, ammStart.lpMint);
 
-        const ammEnd = await ammClient.getAmm(amm);
+    assert.isBelow(Number(lpMintEnd.supply), Number(lpMintStart.supply));
+    assert.isBelow(
+      Number(userLpAccountEnd.amount),
+      Number(userLpAccountStart.amount)
+    );
 
-        assert.isBelow(
-            ammEnd.baseAmount.toNumber(),
-            ammStart.baseAmount.toNumber()
-        );
-        assert.isBelow(
-            ammEnd.quoteAmount.toNumber(),
-            ammStart.quoteAmount.toNumber()
-        );
-    });
+    const ammEnd = await ammClient.getAmm(amm);
+
+    assert.isBelow(
+      ammEnd.baseAmount.toNumber(),
+      ammStart.baseAmount.toNumber()
+    );
+    assert.isBelow(
+      ammEnd.quoteAmount.toNumber(),
+      ammStart.quoteAmount.toNumber()
+    );
+  });
 }

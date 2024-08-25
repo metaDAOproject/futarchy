@@ -24,7 +24,7 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
 
         let vault = &accs.vault;
 
-        let seeds = generate_new_vault_seeds!(vault);
+        let seeds = generate_vault_seeds!(vault);
         let signer = &[&seeds[..]];
 
         token::transfer(
@@ -75,7 +75,10 @@ impl<'info, 'c: 'info> InteractWithNewVault<'info> {
 
         ctx.accounts.vault.invariant(
             &ctx.accounts.question,
-            conditional_token_mints.iter().map(|mint| mint.supply).collect::<Vec<u64>>(),
+            conditional_token_mints
+                .iter()
+                .map(|mint| mint.supply)
+                .collect::<Vec<u64>>(),
             ctx.accounts.vault_underlying_token_account.amount,
         )?;
 

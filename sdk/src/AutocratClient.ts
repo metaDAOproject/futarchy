@@ -323,14 +323,10 @@ export class AutocratClient {
 
     // it's important that these happen in a single atomic transaction
     await this.vaultClient
-      .initializeNewVaultIx(question, storedDao.tokenMint, 2)
+      .initializeVaultIx(question, storedDao.tokenMint, 2)
       .postInstructions(
         await InstructionUtils.getInstructions(
-          this.vaultClient.initializeNewVaultIx(
-            question,
-            storedDao.usdcMint,
-            2
-          ),
+          this.vaultClient.initializeVaultIx(question, storedDao.usdcMint, 2),
           this.ammClient.createAmmIx(
             passBaseMint,
             passQuoteMint,

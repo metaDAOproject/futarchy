@@ -52,10 +52,10 @@ pub mod conditional_vault {
         ResolveQuestion::handle(ctx, args)
     }
 
-    pub fn initialize_new_conditional_vault<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, InitializeNewConditionalVault<'info>>,
+    pub fn initialize_conditional_vault<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, InitializeConditionalVault<'info>>,
     ) -> Result<()> {
-        InitializeNewConditionalVault::handle(ctx)
+        InitializeConditionalVault::handle(ctx)
     }
 
     pub fn split_tokens<'c: 'info, 'info>(
@@ -79,50 +79,11 @@ pub mod conditional_vault {
         InteractWithNewVault::handle_redeem_tokens(ctx)
     }
 
-    // pub fn split_tokens()
-    // merge tokens
-
-    // redeem tokens
-
-    pub fn initialize_conditional_vault(
-        ctx: Context<InitializeConditionalVault>,
-        args: InitializeConditionalVaultArgs,
-    ) -> Result<()> {
-        InitializeConditionalVault::handle(ctx, args)
-    }
-
-    #[access_control(ctx.accounts.validate())]
-    pub fn add_metadata_to_conditional_tokens(
-        ctx: Context<AddMetadataToConditionalTokens>,
-        args: AddMetadataToConditionalTokensArgs,
-    ) -> Result<()> {
-        AddMetadataToConditionalTokens::handle(ctx, args)
-    }
-
     // #[access_control(ctx.accounts.validate())]
-    // pub fn settle_conditional_vault(
-    //     ctx: Context<SettleConditionalVault>,
-    //     new_status: VaultStatus,
+    // pub fn add_metadata_to_conditional_tokens(
+    //     ctx: Context<AddMetadataToConditionalTokens>,
+    //     args: AddMetadataToConditionalTokensArgs,
     // ) -> Result<()> {
-    //     SettleConditionalVault::handle(ctx, new_status)
+    //     AddMetadataToConditionalTokens::handle(ctx, args)
     // }
-
-    #[access_control(ctx.accounts.validate_merge_conditional_tokens())]
-    pub fn merge_conditional_tokens_for_underlying_tokens(
-        ctx: Context<InteractWithVault>,
-        amount: u64,
-    ) -> Result<()> {
-        InteractWithVault::handle_merge_conditional_tokens(ctx, amount)
-    }
-
-    pub fn mint_conditional_tokens(ctx: Context<InteractWithVault>, amount: u64) -> Result<()> {
-        InteractWithVault::handle_mint_conditional_tokens(ctx, amount)
-    }
-
-    #[access_control(ctx.accounts.validate_redeem_conditional_tokens())]
-    pub fn redeem_conditional_tokens_for_underlying_tokens(
-        ctx: Context<InteractWithVault>,
-    ) -> Result<()> {
-        InteractWithVault::handle_redeem_conditional_tokens(ctx)
-    }
 }

@@ -13,7 +13,10 @@ const AUTOCRAT_MIGRATOR_PROGRAM_ID = new PublicKey(
   "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
 );
 
-import { AutocratMigrator, IDL as AutocratMigratorIDL } from "../../target/types/autocrat_migrator";
+import {
+  AutocratMigrator,
+  IDL as AutocratMigratorIDL,
+} from "../../target/types/autocrat_migrator";
 
 export type PublicKey = anchor.web3.PublicKey;
 export type Signer = anchor.web3.Signer;

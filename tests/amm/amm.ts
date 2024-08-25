@@ -110,11 +110,7 @@ describe("amm", async function () {
       let expectedMaxObservationChangePerUpdate = new BN(10_000_000_000);
 
       let bump: number;
-      [amm, bump] = getAmmAddr(
-        ammClient.program.programId,
-        META,
-        USDC,
-      );
+      [amm, bump] = getAmmAddr(ammClient.program.programId, META, USDC);
 
       const ammAcc = await ammClient.getAmm(amm);
 
@@ -159,7 +155,7 @@ describe("amm", async function () {
           META,
           META,
           twapFirstObservationScaled,
-          twapMaxObservationChangePerUpdateScaled,
+          twapMaxObservationChangePerUpdateScaled
         )
         .rpc()
         .then(callbacks[0], callbacks[1]);

@@ -34,13 +34,13 @@ export const getQuestionAddr = (
 
 export const getVaultAddr = (
   programId: PublicKey,
-  settlementAuthority: PublicKey,
+  question: PublicKey,
   underlyingTokenMint: PublicKey
 ) => {
   return PublicKey.findProgramAddressSync(
     [
       utils.bytes.utf8.encode("conditional_vault"),
-      settlementAuthority.toBuffer(),
+      question.toBuffer(),
       underlyingTokenMint.toBuffer(),
     ],
     programId
