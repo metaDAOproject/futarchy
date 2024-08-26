@@ -8,7 +8,6 @@ pub mod proph3t_deployer {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AddMetadataToConditionalTokensArgs {
-    // pub uri: String,
     pub name: String,
     pub symbol: String,
     pub image: String,
@@ -24,7 +23,6 @@ pub struct AddMetadataToConditionalTokens<'info> {
     #[account(
         mut,
         mint::authority = vault,
-        mint::freeze_authority = vault,
     )]
     pub conditional_token_mint: Account<'info, Mint>,
     /// CHECK: verified via cpi into token metadata
@@ -41,6 +39,11 @@ impl AddMetadataToConditionalTokens<'_> {
         //     self.vault.status == VaultStatus::Active,
         //     VaultError::VaultAlreadySettled
         // );
+
+        require!(
+            self.conditional_token_metadata.data_is_empty(),
+            VaultError::ConditionalTokenMetadataAlreadySet
+        );
 
         #[cfg(feature = "production")]
         require_eq!(

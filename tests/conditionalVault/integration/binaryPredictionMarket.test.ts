@@ -61,6 +61,9 @@ export default async function test() {
   const vault = await vaultClient.initializeVault(question, USDC, 2);
   const storedVault = await vaultClient.fetchVault(vault);
 
+  await vaultClient.addMetadataToConditionalTokensIx(vault, 0, "Trump Share", "TRUMP", "https://example.com/trump.png").rpc();
+  await vaultClient.addMetadataToConditionalTokensIx(vault, 1, "Harris Share", "HARRIS", "https://example.com/harris.png").rpc();
+
   await vaultClient
     .splitTokensIx(question, vault, USDC, new BN(100), 2, alice.publicKey)
     .signers([alice])
