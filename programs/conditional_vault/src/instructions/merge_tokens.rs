@@ -1,6 +1,6 @@
 use super::*;
 
-impl<'info, 'c: 'info> InteractWithNewVault<'info> {
+impl<'info, 'c: 'info> InteractWithVault<'info> {
     pub fn handle_merge_tokens(ctx: Context<'_, '_, 'c, 'info, Self>, amount: u64) -> Result<()> {
         let accs = &ctx.accounts;
 

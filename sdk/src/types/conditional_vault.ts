@@ -216,6 +216,54 @@ export type ConditionalVault = {
         }
       ];
       args: [];
+    },
+    {
+      name: "addMetadataToConditionalTokens";
+      accounts: [
+        {
+          name: "payer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "vault";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "conditionalTokenMint";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "conditionalTokenMetadata";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "tokenMetadataProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "rent";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "args";
+          type: {
+            defined: "AddMetadataToConditionalTokensArgs";
+          };
+        }
+      ];
     }
   ];
   accounts: [
@@ -305,6 +353,26 @@ export type ConditionalVault = {
     }
   ];
   types: [
+    {
+      name: "AddMetadataToConditionalTokensArgs";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "name";
+            type: "string";
+          },
+          {
+            name: "symbol";
+            type: "string";
+          },
+          {
+            name: "image";
+            type: "string";
+          }
+        ];
+      };
+    },
     {
       name: "InitializeQuestionArgs";
       type: {
@@ -652,6 +720,54 @@ export const IDL: ConditionalVault = {
       ],
       args: [],
     },
+    {
+      name: "addMetadataToConditionalTokens",
+      accounts: [
+        {
+          name: "payer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "vault",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "conditionalTokenMint",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "conditionalTokenMetadata",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "tokenMetadataProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "rent",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "args",
+          type: {
+            defined: "AddMetadataToConditionalTokensArgs",
+          },
+        },
+      ],
+    },
   ],
   accounts: [
     {
@@ -740,6 +856,26 @@ export const IDL: ConditionalVault = {
     },
   ],
   types: [
+    {
+      name: "AddMetadataToConditionalTokensArgs",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "name",
+            type: "string",
+          },
+          {
+            name: "symbol",
+            type: "string",
+          },
+          {
+            name: "image",
+            type: "string",
+          },
+        ],
+      },
+    },
     {
       name: "InitializeQuestionArgs",
       type: {

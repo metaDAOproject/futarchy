@@ -1,6 +1,6 @@
 use super::*;
 
-// pub mod add_metadata_to_conditional_tokens;
+pub mod add_metadata_to_conditional_tokens;
 pub mod common;
 pub mod initialize_conditional_vault;
 pub mod initialize_question;
@@ -10,7 +10,7 @@ pub mod resolve_question;
 pub mod split_tokens;
 
 pub use initialize_question::*;
-// pub use add_metadata_to_conditional_tokens::*;
+pub use add_metadata_to_conditional_tokens::*;
 pub use common::*;
 pub use initialize_conditional_vault::*;
 pub use resolve_question::*;
