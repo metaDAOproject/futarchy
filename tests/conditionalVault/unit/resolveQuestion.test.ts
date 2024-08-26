@@ -1,6 +1,7 @@
 import { sha256, ConditionalVaultClient } from "@metadaoproject/futarchy";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
+import { expectError } from "../../utils";
 
 export default function suite() {
   let vaultClient: ConditionalVaultClient;
@@ -35,5 +36,29 @@ export default function suite() {
 
     assert.deepEqual(storedQuestion.payoutNumerators, [1, 0]);
     assert.equal(storedQuestion.payoutDenominator, 1);
+  });
+
+  it("throws error when resolving a question with invalid number of payout numerators", async function () {
+    const callbacks = expectError(
+      "InvalidNumPayoutNumerators",
+      "question resolution succeeded despite invalid number of payout numerators"
+    );
+
+    await vaultClient
+      .resolveQuestionIx(question, settlementAuthority, [1, 0, 1])
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
+  });
+
+  it("throws error when resolving a question with zero payout", async function () {
+    const callbacks = expectError(
+      "PayoutZero",
+      "question resolution succeeded despite zero payout"
+    );
+
+    await vaultClient
+      .resolveQuestionIx(question, settlementAuthority, [0, 0])
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
   });
 }

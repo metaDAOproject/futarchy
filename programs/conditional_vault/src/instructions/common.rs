@@ -46,6 +46,7 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
                 VaultError::ConditionalMintMismatch
             );
 
+            // really, this should never fail because we initialize mints when we initialize the vault
             conditional_token_mints.push(
                 Account::<Mint>::try_from(conditional_token_mint)
                     .or(Err(VaultError::BadConditionalMint))?,

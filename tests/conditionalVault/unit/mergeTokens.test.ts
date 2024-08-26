@@ -9,6 +9,7 @@ import {
 } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
+import { expectError } from "../../utils";
 
 export default function suite() {
   let vaultClient: ConditionalVaultClient;
@@ -95,5 +96,17 @@ export default function suite() {
 
     assert.isTrue(balanceAfter > balanceBefore);
     assert.equal(balanceAfter - balanceBefore, 600);
+  });
+
+  it("throws error when trying to merge more tokens than available", async function () {
+    const callbacks = expectError(
+      "InsufficientConditionalTokens",
+      "merge succeeded despite insufficient conditional tokens"
+    );
+
+    await vaultClient
+      .mergeTokensIx(question, vault, underlyingTokenMint, new anchor.BN(2000), 2)
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
   });
 }

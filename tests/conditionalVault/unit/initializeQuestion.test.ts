@@ -5,6 +5,7 @@ import {
 } from "@metadaoproject/futarchy";
 import { Keypair } from "@solana/web3.js";
 import { assert } from "chai";
+import { expectError } from "../../utils";
 
 export default function suite() {
   let vaultClient: ConditionalVaultClient;
@@ -33,5 +34,17 @@ export default function suite() {
     assert.ok(storedQuestion.oracle.equals(oracle.publicKey));
     assert.deepEqual(storedQuestion.payoutNumerators, [0, 0]);
     assert.equal(storedQuestion.payoutDenominator, 0);
+  });
+
+  it("throws error when initializing a question with insufficient conditions", async function () {
+    const callbacks = expectError(
+      "InsufficientNumConditions",
+      "question initialization succeeded despite insufficient conditions"
+    );
+
+    await vaultClient
+      .initializeQuestionIx(sha256(new Uint8Array([4, 5, 6])), Keypair.generate().publicKey, 1)
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
   });
 }
