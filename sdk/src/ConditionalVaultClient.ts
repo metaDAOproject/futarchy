@@ -422,45 +422,49 @@ export class ConditionalVaultClient {
 
   addMetadataToConditionalTokensIx(
     vault: PublicKey,
-    underlyingTokenMint: PublicKey,
-    proposalNumber: number,
-    onFinalizeUri: string,
-    onRevertUri: string
+    index: number,
+    name: string,
+    symbol: string,
+    image: string
+    // underlyingTokenMint: PublicKey,
+    // proposalNumber: number,
+    // onFinalizeUri: string,
+    // onRevertUri: string
   ) {
-    const [underlyingTokenMetadata] = getMetadataAddr(underlyingTokenMint);
+    // const [underlyingTokenMetadata] = getMetadataAddr(underlyingTokenMint);
 
-    const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
+    const [conditionalTokenMint] = getConditionalTokenMintAddr(
       this.vaultProgram.programId,
-      vault
-    );
-    const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
-      this.vaultProgram.programId,
-      vault
+      vault,
+      index
     );
 
-    const [conditionalOnFinalizeTokenMetadata] = getMetadataAddr(
-      conditionalOnFinalizeTokenMint
-    );
+    // const [conditionalOnFinalizeTokenMint] = getVaultFinalizeMintAddr(
+    //   this.vaultProgram.programId,
+    //   vault
+    // );
+    // const [conditionalOnRevertTokenMint] = getVaultRevertMintAddr(
+    //   this.vaultProgram.programId,
+    //   vault
+    // );
 
-    const [conditionalOnRevertTokenMetadata] = getMetadataAddr(
-      conditionalOnRevertTokenMint
-    );
+    const [conditionalTokenMetadata] = getMetadataAddr(conditionalTokenMint);
+
+    // const [conditionalOnRevertTokenMetadata] = getMetadataAddr(
+    //   conditionalOnRevertTokenMint
+    // );
 
     return this.vaultProgram.methods
       .addMetadataToConditionalTokens({
-        proposalNumber: new BN(proposalNumber),
-        onFinalizeUri,
-        onRevertUri,
+        name,
+        symbol,
+        image,
       })
       .accounts({
         payer: this.provider.publicKey,
         vault,
-        underlyingTokenMint,
-        underlyingTokenMetadata,
-        conditionalOnFinalizeTokenMint,
-        conditionalOnRevertTokenMint,
-        conditionalOnFinalizeTokenMetadata,
-        conditionalOnRevertTokenMetadata,
+        conditionalTokenMint,
+        conditionalTokenMetadata,
         tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
       });
   }

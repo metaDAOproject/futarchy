@@ -30,4 +30,6 @@ pub enum VaultError {
     ConditionalTokenMintMismatch,
     #[msg("Payouts must sum to 1 or more")]
     PayoutZero,
+    #[msg("Conditional token metadata already set")]
+    ConditionalTokenMetadataAlreadySet,
 }

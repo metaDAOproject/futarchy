@@ -497,6 +497,11 @@ export type ConditionalVault = {
       code: 6013;
       name: "PayoutZero";
       msg: "Payouts must sum to 1 or more";
+    },
+    {
+      code: 6014;
+      name: "ConditionalTokenMetadataAlreadySet";
+      msg: "Conditional token metadata already set";
     }
   ];
 };
@@ -1000,6 +1005,11 @@ export const IDL: ConditionalVault = {
       code: 6013,
       name: "PayoutZero",
       msg: "Payouts must sum to 1 or more",
+    },
+    {
+      code: 6014,
+      name: "ConditionalTokenMetadataAlreadySet",
+      msg: "Conditional token metadata already set",
     },
   ],
 };

@@ -4,6 +4,7 @@ import resolveQuestion from "./unit/resolveQuestion.test";
 import splitTokens from "./unit/splitTokens.test";
 import mergeTokens from "./unit/mergeTokens.test";
 import redeemTokens from "./unit/redeemTokens.test";
+import addMetadataToConditionalTokens from "./unit/addMetadataToConditionalTokens.test";
 import binaryPredictionMarket from "./integration/binaryPredictionMarket.test";
 import scalarGrantMarket from "./integration/scalarGrantMarket.test";
 
@@ -16,4 +17,5 @@ export default function suite() {
   describe("#split_tokens", splitTokens);
   describe("#merge_tokens", mergeTokens);
   describe("#redeem_tokens", redeemTokens);
+  describe("#add_metadata_to_conditional_tokens", addMetadataToConditionalTokens);
 }
