@@ -151,4 +151,59 @@ export default function suite() {
       .rpc()
       .then(callbacks[0], callbacks[1]);
   });
+
+  it("throws error when using an invalid vault underlying token account", async function () {
+    const fakeUnderlyingTokenMint = await this.createMint(vault, 8);
+    const invalidVaultUnderlyingTokenAccount = await this.createTokenAccount(
+      fakeUnderlyingTokenMint,
+      vault
+    );
+
+    const callbacks = expectError(
+      "InvalidVaultUnderlyingTokenAccount",
+      "split succeeded despite invalid vault underlying token account"
+    );
+
+    await vaultClient
+      .splitTokensIx(question, vault, underlyingTokenMint, new anchor.BN(1000), 2)
+      .accounts({
+        vaultUnderlyingTokenAccount: invalidVaultUnderlyingTokenAccount,
+      })
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
+  });
+
+  it("throws error when providing invalid number of conditional accounts", async function () {
+    const callbacks = expectError(
+      "InvalidConditionals",
+      "split succeeded despite invalid number of conditional accounts"
+    );
+
+    const { remainingAccounts } = vaultClient.getConditionalTokenAccountsAndInstructions(
+      vault,
+      1, // Incorrect number of outcomes
+      this.payer.publicKey
+    );
+
+    await vaultClient.vaultProgram.methods
+      .splitTokens(new anchor.BN(1000))
+      .accounts({
+        question,
+        authority: this.payer.publicKey,
+        vault,
+        vaultUnderlyingTokenAccount: token.getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          vault,
+          true
+        ),
+        userUnderlyingTokenAccount: token.getAssociatedTokenAddressSync(
+          underlyingTokenMint,
+          this.payer.publicKey,
+          true
+        ),
+      })
+      .remainingAccounts(remainingAccounts)
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
+  });
 }

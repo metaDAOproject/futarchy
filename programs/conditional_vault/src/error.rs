@@ -12,8 +12,6 @@ pub enum VaultError {
     InvalidConditionalTokenMint,
     #[msg("Question needs to be resolved before users can redeem conditional tokens for underlying tokens")]
     CantRedeemConditionalTokens,
-    #[msg("Once a vault has been settled, its status as either finalized or reverted cannot be changed")]
-    VaultAlreadySettled,
     #[msg("Questions need 2 or more conditions")]
     InsufficientNumConditions,
     #[msg("Invalid number of payout numerators")]
