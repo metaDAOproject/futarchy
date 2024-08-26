@@ -1,6 +1,6 @@
 use super::*;
 
-impl<'info, 'c: 'info> InteractWithNewVault<'info> {
+impl<'info, 'c: 'info> InteractWithVault<'info> {
     pub fn validate_redeem_tokens(&self) -> Result<()> {
         require!(
             self.question.is_resolved(),
