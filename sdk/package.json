@@ -1,15 +1,21 @@
 {
   "name": "@metadaoproject/futarchy",
-  "version": "0.3.0-alpha.16",
+  "version": "0.4.0-alpha.0",
+  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "/dist"
   ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./v0.4": "./dist/v0.4/index.js"
+  },
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
-    "build": "rm -rf ./dist && cp ../target/types/* ./src/types && yarn lint:fix && yarn tsc"
+    "build": "rm -rf ./dist && cp ../target/types/* ./src/v0.4/types && yarn lint:fix && yarn tsc"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
@@ -30,6 +36,6 @@
     "solana-bankrun": "^0.2.0",
     "spl-token-bankrun": "0.2.3",
     "ts-mocha": "^10.0.0",
-    "typescript": "^4.3.5"
+    "typescript": "^4.9.5"
   }
 }

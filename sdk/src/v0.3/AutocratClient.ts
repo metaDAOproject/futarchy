@@ -32,10 +32,8 @@ import {
   MaxCUs,
   getAmmAddr,
   getAmmLpMintAddr,
-  getConditionalTokenMintAddr,
   getDaoTreasuryAddr,
   getProposalAddr,
-  getQuestionAddr,
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
@@ -47,7 +45,6 @@ import {
   getAssociatedTokenAddressSync,
   unpackMint,
 } from "@solana/spl-token";
-import { sha256 } from "@noble/hashes/sha256";
 
 export type CreateClientParams = {
   provider: AnchorProvider;
@@ -124,7 +121,6 @@ export class AutocratClient {
     quoteMint: PublicKey,
     dao: PublicKey
   ): {
-    question: PublicKey;
     baseVault: PublicKey;
     quoteVault: PublicKey;
     passBaseMint: PublicKey;
@@ -137,45 +133,26 @@ export class AutocratClient {
     failLp: PublicKey;
   } {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
-    const [question] = getQuestionAddr(
-      vaultProgramId,
-      sha256(`Will ${proposal} pass?/FAIL/PASS`),
-      proposal,
-      2
-    );
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
     const [baseVault] = getVaultAddr(
       this.vaultClient.vaultProgram.programId,
-      question,
+      proposal,
       baseMint
     );
     const [quoteVault] = getVaultAddr(
       this.vaultClient.vaultProgram.programId,
-      question,
+      proposal,
       quoteMint
     );
 
-    const [failBaseMint] = getConditionalTokenMintAddr(
+    const [passBaseMint] = getVaultFinalizeMintAddr(vaultProgramId, baseVault);
+    const [passQuoteMint] = getVaultFinalizeMintAddr(
       vaultProgramId,
-      baseVault,
-      0
-    );
-    const [failQuoteMint] = getConditionalTokenMintAddr(
-      vaultProgramId,
-      quoteVault,
-      0
+      quoteVault
     );
 
-    const [passBaseMint] = getConditionalTokenMintAddr(
-      vaultProgramId,
-      baseVault,
-      1
-    );
-    const [passQuoteMint] = getConditionalTokenMintAddr(
-      vaultProgramId,
-      quoteVault,
-      1
-    );
+    const [failBaseMint] = getVaultRevertMintAddr(vaultProgramId, baseVault);
+    const [failQuoteMint] = getVaultRevertMintAddr(vaultProgramId, quoteVault);
 
     const [passAmm] = getAmmAddr(
       this.ammClient.program.programId,
@@ -198,7 +175,6 @@ export class AutocratClient {
     );
 
     return {
-      question,
       baseVault,
       quoteVault,
       passBaseMint,
@@ -298,12 +274,6 @@ export class AutocratClient {
       nonce
     );
 
-    await this.vaultClient.initializeQuestion(
-      sha256(`Will ${proposal} pass?/FAIL/PASS`),
-      proposal,
-      2
-    );
-
     const {
       baseVault,
       quoteVault,
@@ -313,7 +283,6 @@ export class AutocratClient {
       passQuoteMint,
       failBaseMint,
       failQuoteMint,
-      question,
     } = this.getProposalPdas(
       proposal,
       storedDao.tokenMint,
@@ -323,10 +292,10 @@ export class AutocratClient {
 
     // it's important that these happen in a single atomic transaction
     await this.vaultClient
-      .initializeVaultIx(question, storedDao.tokenMint, 2)
+      .initializeVaultIx(proposal, storedDao.tokenMint)
       .postInstructions(
         await InstructionUtils.getInstructions(
-          this.vaultClient.initializeVaultIx(question, storedDao.usdcMint, 2),
+          this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint),
           this.ammClient.createAmmIx(
             passBaseMint,
             passQuoteMint,
@@ -344,21 +313,13 @@ export class AutocratClient {
       .rpc();
 
     await this.vaultClient
-      .splitTokensIx(
-        question,
-        baseVault,
-        storedDao.tokenMint,
-        baseTokensToLP,
-        2
-      )
+      .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
       .postInstructions(
         await InstructionUtils.getInstructions(
-          this.vaultClient.splitTokensIx(
-            question,
+          this.vaultClient.mintConditionalTokensIx(
             quoteVault,
             storedDao.usdcMint,
-            quoteTokensToLP,
-            2
+            quoteTokensToLP
           )
         )
       )
@@ -398,141 +359,139 @@ export class AutocratClient {
       storedDao.usdcMint,
       lpTokens,
       lpTokens,
-      nonce,
-      question
+      nonce
     ).rpc();
 
     return proposal;
   }
 
-  // async createProposalTxAndPDAs(
-  //   dao: PublicKey,
-  //   descriptionUrl: string,
-  //   instruction: ProposalInstruction,
-  //   baseTokensToLP: BN,
-  //   quoteTokensToLP: BN
-  // ): Promise<
-  //   [
-  //     Transaction[],
-  //     {
-  //       proposalAcct: PublicKey;
-  //       baseCondVaultAcct: PublicKey;
-  //       quoteCondVaultAcct: PublicKey;
-  //       passMarketAcct: PublicKey;
-  //       failMarketAcct: PublicKey;
-  //     }
-  //   ]
-  // > {
-  //   const storedDao = await this.getDao(dao);
+  async createProposalTxAndPDAs(
+    dao: PublicKey,
+    descriptionUrl: string,
+    instruction: ProposalInstruction,
+    baseTokensToLP: BN,
+    quoteTokensToLP: BN
+  ): Promise<
+    [
+      Transaction[],
+      {
+        proposalAcct: PublicKey;
+        baseCondVaultAcct: PublicKey;
+        quoteCondVaultAcct: PublicKey;
+        passMarketAcct: PublicKey;
+        failMarketAcct: PublicKey;
+      }
+    ]
+  > {
+    const storedDao = await this.getDao(dao);
 
-  //   const nonce = new BN(Math.random() * 2 ** 50);
+    const nonce = new BN(Math.random() * 2 ** 50);
 
-  //   let [proposal] = getProposalAddr(
-  //     this.autocrat.programId,
-  //     this.provider.publicKey,
-  //     nonce
-  //   );
+    let [proposal] = getProposalAddr(
+      this.autocrat.programId,
+      this.provider.publicKey,
+      nonce
+    );
 
-  //   const {
-  //     baseVault,
-  //     quoteVault,
-  //     passAmm,
-  //     failAmm,
-  //     passBaseMint,
-  //     passQuoteMint,
-  //     failBaseMint,
-  //     failQuoteMint,
-  //   } = this.getProposalPdas(
-  //     proposal,
-  //     storedDao.tokenMint,
-  //     storedDao.usdcMint,
-  //     dao
-  //   );
+    const {
+      baseVault,
+      quoteVault,
+      passAmm,
+      failAmm,
+      passBaseMint,
+      passQuoteMint,
+      failBaseMint,
+      failQuoteMint,
+    } = this.getProposalPdas(
+      proposal,
+      storedDao.tokenMint,
+      storedDao.usdcMint,
+      dao
+    );
 
-  //   // it's important that these happen in a single atomic transaction
-  //   const initVaultTx = await this.vaultClient
-  //     .initializeVaultIx(proposal, storedDao.tokenMint)
-  //     .postInstructions(
-  //       await InstructionUtils.getInstructions(
-  //         this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint),
-  //         this.ammClient.createAmmIx(
-  //           passBaseMint,
-  //           passQuoteMint,
-  //           storedDao.twapInitialObservation,
-  //           storedDao.twapMaxObservationChangePerUpdate
-  //         ),
-  //         this.ammClient.createAmmIx(
-  //           failBaseMint,
-  //           failQuoteMint,
-  //           storedDao.twapInitialObservation,
-  //           storedDao.twapMaxObservationChangePerUpdate
-  //         )
-  //       )
-  //     )
-  //     .transaction();
+    // it's important that these happen in a single atomic transaction
+    const initVaultTx = await this.vaultClient
+      .initializeVaultIx(proposal, storedDao.tokenMint)
+      .postInstructions(
+        await InstructionUtils.getInstructions(
+          this.vaultClient.initializeVaultIx(proposal, storedDao.usdcMint),
+          this.ammClient.createAmmIx(
+            passBaseMint,
+            passQuoteMint,
+            storedDao.twapInitialObservation,
+            storedDao.twapMaxObservationChangePerUpdate
+          ),
+          this.ammClient.createAmmIx(
+            failBaseMint,
+            failQuoteMint,
+            storedDao.twapInitialObservation,
+            storedDao.twapMaxObservationChangePerUpdate
+          )
+        )
+      )
+      .transaction();
 
-  //   const mintConditionalTokensTx = await this.vaultClient
-  //     .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
-  //     .postInstructions(
-  //       await InstructionUtils.getInstructions(
-  //         this.vaultClient.mintConditionalTokensIx(
-  //           quoteVault,
-  //           storedDao.usdcMint,
-  //           quoteTokensToLP
-  //         )
-  //       )
-  //     )
-  //     .transaction();
+    const mintConditionalTokensTx = await this.vaultClient
+      .mintConditionalTokensIx(baseVault, storedDao.tokenMint, baseTokensToLP)
+      .postInstructions(
+        await InstructionUtils.getInstructions(
+          this.vaultClient.mintConditionalTokensIx(
+            quoteVault,
+            storedDao.usdcMint,
+            quoteTokensToLP
+          )
+        )
+      )
+      .transaction();
 
-  //   const addLiquidityTx = await this.ammClient
-  //     .addLiquidityIx(
-  //       passAmm,
-  //       passBaseMint,
-  //       passQuoteMint,
-  //       quoteTokensToLP,
-  //       baseTokensToLP,
-  //       new BN(0)
-  //     )
-  //     .postInstructions(
-  //       await InstructionUtils.getInstructions(
-  //         this.ammClient.addLiquidityIx(
-  //           failAmm,
-  //           failBaseMint,
-  //           failQuoteMint,
-  //           quoteTokensToLP,
-  //           baseTokensToLP,
-  //           new BN(0)
-  //         )
-  //       )
-  //     )
-  //     .transaction();
+    const addLiquidityTx = await this.ammClient
+      .addLiquidityIx(
+        passAmm,
+        passBaseMint,
+        passQuoteMint,
+        quoteTokensToLP,
+        baseTokensToLP,
+        new BN(0)
+      )
+      .postInstructions(
+        await InstructionUtils.getInstructions(
+          this.ammClient.addLiquidityIx(
+            failAmm,
+            failBaseMint,
+            failQuoteMint,
+            quoteTokensToLP,
+            baseTokensToLP,
+            new BN(0)
+          )
+        )
+      )
+      .transaction();
 
-  //   // this is how many original tokens are created
-  //   const lpTokens = quoteTokensToLP;
+    // this is how many original tokens are created
+    const lpTokens = quoteTokensToLP;
 
-  //   const initTx = await this.initializeProposalIx(
-  //     descriptionUrl,
-  //     instruction,
-  //     dao,
-  //     storedDao.tokenMint,
-  //     storedDao.usdcMint,
-  //     lpTokens,
-  //     lpTokens,
-  //     nonce,
-  //     question
-  //   ).transaction();
+    const initTx = await this.initializeProposalIx(
+      descriptionUrl,
+      instruction,
+      dao,
+      storedDao.tokenMint,
+      storedDao.usdcMint,
+      lpTokens,
+      lpTokens,
+      nonce
+    ).transaction();
 
-  //   return [
-  //     [initVaultTx, mintConditionalTokensTx, addLiquidityTx, initTx],
-  //     {
-  //       baseCondVaultAcct: baseVault,
-  //       quoteCondVaultAcct: quoteVault,
-  //       failMarketAcct: failAmm,
-  //       passMarketAcct: passAmm,
-  //       proposalAcct: proposal,
-  //     },
-  //   ];
-  // }
+    return [
+      [initVaultTx, mintConditionalTokensTx, addLiquidityTx, initTx],
+      {
+        baseCondVaultAcct: baseVault,
+        quoteCondVaultAcct: quoteVault,
+        failMarketAcct: failAmm,
+        passMarketAcct: passAmm,
+        proposalAcct: proposal,
+      },
+    ];
+  }
 
   initializeProposalIx(
     descriptionUrl: string,
@@ -542,8 +501,7 @@ export class AutocratClient {
     quoteMint: PublicKey,
     passLpTokensToLock: BN,
     failLpTokensToLock: BN,
-    nonce: BN,
-    question: PublicKey
+    nonce: BN
   ) {
     let [proposal] = getProposalAddr(
       this.autocrat.programId,
@@ -587,7 +545,6 @@ export class AutocratClient {
         nonce,
       })
       .accounts({
-        question,
         proposal,
         dao,
         baseVault,
@@ -649,7 +606,7 @@ export class AutocratClient {
     let vaultProgramId = this.vaultClient.vaultProgram.programId;
 
     const [daoTreasury] = getDaoTreasuryAddr(this.autocrat.programId, dao);
-    const { question, passAmm, failAmm } = this.getProposalPdas(
+    const { baseVault, quoteVault, passAmm, failAmm } = this.getProposalPdas(
       proposal,
       daoToken,
       usdc,
@@ -670,9 +627,8 @@ export class AutocratClient {
       passAmm,
       failAmm,
       dao,
-      question,
-      // baseVault,
-      // quoteVault,
+      baseVault,
+      quoteVault,
       passLpUserAccount: getAssociatedTokenAddressSync(passLp, proposer),
       failLpUserAccount: getAssociatedTokenAddressSync(failLp, proposer),
       passLpVaultAccount: getAssociatedTokenAddressSync(
