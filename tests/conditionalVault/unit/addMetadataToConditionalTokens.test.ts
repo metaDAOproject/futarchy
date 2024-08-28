@@ -47,7 +47,7 @@ export default function suite() {
         i,
         `Outcome ${i}`,
         `OUT${i}`,
-        `https://example.com/image${i}.png`
+        `https://example.com/uri${i}.png`
       ).rpc();
     }
   }
@@ -65,8 +65,7 @@ export default function suite() {
       const metadata = metadataSerializer.deserialize(storedMetadata.data)[0];
       assert.equal(metadata.name, `Outcome ${i}`);
       assert.equal(metadata.symbol, `OUT${i}`);
-      const expectedUri = `data:,{"name":"${metadata.name}","symbol":"${metadata.symbol}","image":"https://example.com/image${i}.png"}`;
-      assert.equal(metadata.uri, expectedUri);
+      assert.equal(metadata.uri, `https://example.com/uri${i}.png`);
     }
   }
 

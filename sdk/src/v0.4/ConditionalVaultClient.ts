@@ -424,7 +424,7 @@ export class ConditionalVaultClient {
     index: number,
     name: string,
     symbol: string,
-    image: string
+    uri: string
     // underlyingTokenMint: PublicKey,
     // proposalNumber: number,
     // onFinalizeUri: string,
@@ -457,7 +457,7 @@ export class ConditionalVaultClient {
       .addMetadataToConditionalTokens({
         name,
         symbol,
-        image,
+        uri,
       })
       .accounts({
         payer: this.provider.publicKey,
