@@ -9,13 +9,13 @@ import {
 import {
   ConditionalVault,
   IDL as ConditionalVaultIDL,
-} from "./types/conditional_vault";
+} from "./types/conditional_vault.js";
 
 import BN from "bn.js";
 import {
   CONDITIONAL_VAULT_PROGRAM_ID,
   MPL_TOKEN_METADATA_PROGRAM_ID,
-} from "./constants";
+} from "./constants.js";
 import {
   getQuestionAddr,
   getMetadataAddr,
@@ -23,8 +23,7 @@ import {
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
   getConditionalTokenMintAddr,
-} from "./utils";
-import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
+} from "./utils/index.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createAssociatedTokenAccountInstruction,
@@ -117,7 +116,7 @@ export class ConditionalVaultClient {
     question: PublicKey,
     underlyingTokenMint: PublicKey,
     numOutcomes: number
-  ): MethodsBuilder<ConditionalVault, any> {
+  ) {
     const [vault] = getVaultAddr(
       this.vaultProgram.programId,
       question,

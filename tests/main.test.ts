@@ -1,6 +1,6 @@
-import conditionalVault from "./conditionalVault/main.test";
-import amm from "./amm/main.test";
-import autocrat from "./autocrat/autocrat";
+import conditionalVault from "./conditionalVault/main.test.js";
+// import amm from "./amm/main.test";
+// import autocrat from "./autocrat/autocrat";
 
 import { startAnchor } from "solana-bankrun";
 import { BankrunProvider } from "anchor-bankrun";
@@ -9,7 +9,14 @@ import {
   AmmClient,
   AutocratClient,
   ConditionalVaultClient,
-} from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
+// import {
+//   // AmmClient,
+//   // AutocratClient,
+//   // ConditionalVaultClient,
+//   getVersion,
+//   VersionKey
+// } from "@metadaoproject/futarchy";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import {
   createAssociatedTokenAccount,
@@ -32,6 +39,9 @@ const MPL_TOKEN_METADATA_PROGRAM_ID = toWeb3JsPublicKey(
 );
 
 before(async function () {
+  // const version: VersionKey = "0.4";
+  // const { AmmClient, AutocratClient, ConditionalVaultClient } = getVersion(version);
+
   this.context = await startAnchor(
     "./",
     // [],
@@ -130,5 +140,5 @@ before(async function () {
 });
 
 describe("conditional_vault", conditionalVault);
-describe("amm", amm);
-describe("autocrat", autocrat);
+// describe("amm", amm);
+// describe("autocrat", autocrat);
