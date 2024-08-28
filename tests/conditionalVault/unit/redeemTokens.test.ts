@@ -1,4 +1,5 @@
-import { sha256, ConditionalVaultClient } from "@metadaoproject/futarchy";
+import { sha256 } from "@metadaoproject/futarchy";
+import { ConditionalVaultClient } from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import {
@@ -9,6 +10,7 @@ import {
 } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
+import { BN } from "bn.js";
 
 export default function suite() {
   let vaultClient: ConditionalVaultClient;
@@ -64,7 +66,7 @@ export default function suite() {
         question,
         vault,
         underlyingTokenMint,
-        new anchor.BN(1000),
+        new BN(1000),
         2
       )
       .rpc();

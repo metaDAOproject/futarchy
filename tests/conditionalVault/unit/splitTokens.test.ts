@@ -1,4 +1,5 @@
-import { sha256, ConditionalVaultClient } from "@metadaoproject/futarchy";
+import { sha256 } from "@metadaoproject/futarchy";
+import { ConditionalVaultClient } from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import {
@@ -10,7 +11,8 @@ import {
 } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-import { expectError } from "../../utils";
+import { expectError } from "../../utils.js";
+import { BN } from "bn.js";
 
 export default function suite() {
   let vaultClient: ConditionalVaultClient;
@@ -52,7 +54,7 @@ export default function suite() {
         question,
         vault,
         underlyingTokenMint,
-        new anchor.BN(1000),
+        new BN(1000),
         2
       )
       .rpc();
@@ -83,7 +85,7 @@ export default function suite() {
     );
 
     await vaultClient.vaultProgram.methods
-      .splitTokens(new anchor.BN(1000))
+      .splitTokens(new BN(1000))
       .accounts({
         question,
         authority: this.payer.publicKey,
@@ -126,7 +128,7 @@ export default function suite() {
 
     // Attempt to split tokens using the original vault but with the malicious vault's conditional token accounts
     await vaultClient.vaultProgram.methods
-      .splitTokens(new anchor.BN(1000))
+      .splitTokens(new BN(1000))
       .accounts({
         question,
         authority: this.payer.publicKey,
@@ -165,7 +167,7 @@ export default function suite() {
     );
 
     await vaultClient
-      .splitTokensIx(question, vault, underlyingTokenMint, new anchor.BN(1000), 2)
+      .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
       .accounts({
         vaultUnderlyingTokenAccount: invalidVaultUnderlyingTokenAccount,
       })
@@ -186,7 +188,7 @@ export default function suite() {
     );
 
     await vaultClient.vaultProgram.methods
-      .splitTokens(new anchor.BN(1000))
+      .splitTokens(new BN(1000))
       .accounts({
         question,
         authority: this.payer.publicKey,

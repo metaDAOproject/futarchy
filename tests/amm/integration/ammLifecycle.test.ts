@@ -2,7 +2,7 @@ import {
   AmmClient,
   getAmmAddr,
   getAmmLpMintAddr,
-} from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import {
@@ -14,7 +14,8 @@ import {
 } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-import { expectError } from "../../utils";
+import { expectError } from "../../utils.js";
+import { BN } from "bn.js";
 
 export default async function () {
   let ammClient: AmmClient;
@@ -55,8 +56,8 @@ export default async function () {
   // 2. Add initial liquidity
   await ammClient.addLiquidity(amm, 1000, 2);
   const ammAfterInitialLiquidity = await ammClient.getAmm(amm);
-  assert.isTrue(ammAfterInitialLiquidity.baseAmount.gt(new anchor.BN(0)));
-  assert.isTrue(ammAfterInitialLiquidity.quoteAmount.gt(new anchor.BN(0)));
+  assert.isTrue(ammAfterInitialLiquidity.baseAmount.gt(new BN(0)));
+  assert.isTrue(ammAfterInitialLiquidity.quoteAmount.gt(new BN(0)));
 
   // 3. Perform swaps
   await ammClient.swap(amm, { buy: {} }, 100, 0.1);
@@ -77,9 +78,9 @@ export default async function () {
       amm,
       META,
       USDC,
-      new anchor.BN(Number(userLpBalance) / 2),
-      new anchor.BN(0),
-      new anchor.BN(0)
+      new BN(Number(userLpBalance) / 2),
+      new BN(0),
+      new BN(0)
     )
     .rpc();
 
@@ -94,9 +95,9 @@ export default async function () {
       amm,
       META,
       USDC,
-      new anchor.BN(userLpBalance),
-      new anchor.BN(0),
-      new anchor.BN(0)
+      new BN(userLpBalance),
+      new BN(0),
+      new BN(0)
     )
     .rpc();
 

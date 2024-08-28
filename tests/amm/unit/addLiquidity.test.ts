@@ -2,7 +2,7 @@ import {
   AmmClient,
   getAmmAddr,
   getAmmLpMintAddr,
-} from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import {
@@ -12,8 +12,9 @@ import {
   getAccount,
 } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
-import { expectError } from "../../utils";
+import { expectError } from "../../utils.js";
 import * as token from "@solana/spl-token";
+import { BN } from "bn.js";
 
 export default function suite() {
   let ammClient: AmmClient;
@@ -54,16 +55,16 @@ export default function suite() {
         amm,
         META,
         USDC,
-        new anchor.BN(5000 * 10 ** 6),
-        new anchor.BN(6 * 10 ** 9),
-        new anchor.BN(0)
+        new BN(5000 * 10 ** 6),
+        new BN(6 * 10 ** 9),
+        new BN(0)
       )
       .rpc();
 
     const storedAmm = await ammClient.getAmm(amm);
 
-    assert.isTrue(storedAmm.baseAmount.eq(new anchor.BN(6 * 10 ** 9)));
-    assert.isTrue(storedAmm.quoteAmount.eq(new anchor.BN(5000 * 10 ** 6)));
+    assert.isTrue(storedAmm.baseAmount.eq(new BN(6 * 10 ** 9)));
+    assert.isTrue(storedAmm.quoteAmount.eq(new BN(5000 * 10 ** 6)));
 
     const lpMint = await getAccount(
       this.banksClient,
@@ -82,16 +83,16 @@ export default function suite() {
         amm,
         META,
         USDC,
-        new anchor.BN(5000 * 10 ** 6),
-        new anchor.BN(6 * 10 ** 9),
-        new anchor.BN(0)
+        new BN(5000 * 10 ** 6),
+        new BN(6 * 10 ** 9),
+        new BN(0)
       )
       .rpc();
 
     const storedAmm = await ammClient.getAmm(amm);
 
-    assert.isTrue(storedAmm.baseAmount.eq(new anchor.BN(6 * 10 ** 9)));
-    assert.isTrue(storedAmm.quoteAmount.eq(new anchor.BN(5000 * 10 ** 6)));
+    assert.isTrue(storedAmm.baseAmount.eq(new BN(6 * 10 ** 9)));
+    assert.isTrue(storedAmm.quoteAmount.eq(new BN(5000 * 10 ** 6)));
 
     // const lpMint = await getAccount(
     //     this.banksClient,

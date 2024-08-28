@@ -1,5 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
-import { BN, Program } from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
+import { BN } from "bn.js";
 import * as token from "@solana/spl-token";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
@@ -20,16 +21,16 @@ import {
   getAccount,
 } from "spl-token-bankrun";
 
-import { advanceBySlots, expectError } from "../utils";
-import { Autocrat, IDL as AutocratIDL } from "../../target/types/autocrat";
+import { advanceBySlots, expectError } from "../utils.js";
+import { Autocrat, IDL as AutocratIDL } from "../../target/types/autocrat.js";
 import {
   ConditionalVault,
   IDL as ConditionalVaultIDL,
-} from "../../target/types/conditional_vault";
+} from "../../target/types/conditional_vault.js";
 import {
   AutocratMigrator,
   IDL as AutocratMigratorIDL,
-} from "../../target/types/autocrat_migrator";
+} from "../../target/types/autocrat_migrator.js";
 
 const { PublicKey, Keypair } = anchor.web3;
 
@@ -40,12 +41,12 @@ import {
   getAmmAddr,
   getAmmLpMintAddr,
   getVaultAddr,
-} from "@metadaoproject/futarchy";
-import { PriceMath } from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
+import { PriceMath } from "@metadaoproject/futarchy/v0.4";
 import {
   AutocratClient,
   ConditionalVaultClient,
-} from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
 import {
   ComputeBudgetInstruction,
   ComputeBudgetProgram,

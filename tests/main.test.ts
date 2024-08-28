@@ -1,6 +1,6 @@
 import conditionalVault from "./conditionalVault/main.test.js";
-// import amm from "./amm/main.test";
-// import autocrat from "./autocrat/autocrat";
+import amm from "./amm/main.test.js";
+import autocrat from "./autocrat/autocrat.js";
 
 import { startAnchor } from "solana-bankrun";
 import { BankrunProvider } from "anchor-bankrun";
@@ -140,5 +140,5 @@ before(async function () {
 });
 
 describe("conditional_vault", conditionalVault);
-// describe("amm", amm);
-// describe("autocrat", autocrat);
+describe("amm", amm);
+describe("autocrat", autocrat);

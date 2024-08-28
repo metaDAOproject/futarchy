@@ -3,12 +3,13 @@ import {
   getAmmAddr,
   getAmmLpMintAddr,
   PriceMath,
-} from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { createMint } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
-import { expectError } from "../../utils";
+import { expectError } from "../../utils.js";
+import { BN } from "bn.js";
 
 export default function suite() {
   let ammClient: AmmClient;
@@ -34,8 +35,8 @@ export default function suite() {
   });
 
   it("creates an amm", async function () {
-    let expectedInitialObservation = new anchor.BN(500_000_000_000);
-    let expectedMaxObservationChangePerUpdate = new anchor.BN(10_000_000_000);
+    let expectedInitialObservation = new BN(500_000_000_000);
+    let expectedMaxObservationChangePerUpdate = new BN(10_000_000_000);
 
     let bump: number;
     let amm: PublicKey;
