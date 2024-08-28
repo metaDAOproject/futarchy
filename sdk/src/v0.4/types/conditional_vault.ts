@@ -367,7 +367,7 @@ export type ConditionalVault = {
             type: "string";
           },
           {
-            name: "image";
+            name: "uri";
             type: "string";
           }
         ];
@@ -870,7 +870,7 @@ export const IDL: ConditionalVault = {
             type: "string",
           },
           {
-            name: "image",
+            name: "uri",
             type: "string",
           },
         ],

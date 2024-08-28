@@ -10,7 +10,7 @@ pub mod proph3t_deployer {
 pub struct AddMetadataToConditionalTokensArgs {
     pub name: String,
     pub symbol: String,
-    pub image: String,
+    pub uri: String,
 }
 
 #[derive(Accounts)]
@@ -75,12 +75,9 @@ impl AddMetadataToConditionalTokens<'_> {
         create_metadata_accounts_v3(
             CpiContext::new(cpi_program, cpi_accounts).with_signer(signer_seeds),
             DataV2 {
-                name: args.name.clone(),
-                symbol: args.symbol.clone(),
-                uri: format!(
-                    "data:,{{\"name\":\"{}\",\"symbol\":\"{}\",\"image\":\"{}\"}}",
-                    args.name, args.symbol, args.image
-                ),
+                name: args.name,
+                symbol: args.symbol,
+                uri: args.uri,
                 seller_fee_basis_points: 0,
                 creators: None,
                 collection: None,
