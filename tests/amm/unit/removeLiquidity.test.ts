@@ -14,8 +14,9 @@ import {
 } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import * as token from "@solana/spl-token";
-import { expectError } from "../../utils";
+import { expectError } from "../../utils.js";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { BN } from "bn.js";
 
 export default function suite() {
   let ammClient: AmmClient;
@@ -63,9 +64,9 @@ export default function suite() {
         amm,
         META,
         USDC,
-        new anchor.BN(0),
-        new anchor.BN(0),
-        new anchor.BN(0)
+        new BN(0),
+        new BN(0),
+        new BN(0)
       )
       .rpc()
       .then(callbacks[0], callbacks[1]);
@@ -90,9 +91,9 @@ export default function suite() {
         amm,
         META,
         USDC,
-        new anchor.BN(userLpAccountStart.amount.toString()).divn(2),
-        new anchor.BN(0),
-        new anchor.BN(0)
+        new BN(userLpAccountStart.amount.toString()).divn(2),
+        new BN(0),
+        new BN(0)
       )
       .rpc();
 
@@ -136,9 +137,9 @@ export default function suite() {
         amm,
         META,
         USDC,
-        new anchor.BN(userLpAccountStart.amount.toString()),
-        new anchor.BN(1 * 10 ** 9),
-        new anchor.BN(10 * 10 ** 6)
+        new BN(userLpAccountStart.amount.toString()),
+        new BN(1 * 10 ** 9),
+        new BN(10 * 10 ** 6)
       )
       .rpc();
 

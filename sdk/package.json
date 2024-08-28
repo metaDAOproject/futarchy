@@ -10,6 +10,7 @@
   ],
   "exports": {
     ".": "./dist/index.js",
+    "./v0.3": "./dist/v0.3/index.js",
     "./v0.4": "./dist/v0.4/index.js"
   },
   "scripts": {

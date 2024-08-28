@@ -1,9 +1,10 @@
-import { sha256, ConditionalVaultClient, getConditionalTokenMintAddr, getMetadataAddr } from "@metadaoproject/futarchy";
+import { sha256 } from "@metadaoproject/futarchy";
+import { ConditionalVaultClient, getConditionalTokenMintAddr, getMetadataAddr } from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { createMint } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
-import { expectError } from "../../utils";
+import { expectError } from "../../utils.js";
 import { Metadata, deserializeMetadata, getMetadataAccountDataSerializer } from "@metaplex-foundation/mpl-token-metadata";
 
 export default function suite() {

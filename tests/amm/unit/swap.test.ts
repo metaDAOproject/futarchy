@@ -2,7 +2,7 @@ import {
   AmmClient,
   getAmmAddr,
   getAmmLpMintAddr,
-} from "@metadaoproject/futarchy";
+} from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import {
@@ -13,8 +13,9 @@ import {
   getMint,
 } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
-import { expectError } from "../../utils";
-import { advanceBySlots } from "../../utils";
+import { expectError } from "../../utils.js";
+import { advanceBySlots } from "../../utils.js";
+import { BN } from "bn.js";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 
 export default function suite() {
@@ -54,9 +55,9 @@ export default function suite() {
         amm,
         META,
         USDC,
-        new anchor.BN(10_000 * 10 ** 6),
-        new anchor.BN(10 * 10 ** 9),
-        new anchor.BN(0)
+        new BN(10_000 * 10 ** 6),
+        new BN(10 * 10 ** 9),
+        new BN(0)
       )
       .rpc();
   });
@@ -84,14 +85,14 @@ export default function suite() {
 
     const storedAmm = await ammClient.getAmm(amm);
     let sim = ammClient.simulateSwap(
-      new anchor.BN(100 * 10 ** 6),
+      new BN(100 * 10 ** 6),
       { buy: {} },
       storedAmm.baseAmount,
       storedAmm.quoteAmount
     );
     assert.equal(
       sim.expectedOut.toString(),
-      new anchor.BN(expectedOut * 10 ** 9).toString()
+      new BN(expectedOut * 10 ** 9).toString()
     );
 
     let callbacks = expectError(
@@ -157,8 +158,8 @@ export default function suite() {
         META,
         USDC,
         { sell: {} },
-        new anchor.BN(startingBaseSwapAmount),
-        new anchor.BN(1)
+        new BN(startingBaseSwapAmount),
+        new BN(1)
       )
       .rpc();
 
@@ -175,8 +176,8 @@ export default function suite() {
         META,
         USDC,
         { buy: {} },
-        new anchor.BN(quoteReceived),
-        new anchor.BN(1)
+        new BN(quoteReceived),
+        new BN(1)
       )
       .rpc();
 
@@ -203,8 +204,8 @@ export default function suite() {
         META,
         USDC,
         { buy: {} },
-        new anchor.BN(startingQuoteSwapAmount),
-        new anchor.BN(1)
+        new BN(startingQuoteSwapAmount),
+        new BN(1)
       )
       .rpc();
 
@@ -220,8 +221,8 @@ export default function suite() {
         META,
         USDC,
         { sell: {} },
-        new anchor.BN(baseReceived),
-        new anchor.BN(1)
+        new BN(baseReceived),
+        new BN(1)
       )
       .rpc();
 
