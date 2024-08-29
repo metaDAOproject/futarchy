@@ -454,86 +454,91 @@ export type Amm = {
   errors: [
     {
       code: 6000;
+      name: "AssertFailed";
+      msg: "An assertion failed";
+    },
+    {
+      code: 6001;
       name: "NoSlotsPassed";
       msg: "Can't get a TWAP before some observations have been stored";
     },
     {
-      code: 6001;
+      code: 6002;
       name: "NoReserves";
       msg: "Can't swap through a pool without token reserves on either side";
     },
     {
-      code: 6002;
+      code: 6003;
       name: "InputAmountOverflow";
       msg: "Input token amount is too large for a swap, causes overflow";
     },
     {
-      code: 6003;
+      code: 6004;
       name: "AddLiquidityCalculationError";
       msg: "Add liquidity calculation error";
     },
     {
-      code: 6004;
+      code: 6005;
       name: "DecimalScaleError";
       msg: "Error in decimal scale conversion";
     },
     {
-      code: 6005;
+      code: 6006;
       name: "SameTokenMints";
       msg: "You can't create an AMM pool where the token mints are the same";
     },
     {
-      code: 6006;
+      code: 6007;
       name: "SwapSlippageExceeded";
       msg: "A user wouldn't have gotten back their `output_amount_min`, reverting";
     },
     {
-      code: 6007;
+      code: 6008;
       name: "InsufficientBalance";
       msg: "The user had insufficient balance to do this";
     },
     {
-      code: 6008;
+      code: 6009;
       name: "ZeroLiquidityRemove";
       msg: "Must remove a non-zero amount of liquidity";
     },
     {
-      code: 6009;
+      code: 6010;
       name: "ZeroLiquidityToAdd";
       msg: "Cannot add liquidity with 0 tokens on either side";
     },
     {
-      code: 6010;
+      code: 6011;
       name: "ZeroMinLpTokens";
       msg: "Must specify a non-zero `min_lp_tokens` when adding to an existing pool";
     },
     {
-      code: 6011;
+      code: 6012;
       name: "AddLiquiditySlippageExceeded";
       msg: "LP wouldn't have gotten back `lp_token_min`";
     },
     {
-      code: 6012;
+      code: 6013;
       name: "AddLiquidityMaxBaseExceeded";
       msg: "LP would have spent more than `max_base_amount`";
     },
     {
-      code: 6013;
+      code: 6014;
       name: "InsufficientQuoteAmount";
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool";
     },
     {
-      code: 6014;
+      code: 6015;
       name: "ZeroSwapAmount";
       msg: "Users must swap a non-zero amount";
     },
     {
-      code: 6015;
+      code: 6016;
       name: "ConstantProductInvariantFailed";
       msg: "K should always be increasing";
     },
     {
-      code: 6016;
+      code: 6017;
       name: "CastingOverflow";
       msg: "Casting has caused an overflow";
     }
@@ -996,86 +1001,91 @@ export const IDL: Amm = {
   errors: [
     {
       code: 6000,
+      name: "AssertFailed",
+      msg: "An assertion failed",
+    },
+    {
+      code: 6001,
       name: "NoSlotsPassed",
       msg: "Can't get a TWAP before some observations have been stored",
     },
     {
-      code: 6001,
+      code: 6002,
       name: "NoReserves",
       msg: "Can't swap through a pool without token reserves on either side",
     },
     {
-      code: 6002,
+      code: 6003,
       name: "InputAmountOverflow",
       msg: "Input token amount is too large for a swap, causes overflow",
     },
     {
-      code: 6003,
+      code: 6004,
       name: "AddLiquidityCalculationError",
       msg: "Add liquidity calculation error",
     },
     {
-      code: 6004,
+      code: 6005,
       name: "DecimalScaleError",
       msg: "Error in decimal scale conversion",
     },
     {
-      code: 6005,
+      code: 6006,
       name: "SameTokenMints",
       msg: "You can't create an AMM pool where the token mints are the same",
     },
     {
-      code: 6006,
+      code: 6007,
       name: "SwapSlippageExceeded",
       msg: "A user wouldn't have gotten back their `output_amount_min`, reverting",
     },
     {
-      code: 6007,
+      code: 6008,
       name: "InsufficientBalance",
       msg: "The user had insufficient balance to do this",
     },
     {
-      code: 6008,
+      code: 6009,
       name: "ZeroLiquidityRemove",
       msg: "Must remove a non-zero amount of liquidity",
     },
     {
-      code: 6009,
+      code: 6010,
       name: "ZeroLiquidityToAdd",
       msg: "Cannot add liquidity with 0 tokens on either side",
     },
     {
-      code: 6010,
+      code: 6011,
       name: "ZeroMinLpTokens",
       msg: "Must specify a non-zero `min_lp_tokens` when adding to an existing pool",
     },
     {
-      code: 6011,
+      code: 6012,
       name: "AddLiquiditySlippageExceeded",
       msg: "LP wouldn't have gotten back `lp_token_min`",
     },
     {
-      code: 6012,
+      code: 6013,
       name: "AddLiquidityMaxBaseExceeded",
       msg: "LP would have spent more than `max_base_amount`",
     },
     {
-      code: 6013,
+      code: 6014,
       name: "InsufficientQuoteAmount",
       msg: "`quote_amount` must be greater than 100000000 when initializing a pool",
     },
     {
-      code: 6014,
+      code: 6015,
       name: "ZeroSwapAmount",
       msg: "Users must swap a non-zero amount",
     },
     {
-      code: 6015,
+      code: 6016,
       name: "ConstantProductInvariantFailed",
       msg: "K should always be increasing",
     },
     {
-      code: 6016,
+      code: 6017,
       name: "CastingOverflow",
       msg: "Casting has caused an overflow",
     },

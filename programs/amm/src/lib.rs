@@ -10,7 +10,7 @@ security_txt! {
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
     source_code: "https://github.com/metaDAOproject/futarchy",
-    source_release: "v0.3",
+    source_release: "v0.4",
     auditors: "Neodyme",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
@@ -22,7 +22,7 @@ pub mod state;
 use crate::instructions::*;
 use crate::state::*;
 
-declare_id!("AMM5G2nxuKUwCLRYTW7qqEwuoqCtNSjtbipwEmm2g8bH");
+declare_id!("AMMt4mC7UjyTnEvY4mxrvdUW24mAZXsDJz872vXd56Uw");
 
 #[program]
 pub mod amm {

@@ -430,71 +430,76 @@ export type ConditionalVault = {
   errors: [
     {
       code: 6000;
+      name: "AssertFailed";
+      msg: "An assertion failed";
+    },
+    {
+      code: 6001;
       name: "InsufficientUnderlyingTokens";
       msg: "Insufficient underlying token balance to mint this amount of conditional tokens";
     },
     {
-      code: 6001;
+      code: 6002;
       name: "InsufficientConditionalTokens";
       msg: "Insufficient conditional token balance to merge this `amount`";
     },
     {
-      code: 6002;
+      code: 6003;
       name: "InvalidVaultUnderlyingTokenAccount";
       msg: "This `vault_underlying_token_account` is not this vault's `underlying_token_account`";
     },
     {
-      code: 6003;
+      code: 6004;
       name: "InvalidConditionalTokenMint";
       msg: "This conditional token mint is not this vault's conditional token mint";
     },
     {
-      code: 6004;
+      code: 6005;
       name: "CantRedeemConditionalTokens";
       msg: "Question needs to be resolved before users can redeem conditional tokens for underlying tokens";
     },
     {
-      code: 6005;
+      code: 6006;
       name: "InsufficientNumConditions";
       msg: "Questions need 2 or more conditions";
     },
     {
-      code: 6006;
+      code: 6007;
       name: "InvalidNumPayoutNumerators";
       msg: "Invalid number of payout numerators";
     },
     {
-      code: 6007;
+      code: 6008;
       name: "InvalidConditionals";
       msg: "Client needs to pass in the list of conditional mints for a vault followed by the user's token accounts for those tokens";
     },
     {
-      code: 6008;
+      code: 6009;
       name: "ConditionalMintMismatch";
       msg: "Conditional mint not in vault";
     },
     {
-      code: 6009;
+      code: 6010;
       name: "BadConditionalMint";
       msg: "Unable to deserialize a conditional token mint";
     },
     {
-      code: 6010;
+      code: 6011;
       name: "BadConditionalTokenAccount";
       msg: "Unable to deserialize a conditional token account";
     },
     {
-      code: 6011;
+      code: 6012;
       name: "ConditionalTokenMintMismatch";
       msg: "User conditional token account mint does not match conditional mint";
     },
     {
-      code: 6012;
+      code: 6013;
       name: "PayoutZero";
       msg: "Payouts must sum to 1 or more";
     },
     {
-      code: 6013;
+      code: 6014;
       name: "ConditionalTokenMetadataAlreadySet";
       msg: "Conditional token metadata already set";
     }
@@ -933,71 +938,76 @@ export const IDL: ConditionalVault = {
   errors: [
     {
       code: 6000,
+      name: "AssertFailed",
+      msg: "An assertion failed",
+    },
+    {
+      code: 6001,
       name: "InsufficientUnderlyingTokens",
       msg: "Insufficient underlying token balance to mint this amount of conditional tokens",
     },
     {
-      code: 6001,
+      code: 6002,
       name: "InsufficientConditionalTokens",
       msg: "Insufficient conditional token balance to merge this `amount`",
     },
     {
-      code: 6002,
+      code: 6003,
       name: "InvalidVaultUnderlyingTokenAccount",
       msg: "This `vault_underlying_token_account` is not this vault's `underlying_token_account`",
     },
     {
-      code: 6003,
+      code: 6004,
       name: "InvalidConditionalTokenMint",
       msg: "This conditional token mint is not this vault's conditional token mint",
     },
     {
-      code: 6004,
+      code: 6005,
       name: "CantRedeemConditionalTokens",
       msg: "Question needs to be resolved before users can redeem conditional tokens for underlying tokens",
     },
     {
-      code: 6005,
+      code: 6006,
       name: "InsufficientNumConditions",
       msg: "Questions need 2 or more conditions",
     },
     {
-      code: 6006,
+      code: 6007,
       name: "InvalidNumPayoutNumerators",
       msg: "Invalid number of payout numerators",
     },
     {
-      code: 6007,
+      code: 6008,
       name: "InvalidConditionals",
       msg: "Client needs to pass in the list of conditional mints for a vault followed by the user's token accounts for those tokens",
     },
     {
-      code: 6008,
+      code: 6009,
       name: "ConditionalMintMismatch",
       msg: "Conditional mint not in vault",
     },
     {
-      code: 6009,
+      code: 6010,
       name: "BadConditionalMint",
       msg: "Unable to deserialize a conditional token mint",
     },
     {
-      code: 6010,
+      code: 6011,
       name: "BadConditionalTokenAccount",
       msg: "Unable to deserialize a conditional token account",
     },
     {
-      code: 6011,
+      code: 6012,
       name: "ConditionalTokenMintMismatch",
       msg: "User conditional token account mint does not match conditional mint",
     },
     {
-      code: 6012,
+      code: 6013,
       name: "PayoutZero",
       msg: "Payouts must sum to 1 or more",
     },
     {
-      code: 6013,
+      code: 6014,
       name: "ConditionalTokenMetadataAlreadySet",
       msg: "Conditional token metadata already set",
     },
