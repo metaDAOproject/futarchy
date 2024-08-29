@@ -58,19 +58,20 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
         }
 
         ctx.accounts.vault_underlying_token_account.reload()?;
-        assert!(
-            ctx.accounts.vault_underlying_token_account.amount
-                == pre_vault_underlying_balance + amount
+        require_eq!(
+            ctx.accounts.vault_underlying_token_account.amount,
+                 pre_vault_underlying_balance + amount,
+                 VaultError::AssertFailed
         );
 
         for (i, mint) in conditional_token_mints.iter_mut().enumerate() {
             mint.reload()?;
-            assert!(mint.supply == pre_conditional_mint_supplies[i] + amount);
+            require_eq!(mint.supply, pre_conditional_mint_supplies[i] + amount, VaultError::AssertFailed);
         }
 
         for (i, acc) in user_conditional_token_accounts.iter_mut().enumerate() {
             acc.reload()?;
-            assert!(acc.amount == pre_conditional_user_balances[i] + amount);
+            require_eq!(acc.amount, pre_conditional_user_balances[i] + amount, VaultError::AssertFailed);
         }
 
         ctx.accounts.vault.invariant(

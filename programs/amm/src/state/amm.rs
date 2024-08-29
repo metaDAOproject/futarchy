@@ -166,7 +166,7 @@ impl Amm {
         let slots_passed = (self.oracle.last_updated_slot - self.created_at_slot) as u128;
 
         require_neq!(slots_passed, 0, AmmError::NoSlotsPassed);
-        assert!(self.oracle.aggregator != 0);
+        require!(self.oracle.aggregator != 0, AmmError::AssertFailed);
 
         Ok(self.oracle.aggregator / slots_passed)
     }
@@ -175,7 +175,7 @@ impl Amm {
     /// have been made.
     ///
     /// Returns an observation if one was recorded.
-    pub fn update_twap(&mut self, current_slot: Slot) -> Option<u128> {
+    pub fn update_twap(&mut self, current_slot: Slot) -> Result<Option<u128>> {
         let oracle = &mut self.oracle;
         // a manipulator is likely to be "bursty" with their usage, such as a
         // validator who abuses their slots to manipulate the TWAP.
@@ -196,11 +196,11 @@ impl Amm {
         // that trades near $1500 and you allow $25 updates per minute, it can double
         // over an hour.
         if current_slot < oracle.last_updated_slot + ONE_MINUTE_IN_SLOTS {
-            return None;
+            return Ok(None);
         }
 
         if self.base_amount == 0 || self.quote_amount == 0 {
-            return None;
+            return Ok(None);
         }
 
         // we store prices as quote units / base units scaled by 1e12.
@@ -244,32 +244,32 @@ impl Amm {
             initial_observation: oracle.initial_observation,
         };
 
-        assert!(new_oracle.last_updated_slot > oracle.last_updated_slot);
+        require!(new_oracle.last_updated_slot > oracle.last_updated_slot, AmmError::AssertFailed);
         // assert that the new observation is between price and last observation
         match price.cmp(&oracle.last_observation) {
             Ordering::Greater => {
-                assert!(new_observation > oracle.last_observation);
-                assert!(new_observation <= price);
+                require!(new_observation > oracle.last_observation, AmmError::AssertFailed);
+                require!(new_observation <= price, AmmError::AssertFailed);
             }
             Ordering::Equal => {
-                assert!(new_observation == price);
+                require!(new_observation == price, AmmError::AssertFailed);
             }
             Ordering::Less => {
-                assert!(new_observation < oracle.last_observation);
-                assert!(new_observation >= price);
+                require!(new_observation < oracle.last_observation, AmmError::AssertFailed);
+                require!(new_observation >= price, AmmError::AssertFailed);
             }
         }
 
         *oracle = new_oracle;
 
-        Some(new_observation)
+        Ok(Some(new_observation))
     }
 
     pub fn invariant(&self) -> Result<()> {
         let oracle = &self.oracle;
 
-        assert!(oracle.last_price <= MAX_PRICE);
-        assert!(oracle.last_observation <= MAX_PRICE);
+        require!(oracle.last_price <= MAX_PRICE, AmmError::AssertFailed);
+        require!(oracle.last_observation <= MAX_PRICE, AmmError::AssertFailed);
 
         Ok(())
     }
@@ -359,7 +359,7 @@ mod simple_amm_tests {
         let slots_until_overflow = u128::MAX / (u64::MAX as u128 * PRICE_SCALE);
 
         amm.update_twap(slots_until_overflow as u64);
-        assert!(amm.oracle.aggregator > MAX_PRICE * 18_400_000);
+        require!(amm.oracle.aggregator > MAX_PRICE * 18_400_000);
         assert_ne!(amm.oracle.aggregator, u128::MAX);
 
         amm_clone.update_twap(slots_until_overflow as u64 + 1);

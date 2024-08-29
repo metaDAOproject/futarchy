@@ -2,6 +2,8 @@ use super::*;
 
 #[error_code]
 pub enum VaultError {
+    #[msg("An assertion failed")]
+    AssertFailed,
     #[msg("Insufficient underlying token balance to mint this amount of conditional tokens")]
     InsufficientUnderlyingTokens,
     #[msg("Insufficient conditional token balance to merge this `amount`")]
