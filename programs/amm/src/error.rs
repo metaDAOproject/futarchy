@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum AmmError {
+    #[msg("An assertion failed")]
+    AssertFailed,
     #[msg("Can't get a TWAP before some observations have been stored")]
     NoSlotsPassed,
     #[msg("Can't swap through a pool without token reserves on either side")]

@@ -65,13 +65,15 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
         ctx.accounts.user_underlying_token_account.reload()?;
         ctx.accounts.vault_underlying_token_account.reload()?;
 
-        assert!(
-            ctx.accounts.user_underlying_token_account.amount
-                == pre_user_underlying_balance + amount
+        require_eq!(
+            ctx.accounts.user_underlying_token_account.amount,
+                pre_user_underlying_balance + amount,
+                VaultError::AssertFailed
         );
-        assert!(
-            ctx.accounts.vault_underlying_token_account.amount
-                == pre_vault_underlying_balance - amount
+        require_eq!(
+            ctx.accounts.vault_underlying_token_account.amount,
+                pre_vault_underlying_balance - amount,
+                VaultError::AssertFailed
         );
 
         for (mint, expected_supply) in conditional_token_mints
@@ -79,7 +81,7 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             .zip(expected_future_supplies.iter())
         {
             mint.reload()?;
-            assert!(mint.supply == *expected_supply);
+            require_eq!(mint.supply, *expected_supply, VaultError::AssertFailed);
         }
 
         for (account, expected_balance) in user_conditional_token_accounts
@@ -87,7 +89,7 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             .zip(expected_future_balances.iter())
         {
             account.reload()?;
-            assert!(account.amount == *expected_balance);
+            require_eq!(account.amount, *expected_balance, VaultError::AssertFailed);
         }
 
         ctx.accounts.vault.invariant(

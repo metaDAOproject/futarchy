@@ -83,24 +83,26 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             total_redeemable,
         )?;
 
-        assert!(max_redeemable >= total_redeemable);
+        require_gte!(max_redeemable, total_redeemable, VaultError::AssertFailed);
 
         ctx.accounts.user_underlying_token_account.reload()?;
         ctx.accounts.vault_underlying_token_account.reload()?;
 
-        assert!(
-            ctx.accounts.user_underlying_token_account.amount
-                == user_underlying_balance_before + total_redeemable
+        require_eq!(
+            ctx.accounts.user_underlying_token_account.amount,
+                user_underlying_balance_before + total_redeemable,
+                VaultError::AssertFailed
         );
 
-        assert!(
-            ctx.accounts.vault_underlying_token_account.amount
-                == vault_underlying_balance_before - total_redeemable
+        require_eq!(
+            ctx.accounts.vault_underlying_token_account.amount,
+                vault_underlying_balance_before - total_redeemable,
+                VaultError::AssertFailed
         );
 
         for acc in user_conditional_token_accounts.iter_mut() {
             acc.reload()?;
-            assert!(acc.amount == 0);
+            require_eq!(acc.amount, 0, VaultError::AssertFailed);
         }
 
         for (mint, expected_supply) in conditional_token_mints
@@ -108,7 +110,7 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             .zip(expected_future_supplies.iter())
         {
             mint.reload()?;
-            assert!(mint.supply == *expected_supply);
+            require_eq!(mint.supply, *expected_supply, VaultError::AssertFailed);
         }
 
         ctx.accounts.vault.invariant(

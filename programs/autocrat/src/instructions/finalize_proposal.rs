@@ -178,12 +178,12 @@ impl FinalizeProposal<'_> {
 
         // match new_proposal_state {
         //     ProposalState::Passed => {
-        //         assert!(base_vault.status == VaultStatus::Finalized);
-        //         assert!(quote_vault.status == VaultStatus::Finalized);
+        //         require!(base_vault.status == VaultStatus::Finalized);
+        //         require!(quote_vault.status == VaultStatus::Finalized);
         //     }
         //     ProposalState::Failed => {
-        //         assert!(base_vault.status == VaultStatus::Reverted);
-        //         assert!(quote_vault.status == VaultStatus::Reverted);
+        //         require!(base_vault.status == VaultStatus::Reverted);
+        //         require!(quote_vault.status == VaultStatus::Reverted);
         //     }
         //     _ => unreachable!("Encountered an unexpected proposal state"),
         // }

@@ -78,7 +78,7 @@ impl Swap<'_> {
 
         require!(input_amount > 0, AmmError::ZeroSwapAmount);
 
-        amm.update_twap(Clock::get()?.slot);
+        amm.update_twap(Clock::get()?.slot)?;
 
         let output_amount = amm.swap(input_amount, swap_type)?;
 

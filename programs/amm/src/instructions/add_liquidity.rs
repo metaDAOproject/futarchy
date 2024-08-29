@@ -46,7 +46,7 @@ impl AddOrRemoveLiquidity<'_> {
             AmmError::InsufficientBalance
         );
 
-        amm.update_twap(Clock::get()?.slot);
+        amm.update_twap(Clock::get()?.slot)?;
 
         // airlifted from uniswap v1:
         // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L48

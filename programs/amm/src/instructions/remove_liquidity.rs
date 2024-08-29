@@ -41,13 +41,13 @@ impl AddOrRemoveLiquidity<'_> {
 
         require!(lp_tokens_to_burn > 0, AmmError::ZeroLiquidityRemove);
 
-        amm.update_twap(Clock::get()?.slot);
+        amm.update_twap(Clock::get()?.slot)?;
 
         // airlifted from uniswap v1:
         // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L83
 
         let total_liquidity = lp_mint.supply;
-        assert!(total_liquidity > 0);
+        require_gt!(total_liquidity, 0, AmmError::AssertFailed);
 
         let (base_to_withdraw, quote_to_withdraw) =
             amm.get_base_and_quote_withdrawable(lp_tokens_to_burn, total_liquidity);

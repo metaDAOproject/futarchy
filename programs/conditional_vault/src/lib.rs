@@ -7,7 +7,6 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
-// use mpl_token_metadata::state::DataV2;
 
 pub mod error;
 pub mod instructions;
