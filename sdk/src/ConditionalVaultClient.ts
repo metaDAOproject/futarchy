@@ -24,8 +24,6 @@ import {
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 
-import { getTokenDecimals } from "../../scripts/main";
-
 export type CreateVaultClientParams = {
   provider: AnchorProvider;
   conditionalVaultProgramId?: PublicKey;
@@ -76,8 +74,7 @@ export class ConditionalVaultClient {
     const storedVault = await this.getVault(vault);
 
     try {
-      const tokenDecimals = await getTokenDecimals(storedVault.underlyingTokenMint);
-      const scaledAmount = uiAmount * Math.pow(10, tokenDecimals);
+      const scaledAmount = uiAmount * Math.pow(10, storedVault.decimals);
       const bnAmount = new BN(scaledAmount.toFixed(0));
 
       return this.mintConditionalTokensIx(
