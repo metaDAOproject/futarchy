@@ -8,6 +8,7 @@ import addMetadataToConditionalTokens from "./unit/addMetadataToConditionalToken
 import binaryPredictionMarket from "./integration/binaryPredictionMarket.test.js";
 import scalarGrantMarket from "./integration/scalarGrantMarket.test.js";
 
+// TODO add a many-outcome integration test
 export default function suite() {
   it("binary prediction market", binaryPredictionMarket);
   it("scalar grant market", scalarGrantMarket);

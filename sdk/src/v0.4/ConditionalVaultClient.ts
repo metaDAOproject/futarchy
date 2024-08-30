@@ -30,6 +30,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { ConditionalVaultAccount, Question } from "./types/index.js";
 
 export type CreateVaultClientParams = {
   provider: AnchorProvider;
@@ -60,12 +61,12 @@ export class ConditionalVaultClient {
     );
   }
 
-  async fetchQuestion(question: PublicKey) {
-    return this.vaultProgram.account.question.fetch(question);
+  async fetchQuestion(question: PublicKey): Promise<Question | null> {
+    return this.vaultProgram.account.question.fetchNullable(question);
   }
 
-  async fetchVault(vault: PublicKey) {
-    return this.vaultProgram.account.conditionalVault.fetch(vault);
+  async fetchVault(vault: PublicKey): Promise<ConditionalVaultAccount | null> {
+    return this.vaultProgram.account.conditionalVault.fetchNullable(vault);
   }
 
   async getVault(vault: PublicKey) {

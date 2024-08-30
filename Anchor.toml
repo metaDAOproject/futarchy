@@ -9,6 +9,7 @@ crank = "yarn run ts-node scripts/crankTwap.ts"
 attach-metadata = "yarn run ts-node scripts/attachMetadata.ts"
 reclaim-tokens = "yarn run ts-node scripts/reclaimTokens.ts"
 merge-tokens = "yarn run ts-node scripts/mergeTokens.ts"
+setup-devnet = "yarn run tsx scripts/setupDevnet.ts"
 
 [toolchain]
 

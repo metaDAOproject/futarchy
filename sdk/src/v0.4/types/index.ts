@@ -15,20 +15,14 @@ export { LowercaseKeys } from "./utils.js";
 import type { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 
+export type Question = IdlAccounts<ConditionalVault>["question"];
+export type ConditionalVaultAccount =
+  IdlAccounts<ConditionalVault>["conditionalVault"];
+
 export type InitializeDaoParams = IdlTypes<Autocrat>["InitializeDaoParams"];
 export type UpdateDaoParams = IdlTypes<Autocrat>["UpdateDaoParams"];
 export type ProposalInstruction = IdlTypes<Autocrat>["ProposalInstruction"];
 
-export type Proposal = IdlAccounts<Autocrat>["proposal"];
-export type ProposalWrapper = {
-  account: Proposal;
-  publicKey: PublicKey;
-};
-
 export type Dao = IdlAccounts<Autocrat>["dao"];
-export type ProposalAccount = IdlAccounts<Autocrat>["proposal"];
-
+export type Proposal = IdlAccounts<Autocrat>["proposal"];
 export type AmmAccount = IdlAccounts<Amm>["amm"];
-
-export type ConditionalVaultAccount =
-  IdlAccounts<ConditionalVault>["conditionalVault"];
