@@ -791,7 +791,7 @@ export async function mintConditionalTokens(amount: number, vault: PublicKey) {
     .rpc();
 }
 
-async function getTokenDecimals(mint: PublicKey): Promise<number> {
+export async function getTokenDecimals(mint: PublicKey): Promise<number> {
   try {
     const mintInfo = await token.getMint(provider.connection, mint);
     return mintInfo.decimals;
