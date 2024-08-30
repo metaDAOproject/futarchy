@@ -73,18 +73,19 @@ export class ConditionalVaultClient {
   ) {
     const storedVault = await this.getVault(vault);
 
-    return (
-      this.mintConditionalTokensIx(
+    try {
+      const scaledAmount = uiAmount * Math.pow(10, storedVault.decimals);
+      const bnAmount = new BN(scaledAmount.toFixed(0));
+
+      return this.mintConditionalTokensIx(
         vault,
         storedVault.underlyingTokenMint,
-        new BN(uiAmount).mul(new BN(10).pow(new BN(storedVault.decimals))),
+        bnAmount,
         user
-      )
-        // .preInstructions([
-        //   createAssociatedTokenAccountIdempotentInstruction(this.provider.publicKey, )
-        // ])
-        .rpc()
-    );
+      ).rpc();
+    } catch (e) {
+      throw new Error(`Error minting conditional tokens for ${storedVault.underlyingTokenMint} with error ${e}`);
+    }
   }
 
   mintConditionalTokensIx(
