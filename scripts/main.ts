@@ -768,7 +768,10 @@ export async function mintConditionalTokens(amount: number, vault: PublicKey) {
   );
   const vaultUnderlyingTokenAccount = storedVault.underlyingTokenAccount;
 
-  const bnAmount = new anchor.BN(amount);
+  const tokenDecimals = await getTokenDecimals(storedVault.underlyingTokenMint);
+
+  const scaledAmount = amount * Math.pow(10, tokenDecimals);
+  const bnAmount = new anchor.BN(scaledAmount.toFixed(0));
 
   // Mint conditional tokens
   await vaultProgram.methods
@@ -786,6 +789,15 @@ export async function mintConditionalTokens(amount: number, vault: PublicKey) {
     })
     .signers([payer])
     .rpc();
+}
+
+async function getTokenDecimals(mint: PublicKey): Promise<number> {
+  try {
+    const mintInfo = await token.getMint(provider.connection, mint);
+    return mintInfo.decimals;
+  } catch (e) {
+    throw new Error(`Error fetching the decimals for ${mint} with error ${e}`);
+  }
 }
 
 async function getOrCreateAccount(mint: PublicKey) {
