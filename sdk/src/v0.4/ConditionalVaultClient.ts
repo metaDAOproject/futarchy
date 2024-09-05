@@ -6,10 +6,7 @@ import {
   SystemProgram,
 } from "@solana/web3.js";
 
-import {
-  ConditionalVault,
-  IDL as ConditionalVaultIDL,
-} from "./types/conditional_vault.js";
+import { ConditionalVaultProgram, ConditionalVaultIDL } from "./types/index.js";
 
 import BN from "bn.js";
 import {
@@ -30,7 +27,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { ConditionalVaultAccount, Question } from "./types/index.js";
+import { ConditionalVault, Question } from "./types/index.js";
 
 export type CreateVaultClientParams = {
   provider: AnchorProvider;
@@ -39,11 +36,11 @@ export type CreateVaultClientParams = {
 
 export class ConditionalVaultClient {
   public readonly provider: AnchorProvider;
-  public readonly vaultProgram: Program<ConditionalVault>;
+  public readonly vaultProgram: Program<ConditionalVaultProgram>;
 
   constructor(provider: AnchorProvider, conditionalVaultProgramId: PublicKey) {
     this.provider = provider;
-    this.vaultProgram = new Program<ConditionalVault>(
+    this.vaultProgram = new Program<ConditionalVaultProgram>(
       ConditionalVaultIDL,
       conditionalVaultProgramId,
       provider
@@ -65,12 +62,8 @@ export class ConditionalVaultClient {
     return this.vaultProgram.account.question.fetchNullable(question);
   }
 
-  async fetchVault(vault: PublicKey): Promise<ConditionalVaultAccount | null> {
+  async fetchVault(vault: PublicKey): Promise<ConditionalVault | null> {
     return this.vaultProgram.account.conditionalVault.fetchNullable(vault);
-  }
-
-  async getVault(vault: PublicKey) {
-    return this.vaultProgram.account.conditionalVault.fetch(vault);
   }
 
   initializeQuestionIx(

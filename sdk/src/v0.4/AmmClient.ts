@@ -5,7 +5,7 @@ import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm.js";
 
 import BN from "bn.js";
 import { AMM_PROGRAM_ID } from "./constants.js";
-import { AmmAccount, LowercaseKeys } from "./types/index.js";
+import { Amm, LowercaseKeys } from "./types/index.js";
 import { getAmmLpMintAddr, getAmmAddr } from "./utils/pda.js";
 // import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
 import {
@@ -391,11 +391,11 @@ export class AmmClient {
   //     .toNumber();
   // }
 
-  async getAmm(amm: PublicKey): Promise<AmmAccount> {
+  async getAmm(amm: PublicKey): Promise<Amm> {
     return await this.program.account.amm.fetch(amm);
   }
 
-  getTwap(amm: AmmAccount): BN {
+  getTwap(amm: Amm): BN {
     return amm.oracle.aggregator.div(
       amm.oracle.lastUpdatedSlot.sub(amm.createdAtSlot)
     );
