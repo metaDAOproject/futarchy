@@ -1,5 +1,5 @@
 import { ConditionalVaultClient, sha256 } from "@metadaoproject/futarchy";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey, AddressLookupTableProgram, TransactionInstruction, Connection, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 import { assert } from "chai";
 import {
@@ -11,6 +11,7 @@ import {
   getAccount,
 } from "spl-token-bankrun";
 import * as token from "@solana/spl-token";
+import { BanksClient } from "solana-bankrun";
 
 export default async function test() {
   // A 10-option prediction market test. Alice, Bob, and Charlie are betting on
@@ -48,6 +49,52 @@ export default async function test() {
 
   const vault = await vaultClient.initializeVault(question, USDC, numCandidates);
   const storedVault = await vaultClient.fetchVault(vault);
+
+  // // Create a lookup table
+  // // const connection = this.provider.connection as Connection;
+  // const slot = await this.banksClient.getSlot();
+  // console.log("slot", slot);
+  // const [lookupTableInst, lookupTableAddress] = AddressLookupTableProgram.createLookupTable({
+  //   authority: this.payer.publicKey,
+  //   payer: this.payer.publicKey,
+  //   recentSlot: slot -1n,
+  // });
+
+  // const extendInstruction = AddressLookupTableProgram.extendLookupTable({
+  //   payer: this.payer.publicKey,
+  //   authority: this.payer.publicKey,
+  //   lookupTable: lookupTableAddress,
+  //   addresses: [
+  //     vault,
+  //     vaultClient.vaultProgram.programId,
+  //     question,
+  //     storedVault.underlyingTokenAccount,
+  //   ],
+  // });
+
+  // let tx = new Transaction().add(lookupTableInst, extendInstruction);
+  // tx.recentBlockhash = (await this.banksClient.getLatestBlockhash())[0];
+  // tx.feePayer = this.payer.publicKey;
+  // tx.sign(this.payer);
+
+  // await (this.banksClient as BanksClient).processTransaction(tx)
+
+  // // Send the instructions to create and extend the lookup table
+  // // await vaultClient.vaultProgram.provider.sendAndConfirm(
+  // //   [tx],
+  // //   [this.payer]
+  // // );
+
+  // // Verify that the lookup table was created and extended correctly
+  // const lookupTable = await this.banksClient.getAccount(lookupTableAddress);
+  // console.log(lookupTable);
+  // const lookupTable = await connection.getAddressLookupTable(lookupTableAddress);
+  // assert.ok(lookupTable.value !== null, "Lookup table not found");
+  // assert.equal(lookupTable.value.state.addresses.length, 4, "Incorrect number of addresses in lookup table");
+  // assert.ok(lookupTable.value.state.addresses.includes(vault), "Vault address not in lookup table");
+  // assert.ok(lookupTable.value.state.addresses.includes(vaultClient.vaultProgram.programId), "Vault program ID not in lookup table");
+  // assert.ok(lookupTable.value.state.addresses.includes(question), "Question address not in lookup table");
+  // assert.ok(lookupTable.value.state.addresses.includes(storedVault.underlyingTokenAccount), "Underlying vault account not in lookup table");
 
   // Add metadata to conditional tokens
   for (let i = 0; i < numCandidates; i++) {

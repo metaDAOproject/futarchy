@@ -78,7 +78,7 @@ export default function suite() {
     let proposal = Keypair.generate().publicKey;
 
     await ammClient
-      .createAmmIx(
+      .initializeAmmIx(
         META,
         META,
         twapFirstObservationScaled,

@@ -38,6 +38,8 @@ const MPL_TOKEN_METADATA_PROGRAM_ID = toWeb3JsPublicKey(
   UMI_MPL_TOKEN_METADATA_PROGRAM_ID
 );
 
+import mintAndSwap from "./integration/mintAndSwap.test.js";
+
 before(async function () {
   // const version: VersionKey = "0.4";
   // const { AmmClient, AutocratClient, ConditionalVaultClient } = getVersion(version);
@@ -112,14 +114,22 @@ before(async function () {
     );
   };
 
+  this.getTokenBalance = async (mint: PublicKey, owner: PublicKey) => {
+    const tokenAccount = token.getAssociatedTokenAddressSync(mint, owner, true);
+    const storedTokenAccount = await getAccount(this.banksClient, tokenAccount);
+    return storedTokenAccount.amount;
+  };
+
   this.assertBalance = async (
     mint: PublicKey,
     owner: PublicKey,
     amount: number
   ) => {
-    const tokenAccount = token.getAssociatedTokenAddressSync(mint, owner, true);
-    const storedTokenAccount = await getAccount(this.banksClient, tokenAccount);
-    assert.equal(storedTokenAccount.amount.toString(), amount.toString());
+    const balance = await this.getTokenBalance(mint, owner);
+    assert.equal(balance.toString(), amount.toString());
+    // const tokenAccount = token.getAssociatedTokenAddressSync(mint, owner, true);
+    // const storedTokenAccount = await getAccount(this.banksClient, tokenAccount);
+    // assert.equal(storedTokenAccount.amount.toString(), amount.toString());
   };
 
   this.transfer = async (
@@ -142,3 +152,6 @@ before(async function () {
 describe("conditional_vault", conditionalVault);
 describe("amm", amm);
 describe("autocrat", autocrat);
+describe("project-wide integration tests", function () {
+  it("mint and swap in a single transaction", mintAndSwap);
+});

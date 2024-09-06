@@ -328,13 +328,13 @@ export class AutocratClient {
       .postInstructions(
         await InstructionUtils.getInstructions(
           this.vaultClient.initializeVaultIx(question, storedDao.usdcMint, 2),
-          this.ammClient.createAmmIx(
+          this.ammClient.initializeAmmIx(
             passBaseMint,
             passQuoteMint,
             storedDao.twapInitialObservation,
             storedDao.twapMaxObservationChangePerUpdate
           ),
-          this.ammClient.createAmmIx(
+          this.ammClient.initializeAmmIx(
             failBaseMint,
             failQuoteMint,
             storedDao.twapInitialObservation,
