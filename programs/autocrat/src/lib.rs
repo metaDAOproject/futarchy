@@ -71,6 +71,11 @@ pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 300;
 
 pub const MAX_BPS: u16 = 10_000;
 
+// the index of the fail and pass outcomes in the question and the index of
+// the pass and fail conditional tokens in the conditional vault
+pub const FAIL_INDEX: usize = 0;
+pub const PASS_INDEX: usize = 1;
+
 // TWAP can only move by $5 per slot
 pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;
 
