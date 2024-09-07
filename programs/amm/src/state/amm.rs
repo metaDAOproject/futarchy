@@ -248,14 +248,14 @@ impl Amm {
         // assert that the new observation is between price and last observation
         match price.cmp(&oracle.last_observation) {
             Ordering::Greater => {
-                require!(new_observation > oracle.last_observation, AmmError::AssertFailed);
+                require!(new_observation >= oracle.last_observation, AmmError::AssertFailed);
                 require!(new_observation <= price, AmmError::AssertFailed);
             }
             Ordering::Equal => {
                 require!(new_observation == price, AmmError::AssertFailed);
             }
             Ordering::Less => {
-                require!(new_observation < oracle.last_observation, AmmError::AssertFailed);
+                require!(new_observation <= oracle.last_observation, AmmError::AssertFailed);
                 require!(new_observation >= price, AmmError::AssertFailed);
             }
         }
