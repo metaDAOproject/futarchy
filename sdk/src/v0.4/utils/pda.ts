@@ -26,7 +26,7 @@ export const getQuestionAddr = (
       utils.bytes.utf8.encode("question"),
       Buffer.from(questionId),
       oracle.toBuffer(),
-      new BN(numConditions).toBuffer("le", 1),
+      new BN(numConditions).toArrayLike(Buffer, "le", 1),
     ],
     programId
   );
@@ -56,7 +56,7 @@ export const getConditionalTokenMintAddr = (
     [
       utils.bytes.utf8.encode("conditional_token"),
       vault.toBuffer(),
-      new BN(index).toBuffer("le", 1),
+      new BN(index).toArrayLike(Buffer, "le", 1),
     ],
     programId
   );
