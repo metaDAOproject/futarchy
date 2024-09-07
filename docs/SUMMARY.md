@@ -35,6 +35,9 @@
 
 * [Discord](https://discord.gg/metadao)
 * [X](https://x.com/MetaDAOProject)
-* [Blog](https://blog.themetadao.org/)
+* [Blog](https://blog.metadao.fi/)
 * [GitHub](https://github.com/metaDAOproject)
 * [Whitepaper](https://github.com/metaDAOproject/Manifesto/blob/main/Manifesto.pdf)
+* [Linkedin](https://linkedin.com/company/metadaoproject)
+* [WellFound](https://wellfound.com/company/metadao)
+* [YouTube](https://www.youtube.com/@metaDAOproject)
