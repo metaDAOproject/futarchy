@@ -1,5 +1,6 @@
 import { AnchorProvider, Program, utils } from "@coral-xyz/anchor";
 import {
+  AccountInfo,
   AddressLookupTableAccount,
   Keypair,
   PublicKey,
@@ -64,6 +65,24 @@ export class ConditionalVaultClient {
 
   async fetchVault(vault: PublicKey): Promise<ConditionalVault | null> {
     return this.vaultProgram.account.conditionalVault.fetchNullable(vault);
+  }
+
+  async deserializeQuestion(
+    accountInfo: AccountInfo<Buffer>
+  ): Promise<Question> {
+    return this.vaultProgram.coder.accounts.decode(
+      "question",
+      accountInfo.data
+    );
+  }
+
+  async deserializeVault(
+    accountInfo: AccountInfo<Buffer>
+  ): Promise<ConditionalVault> {
+    return this.vaultProgram.coder.accounts.decode(
+      "conditionalVault",
+      accountInfo.data
+    );
   }
 
   initializeQuestionIx(

@@ -1,5 +1,10 @@
 import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
-import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  AccountInfo,
+  AddressLookupTableAccount,
+  Keypair,
+  PublicKey,
+} from "@solana/web3.js";
 
 import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm.js";
 
@@ -72,6 +77,18 @@ export class AmmClient {
 
   getProgramId(): PublicKey {
     return this.program.programId;
+  }
+
+  async getAmm(amm: PublicKey): Promise<Amm> {
+    return await this.program.account.amm.fetch(amm);
+  }
+
+  async fetchAmm(amm: PublicKey): Promise<Amm | null> {
+    return await this.program.account.amm.fetchNullable(amm);
+  }
+
+  async deserializeAmm(accountInfo: AccountInfo<Buffer>): Promise<Amm> {
+    return this.program.coder.accounts.decode("amm", accountInfo.data);
   }
 
   async createAmm(
@@ -380,10 +397,6 @@ export class AmmClient {
   //     .div(new BN(2).pow(new BN(32)))
   //     .toNumber();
   // }
-
-  async getAmm(amm: PublicKey): Promise<Amm> {
-    return await this.program.account.amm.fetch(amm);
-  }
 
   getTwap(amm: Amm): BN {
     return amm.oracle.aggregator.div(

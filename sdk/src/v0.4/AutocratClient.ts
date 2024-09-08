@@ -1,5 +1,6 @@
 import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
 import {
+  AccountInfo,
   AccountMeta,
   AddressLookupTableAccount,
   ComputeBudgetProgram,
@@ -117,6 +118,24 @@ export class AutocratClient {
 
   async getDao(dao: PublicKey): Promise<Dao> {
     return this.autocrat.account.dao.fetch(dao);
+  }
+
+  async fetchProposal(proposal: PublicKey): Promise<Proposal | null> {
+    return this.autocrat.account.proposal.fetchNullable(proposal);
+  }
+
+  async fetchDao(dao: PublicKey): Promise<Dao | null> {
+    return this.autocrat.account.dao.fetchNullable(dao);
+  }
+
+  async deserializeProposal(
+    accountInfo: AccountInfo<Buffer>
+  ): Promise<Proposal> {
+    return this.autocrat.coder.accounts.decode("proposal", accountInfo.data);
+  }
+
+  async deserializeDao(accountInfo: AccountInfo<Buffer>): Promise<Dao> {
+    return this.autocrat.coder.accounts.decode("dao", accountInfo.data);
   }
 
   getProposalPdas(
