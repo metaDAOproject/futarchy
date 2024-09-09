@@ -32,14 +32,19 @@ export class PriceMath {
     baseDecimals: number,
     quoteDecimals: number
   ): number {
-    let decimalScalar = BN_TEN.pow(new BN(quoteDecimals - baseDecimals).abs());
-
-    let price1e12 =
+    const decimalScalar = BN_TEN.pow(
+      new BN(quoteDecimals - baseDecimals).abs()
+    );
+    const price1e12 =
       quoteDecimals > baseDecimals
         ? ammPrice.div(decimalScalar)
         : ammPrice.mul(decimalScalar);
-
-    return price1e12.toNumber() / 1e12;
+  
+    try {
+      return price1e12.toNumber() / 1e12;
+    } catch (e) {
+      return price1e12.div(new BN(1e12)).toNumber();
+    }
   }
 
   public static getAmmPrice(
