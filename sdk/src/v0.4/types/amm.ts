@@ -1,5 +1,5 @@
 export type Amm = {
-  version: "0.3.0";
+  version: "0.4.0";
   name: "amm";
   instructions: [
     {
@@ -216,6 +216,16 @@ export type Amm = {
         },
         {
           name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
           isMut: false;
           isSigner: false;
         }
@@ -451,6 +461,50 @@ export type Amm = {
       };
     }
   ];
+  events: [
+    {
+      name: "SwapEvent";
+      fields: [
+        {
+          name: "user";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "amm";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "baseMint";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "quoteMint";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "inputAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "outputAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "swapType";
+          type: {
+            defined: "SwapType";
+          };
+          index: false;
+        }
+      ];
+    }
+  ];
   errors: [
     {
       code: 6000;
@@ -546,7 +600,7 @@ export type Amm = {
 };
 
 export const IDL: Amm = {
-  version: "0.3.0",
+  version: "0.4.0",
   name: "amm",
   instructions: [
     {
@@ -763,6 +817,16 @@ export const IDL: Amm = {
         },
         {
           name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
           isMut: false,
           isSigner: false,
         },
@@ -996,6 +1060,50 @@ export const IDL: Amm = {
           },
         ],
       },
+    },
+  ],
+  events: [
+    {
+      name: "SwapEvent",
+      fields: [
+        {
+          name: "user",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "amm",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "baseMint",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "quoteMint",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "inputAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "outputAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "swapType",
+          type: {
+            defined: "SwapType",
+          },
+          index: false,
+        },
+      ],
     },
   ],
   errors: [

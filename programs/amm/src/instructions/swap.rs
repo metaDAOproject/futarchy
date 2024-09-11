@@ -5,6 +5,17 @@ use crate::error::AmmError;
 use crate::generate_amm_seeds;
 use crate::state::*;
 
+#[event]
+pub struct SwapEvent {
+    pub user: Pubkey,
+    pub amm: Pubkey,
+    pub base_mint: Pubkey,
+    pub quote_mint: Pubkey,
+    pub input_amount: u64,
+    pub output_amount: u64,
+    pub swap_type: SwapType,
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SwapArgs {
     pub swap_type: SwapType,
@@ -12,6 +23,7 @@ pub struct SwapArgs {
     pub output_amount_min: u64,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 pub struct Swap<'info> {
     #[account(mut)]
@@ -55,6 +67,8 @@ impl Swap<'_> {
             vault_ata_base,
             vault_ata_quote,
             token_program,
+            event_authority: _,
+            program: _,
         } = ctx.accounts;
 
         let SwapArgs {
@@ -129,6 +143,16 @@ impl Swap<'_> {
             output_amount_min,
             AmmError::SwapSlippageExceeded
         );
+
+        emit_cpi!(SwapEvent {
+            user: user.key(),
+            amm: amm.key(),
+            base_mint: amm.base_mint,
+            quote_mint: amm.quote_mint,
+            input_amount,
+            output_amount,
+            swap_type,
+        });
 
         Ok(())
     }
