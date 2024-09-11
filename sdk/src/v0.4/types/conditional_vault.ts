@@ -19,6 +19,16 @@ export type ConditionalVault = {
           name: "systemProgram";
           isMut: false;
           isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [
@@ -42,6 +52,16 @@ export type ConditionalVault = {
           name: "oracle";
           isMut: false;
           isSigner: true;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [
@@ -95,6 +115,16 @@ export type ConditionalVault = {
           name: "systemProgram";
           isMut: false;
           isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [];
@@ -129,6 +159,16 @@ export type ConditionalVault = {
         },
         {
           name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
           isMut: false;
           isSigner: false;
         }
@@ -172,6 +212,16 @@ export type ConditionalVault = {
           name: "tokenProgram";
           isMut: false;
           isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [
@@ -213,6 +263,16 @@ export type ConditionalVault = {
           name: "tokenProgram";
           isMut: false;
           isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [];
@@ -252,6 +312,16 @@ export type ConditionalVault = {
         },
         {
           name: "rent";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
           isMut: false;
           isSigner: false;
         }
@@ -354,6 +424,22 @@ export type ConditionalVault = {
   ];
   types: [
     {
+      name: "CommonFields";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "slot";
+            type: "u64";
+          },
+          {
+            name: "unixTimestamp";
+            type: "i64";
+          }
+        ];
+      };
+    },
+    {
       name: "AddMetadataToConditionalTokensArgs";
       type: {
         kind: "struct";
@@ -425,6 +511,293 @@ export type ConditionalVault = {
           }
         ];
       };
+    }
+  ];
+  events: [
+    {
+      name: "AddMetadataToConditionalTokensEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "vault";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "conditionalTokenMint";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "conditionalTokenMetadata";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "name";
+          type: "string";
+          index: false;
+        },
+        {
+          name: "symbol";
+          type: "string";
+          index: false;
+        },
+        {
+          name: "uri";
+          type: "string";
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "InitializeConditionalVaultEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "question";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "underlyingTokenMint";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "vaultUnderlyingTokenAccount";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "conditionalTokenMints";
+          type: {
+            vec: "publicKey";
+          };
+          index: false;
+        },
+        {
+          name: "pdaBump";
+          type: "u8";
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "InitializeQuestionEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "questionId";
+          type: {
+            array: ["u8", 32];
+          };
+          index: false;
+        },
+        {
+          name: "oracle";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "numConditions";
+          type: "u8";
+          index: false;
+        },
+        {
+          name: "question";
+          type: "publicKey";
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "MergeTokensEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "user";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "vault";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "amount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postUserUnderlyingBalance";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postVaultUnderlyingBalance";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postUserConditionalTokenBalances";
+          type: {
+            vec: "u64";
+          };
+          index: false;
+        },
+        {
+          name: "postConditionalTokenSupplies";
+          type: {
+            vec: "u64";
+          };
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "RedeemTokensEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "user";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "vault";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "amount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postUserUnderlyingBalance";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postVaultUnderlyingBalance";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postConditionalTokenSupplies";
+          type: {
+            vec: "u64";
+          };
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "ResolveQuestionEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "question";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "payoutNumerators";
+          type: {
+            vec: "u32";
+          };
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "SplitTokensEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "user";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "vault";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "amount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postUserUnderlyingBalance";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postVaultUnderlyingBalance";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "postUserConditionalTokenBalances";
+          type: {
+            vec: "u64";
+          };
+          index: false;
+        },
+        {
+          name: "postConditionalTokenSupplies";
+          type: {
+            vec: "u64";
+          };
+          index: false;
+        }
+      ];
     }
   ];
   errors: [
@@ -528,6 +901,16 @@ export const IDL: ConditionalVault = {
           isMut: false,
           isSigner: false,
         },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
+        },
       ],
       args: [
         {
@@ -550,6 +933,16 @@ export const IDL: ConditionalVault = {
           name: "oracle",
           isMut: false,
           isSigner: true,
+        },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
         },
       ],
       args: [
@@ -604,6 +997,16 @@ export const IDL: ConditionalVault = {
           isMut: false,
           isSigner: false,
         },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
+        },
       ],
       args: [],
     },
@@ -637,6 +1040,16 @@ export const IDL: ConditionalVault = {
         },
         {
           name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
           isMut: false,
           isSigner: false,
         },
@@ -681,6 +1094,16 @@ export const IDL: ConditionalVault = {
           isMut: false,
           isSigner: false,
         },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
+        },
       ],
       args: [
         {
@@ -722,6 +1145,16 @@ export const IDL: ConditionalVault = {
           isMut: false,
           isSigner: false,
         },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
+        },
       ],
       args: [],
     },
@@ -760,6 +1193,16 @@ export const IDL: ConditionalVault = {
         },
         {
           name: "rent",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
           isMut: false,
           isSigner: false,
         },
@@ -862,6 +1305,22 @@ export const IDL: ConditionalVault = {
   ],
   types: [
     {
+      name: "CommonFields",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "slot",
+            type: "u64",
+          },
+          {
+            name: "unixTimestamp",
+            type: "i64",
+          },
+        ],
+      },
+    },
+    {
       name: "AddMetadataToConditionalTokensArgs",
       type: {
         kind: "struct",
@@ -933,6 +1392,293 @@ export const IDL: ConditionalVault = {
           },
         ],
       },
+    },
+  ],
+  events: [
+    {
+      name: "AddMetadataToConditionalTokensEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "vault",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "conditionalTokenMint",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "conditionalTokenMetadata",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "name",
+          type: "string",
+          index: false,
+        },
+        {
+          name: "symbol",
+          type: "string",
+          index: false,
+        },
+        {
+          name: "uri",
+          type: "string",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "InitializeConditionalVaultEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "question",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "underlyingTokenMint",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "vaultUnderlyingTokenAccount",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "conditionalTokenMints",
+          type: {
+            vec: "publicKey",
+          },
+          index: false,
+        },
+        {
+          name: "pdaBump",
+          type: "u8",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "InitializeQuestionEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "questionId",
+          type: {
+            array: ["u8", 32],
+          },
+          index: false,
+        },
+        {
+          name: "oracle",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "numConditions",
+          type: "u8",
+          index: false,
+        },
+        {
+          name: "question",
+          type: "publicKey",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "MergeTokensEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "user",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "vault",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "amount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postUserUnderlyingBalance",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postVaultUnderlyingBalance",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postUserConditionalTokenBalances",
+          type: {
+            vec: "u64",
+          },
+          index: false,
+        },
+        {
+          name: "postConditionalTokenSupplies",
+          type: {
+            vec: "u64",
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "RedeemTokensEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "user",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "vault",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "amount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postUserUnderlyingBalance",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postVaultUnderlyingBalance",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postConditionalTokenSupplies",
+          type: {
+            vec: "u64",
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "ResolveQuestionEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "question",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "payoutNumerators",
+          type: {
+            vec: "u32",
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "SplitTokensEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "user",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "vault",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "amount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postUserUnderlyingBalance",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postVaultUnderlyingBalance",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "postUserConditionalTokenBalances",
+          type: {
+            vec: "u64",
+          },
+          index: false,
+        },
+        {
+          name: "postConditionalTokenSupplies",
+          type: {
+            vec: "u64",
+          },
+          index: false,
+        },
+      ],
     },
   ],
   errors: [

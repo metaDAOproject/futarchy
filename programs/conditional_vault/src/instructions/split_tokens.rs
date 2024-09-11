@@ -83,6 +83,20 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             ctx.accounts.vault_underlying_token_account.amount,
         )?;
 
+        let clock = Clock::get()?;
+        emit_cpi!(SplitTokensEvent {
+            common: CommonFields {
+                slot: clock.slot,
+                unix_timestamp: clock.unix_timestamp,
+            },
+            user: ctx.accounts.authority.key(),
+            vault: ctx.accounts.vault.key(),
+            amount,
+            post_user_underlying_balance: ctx.accounts.user_underlying_token_account.amount,
+            post_vault_underlying_balance: ctx.accounts.vault_underlying_token_account.amount,
+            post_user_conditional_token_balances: user_conditional_token_accounts.iter().map(|account| account.amount).collect(),
+            post_conditional_token_supplies: conditional_token_mints.iter().map(|mint| mint.supply).collect(),
+        });
         Ok(())
     }
 }

@@ -7,6 +7,7 @@ pub struct InitializeQuestionArgs {
     pub num_conditions: u8,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: InitializeQuestionArgs)]
 pub struct InitializeQuestion<'info> {
@@ -49,6 +50,18 @@ impl InitializeQuestion<'_> {
             oracle,
             payout_numerators: vec![0; num_conditions as usize],
             payout_denominator: 0,
+        });
+
+        let clock = Clock::get()?;
+        emit_cpi!(InitializeQuestionEvent {
+            common: CommonFields {
+                slot: clock.slot,
+                unix_timestamp: clock.unix_timestamp,
+            },
+            question_id,
+            oracle,
+            num_conditions,
+            question: question.key(),
         });
 
         Ok(())

@@ -5,6 +5,7 @@ pub struct ResolveQuestionArgs {
     pub payout_numerators: Vec<u32>,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: ResolveQuestionArgs)]
 pub struct ResolveQuestion<'info> {
@@ -24,9 +25,19 @@ impl ResolveQuestion<'_> {
         );
 
         question.payout_denominator = args.payout_numerators.iter().sum();
-        question.payout_numerators = args.payout_numerators;
+        question.payout_numerators = args.payout_numerators.clone();
 
         require_gt!(question.payout_denominator, 0, VaultError::PayoutZero);
+
+        let clock = Clock::get()?;
+        emit_cpi!(ResolveQuestionEvent {
+            common: CommonFields {
+                slot: clock.slot,
+                unix_timestamp: clock.unix_timestamp,
+            },
+            question: question.key(),
+            payout_numerators: args.payout_numerators,
+        });
 
         Ok(())
     }

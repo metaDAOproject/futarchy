@@ -11,10 +11,12 @@ use anchor_spl::{
 pub mod error;
 pub mod instructions;
 pub mod state;
+pub mod events;
 
 pub use error::VaultError;
 pub use instructions::*;
 pub use state::*;
+pub use events::*;
 
 #[cfg(not(feature = "no-entrypoint"))]
 use solana_security_txt::security_txt;

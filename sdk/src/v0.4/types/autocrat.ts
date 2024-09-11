@@ -195,6 +195,11 @@ export type Autocrat = {
           name: "vaultProgram";
           isMut: false;
           isSigner: false;
+        },
+        {
+          name: "vaultEventAuthority";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [];
@@ -829,6 +834,11 @@ export const IDL: Autocrat = {
         },
         {
           name: "vaultProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "vaultEventAuthority",
           isMut: false,
           isSigner: false,
         },

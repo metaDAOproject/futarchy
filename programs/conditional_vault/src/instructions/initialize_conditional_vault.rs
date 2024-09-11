@@ -3,6 +3,7 @@ use super::*;
 use anchor_lang::system_program;
 use anchor_spl::token;
 
+#[event_cpi]
 #[derive(Accounts)]
 pub struct InitializeConditionalVault<'info> {
     #[account(
@@ -92,6 +93,19 @@ impl<'info, 'c: 'info> InitializeConditionalVault<'info> {
             conditional_token_mints,
             pda_bump: ctx.bumps.vault,
             decimals,
+        });
+
+        let clock = Clock::get()?;
+        emit_cpi!(InitializeConditionalVaultEvent {
+            common: CommonFields {
+                slot: clock.slot,
+                unix_timestamp: clock.unix_timestamp,
+            },
+            question: vault.question,
+            underlying_token_mint: vault.underlying_token_mint,
+            vault_underlying_token_account: vault.underlying_token_account,
+            conditional_token_mints: vault.conditional_token_mints.clone(),
+            pda_bump: vault.pda_bump,
         });
 
         Ok(())

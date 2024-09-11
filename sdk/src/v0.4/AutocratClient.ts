@@ -35,6 +35,7 @@ import {
   getAmmLpMintAddr,
   getConditionalTokenMintAddr,
   getDaoTreasuryAddr,
+  getEventAuthorityAddr,
   getProposalAddr,
   getQuestionAddr,
   getVaultAddr,
@@ -685,6 +686,8 @@ export class AutocratClient {
       failAmm
     );
 
+    const [vaultEventAuthority] = getEventAuthorityAddr(vaultProgramId);
+
     return this.autocrat.methods.finalizeProposal().accounts({
       proposal,
       passAmm,
@@ -707,6 +710,7 @@ export class AutocratClient {
       ),
       vaultProgram: this.vaultClient.vaultProgram.programId,
       treasury: daoTreasury,
+      vaultEventAuthority,
     });
   }
 

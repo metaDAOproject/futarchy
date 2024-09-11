@@ -11,6 +11,13 @@ import {
 } from "@metaplex-foundation/umi-web3js-adapters";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "../constants.js";
 
+export const getEventAuthorityAddr = (programId: PublicKey) => {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("__event_authority")],
+    programId
+  );
+};
+
 export const getQuestionAddr = (
   programId: PublicKey,
   questionId: Uint8Array,

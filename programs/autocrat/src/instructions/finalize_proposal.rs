@@ -50,6 +50,8 @@ pub struct FinalizeProposal<'info> {
     pub fail_lp_vault_account: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub vault_program: Program<'info, ConditionalVaultProgram>,
+    /// CHECK: checked by vault program
+    pub vault_event_authority: UncheckedAccount<'info>,
 }
 
 impl FinalizeProposal<'_> {
@@ -85,6 +87,7 @@ impl FinalizeProposal<'_> {
             fail_lp_vault_account,
             vault_program,
             token_program,
+            vault_event_authority,
         } = ctx.accounts;
 
         let proposer_key = proposal.proposer;
@@ -165,6 +168,8 @@ impl FinalizeProposal<'_> {
         let cpi_accounts = ResolveQuestion {
             question: question.to_account_info(),
             oracle: proposal.to_account_info(),
+            event_authority: vault_event_authority.to_account_info(),
+            program: vault_program.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(proposal_signer);
         conditional_vault::cpi::resolve_question(

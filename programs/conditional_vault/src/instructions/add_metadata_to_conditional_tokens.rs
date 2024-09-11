@@ -13,13 +13,13 @@ pub struct AddMetadataToConditionalTokensArgs {
     pub uri: String,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 pub struct AddMetadataToConditionalTokens<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(mut)]
     pub vault: Account<'info, ConditionalVault>,
-    // pub underlying_token_metadata: Account<'info, MetadataAccount>,
     #[account(
         mut,
         mint::authority = vault,
@@ -57,9 +57,6 @@ impl AddMetadataToConditionalTokens<'_> {
         let seeds = generate_vault_seeds!(ctx.accounts.vault);
         let signer_seeds = &[&seeds[..]];
 
-        // let underlying_token_symbol_raw = ctx.accounts.underlying_token_metadata.symbol.clone();
-        // let underlying_token_symbol = underlying_token_symbol_raw.trim_matches(char::from(0));
-
         let cpi_program = ctx.accounts.token_metadata_program.to_account_info();
 
         let cpi_accounts = CreateMetadataAccountsV3 {
@@ -75,9 +72,9 @@ impl AddMetadataToConditionalTokens<'_> {
         create_metadata_accounts_v3(
             CpiContext::new(cpi_program, cpi_accounts).with_signer(signer_seeds),
             DataV2 {
-                name: args.name,
-                symbol: args.symbol,
-                uri: args.uri,
+                name: args.name.clone(),
+                symbol: args.symbol.clone(),
+                uri: args.uri.clone(),
                 seller_fee_basis_points: 0,
                 creators: None,
                 collection: None,
@@ -87,6 +84,20 @@ impl AddMetadataToConditionalTokens<'_> {
             true,
             None,
         )?;
+
+        let clock = Clock::get()?;
+        emit_cpi!(AddMetadataToConditionalTokensEvent {
+            common: CommonFields {
+                slot: clock.slot,
+                unix_timestamp: clock.unix_timestamp,
+            },
+            vault: ctx.accounts.vault.key(),
+            conditional_token_mint: ctx.accounts.conditional_token_mint.key(),
+            conditional_token_metadata: ctx.accounts.conditional_token_metadata.key(),
+            name: args.name,
+            symbol: args.symbol,
+            uri: args.uri,
+        });
 
         Ok(())
     }

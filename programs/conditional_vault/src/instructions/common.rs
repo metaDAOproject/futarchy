@@ -1,5 +1,6 @@
 use super::*;
 
+#[event_cpi]
 #[derive(Accounts)]
 pub struct InteractWithVault<'info> {
     pub question: Account<'info, Question>,
