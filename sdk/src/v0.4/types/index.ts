@@ -12,7 +12,7 @@ export { ConditionalVaultProgram, ConditionalVaultIDL };
 
 export { LowercaseKeys } from "./utils.js";
 
-import type { IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
+import type { IdlAccounts, IdlTypes, IdlEvents } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 
 export type Question = IdlAccounts<ConditionalVaultProgram>["question"];
@@ -28,3 +28,5 @@ export type ProposalInstruction =
 export type Dao = IdlAccounts<AutocratProgram>["dao"];
 export type Proposal = IdlAccounts<AutocratProgram>["proposal"];
 export type Amm = IdlAccounts<AmmProgram>["amm"];
+
+export type SwapEvent = IdlEvents<AmmProgram>["SwapEvent"];
