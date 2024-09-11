@@ -38,7 +38,7 @@ pub struct TwapOracle {
     ///
     /// So in the case of an overflow, the aggregator rolls back to 0. It's the
     /// client's responsibility to sanity check the assets or to handle an
-    /// aggregator at t2 being smaller than an aggregator at t1.
+    /// aggregator at T2 being smaller than an aggregator at T1.
     pub aggregator: u128,
     /// The most that an observation can change per update.
     pub max_observation_change_per_update: u128,

@@ -54,6 +54,16 @@ export type Amm = {
           name: "systemProgram";
           isMut: false;
           isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [
@@ -112,6 +122,16 @@ export type Amm = {
           name: "tokenProgram";
           isMut: false;
           isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [
@@ -168,6 +188,16 @@ export type Amm = {
         },
         {
           name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
           isMut: false;
           isSigner: false;
         }
@@ -246,6 +276,16 @@ export type Amm = {
           name: "amm";
           isMut: true;
           isSigner: false;
+        },
+        {
+          name: "eventAuthority";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "program";
+          isMut: false;
+          isSigner: false;
         }
       ];
       args: [];
@@ -304,6 +344,50 @@ export type Amm = {
     }
   ];
   types: [
+    {
+      name: "CommonFields";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "slot";
+            type: "u64";
+          },
+          {
+            name: "unixTimestamp";
+            type: "i64";
+          },
+          {
+            name: "user";
+            type: "publicKey";
+          },
+          {
+            name: "amm";
+            type: "publicKey";
+          },
+          {
+            name: "postBaseReserves";
+            type: "u64";
+          },
+          {
+            name: "postQuoteReserves";
+            type: "u64";
+          },
+          {
+            name: "oracleLastPrice";
+            type: "u128";
+          },
+          {
+            name: "oracleLastObservation";
+            type: "u128";
+          },
+          {
+            name: "oracleAggregator";
+            type: "u128";
+          }
+        ];
+      };
+    },
     {
       name: "AddLiquidityArgs";
       type: {
@@ -429,7 +513,7 @@ export type Amm = {
               "",
               "So in the case of an overflow, the aggregator rolls back to 0. It's the",
               "client's responsibility to sanity check the assets or to handle an",
-              "aggregator at t2 being smaller than an aggregator at t1."
+              "aggregator at T2 being smaller than an aggregator at T1."
             ];
             type: "u128";
           },
@@ -466,23 +550,10 @@ export type Amm = {
       name: "SwapEvent";
       fields: [
         {
-          name: "user";
-          type: "publicKey";
-          index: false;
-        },
-        {
-          name: "amm";
-          type: "publicKey";
-          index: false;
-        },
-        {
-          name: "baseMint";
-          type: "publicKey";
-          index: false;
-        },
-        {
-          name: "quoteMint";
-          type: "publicKey";
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
           index: false;
         },
         {
@@ -499,6 +570,139 @@ export type Amm = {
           name: "swapType";
           type: {
             defined: "SwapType";
+          };
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "AddLiquidityEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "quoteAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "maxBaseAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "minLpTokens";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "baseAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "lpTokensMinted";
+          type: "u64";
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "RemoveLiquidityEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "lpTokensBurned";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "minQuoteAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "minBaseAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "baseAmount";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "quoteAmount";
+          type: "u64";
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "CreateAmmEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
+          };
+          index: false;
+        },
+        {
+          name: "twapInitialObservation";
+          type: "u128";
+          index: false;
+        },
+        {
+          name: "twapMaxObservationChangePerUpdate";
+          type: "u128";
+          index: false;
+        },
+        {
+          name: "lpMint";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "baseMint";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "quoteMint";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "vaultAtaBase";
+          type: "publicKey";
+          index: false;
+        },
+        {
+          name: "vaultAtaQuote";
+          type: "publicKey";
+          index: false;
+        }
+      ];
+    },
+    {
+      name: "CrankThatTwapEvent";
+      fields: [
+        {
+          name: "common";
+          type: {
+            defined: "CommonFields";
           };
           index: false;
         }
@@ -656,6 +860,16 @@ export const IDL: Amm = {
           isMut: false,
           isSigner: false,
         },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
+        },
       ],
       args: [
         {
@@ -714,6 +928,16 @@ export const IDL: Amm = {
           isMut: false,
           isSigner: false,
         },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
+        },
       ],
       args: [
         {
@@ -769,6 +993,16 @@ export const IDL: Amm = {
         },
         {
           name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
           isMut: false,
           isSigner: false,
         },
@@ -848,6 +1082,16 @@ export const IDL: Amm = {
           isMut: true,
           isSigner: false,
         },
+        {
+          name: "eventAuthority",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "program",
+          isMut: false,
+          isSigner: false,
+        },
       ],
       args: [],
     },
@@ -905,6 +1149,50 @@ export const IDL: Amm = {
     },
   ],
   types: [
+    {
+      name: "CommonFields",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "slot",
+            type: "u64",
+          },
+          {
+            name: "unixTimestamp",
+            type: "i64",
+          },
+          {
+            name: "user",
+            type: "publicKey",
+          },
+          {
+            name: "amm",
+            type: "publicKey",
+          },
+          {
+            name: "postBaseReserves",
+            type: "u64",
+          },
+          {
+            name: "postQuoteReserves",
+            type: "u64",
+          },
+          {
+            name: "oracleLastPrice",
+            type: "u128",
+          },
+          {
+            name: "oracleLastObservation",
+            type: "u128",
+          },
+          {
+            name: "oracleAggregator",
+            type: "u128",
+          },
+        ],
+      },
+    },
     {
       name: "AddLiquidityArgs",
       type: {
@@ -1030,7 +1318,7 @@ export const IDL: Amm = {
               "",
               "So in the case of an overflow, the aggregator rolls back to 0. It's the",
               "client's responsibility to sanity check the assets or to handle an",
-              "aggregator at t2 being smaller than an aggregator at t1.",
+              "aggregator at T2 being smaller than an aggregator at T1.",
             ],
             type: "u128",
           },
@@ -1067,23 +1355,10 @@ export const IDL: Amm = {
       name: "SwapEvent",
       fields: [
         {
-          name: "user",
-          type: "publicKey",
-          index: false,
-        },
-        {
-          name: "amm",
-          type: "publicKey",
-          index: false,
-        },
-        {
-          name: "baseMint",
-          type: "publicKey",
-          index: false,
-        },
-        {
-          name: "quoteMint",
-          type: "publicKey",
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
           index: false,
         },
         {
@@ -1100,6 +1375,139 @@ export const IDL: Amm = {
           name: "swapType",
           type: {
             defined: "SwapType",
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "AddLiquidityEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "quoteAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "maxBaseAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "minLpTokens",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "baseAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "lpTokensMinted",
+          type: "u64",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "RemoveLiquidityEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "lpTokensBurned",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "minQuoteAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "minBaseAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "baseAmount",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "quoteAmount",
+          type: "u64",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "CreateAmmEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
+          },
+          index: false,
+        },
+        {
+          name: "twapInitialObservation",
+          type: "u128",
+          index: false,
+        },
+        {
+          name: "twapMaxObservationChangePerUpdate",
+          type: "u128",
+          index: false,
+        },
+        {
+          name: "lpMint",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "baseMint",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "quoteMint",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "vaultAtaBase",
+          type: "publicKey",
+          index: false,
+        },
+        {
+          name: "vaultAtaQuote",
+          type: "publicKey",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "CrankThatTwapEvent",
+      fields: [
+        {
+          name: "common",
+          type: {
+            defined: "CommonFields",
           },
           index: false,
         },

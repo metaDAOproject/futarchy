@@ -4,6 +4,7 @@ use anchor_spl::token::{self, *};
 use crate::error::AmmError;
 use crate::AddOrRemoveLiquidity;
 use crate::{generate_amm_seeds, state::*};
+use crate::events::{AddLiquidityEvent, CommonFields};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AddLiquidityArgs {
@@ -27,6 +28,8 @@ impl AddOrRemoveLiquidity<'_> {
             vault_ata_base,
             vault_ata_quote,
             token_program,
+            program: _,
+            event_authority: _,
         } = ctx.accounts;
 
         let AddLiquidityArgs {
@@ -130,6 +133,16 @@ impl AddOrRemoveLiquidity<'_> {
                 amount,
             )?;
         }
+
+        let clock = Clock::get()?;
+        emit_cpi!(AddLiquidityEvent {
+            common: CommonFields::new(&clock, user.key(), amm),
+            lp_tokens_minted: lp_tokens_to_mint,
+            max_base_amount,
+            min_lp_tokens,
+            base_amount,
+            quote_amount,
+        });
 
         Ok(())
     }

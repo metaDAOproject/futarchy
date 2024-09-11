@@ -3,6 +3,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 
 use crate::*;
 
+#[event_cpi]
 #[derive(Accounts)]
 pub struct AddOrRemoveLiquidity<'info> {
     #[account(mut)]

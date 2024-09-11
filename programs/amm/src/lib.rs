@@ -16,11 +16,13 @@ security_txt! {
 }
 
 pub mod error;
+pub mod events;
 pub mod instructions;
 pub mod state;
 
 use crate::instructions::*;
 use crate::state::*;
+use crate::events::*;
 
 declare_id!("AMMt4mC7UjyTnEvY4mxrvdUW24mAZXsDJz872vXd56Uw");
 

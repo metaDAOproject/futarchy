@@ -3,6 +3,8 @@ use anchor_spl::token::{self, Burn, Transfer};
 
 use crate::{error::AmmError, *};
 
+use crate::events::RemoveLiquidityEvent;
+
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct RemoveLiquidityArgs {
     pub lp_tokens_to_burn: u64,
@@ -25,6 +27,8 @@ impl AddOrRemoveLiquidity<'_> {
             vault_ata_base,
             vault_ata_quote,
             token_program,
+            program: _,
+            event_authority: _,
         } = ctx.accounts;
 
         let RemoveLiquidityArgs {
@@ -97,6 +101,16 @@ impl AddOrRemoveLiquidity<'_> {
                 amount_to_withdraw,
             )?;
         }
+
+        let clock = Clock::get()?;
+        emit_cpi!(RemoveLiquidityEvent {
+            common: CommonFields::new(&clock, user.key(), amm),
+            lp_tokens_burned: lp_tokens_to_burn,
+            min_quote_amount,
+            min_base_amount,
+            base_amount: base_to_withdraw,
+            quote_amount: quote_to_withdraw,
+        });
 
         Ok(())
     }
