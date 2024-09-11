@@ -18,10 +18,10 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-amm = "AMMt4mC7UjyTnEvY4mxrvdUW24mAZXsDJz872vXd56Uw"
+amm = "AMMgMWMtPEcfpiu6Zcrq1meUrMEwm9YukJez3W2KbJ2F"
 autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
-autocrat = "AUtoXev1k6UYoExJFyf7cgVTNjritNCKbyKHLV4wHNy"
-conditional_vault = "vAU1TsWFfYsgJwsDGxvCCNJBCvTwjwS4SqLckZPqyMQ"
+autocrat = "aUtoxZicuMfnN2Qa8WuebpJCCHZAMM1A1L4vjG6VSyY"
+conditional_vault = "VaU1Tsg928kjWLcPMKZ16cPWy3Uy7PuDw149U9zuddd"
 optimistic_timelock = "tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF"
 
 [registry]
