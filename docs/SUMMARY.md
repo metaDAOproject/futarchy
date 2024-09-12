@@ -7,6 +7,7 @@
 * [Creating a DAO](using-the-platform/creating-a-dao.md)
 * [Creating Proposals](using-the-platform/creating-proposals.md)
 * [Trading Proposals](using-the-platform/trading-proposals.md)
+* [Value Resolved Decision Markets](using-the-platform/value-resolved-decision-markets.md)
 
 ## Futarchy
 
@@ -38,6 +39,10 @@
 * [Blog](https://blog.metadao.fi/)
 * [GitHub](https://github.com/metaDAOproject)
 * [Whitepaper](https://github.com/metaDAOproject/Manifesto/blob/main/Manifesto.pdf)
+* [YouTube](https://www.youtube.com/@metaDAOproject)
+
+## Careers
+
 * [Linkedin](https://linkedin.com/company/metadaoproject)
 * [WellFound](https://wellfound.com/company/metadao)
-* [YouTube](https://www.youtube.com/@metaDAOproject)
+* [Job Board](https://jobs.metadao.fi)
