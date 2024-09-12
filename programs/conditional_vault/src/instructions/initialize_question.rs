@@ -4,7 +4,7 @@ use super::*;
 pub struct InitializeQuestionArgs {
     pub question_id: [u8; 32],
     pub oracle: Pubkey,
-    pub num_conditions: u8,
+    pub num_outcomes: u8,
 }
 
 #[event_cpi]
@@ -14,12 +14,12 @@ pub struct InitializeQuestion<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + 32 + 32 + 1 + 4 + (args.num_conditions as usize * 4) + 4,
+        space = 8 + 32 + 32 + 1 + 4 + (args.num_outcomes as usize * 4) + 4,
         seeds = [
             b"question", 
             args.question_id.as_ref(),
             args.oracle.key().as_ref(),
-            &[args.num_conditions],
+            &[args.num_outcomes],
         ],
         bump
     )]
@@ -32,7 +32,7 @@ pub struct InitializeQuestion<'info> {
 impl InitializeQuestion<'_> {
     pub fn handle(ctx: Context<Self>, args: InitializeQuestionArgs) -> Result<()> {
         require_gte!(
-            args.num_conditions,
+            args.num_outcomes,
             2,
             VaultError::InsufficientNumConditions
         );
@@ -42,13 +42,13 @@ impl InitializeQuestion<'_> {
         let InitializeQuestionArgs {
             question_id,
             oracle,
-            num_conditions,
+            num_outcomes,
         } = args;
 
         question.set_inner(Question {
             question_id,
             oracle,
-            payout_numerators: vec![0; num_conditions as usize],
+            payout_numerators: vec![0; num_outcomes as usize],
             payout_denominator: 0,
         });
 
@@ -60,7 +60,7 @@ impl InitializeQuestion<'_> {
             },
             question_id,
             oracle,
-            num_conditions,
+            num_outcomes,
             question: question.key(),
         });
 

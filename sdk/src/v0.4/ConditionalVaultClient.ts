@@ -88,20 +88,20 @@ export class ConditionalVaultClient {
   initializeQuestionIx(
     questionId: Uint8Array,
     oracle: PublicKey,
-    numConditions: number
+    numOutcomes: number
   ) {
     const [question] = getQuestionAddr(
       this.vaultProgram.programId,
       questionId,
       oracle,
-      numConditions
+      numOutcomes
     );
 
     return this.vaultProgram.methods
       .initializeQuestion({
         questionId: Array.from(questionId),
         oracle,
-        numConditions,
+        numOutcomes,
       })
       .accounts({
         question,
@@ -111,16 +111,16 @@ export class ConditionalVaultClient {
   async initializeQuestion(
     questionId: Uint8Array,
     oracle: PublicKey,
-    numConditions: number
+    numOutcomes: number
   ): Promise<PublicKey> {
     const [question] = getQuestionAddr(
       this.vaultProgram.programId,
       questionId,
       oracle,
-      numConditions
+      numOutcomes
     );
 
-    await this.initializeQuestionIx(questionId, oracle, numConditions).rpc();
+    await this.initializeQuestionIx(questionId, oracle, numOutcomes).rpc();
 
     return question;
   }

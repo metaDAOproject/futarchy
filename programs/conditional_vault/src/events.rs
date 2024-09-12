@@ -32,7 +32,7 @@ pub struct InitializeQuestionEvent {
     pub common: CommonFields,
     pub question_id: [u8; 32],
     pub oracle: Pubkey,
-    pub num_conditions: u8,
+    pub num_outcomes: u8,
     pub question: Pubkey,
 }
 

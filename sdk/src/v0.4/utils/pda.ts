@@ -22,7 +22,7 @@ export const getQuestionAddr = (
   programId: PublicKey,
   questionId: Uint8Array,
   oracle: PublicKey,
-  numConditions: number
+  numOutcomes: number
 ) => {
   if (questionId.length != 32) {
     throw new Error("questionId must be 32 bytes");
@@ -33,7 +33,7 @@ export const getQuestionAddr = (
       utils.bytes.utf8.encode("question"),
       Buffer.from(questionId),
       oracle.toBuffer(),
-      new BN(numConditions).toArrayLike(Buffer, "le", 1),
+      new BN(numOutcomes).toArrayLike(Buffer, "le", 1),
     ],
     programId
   );

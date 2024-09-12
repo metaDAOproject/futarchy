@@ -475,7 +475,7 @@ export type ConditionalVault = {
             type: "publicKey";
           },
           {
-            name: "numConditions";
+            name: "numOutcomes";
             type: "u8";
           }
         ];
@@ -618,7 +618,7 @@ export type ConditionalVault = {
           index: false;
         },
         {
-          name: "numConditions";
+          name: "numOutcomes";
           type: "u8";
           index: false;
         },
@@ -1356,7 +1356,7 @@ export const IDL: ConditionalVault = {
             type: "publicKey",
           },
           {
-            name: "numConditions",
+            name: "numOutcomes",
             type: "u8",
           },
         ],
@@ -1499,7 +1499,7 @@ export const IDL: ConditionalVault = {
           index: false,
         },
         {
-          name: "numConditions",
+          name: "numOutcomes",
           type: "u8",
           index: false,
         },
