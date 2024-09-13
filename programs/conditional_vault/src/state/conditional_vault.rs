@@ -45,10 +45,10 @@ impl ConditionalVault {
                 .iter()
                 .enumerate()
                 .map(|(i, supply)| {
-                    *supply * question.payout_numerators[i] as u64
-                        / question.payout_denominator as u64
+                    *supply as u128 * question.payout_numerators[i] as u128
+                        / question.payout_denominator as u128
                 })
-                .sum::<u64>()
+                .sum::<u128>() as u64
         };
 
         require_gte!(vault_underlying_balance, max_possible_liability, VaultError::AssertFailed);
