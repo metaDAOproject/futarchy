@@ -17,6 +17,7 @@ pub struct AddMetadataToConditionalTokensEvent {
     pub uri: String,
 }
 
+// TODO add `vault` to this event
 #[event]
 pub struct InitializeConditionalVaultEvent {
     pub common: CommonFields,
