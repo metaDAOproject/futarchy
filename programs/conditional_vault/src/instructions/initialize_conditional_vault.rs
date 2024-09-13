@@ -55,11 +55,14 @@ impl<'info, 'c: 'info> InitializeConditionalVault<'info> {
 
             conditional_token_mints.push(conditional_token_mint_address);
 
-            let cpi_program = ctx.accounts.system_program.to_account_info();
-            let cpi_accounts = system_program::CreateAccount {
+            let cpi_accounts = system_program::Transfer {
                 from: ctx.accounts.payer.to_account_info(),
                 to: conditional_token_mint.to_account_info(),
             };
+            let cpi_ctx =
+                CpiContext::new(ctx.accounts.system_program.to_account_info(), cpi_accounts);
+            system_program::transfer(cpi_ctx, mint_lamports)?;
+
             let vault_key = vault.key();
             let seeds = &[
                 b"conditional_token",
@@ -68,14 +71,20 @@ impl<'info, 'c: 'info> InitializeConditionalVault<'info> {
                 &[pda_bump],
             ];
             let signer = &[&seeds[..]];
-            let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
 
-            system_program::create_account(
-                cpi_ctx,
-                mint_lamports,
-                Mint::LEN as u64,
-                ctx.accounts.token_program.key,
-            )?;
+            let cpi_accounts = system_program::Allocate {
+                account_to_allocate: conditional_token_mint.to_account_info(),
+            };
+            let cpi_ctx =
+                CpiContext::new(ctx.accounts.system_program.to_account_info(), cpi_accounts);
+            system_program::allocate(cpi_ctx.with_signer(signer), Mint::LEN as u64)?;
+
+            let cpi_accounts = system_program::Assign {
+                account_to_assign: conditional_token_mint.to_account_info(),
+            };
+            let cpi_ctx =
+                CpiContext::new(ctx.accounts.system_program.to_account_info(), cpi_accounts);
+            system_program::assign(cpi_ctx.with_signer(signer), ctx.accounts.token_program.key)?;
 
             let cpi_program = ctx.accounts.token_program.to_account_info();
             let cpi_accounts = token::InitializeMint2 {
