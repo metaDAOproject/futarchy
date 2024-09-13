@@ -4,7 +4,7 @@ For futarchy to work, you need a way of extracting the price of a proposal's con
 
 The naive approach is to just use the spot price at the time of proposal finalization. But this is highly manipulable. For example, someone could pump the price of the pass market right before finalization in order to force the proposal to pass.
 
-<figure><img src="../.gitbook/assets/conditional-markets(3).png" alt=""><figcaption><p>Someone could bid up the pass price in the last minute to force a proposal through</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/conditional-markets-dark.png" alt=""><figcaption><p>Someone could bid up the pass price in the last minute to force a proposal through</p></figcaption></figure>
 
 ### TWAP
 
@@ -16,7 +16,7 @@ However, TWAPs also have their flaws. Importantly, Solana validators can manipul
 
 We deal with this by using a special form of TWAP we call a lagging price TWAP. In a lagging price TWAP, the number that gets fed into the TWAP isn't the raw price - it's a number that tries to approximate the price but which can only move a certain amount per update. We call this an _observation_. Each DAO must configure the _first observation_ and _max observation change per update_ that get used in its proposals' markets.
 
-<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/twap-chart.png" alt=""><figcaption></figcaption></figure>
 
 To take an example, imagine that MetaDAO's first observation is set to $500 and its max change per update is $5. If a proposal opens with a pass market of $550, it will take 10 updates before the observation accurately reflects the price. Assuming each update is spaced evenly and the price stays at $550, the TWAP after 10 updates will be $527.5 (\[$505 + $510 + $515 + $520 + $525 + $530 + $535 + $540 + $545 + $550] / 10). After 10 more updates, it will be $538.75.
 
