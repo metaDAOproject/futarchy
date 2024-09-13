@@ -17,11 +17,7 @@ pub struct FinalizeProposal<'info> {
     pub dao: Box<Account<'info, Dao>>,
     #[account(mut)]
     pub question: Account<'info, Question>,
-    // #[account(mut)]
-    // pub base_vault: Box<Account<'info, ConditionalVaultAccount>>,
-    // #[account(mut)]
-    // pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
-    /// CHECK: never read
+    /// CHECK: it's okay
     pub treasury: UncheckedAccount<'info>,
     #[account(
         mut,
@@ -77,8 +73,6 @@ impl FinalizeProposal<'_> {
             fail_amm,
             dao,
             question,
-            // base_vault,
-            // quote_vault,
             treasury,
             pass_lp_user_account,
             fail_lp_user_account,
@@ -162,7 +156,6 @@ impl FinalizeProposal<'_> {
 
         proposal.state = new_proposal_state;
 
-        // for vault in [base_vault.to_account_info(), quote_vault.to_account_info()] {
         let vault_program = vault_program.to_account_info();
         let cpi_accounts = ResolveQuestion {
             question: question.to_account_info(),
@@ -175,22 +168,6 @@ impl FinalizeProposal<'_> {
             cpi_ctx,
             ResolveQuestionArgs { payout_numerators },
         )?;
-        // }
-
-        // base_vault.reload()?;
-        // quote_vault.reload()?;
-
-        // match new_proposal_state {
-        //     ProposalState::Passed => {
-        //         require!(base_vault.status == VaultStatus::Finalized);
-        //         require!(quote_vault.status == VaultStatus::Finalized);
-        //     }
-        //     ProposalState::Failed => {
-        //         require!(base_vault.status == VaultStatus::Reverted);
-        //         require!(quote_vault.status == VaultStatus::Reverted);
-        //     }
-        //     _ => unreachable!("Encountered an unexpected proposal state"),
-        // }
 
         Ok(())
     }

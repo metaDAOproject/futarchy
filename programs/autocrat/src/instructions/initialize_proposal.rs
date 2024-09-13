@@ -32,13 +32,11 @@ pub struct InitializeProposal<'info> {
     #[account(
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
         has_one = question,
-        // constraint = quote_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
     )]
     pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
         constraint = base_vault.underlying_token_mint == dao.token_mint,
         has_one = question,
-        // constraint = base_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
