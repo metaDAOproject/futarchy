@@ -5,8 +5,7 @@ use super::*;
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
     #[account(mut,
-        // has_one = base_vault,
-        // has_one = quote_vault,
+        has_one = question,
         has_one = pass_amm,
         has_one = fail_amm,
         has_one = dao,
