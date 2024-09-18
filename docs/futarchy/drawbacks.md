@@ -6,7 +6,7 @@ But of course, futarchy isn't perfect. These are some potential pitfalls with th
 
 Sometimes, investors buy what they think others will buy, not what they think the fundamentals support. The housing bubble of the mid 2000's is an example of this, and many more can be found in crypto.
 
-This is less of an issue in crypto as token supply is elastic and any member of the DAO can create a proposal for toke dilution or buy backs. Another potential solution is to facilitate information dissemination by giving top traders a box to leave comments in the UI.
+A potential solution to this is to use a token with supply, mintable only by the autocrat, so any member of the DAO to create a proposal for token dilution or buy backs.
 
 ### Conditional Markets are Zero-Sum
 
