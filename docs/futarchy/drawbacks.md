@@ -4,9 +4,9 @@ But of course, futarchy isn't perfect. These are some potential pitfalls with th
 
 ### Keynesian Beauty Contests
 
-Sometimes, investors buy what they think others will buy, not what they think the fundamentals support. The [GameStop short squeeze](https://en.wikipedia.org/wiki/GameStop\_short\_squeeze) is an example of this, and many more can be found in crypto.
+Sometimes, investors buy what they think others will buy, not what they think the fundamentals support. The housing bubble of the mid 2000's is an example of this, and many more can be found in crypto.
 
-A potential solution to this is to use whitelisted markets. Investors would apply to be a part of futarchic markets, demonstrating that they have traded based on fundamentals in the past.
+This is less of an issue in crypto as token supply is elastic and any member of the DAO can create a proposal for toke dilution or buy backs. Another potential solution is to facilitate information dissemination by giving top traders a box to leave comments in the UI.
 
 ### Conditional Markets are Zero-Sum
 
@@ -19,3 +19,7 @@ You may be able to resolve this by providing an incentive to trade or provide li
 Futarchy is good for big decisions like whether to fire the CEO, but not as good for smaller decisions like whether to fire a division leader because those actions are usually too inconsequential to reflect in the share price.
 
 A solution to this problem is described in MetaDAO's whitepaper.
+
+### Multisig
+In its current state, MetaDAO still relies on multisig members. When a proposal passes, it will often require the transaction of funds from the multisig. We hope to eventually eliminate the need for the multisig as an intermediary and pass all power to the autocrat and formally verified proposals as smart contracts. See [https://lextek.eth.limo/](https://lextek.eth.limo/) and [https://www.metalex.tech/](https://www.metalex.tech/).
+
