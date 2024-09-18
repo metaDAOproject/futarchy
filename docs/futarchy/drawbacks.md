@@ -21,5 +21,5 @@ Futarchy is good for big decisions like whether to fire the CEO, but not as good
 A solution to this problem is described in MetaDAO's whitepaper.
 
 ### Multisig
-In its current state, MetaDAO still relies on multisig members. When a proposal passes, it will often require the transaction of funds from the multisig. We hope to eventually eliminate the need for the multisig as an intermediary and pass all power to the autocrat and formally verified proposals as smart contracts. See [https://lextek.eth.limo/](https://lextek.eth.limo/) and [https://www.metalex.tech/](https://www.metalex.tech/).
+MetaDAO currently relies on multisig members to authorize transactions. When a proposal passes, it often requires funds to be transferred through the multisig. In the future, we aim to eliminate the multisig as an intermediary, transferring full control to an autocrat and formalized, verified proposals implemented as smart contracts. [https://lextek.eth.limo/](https://lextek.eth.limo/) and [https://www.metalex.tech/](https://www.metalex.tech/) are making progress in this area.
 
