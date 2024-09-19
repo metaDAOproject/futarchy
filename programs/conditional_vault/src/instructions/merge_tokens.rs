@@ -101,6 +101,8 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             ctx.accounts.vault_underlying_token_account.amount,
         )?;
 
+        ctx.accounts.vault.seq_num += 1;
+
         emit_cpi!(MergeTokensEvent {
             common: CommonFields {
                 slot: Clock::get()?.slot,
@@ -113,6 +115,7 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             post_vault_underlying_balance: ctx.accounts.vault_underlying_token_account.amount,
             post_user_conditional_token_balances: user_conditional_token_accounts.iter().map(|account| account.amount).collect(),
             post_conditional_token_supplies: conditional_token_mints.iter().map(|mint| mint.supply).collect(),
+            seq_num: ctx.accounts.vault.seq_num,
         });
 
         Ok(())

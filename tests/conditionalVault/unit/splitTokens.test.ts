@@ -55,6 +55,8 @@ export default function suite() {
 
     const storedVault = await vaultClient.fetchVault(vault);
 
+    assert.equal(storedVault.seqNum.toString(), "1");
+
     this.assertBalance(underlyingTokenMint, vault, 1000);
 
     const storedConditionalTokenMints = storedVault.conditionalTokenMints;

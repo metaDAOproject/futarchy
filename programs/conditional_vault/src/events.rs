@@ -6,6 +6,15 @@ pub struct CommonFields {
     pub unix_timestamp: i64,
 }
 
+impl CommonFields {
+    pub fn new(clock: &Clock) -> Self {
+        Self {
+            slot: clock.slot,
+            unix_timestamp: clock.unix_timestamp,
+        }
+    }
+}
+
 #[event]
 pub struct AddMetadataToConditionalTokensEvent {
     pub common: CommonFields,
@@ -15,17 +24,20 @@ pub struct AddMetadataToConditionalTokensEvent {
     pub name: String,
     pub symbol: String,
     pub uri: String,
+    pub seq_num: u64,
 }
 
 // TODO add `vault` to this event
 #[event]
 pub struct InitializeConditionalVaultEvent {
     pub common: CommonFields,
+    pub vault: Pubkey,
     pub question: Pubkey,
     pub underlying_token_mint: Pubkey,
     pub vault_underlying_token_account: Pubkey,
     pub conditional_token_mints: Vec<Pubkey>,
     pub pda_bump: u8,
+    pub seq_num: u64,
 }
 
 #[event]
@@ -47,6 +59,7 @@ pub struct MergeTokensEvent {
     pub post_vault_underlying_balance: u64,
     pub post_user_conditional_token_balances: Vec<u64>,
     pub post_conditional_token_supplies: Vec<u64>,
+    pub seq_num: u64,
 }
 
 #[event]
@@ -58,6 +71,7 @@ pub struct RedeemTokensEvent {
     pub post_user_underlying_balance: u64,
     pub post_vault_underlying_balance: u64,
     pub post_conditional_token_supplies: Vec<u64>,
+    pub seq_num: u64,
 }
 
 #[event]
@@ -77,13 +91,6 @@ pub struct SplitTokensEvent {
     pub post_vault_underlying_balance: u64,
     pub post_user_conditional_token_balances: Vec<u64>,
     pub post_conditional_token_supplies: Vec<u64>,
+    pub seq_num: u64,
 }
 
-impl CommonFields {
-    pub fn new(clock: &Clock) -> Self {
-        Self {
-            slot: clock.slot,
-            unix_timestamp: clock.unix_timestamp,
-        }
-    }
-}

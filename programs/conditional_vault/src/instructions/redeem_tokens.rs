@@ -122,6 +122,8 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             ctx.accounts.vault_underlying_token_account.amount,
         )?;
 
+        ctx.accounts.vault.seq_num += 1;
+
         let clock = Clock::get()?;
         emit_cpi!(RedeemTokensEvent {
             common: CommonFields {
@@ -134,6 +136,7 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
             post_user_underlying_balance: ctx.accounts.user_underlying_token_account.amount,
             post_vault_underlying_balance: ctx.accounts.vault_underlying_token_account.amount,
             post_conditional_token_supplies: conditional_token_mints.iter().map(|mint| mint.supply).collect(),
+            seq_num: ctx.accounts.vault.seq_num,
         });
 
         Ok(())

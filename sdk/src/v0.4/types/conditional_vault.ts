@@ -139,7 +139,7 @@ export type ConditionalVault = {
         },
         {
           name: "vault";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -190,7 +190,7 @@ export type ConditionalVault = {
         },
         {
           name: "vault";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -241,7 +241,7 @@ export type ConditionalVault = {
         },
         {
           name: "vault";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -367,6 +367,10 @@ export type ConditionalVault = {
           {
             name: "decimals";
             type: "u8";
+          },
+          {
+            name: "seqNum";
+            type: "u64";
           }
         ];
       };
@@ -553,6 +557,11 @@ export type ConditionalVault = {
           name: "uri";
           type: "string";
           index: false;
+        },
+        {
+          name: "seqNum";
+          type: "u64";
+          index: false;
         }
       ];
     },
@@ -564,6 +573,11 @@ export type ConditionalVault = {
           type: {
             defined: "CommonFields";
           };
+          index: false;
+        },
+        {
+          name: "vault";
+          type: "publicKey";
           index: false;
         },
         {
@@ -591,6 +605,11 @@ export type ConditionalVault = {
         {
           name: "pdaBump";
           type: "u8";
+          index: false;
+        },
+        {
+          name: "seqNum";
+          type: "u64";
           index: false;
         }
       ];
@@ -677,6 +696,11 @@ export type ConditionalVault = {
             vec: "u64";
           };
           index: false;
+        },
+        {
+          name: "seqNum";
+          type: "u64";
+          index: false;
         }
       ];
     },
@@ -720,6 +744,11 @@ export type ConditionalVault = {
           type: {
             vec: "u64";
           };
+          index: false;
+        },
+        {
+          name: "seqNum";
+          type: "u64";
           index: false;
         }
       ];
@@ -795,6 +824,11 @@ export type ConditionalVault = {
           type: {
             vec: "u64";
           };
+          index: false;
+        },
+        {
+          name: "seqNum";
+          type: "u64";
           index: false;
         }
       ];
@@ -1025,7 +1059,7 @@ export const IDL: ConditionalVault = {
         },
         {
           name: "vault",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -1076,7 +1110,7 @@ export const IDL: ConditionalVault = {
         },
         {
           name: "vault",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -1127,7 +1161,7 @@ export const IDL: ConditionalVault = {
         },
         {
           name: "vault",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -1253,6 +1287,10 @@ export const IDL: ConditionalVault = {
           {
             name: "decimals",
             type: "u8",
+          },
+          {
+            name: "seqNum",
+            type: "u64",
           },
         ],
       },
@@ -1440,6 +1478,11 @@ export const IDL: ConditionalVault = {
           type: "string",
           index: false,
         },
+        {
+          name: "seqNum",
+          type: "u64",
+          index: false,
+        },
       ],
     },
     {
@@ -1450,6 +1493,11 @@ export const IDL: ConditionalVault = {
           type: {
             defined: "CommonFields",
           },
+          index: false,
+        },
+        {
+          name: "vault",
+          type: "publicKey",
           index: false,
         },
         {
@@ -1477,6 +1525,11 @@ export const IDL: ConditionalVault = {
         {
           name: "pdaBump",
           type: "u8",
+          index: false,
+        },
+        {
+          name: "seqNum",
+          type: "u64",
           index: false,
         },
       ],
@@ -1564,6 +1617,11 @@ export const IDL: ConditionalVault = {
           },
           index: false,
         },
+        {
+          name: "seqNum",
+          type: "u64",
+          index: false,
+        },
       ],
     },
     {
@@ -1606,6 +1664,11 @@ export const IDL: ConditionalVault = {
           type: {
             vec: "u64",
           },
+          index: false,
+        },
+        {
+          name: "seqNum",
+          type: "u64",
           index: false,
         },
       ],
@@ -1681,6 +1744,11 @@ export const IDL: ConditionalVault = {
           type: {
             vec: "u64",
           },
+          index: false,
+        },
+        {
+          name: "seqNum",
+          type: "u64",
           index: false,
         },
       ],

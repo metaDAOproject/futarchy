@@ -79,6 +79,7 @@ export default function suite() {
         });
         assert.equal(storedVault.pdaBump, pdaBump);
         assert.equal(storedVault.decimals, 8);
+        assert.equal(storedVault.seqNum.toString(), "0");
 
         for (let mint of storedConditionalTokenMints) {
           const storedMint = await getMint(this.banksClient, mint);

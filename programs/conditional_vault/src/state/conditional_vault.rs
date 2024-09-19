@@ -15,6 +15,7 @@ pub struct ConditionalVault {
     pub conditional_token_mints: Vec<Pubkey>,
     pub pda_bump: u8,
     pub decimals: u8,
+    pub seq_num: u64,
 }
 
 impl ConditionalVault {

@@ -4,7 +4,7 @@ use super::*;
 #[derive(Accounts)]
 pub struct InteractWithVault<'info> {
     pub question: Account<'info, Question>,
-    #[account(has_one = question)]
+    #[account(mut, has_one = question)]
     pub vault: Account<'info, ConditionalVault>,
     #[account(
         mut,
@@ -25,9 +25,7 @@ impl<'info, 'c: 'info> InteractWithVault<'info> {
     pub fn get_mints_and_user_token_accounts(
         ctx: &Context<'_, '_, 'c, 'info, Self>,
     ) -> Result<(Vec<Account<'info, Mint>>, Vec<Account<'info, TokenAccount>>)> {
-        // msg!("HelloWorld");
         let remaining_accs = &mut ctx.remaining_accounts.iter();
-        // msg!("{:?}", remaining_accs);
 
         let expected_num_conditional_tokens = ctx.accounts.question.num_outcomes();
         require_eq!(

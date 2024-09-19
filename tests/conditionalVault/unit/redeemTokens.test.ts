@@ -103,5 +103,8 @@ export default function suite() {
 
     assert.isTrue(balanceAfter > balanceBefore);
     assert.equal(balanceAfter - balanceBefore, 1000);
+
+    const updatedVault = await vaultClient.fetchVault(vault);
+    assert.equal(updatedVault.seqNum.toString(), "2");
   });
 }

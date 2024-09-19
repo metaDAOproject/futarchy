@@ -102,6 +102,7 @@ impl<'info, 'c: 'info> InitializeConditionalVault<'info> {
             conditional_token_mints,
             pda_bump: ctx.bumps.vault,
             decimals,
+            seq_num: 0,
         });
 
         let clock = Clock::get()?;
@@ -110,11 +111,13 @@ impl<'info, 'c: 'info> InitializeConditionalVault<'info> {
                 slot: clock.slot,
                 unix_timestamp: clock.unix_timestamp,
             },
+            vault: vault.key(),
             question: vault.question,
             underlying_token_mint: vault.underlying_token_mint,
             vault_underlying_token_account: vault.underlying_token_account,
             conditional_token_mints: vault.conditional_token_mints.clone(),
             pda_bump: vault.pda_bump,
+            seq_num: vault.seq_num,
         });
 
         Ok(())

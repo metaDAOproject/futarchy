@@ -85,6 +85,8 @@ impl AddMetadataToConditionalTokens<'_> {
             None,
         )?;
 
+        ctx.accounts.vault.seq_num += 1;
+
         let clock = Clock::get()?;
         emit_cpi!(AddMetadataToConditionalTokensEvent {
             common: CommonFields {
@@ -97,6 +99,7 @@ impl AddMetadataToConditionalTokens<'_> {
             name: args.name,
             symbol: args.symbol,
             uri: args.uri,
+            seq_num: ctx.accounts.vault.seq_num,
         });
 
         Ok(())

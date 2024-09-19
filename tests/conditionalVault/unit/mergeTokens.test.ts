@@ -86,6 +86,8 @@ export default function suite() {
 
     assert.isTrue(balanceAfter > balanceBefore);
     assert.equal(balanceAfter - balanceBefore, 600);
+    const updatedVault = await vaultClient.fetchVault(vault);
+    assert.equal(updatedVault.seqNum.toString(), "2");
   });
 
   it("throws error when trying to merge more tokens than available", async function () {
