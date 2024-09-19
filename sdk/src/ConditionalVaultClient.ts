@@ -84,7 +84,9 @@ export class ConditionalVaultClient {
         user
       ).rpc();
     } catch (e) {
-      throw new Error(`Error minting conditional tokens for ${storedVault.underlyingTokenMint} with error ${e}`);
+      throw new Error(
+        `Error minting conditional tokens for ${storedVault.underlyingTokenMint} with error ${e}`
+      );
     }
   }
 
