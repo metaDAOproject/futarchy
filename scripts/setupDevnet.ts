@@ -109,7 +109,10 @@ async function main() {
         storedAmm = await ammProgram.fetchAmm(amm);
     }
 
-    // await ammProgram.addLiquidity(amm, 1000, 1000);
+    await vaultProgram.splitTokensIx(outcomeQuestion, outcomeVault, USDC, new BN(1000 * 10 ** 6), 2, payer.publicKey).rpc();
+    await vaultProgram.splitTokensIx(metricQuestion, metricVault, pUSDC, new BN(1000 * 10 ** 6), 2, payer.publicKey).rpc();
+
+    await ammProgram.addLiquidity(amm, 1000, 1000);
 
     // const amm = await ammProgram.fetchAmm(ammProgram.ammProgram.programId, pDown, pUp);
 

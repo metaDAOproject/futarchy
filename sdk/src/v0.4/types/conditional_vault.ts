@@ -873,6 +873,11 @@ export type ConditionalVault = {
     },
     {
       code: 6014;
+      name: "QuestionAlreadyResolved";
+      msg: "Question already resolved";
+    },
+    {
+      code: 6015;
       name: "ConditionalTokenMetadataAlreadySet";
       msg: "Conditional token metadata already set";
     }
@@ -1754,6 +1759,11 @@ export const IDL: ConditionalVault = {
     },
     {
       code: 6014,
+      name: "QuestionAlreadyResolved",
+      msg: "Question already resolved",
+    },
+    {
+      code: 6015,
       name: "ConditionalTokenMetadataAlreadySet",
       msg: "Conditional token metadata already set",
     },

@@ -70,3 +70,7 @@ export default async function test() {
   await this.assertBalance(USDC, bob.publicKey, 18);
   await this.assertBalance(USDC, alice.publicKey, 82);
 }
+
+// add tests for:
+// - different numbers for outcomes (test 0)
+// - 
