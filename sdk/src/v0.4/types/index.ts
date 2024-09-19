@@ -30,3 +30,37 @@ export type Proposal = IdlAccounts<AutocratProgram>["proposal"];
 export type Amm = IdlAccounts<AmmProgram>["amm"];
 
 export type SwapEvent = IdlEvents<AmmProgram>["SwapEvent"];
+export type AddLiquidityEvent = IdlEvents<AmmProgram>["AddLiquidityEvent"];
+export type RemoveLiquidityEvent =
+  IdlEvents<AmmProgram>["RemoveLiquidityEvent"];
+export type CreateAmmEvent = IdlEvents<AmmProgram>["CreateAmmEvent"];
+export type CrankThatTwapEvent = IdlEvents<AmmProgram>["CrankThatTwapEvent"];
+export type AmmEvent =
+  | SwapEvent
+  | AddLiquidityEvent
+  | RemoveLiquidityEvent
+  | CreateAmmEvent
+  | CrankThatTwapEvent;
+
+export type AddMetadataToConditionalTokensEvent =
+  IdlEvents<ConditionalVaultProgram>["AddMetadataToConditionalTokensEvent"];
+export type InitializeConditionalVaultEvent =
+  IdlEvents<ConditionalVaultProgram>["InitializeConditionalVaultEvent"];
+export type InitializeQuestionEvent =
+  IdlEvents<ConditionalVaultProgram>["InitializeQuestionEvent"];
+export type MergeTokensEvent =
+  IdlEvents<ConditionalVaultProgram>["MergeTokensEvent"];
+export type RedeemTokensEvent =
+  IdlEvents<ConditionalVaultProgram>["RedeemTokensEvent"];
+export type ResolveQuestionEvent =
+  IdlEvents<ConditionalVaultProgram>["ResolveQuestionEvent"];
+export type SplitTokensEvent =
+  IdlEvents<ConditionalVaultProgram>["SplitTokensEvent"];
+export type ConditionalVaultEvent =
+  | AddMetadataToConditionalTokensEvent
+  | InitializeConditionalVaultEvent
+  | InitializeQuestionEvent
+  | MergeTokensEvent
+  | RedeemTokensEvent
+  | ResolveQuestionEvent
+  | SplitTokensEvent;
