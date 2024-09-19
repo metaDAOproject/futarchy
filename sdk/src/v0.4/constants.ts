@@ -4,10 +4,10 @@ export const AUTOCRAT_PROGRAM_ID = new PublicKey(
   "aUtoxZicuMfnN2Qa8WuebpJCCHZAMM1A1L4vjG6VSyY"
 );
 export const AMM_PROGRAM_ID = new PublicKey(
-  "AMMgMWMtPEcfpiu6Zcrq1meUrMEwm9YukJez3W2KbJ2F"
+  "AMMyu265tkBpRW21iGQxKGLaves3gKm2JcMUqfXNSpqD"
 );
 export const CONDITIONAL_VAULT_PROGRAM_ID = new PublicKey(
-  "VaU1Tsg928kjWLcPMKZ16cPWy3Uy7PuDw149U9zuddd"
+  "VLTX1ishMBbcX3rdBWGssxawAo1Q2X2qxYFYqiGodVg"
 );
 
 export const MPL_TOKEN_METADATA_PROGRAM_ID = new PublicKey(
