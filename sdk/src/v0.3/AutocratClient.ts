@@ -9,14 +9,14 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { PriceMath } from "./utils/priceMath";
-import { ProposalInstruction, InitializeDaoParams } from "./types";
+import { PriceMath } from "./utils/priceMath.js";
+import { ProposalInstruction, InitializeDaoParams } from "./types/index.js";
 
-import { Autocrat, IDL as AutocratIDL } from "./types/autocrat";
+import { Autocrat, IDL as AutocratIDL } from "./types/autocrat.js";
 import {
   ConditionalVault,
   IDL as ConditionalVaultIDL,
-} from "./types/conditional_vault";
+} from "./types/conditional_vault.js";
 
 import BN from "bn.js";
 import {
@@ -25,7 +25,7 @@ import {
   CONDITIONAL_VAULT_PROGRAM_ID,
   MAINNET_USDC,
   USDC_DECIMALS,
-} from "./constants";
+} from "./constants.js";
 import {
   DEFAULT_CU_PRICE,
   InstructionUtils,
@@ -37,14 +37,15 @@ import {
   getVaultAddr,
   getVaultFinalizeMintAddr,
   getVaultRevertMintAddr,
-} from "./utils";
-import { ConditionalVaultClient } from "./ConditionalVaultClient";
-import { AmmClient } from "./AmmClient";
+} from "./utils/index.js";
+import { ConditionalVaultClient } from "./ConditionalVaultClient.js";
+import { AmmClient } from "./AmmClient.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
   unpackMint,
 } from "@solana/spl-token";
+import { DaoAccount, Proposal } from "./types/index.js";
 
 export type CreateClientParams = {
   provider: AnchorProvider;
@@ -107,11 +108,11 @@ export class AutocratClient {
     );
   }
 
-  async getProposal(proposal: PublicKey) {
+  async getProposal(proposal: PublicKey): Promise<Proposal> {
     return this.autocrat.account.proposal.fetch(proposal);
   }
 
-  async getDao(dao: PublicKey) {
+  async getDao(dao: PublicKey): Promise<DaoAccount> {
     return this.autocrat.account.dao.fetch(dao);
   }
 

@@ -1,20 +1,19 @@
 import { AnchorProvider, IdlTypes, Program } from "@coral-xyz/anchor";
 import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
 
-import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm";
+import { Amm as AmmIDLType, IDL as AmmIDL } from "./types/amm.js";
 
 import BN from "bn.js";
-import { AMM_PROGRAM_ID } from "./constants";
-import { AmmAccount, LowercaseKeys } from "./types/";
-import { getAmmLpMintAddr, getAmmAddr } from "./utils/pda";
-import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
+import { AMM_PROGRAM_ID } from "./constants.js";
+import { AmmAccount, LowercaseKeys } from "./types/index.js";
+import { getAmmLpMintAddr, getAmmAddr } from "./utils/pda.js";
 import {
   MintLayout,
   unpackMint,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
-import { PriceMath } from "./utils/priceMath";
+import { PriceMath } from "./utils/priceMath.js";
 
 export type SwapType = LowercaseKeys<IdlTypes<AmmIDLType>["SwapType"]>;
 
@@ -119,7 +118,7 @@ export class AmmClient {
     quoteMint: PublicKey,
     twapInitialObservation: BN,
     twapMaxObservationChangePerUpdate: BN
-  ): MethodsBuilder<AmmIDLType, any> {
+  ) {
     let [amm] = getAmmAddr(this.getProgramId(), baseMint, quoteMint);
     let [lpMint] = getAmmLpMintAddr(this.getProgramId(), amm);
 

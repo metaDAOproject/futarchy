@@ -5,6 +5,7 @@
       "chai"
     ],
     "paths": {
+      "@metadaoproject/futarchy/v0.3": ["./dist/v0.3/types/index.d.ts"],
       "@metadaoproject/futarchy/v0.4": ["./dist/v0.4/types/index.d.ts"]
     },
     "typeRoots": [
@@ -25,6 +26,7 @@
   },
   "include": [
     "src/*",
+    "src/v0.3/*",
     "src/v0.4/*"
   ],
   "exclude": [

@@ -9,7 +9,7 @@ import {
   fromWeb3JsPublicKey,
   toWeb3JsPublicKey,
 } from "@metaplex-foundation/umi-web3js-adapters";
-import { MPL_TOKEN_METADATA_PROGRAM_ID } from "../constants";
+import { MPL_TOKEN_METADATA_PROGRAM_ID } from "../constants.js";
 
 export const getVaultAddr = (
   programId: PublicKey,

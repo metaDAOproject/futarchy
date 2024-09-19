@@ -126,6 +126,7 @@ async function main() {
   console.log(metricVault);
   console.log(storedMetricVault);
 
+
   // await vaultProgram.splitTokensIx(outcomeQuestion, outcomeVault, USDC, new BN(1000 * 10 ** 6), 2).rpc();
   // await vaultProgram.splitTokensIx(metricQuestion, metricVault, pUSDC, new BN(1000 * 10 ** 6), 2).rpc();
 
@@ -134,7 +135,10 @@ async function main() {
 
   const amm = getAmmAddr(ammProgram.program.programId, pUp, pDown)[0];
 
+  console.log("AMM");
   console.log(amm);
+
+  return;
 
   let storedAmm: Amm | null = await ammProgram.fetchAmm(amm);
   console.log(storedAmm);
@@ -148,7 +152,7 @@ async function main() {
       outcomeQuestion,
       outcomeVault,
       USDC,
-      new BN(1000 * 10 ** 6),
+      new BN(1001 * 10 ** 6),
       2,
       payer.publicKey
     )
@@ -158,13 +162,14 @@ async function main() {
       metricQuestion,
       metricVault,
       pUSDC,
-      new BN(1000 * 10 ** 6),
+      new BN(1001 * 10 ** 6),
       2,
       payer.publicKey
     )
     .rpc();
 
   await ammProgram.addLiquidity(amm, 1000, 1000);
+  console.log("utc millis", new Date().getTime());
 
   // const amm = await ammProgram.fetchAmm(ammProgram.ammProgram.programId, pDown, pUp);
 
