@@ -1,11 +1,19 @@
 import { sha256 } from "@metadaoproject/futarchy";
-import { ConditionalVaultClient, getConditionalTokenMintAddr, getMetadataAddr } from "@metadaoproject/futarchy/v0.4";
+import {
+  ConditionalVaultClient,
+  getConditionalTokenMintAddr,
+  getMetadataAddr,
+} from "@metadaoproject/futarchy/v0.4";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 import { createMint } from "spl-token-bankrun";
 import * as anchor from "@coral-xyz/anchor";
 import { expectError } from "../../utils.js";
-import { Metadata, deserializeMetadata, getMetadataAccountDataSerializer } from "@metaplex-foundation/mpl-token-metadata";
+import {
+  Metadata,
+  deserializeMetadata,
+  getMetadataAccountDataSerializer,
+} from "@metaplex-foundation/mpl-token-metadata";
 
 export default function suite() {
   let vaultClient: ConditionalVaultClient;
@@ -37,18 +45,24 @@ export default function suite() {
       8
     );
 
-    vault = await vaultClient.initializeVault(question, underlyingTokenMint, outcomes);
+    vault = await vaultClient.initializeVault(
+      question,
+      underlyingTokenMint,
+      outcomes
+    );
   }
 
   async function addMetadataToConditionalTokens(outcomes: number) {
     for (let i = 0; i < outcomes; i++) {
-      await vaultClient.addMetadataToConditionalTokensIx(
-        vault,
-        i,
-        `Outcome ${i}`,
-        `OUT${i}`,
-        `https://example.com/uri${i}.png`
-      ).rpc();
+      await vaultClient
+        .addMetadataToConditionalTokensIx(
+          vault,
+          i,
+          `Outcome ${i}`,
+          `OUT${i}`,
+          `https://example.com/uri${i}.png`
+        )
+        .rpc();
     }
   }
 
@@ -60,7 +74,9 @@ export default function suite() {
         i
       );
 
-      const storedMetadata = await this.banksClient.getAccount(getMetadataAddr(conditionalTokenMint)[0]);
+      const storedMetadata = await this.banksClient.getAccount(
+        getMetadataAddr(conditionalTokenMint)[0]
+      );
       assert.isNotNull(storedMetadata);
       const metadata = metadataSerializer.deserialize(storedMetadata.data)[0];
       assert.equal(metadata.name, `Outcome ${i}`);
@@ -96,14 +112,15 @@ export default function suite() {
       "added metadata to a conditional token that already had metadata"
     );
 
-    await vaultClient.addMetadataToConditionalTokensIx(
-      vault,
-      0,
-      "New Outcome",
-      "NEW",
-      "https://example.com/new.png"
-    )
-    .rpc()
-    .then(callbacks[0], callbacks[1]);
+    await vaultClient
+      .addMetadataToConditionalTokensIx(
+        vault,
+        0,
+        "New Outcome",
+        "NEW",
+        "https://example.com/new.png"
+      )
+      .rpc()
+      .then(callbacks[0], callbacks[1]);
   });
 }

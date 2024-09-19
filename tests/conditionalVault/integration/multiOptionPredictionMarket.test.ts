@@ -1,5 +1,12 @@
 import { ConditionalVaultClient, sha256 } from "@metadaoproject/futarchy";
-import { Keypair, PublicKey, AddressLookupTableProgram, TransactionInstruction, Connection, Transaction } from "@solana/web3.js";
+import {
+  Keypair,
+  PublicKey,
+  AddressLookupTableProgram,
+  TransactionInstruction,
+  Connection,
+  Transaction,
+} from "@solana/web3.js";
 import BN from "bn.js";
 import { assert } from "chai";
 import {
@@ -47,7 +54,11 @@ export default async function test() {
   await this.mintTo(USDC, bob.publicKey, operator, 100);
   await this.mintTo(USDC, charlie.publicKey, operator, 100);
 
-  const vault = await vaultClient.initializeVault(question, USDC, numCandidates);
+  const vault = await vaultClient.initializeVault(
+    question,
+    USDC,
+    numCandidates
+  );
   const storedVault = await vaultClient.fetchVault(vault);
 
   // // Create a lookup table
@@ -98,28 +109,51 @@ export default async function test() {
 
   // Add metadata to conditional tokens
   for (let i = 0; i < numCandidates; i++) {
-    await vaultClient.addMetadataToConditionalTokensIx(
-      vault,
-      i,
-      `Candidate ${i + 1}`,
-      `CAND${i + 1}`,
-      `https://example.com/candidate${i + 1}.png`
-    ).rpc();
+    await vaultClient
+      .addMetadataToConditionalTokensIx(
+        vault,
+        i,
+        `Candidate ${i + 1}`,
+        `CAND${i + 1}`,
+        `https://example.com/candidate${i + 1}.png`
+      )
+      .rpc();
   }
 
   // Split tokens for Alice, Bob, and Charlie
   await vaultClient
-    .splitTokensIx(question, vault, USDC, new BN(100), numCandidates, alice.publicKey)
+    .splitTokensIx(
+      question,
+      vault,
+      USDC,
+      new BN(100),
+      numCandidates,
+      alice.publicKey
+    )
     .signers([alice])
     .rpc();
 
   await vaultClient
-    .splitTokensIx(question, vault, USDC, new BN(100), numCandidates, bob.publicKey)
+    .splitTokensIx(
+      question,
+      vault,
+      USDC,
+      new BN(100),
+      numCandidates,
+      bob.publicKey
+    )
     .signers([bob])
     .rpc();
 
   await vaultClient
-    .splitTokensIx(question, vault, USDC, new BN(100), numCandidates, charlie.publicKey)
+    .splitTokensIx(
+      question,
+      vault,
+      USDC,
+      new BN(100),
+      numCandidates,
+      charlie.publicKey
+    )
     .signers([charlie])
     .rpc();
 
@@ -137,7 +171,9 @@ export default async function test() {
   // Resolve the question (let's say CAND3 wins)
   const resolutionArray = Array(numCandidates).fill(0);
   resolutionArray[2] = 1; // CAND3 wins
-  await vaultClient.resolveQuestionIx(question, operator, resolutionArray).rpc();
+  await vaultClient
+    .resolveQuestionIx(question, operator, resolutionArray)
+    .rpc();
 
   // Redeem tokens
   await vaultClient

@@ -50,13 +50,7 @@ export default function suite() {
 
   it("splits tokens", async function () {
     await vaultClient
-      .splitTokensIx(
-        question,
-        vault,
-        underlyingTokenMint,
-        new BN(1000),
-        2
-      )
+      .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
       .rpc();
 
     const storedVault = await vaultClient.fetchVault(vault);
@@ -181,11 +175,12 @@ export default function suite() {
       "split succeeded despite invalid number of conditional accounts"
     );
 
-    const { remainingAccounts } = vaultClient.getConditionalTokenAccountsAndInstructions(
-      vault,
-      1, // Incorrect number of outcomes
-      this.payer.publicKey
-    );
+    const { remainingAccounts } =
+      vaultClient.getConditionalTokenAccountsAndInstructions(
+        vault,
+        1, // Incorrect number of outcomes
+        this.payer.publicKey
+      );
 
     await vaultClient.vaultProgram.methods
       .splitTokens(new BN(1000))

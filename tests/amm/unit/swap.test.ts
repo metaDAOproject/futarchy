@@ -173,14 +173,7 @@ export default function suite() {
       ammMiddle.quoteAmount.toNumber();
 
     await ammClient
-      .swapIx(
-        amm,
-        META,
-        USDC,
-        { buy: {} },
-        new BN(quoteReceived),
-        new BN(1)
-      )
+      .swapIx(amm, META, USDC, { buy: {} }, new BN(quoteReceived), new BN(1))
       .rpc();
 
     const permissionlessAmmEnd = await ammClient.program.account.amm.fetch(amm);
@@ -220,14 +213,7 @@ export default function suite() {
       ammStart.baseAmount.toNumber() - ammMiddle.baseAmount.toNumber();
 
     await ammClient
-      .swapIx(
-        amm,
-        META,
-        USDC,
-        { sell: {} },
-        new BN(baseReceived),
-        new BN(1)
-      )
+      .swapIx(amm, META, USDC, { sell: {} }, new BN(baseReceived), new BN(1))
       .rpc();
 
     const ammEnd = await ammClient.getAmm(amm);

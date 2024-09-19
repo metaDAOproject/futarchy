@@ -61,13 +61,7 @@ export default function suite() {
     );
 
     await vaultClient
-      .splitTokensIx(
-        question,
-        vault,
-        underlyingTokenMint,
-        new BN(1000),
-        2
-      )
+      .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
       .rpc();
   });
 
@@ -80,13 +74,7 @@ export default function suite() {
       )
     ).then((acc) => acc.amount);
     await vaultClient
-      .mergeTokensIx(
-        question,
-        vault,
-        underlyingTokenMint,
-        new BN(600),
-        2
-      )
+      .mergeTokensIx(question, vault, underlyingTokenMint, new BN(600), 2)
       .rpc();
     const balanceAfter = await getAccount(
       this.banksClient,

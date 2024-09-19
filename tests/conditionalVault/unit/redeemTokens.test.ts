@@ -62,13 +62,7 @@ export default function suite() {
     );
 
     await vaultClient
-      .splitTokensIx(
-        question,
-        vault,
-        underlyingTokenMint,
-        new BN(1000),
-        2
-      )
+      .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
       .rpc();
   });
 

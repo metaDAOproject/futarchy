@@ -20,5 +20,8 @@ export default function suite() {
   describe("#split_tokens", splitTokens);
   describe("#merge_tokens", mergeTokens);
   describe("#redeem_tokens", redeemTokens);
-  describe("#add_metadata_to_conditional_tokens", addMetadataToConditionalTokens);
+  describe(
+    "#add_metadata_to_conditional_tokens",
+    addMetadataToConditionalTokens
+  );
 }

@@ -27,12 +27,8 @@ import {
 } from "spl-token-bankrun";
 import * as token from "@solana/spl-token";
 import { assert } from "chai";
-import {
-  MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID,
-} from "@metaplex-foundation/mpl-token-metadata";
-import {
-  toWeb3JsPublicKey,
-} from "@metaplex-foundation/umi-web3js-adapters";
+import { MPL_TOKEN_METADATA_PROGRAM_ID as UMI_MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
+import { toWeb3JsPublicKey } from "@metaplex-foundation/umi-web3js-adapters";
 
 const MPL_TOKEN_METADATA_PROGRAM_ID = toWeb3JsPublicKey(
   UMI_MPL_TOKEN_METADATA_PROGRAM_ID
@@ -47,14 +43,14 @@ before(async function () {
   this.context = await startAnchor(
     "./",
     // [],
-      [
-        // even though the program is loaded into the test validator, we need
-        // to tell banks test client to load it as well
-        {
-          name: "mpl_token_metadata",
-          programId: MPL_TOKEN_METADATA_PROGRAM_ID,
-        },
-      ],
+    [
+      // even though the program is loaded into the test validator, we need
+      // to tell banks test client to load it as well
+      {
+        name: "mpl_token_metadata",
+        programId: MPL_TOKEN_METADATA_PROGRAM_ID,
+      },
+    ],
     []
   );
   this.banksClient = this.context.banksClient;

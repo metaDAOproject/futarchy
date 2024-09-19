@@ -1,4 +1,10 @@
-import { ConditionalVaultClient, AmmClient, getAmmAddr, SwapType, InstructionUtils } from "@metadaoproject/futarchy/v0.4";
+import {
+  ConditionalVaultClient,
+  AmmClient,
+  getAmmAddr,
+  SwapType,
+  InstructionUtils,
+} from "@metadaoproject/futarchy/v0.4";
 import { sha256 } from "@noble/hashes/sha256";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
@@ -34,28 +40,41 @@ export default async function test() {
   const NO = storedVault.conditionalTokenMints[1];
 
   // Initialize AMM
-  await ammClient.initializeAmmIx(
-    YES,
-    NO,
-    new BN(100), // fee
-    new BN(1000) // k
-  ).rpc();
+  await ammClient
+    .initializeAmmIx(
+      YES,
+      NO,
+      new BN(100), // fee
+      new BN(1000) // k
+    )
+    .rpc();
   const amm = getAmmAddr(ammClient.getProgramId(), YES, NO)[0];
 
   // Create token accounts for Alice
-//   await this.createTokenAccount(YES, alice.publicKey);
-//   await this.createTokenAccount(NO, alice.publicKey);
+  //   await this.createTokenAccount(YES, alice.publicKey);
+  //   await this.createTokenAccount(NO, alice.publicKey);
 
   // Add initial liquidity to AMM
-  await vaultClient.splitTokensIx(question, vault, USDC, new BN(1000 * 10 ** 6), numOutcomes, this.payer.publicKey).rpc();
-  await ammClient.addLiquidityIx(
-    amm,
-    YES,
-    NO,
-    new BN(500 * 10 ** 6),
-    new BN(500 * 10 ** 6),
-    new BN(0)
-  ).rpc();
+  await vaultClient
+    .splitTokensIx(
+      question,
+      vault,
+      USDC,
+      new BN(1000 * 10 ** 6),
+      numOutcomes,
+      this.payer.publicKey
+    )
+    .rpc();
+  await ammClient
+    .addLiquidityIx(
+      amm,
+      YES,
+      NO,
+      new BN(500 * 10 ** 6),
+      new BN(500 * 10 ** 6),
+      new BN(0)
+    )
+    .rpc();
 
   // Perform mint and swap in the same transaction
   const mintAmount = new BN(500 * 10 ** 6);
@@ -94,7 +113,19 @@ export default async function test() {
   const yesBalance = await this.getTokenBalance(YES, alice.publicKey);
   const noBalance = await this.getTokenBalance(NO, alice.publicKey);
 
-  assert.equal(usdcBalance, 9500 * 10 ** 6, "Alice's USDC balance should be 9500000000");
-  assert.isAbove(Number(yesBalance), 250 * 10 ** 6, "Alice's YES balance should be more than 250000000");
-  assert.equal(noBalance, 250 * 10 ** 6, "Alice's NO balance should be less than 250000000");
+  assert.equal(
+    usdcBalance,
+    9500 * 10 ** 6,
+    "Alice's USDC balance should be 9500000000"
+  );
+  assert.isAbove(
+    Number(yesBalance),
+    250 * 10 ** 6,
+    "Alice's YES balance should be more than 250000000"
+  );
+  assert.equal(
+    noBalance,
+    250 * 10 ** 6,
+    "Alice's NO balance should be less than 250000000"
+  );
 }

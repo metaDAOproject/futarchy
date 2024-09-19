@@ -60,14 +60,7 @@ export default function suite() {
     );
 
     await ammClient
-      .removeLiquidityIx(
-        amm,
-        META,
-        USDC,
-        new BN(0),
-        new BN(0),
-        new BN(0)
-      )
+      .removeLiquidityIx(amm, META, USDC, new BN(0), new BN(0), new BN(0))
       .rpc()
       .then(callbacks[0], callbacks[1]);
   });

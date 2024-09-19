@@ -1,11 +1,12 @@
-import {
-  sha256
-} from "@metadaoproject/futarchy";
+import { sha256 } from "@metadaoproject/futarchy";
 // const { ConditionalVaultClient, getQuestionAddr } = futarchy;
 import { Keypair } from "@solana/web3.js";
 import { assert } from "chai";
 import { expectError } from "../../utils";
-import { ConditionalVaultClient, getQuestionAddr } from "@metadaoproject/futarchy/v0.4";
+import {
+  ConditionalVaultClient,
+  getQuestionAddr,
+} from "@metadaoproject/futarchy/v0.4";
 // import { getQuestionAddr } from "@metadaoproject/futarchy/dist/v0.4";
 
 export default function suite() {
@@ -44,7 +45,11 @@ export default function suite() {
     );
 
     await vaultClient
-      .initializeQuestionIx(sha256(new Uint8Array([4, 5, 6])), Keypair.generate().publicKey, 1)
+      .initializeQuestionIx(
+        sha256(new Uint8Array([4, 5, 6])),
+        Keypair.generate().publicKey,
+        1
+      )
       .rpc()
       .then(callbacks[0], callbacks[1]);
   });
