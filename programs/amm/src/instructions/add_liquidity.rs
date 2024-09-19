@@ -134,6 +134,8 @@ impl AddOrRemoveLiquidity<'_> {
             )?;
         }
 
+        amm.seq_num += 1;
+
         let clock = Clock::get()?;
         emit_cpi!(AddLiquidityEvent {
             common: CommonFields::new(&clock, user.key(), amm),

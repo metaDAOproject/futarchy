@@ -116,6 +116,8 @@ impl CreateAmm<'_> {
                 twap_initial_observation,
                 twap_max_observation_change_per_update,
             ),
+
+            seq_num: 0,
         });
 
         let clock = Clock::get()?;

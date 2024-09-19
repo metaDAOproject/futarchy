@@ -16,6 +16,8 @@ impl CrankThatTwap<'_> {
 
         amm.update_twap(Clock::get()?.slot)?;
 
+        amm.seq_num += 1;
+
         let clock = Clock::get()?;
         emit_cpi!(CrankThatTwapEvent {
             common: CommonFields::new(&clock, Pubkey::default(), amm),

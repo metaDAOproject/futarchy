@@ -82,6 +82,8 @@ pub struct Amm {
     pub quote_amount: u64,
 
     pub oracle: TwapOracle,
+
+    pub seq_num: u64,
 }
 
 impl Amm {

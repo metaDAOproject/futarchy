@@ -338,6 +338,10 @@ export type Amm = {
             type: {
               defined: "TwapOracle";
             };
+          },
+          {
+            name: "seqNum";
+            type: "u64";
           }
         ];
       };
@@ -384,6 +388,10 @@ export type Amm = {
           {
             name: "oracleAggregator";
             type: "u128";
+          },
+          {
+            name: "seqNum";
+            type: "u64";
           }
         ];
       };
@@ -1144,6 +1152,10 @@ export const IDL: Amm = {
               defined: "TwapOracle",
             },
           },
+          {
+            name: "seqNum",
+            type: "u64",
+          },
         ],
       },
     },
@@ -1189,6 +1201,10 @@ export const IDL: Amm = {
           {
             name: "oracleAggregator",
             type: "u128",
+          },
+          {
+            name: "seqNum",
+            type: "u64",
           },
         ],
       },

@@ -102,6 +102,8 @@ export default function suite() {
 
     const ammEnd = await ammClient.getAmm(amm);
 
+    assert.equal(ammEnd.seqNum.toString(), "2");
+
     assert.isBelow(Number(lpMintEnd.supply), Number(lpMintStart.supply));
     assert.isBelow(
       Number(userLpAccountEnd.amount),
@@ -153,6 +155,8 @@ export default function suite() {
     );
 
     const ammEnd = await ammClient.getAmm(amm);
+
+    assert.equal(ammEnd.seqNum.toString(), "2");
 
     assert.isBelow(
       ammEnd.baseAmount.toNumber(),

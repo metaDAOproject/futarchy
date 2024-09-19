@@ -115,6 +115,7 @@ export default function suite() {
       expectedBaseAmount: (10 - expectedOut) * 10 ** 9,
       expectedQuoteAmount: 10_100 * 10 ** 6,
       expectedLpSupply: 10_000 * 10 ** 6,
+      expectedSeqNum: 2,
     });
   });
 
@@ -141,6 +142,7 @@ export default function suite() {
       expectedBaseAmount: 11 * 10 ** 9,
       expectedQuoteAmount: (10_000 - expectedOut) * 10 ** 6,
       expectedLpSupply: 10_000 * 10 ** 6,
+      expectedSeqNum: 2,
     });
   });
 
@@ -188,6 +190,8 @@ export default function suite() {
 
     assert.isBelow(baseReceived, startingBaseSwapAmount);
     assert.isAbove(baseReceived, startingBaseSwapAmount * 0.98);
+
+    assert.equal(permissionlessAmmEnd.seqNum.toString(), "3");
   });
 
   it("swap quote to base and back, should not be profitable", async function () {
@@ -244,6 +248,7 @@ async function validateAmmState({
   expectedBaseAmount,
   expectedQuoteAmount,
   expectedLpSupply,
+  expectedSeqNum,
 }: {
   banksClient: any;
   ammClient: AmmClient;
@@ -253,6 +258,7 @@ async function validateAmmState({
   expectedBaseAmount: number;
   expectedQuoteAmount: number;
   expectedLpSupply: number;
+  expectedSeqNum: number;
 }) {
   const storedAmm = await ammClient.getAmm(amm);
 
@@ -284,4 +290,5 @@ async function validateAmmState({
     (await getMint(banksClient, storedAmm.lpMint)).supply,
     BigInt(expectedLpSupply)
   );
+  assert.equal(storedAmm.seqNum.toString(), expectedSeqNum.toString());
 }

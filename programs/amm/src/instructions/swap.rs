@@ -137,6 +137,8 @@ impl Swap<'_> {
             AmmError::SwapSlippageExceeded
         );
 
+        amm.seq_num += 1;
+
         emit_cpi!(SwapEvent {
             common: CommonFields::new(&clock, user.key(), amm),
             input_amount,

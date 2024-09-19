@@ -13,6 +13,7 @@ pub struct CommonFields {
     pub oracle_last_price: u128,
     pub oracle_last_observation: u128,
     pub oracle_aggregator: u128,
+    pub seq_num: u64,
 }
 
 impl CommonFields {
@@ -27,6 +28,7 @@ impl CommonFields {
             oracle_last_price: amm.oracle.last_price,
             oracle_last_observation: amm.oracle.last_observation,
             oracle_aggregator: amm.oracle.aggregator,
+            seq_num: amm.seq_num,
         }
     }
 }

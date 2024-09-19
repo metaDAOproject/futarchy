@@ -64,6 +64,7 @@ export default function suite() {
     assert.isTrue(
       ammAcc.oracle.initialObservation.eq(expectedInitialObservation)
     );
+    assert.equal(ammAcc.seqNum.toString(), "0");
   });
 
   it("fails to create an amm with two identical mints", async function () {

@@ -63,6 +63,8 @@ export default function suite() {
 
     const storedAmm = await ammClient.getAmm(amm);
 
+    assert.equal(storedAmm.seqNum.toString(), "1");
+
     assert.isTrue(storedAmm.baseAmount.eq(new BN(6 * 10 ** 9)));
     assert.isTrue(storedAmm.quoteAmount.eq(new BN(5000 * 10 ** 6)));
 
