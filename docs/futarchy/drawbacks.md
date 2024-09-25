@@ -19,7 +19,3 @@ You may be able to resolve this by providing an incentive to trade or provide li
 Futarchy is good for big decisions like whether to fire the CEO, but not as good for smaller decisions like whether to fire a division leader because those actions are usually too inconsequential to reflect in the share price.
 
 A solution to this problem is described in MetaDAO's whitepaper.
-
-### Multisig
-MetaDAO currently relies on multisig members to authorize transactions. When a proposal passes, it often requires funds to be transferred through the multisig. In the future, we aim to eliminate the multisig as an intermediary, transferring full control to an autocrat and formalized, verified proposals implemented as smart contracts. [https://lextek.eth.limo/](https://lextek.eth.limo/) and [https://www.metalex.tech/](https://www.metalex.tech/) are making progress in this area.
-
