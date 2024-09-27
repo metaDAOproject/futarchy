@@ -69,6 +69,16 @@ export const getConditionalTokenMintAddr = (
   );
 };
 
+export const getDownAndUpMintAddrs = (
+  programId: PublicKey,
+  vault: PublicKey
+): { down: PublicKey; up: PublicKey } => {
+  return {
+    down: getConditionalTokenMintAddr(programId, vault, 0)[0],
+    up: getConditionalTokenMintAddr(programId, vault, 1)[0],
+  };
+};
+
 export const getVaultFinalizeMintAddr = (
   programId: PublicKey,
   vault: PublicKey
