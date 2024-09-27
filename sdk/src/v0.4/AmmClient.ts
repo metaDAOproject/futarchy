@@ -526,4 +526,116 @@ export class AmmClient {
     return unpackMint(mint, await this.provider.connection.getAccountInfo(mint))
       .decimals;
   }
+
+  /**
+   * Calculates the optimal swap amount and mergeable tokens without using square roots.
+   * @param userTokens BN – User's base tokens (pass or fail tokens), in smallest units.
+   * @param baseAmount BN – Amount of base tokens in the AMM, in smallest units.
+   * @param quoteAmount BN – Amount of quote tokens in the AMM, in smallest units.
+   * @param decimals number – Number of decimals for the tokens (e.g., 6 for USDC).
+   * @returns An object containing the optimal swap amount, expected quote received, and expected mergeable tokens.
+   */
+  calculateOptimalSwapAndMerge(
+    userTokens: BN,
+    baseAmount: BN,
+    quoteAmount: BN,
+    decimals: number = 6 // Number of decimals, e.g., 6 for USDC
+  ): {
+    optimalSwapAmount: BN;
+    expectedQuoteReceived: BN;
+    expectedMergeableTokens: BN;
+  } {
+    // Input validation
+    if (
+      userTokens.lte(new BN(0)) ||
+      baseAmount.lte(new BN(0)) ||
+      quoteAmount.lte(new BN(0))
+    ) {
+      throw new Error("All input amounts must be positive BN numbers.");
+    }
+
+    const x = baseAmount;
+    const y = quoteAmount;
+    const Y0 = userTokens;
+
+    // Perform ternary search to find the optimal 's'
+    const optimalSwapAmount = ternarySearch(x, y, Y0);
+
+    // Calculate expected quote tokens received
+    const newBaseAmount = x.add(optimalSwapAmount);
+    const expectedQuoteReceived = y.mul(optimalSwapAmount).div(newBaseAmount);
+
+    // Remaining base tokens after swap
+    const remainingBaseTokens = Y0.sub(optimalSwapAmount);
+
+    // Number of tokens that can be merged into USD
+    const expectedMergeableTokens = BN.min(
+      remainingBaseTokens,
+      expectedQuoteReceived
+    );
+
+    return {
+      optimalSwapAmount: optimalSwapAmount,
+      expectedQuoteReceived: expectedQuoteReceived,
+      expectedMergeableTokens: expectedMergeableTokens,
+    };
+  }
+}
+
+/**
+ * Calculates the USD obtained after merging for a given swap amount 's'.
+ * @param s BN – Swap amount of base tokens.
+ * @param x BN – Base tokens in the AMM.
+ * @param y BN – Quote tokens in the AMM.
+ * @param Y0 BN – User's base tokens.
+ * @returns BN – USD obtained after merging.
+ */
+function calculateUSDObtained(s: BN, x: BN, y: BN, Y0: BN): BN {
+  // Ensure s <= Y0
+  if (s.gt(Y0)) {
+    return new BN(0);
+  }
+
+  // Calculate N(s) = (y * s) / (x + s)
+  const numerator = y.mul(s);
+  const denominator = x.add(s);
+  const Ns = numerator.div(denominator);
+
+  // Remaining base tokens after swap: Y0 - s
+  const remainingBaseTokens = Y0.sub(s);
+
+  // USD obtained is the minimum of remaining base tokens and Ns
+  return BN.min(remainingBaseTokens, Ns);
+}
+
+/**
+ * Performs ternary search to find the optimal swap amount 's' that maximizes USD obtained.
+ * @param x BN – Base tokens in the AMM.
+ * @param y BN – Quote tokens in the AMM.
+ * @param Y0 BN – User's base tokens.
+ * @param maxIterations number – Maximum number of iterations for the search.
+ * @returns BN – Optimal swap amount 's'.
+ */
+function ternarySearch(x: BN, y: BN, Y0: BN, maxIterations: number = 100): BN {
+  let left = new BN(0);
+  let right = Y0;
+  const two = new BN(2);
+  const three = new BN(3);
+
+  while (left.lt(right) && maxIterations-- > 0) {
+    const leftThird = right.sub(left).div(three).add(left);
+    const rightThird = right.sub(left).mul(two).div(three).add(left);
+
+    const fLeftThird = calculateUSDObtained(leftThird, x, y, Y0);
+    const fRightThird = calculateUSDObtained(rightThird, x, y, Y0);
+
+    if (fLeftThird.lt(fRightThird)) {
+      left = leftThird.add(new BN(1));
+    } else {
+      right = rightThird.sub(new BN(1));
+    }
+  }
+
+  // After the loop, 'left' is approximately the optimal 's'
+  return left;
 }
