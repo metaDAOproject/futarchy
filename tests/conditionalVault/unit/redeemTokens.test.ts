@@ -107,4 +107,50 @@ export default function suite() {
     const updatedVault = await vaultClient.fetchVault(vault);
     assert.equal(updatedVault.seqNum.toString(), "2");
   });
+
+  it("redeeming tokens a second time should do nothing", async function () {
+    await vaultClient
+      .resolveQuestionIx(question, settlementAuthority, [1, 0])
+      .rpc();
+
+    const underlyingTokenAccount = await token.getAssociatedTokenAddress(
+      underlyingTokenMint,
+      this.payer.publicKey
+    );
+
+    const balanceBefore = await getAccount(
+      this.banksClient,
+      underlyingTokenAccount
+    ).then((acc) => acc.amount);
+
+    await vaultClient
+      .redeemTokensIx(question, vault, underlyingTokenMint, 2)
+      .rpc();
+
+    let balanceAfter = await getAccount(
+      this.banksClient,
+      underlyingTokenAccount
+    ).then((acc) => acc.amount);
+
+    assert.isTrue(balanceAfter > balanceBefore);
+    assert.equal(balanceAfter - balanceBefore, 1000);
+
+    let updatedVault = await vaultClient.fetchVault(vault);
+    assert.equal(updatedVault.seqNum.toString(), "2");
+
+    await vaultClient
+      .redeemTokensIx(question, vault, underlyingTokenMint, 2)
+      .rpc();
+
+    balanceAfter = await getAccount(
+      this.banksClient,
+      underlyingTokenAccount
+    ).then((acc) => acc.amount);
+
+    assert.isTrue(balanceAfter > balanceBefore);
+    assert.equal(balanceAfter - balanceBefore, 1000);
+
+    updatedVault = await vaultClient.fetchVault(vault);
+    assert.equal(updatedVault.seqNum.toString(), "3");
+  });
 }

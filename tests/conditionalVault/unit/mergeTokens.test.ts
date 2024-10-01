@@ -101,4 +101,52 @@ export default function suite() {
       .rpc()
       .then(callbacks[0], callbacks[1]);
   });
+
+  it("successfully calls mergeTokens consecutively", async function () {
+    let balanceBefore = await getAccount(
+      this.banksClient,
+      token.getAssociatedTokenAddressSync(
+        underlyingTokenMint,
+        this.payer.publicKey
+      )
+    ).then((acc) => acc.amount);
+    await vaultClient
+      .mergeTokensIx(question, vault, underlyingTokenMint, new BN(500), 2)
+      .rpc();
+    let balanceAfter = await getAccount(
+      this.banksClient,
+      token.getAssociatedTokenAddressSync(
+        underlyingTokenMint,
+        this.payer.publicKey
+      )
+    ).then((acc) => acc.amount);
+
+    assert.isTrue(balanceAfter > balanceBefore);
+    assert.equal(balanceAfter - balanceBefore, 500);
+    let updatedVault = await vaultClient.fetchVault(vault);
+    assert.equal(updatedVault.seqNum.toString(), "2");
+
+    balanceBefore = await getAccount(
+      this.banksClient,
+      token.getAssociatedTokenAddressSync(
+        underlyingTokenMint,
+        this.payer.publicKey
+      )
+    ).then((acc) => acc.amount);
+    await vaultClient
+      .mergeTokensIx(question, vault, underlyingTokenMint, new BN(500), 2)
+      .rpc();
+    balanceAfter = await getAccount(
+      this.banksClient,
+      token.getAssociatedTokenAddressSync(
+        underlyingTokenMint,
+        this.payer.publicKey
+      )
+    ).then((acc) => acc.amount);
+
+    assert.isTrue(balanceAfter > balanceBefore);
+    assert.equal(balanceAfter - balanceBefore, 500);
+    updatedVault = await vaultClient.fetchVault(vault);
+    assert.equal(updatedVault.seqNum.toString(), "3");
+  });
 }

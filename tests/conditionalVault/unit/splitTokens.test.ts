@@ -205,4 +205,41 @@ export default function suite() {
       .rpc()
       .then(callbacks[0], callbacks[1]);
   });
+
+  it("successfully calls splitTokens consecutively", async function () {
+    await vaultClient
+      .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
+      .rpc();
+
+    let storedVault = await vaultClient.fetchVault(vault);
+
+    assert.equal(storedVault.seqNum.toString(), "1");
+
+    this.assertBalance(underlyingTokenMint, vault, 1000);
+
+    let storedConditionalTokenMints = storedVault.conditionalTokenMints;
+    for (let mint of storedConditionalTokenMints) {
+      let storedMint = await getMint(this.banksClient, mint);
+      assert.equal(storedMint.supply.toString(), "1000");
+      await this.assertBalance(mint, this.payer.publicKey, 1000);
+    }
+
+    await vaultClient
+      .splitTokensIx(question, vault, underlyingTokenMint, new BN(1000), 2)
+      .rpc();
+
+    storedVault = await vaultClient.fetchVault(vault);
+
+    assert.equal(storedVault.seqNum.toString(), "2");
+
+    this.assertBalance(underlyingTokenMint, vault, 2000);
+
+    storedConditionalTokenMints = storedVault.conditionalTokenMints;
+    for (let mint of storedConditionalTokenMints) {
+      let storedMint = await getMint(this.banksClient, mint);
+      assert.equal(storedMint.supply.toString(), "2000");
+      await this.assertBalance(mint, this.payer.publicKey, 2000);
+    }
+    
+  });
 }
