@@ -535,49 +535,60 @@ export class AmmClient {
    * @param decimals number – Number of decimals for the tokens (e.g., 6 for USDC).
    * @returns An object containing the optimal swap amount, expected quote received, and expected mergeable tokens.
    */
-  calculateOptimalSwapAndMerge(
+  calculateOptimalSwapForMerge(
     userTokens: BN,
     baseAmount: BN,
-    quoteAmount: BN,
-    decimals: number = 6 // Number of decimals, e.g., 6 for USDC
+    quoteAmount: BN
   ): {
     optimalSwapAmount: BN;
+    userTokensAfterSwap: BN;
     expectedQuoteReceived: BN;
-    expectedMergeableTokens: BN;
   } {
-    // Input validation
-    if (
-      userTokens.lte(new BN(0)) ||
-      baseAmount.lte(new BN(0)) ||
-      quoteAmount.lte(new BN(0))
-    ) {
-      throw new Error("All input amounts must be positive BN numbers.");
+    const epsilon = new BN(100); // Smallest unit of token
+    let left = new BN(0);
+    let right = userTokens;
+
+    while (right.sub(left).gt(epsilon)) {
+      const leftThird = left.add(right.sub(left).div(new BN(3)));
+      const rightThird = right.sub(right.sub(left).div(new BN(3)));
+
+      const leftSimulation = this.simulateSwap(
+        leftThird,
+        { sell: {} },
+        baseAmount,
+        quoteAmount
+      );
+      const rightSimulation = this.simulateSwap(
+        rightThird,
+        { sell: {} },
+        baseAmount,
+        quoteAmount
+      );
+
+      const leftDiff = leftSimulation.expectedOut
+        .sub(userTokens.sub(leftThird))
+        .abs();
+      const rightDiff = rightSimulation.expectedOut
+        .sub(userTokens.sub(rightThird))
+        .abs();
+
+      if (leftDiff.lt(rightDiff)) {
+        right = rightThird;
+      } else {
+        left = leftThird;
+      }
     }
 
-    const x = baseAmount;
-    const y = quoteAmount;
-    const Y0 = userTokens;
-
-    // Perform ternary search to find the optimal 's'
-    const optimalSwapAmount = ternarySearch(x, y, Y0);
-
-    // Calculate expected quote tokens received
-    const newBaseAmount = x.add(optimalSwapAmount);
-    const expectedQuoteReceived = y.mul(optimalSwapAmount).div(newBaseAmount);
-
-    // Remaining base tokens after swap
-    const remainingBaseTokens = Y0.sub(optimalSwapAmount);
-
-    // Number of tokens that can be merged into USD
-    const expectedMergeableTokens = BN.min(
-      remainingBaseTokens,
-      expectedQuoteReceived
-    );
-
+    const optimalSwapAmount = left;
     return {
-      optimalSwapAmount: optimalSwapAmount,
-      expectedQuoteReceived: expectedQuoteReceived,
-      expectedMergeableTokens: expectedMergeableTokens,
+      optimalSwapAmount,
+      userTokensAfterSwap: userTokens.sub(optimalSwapAmount),
+      expectedQuoteReceived: this.simulateSwap(
+        optimalSwapAmount,
+        { sell: {} },
+        baseAmount,
+        quoteAmount
+      ).expectedOut,
     };
   }
 }

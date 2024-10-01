@@ -60,7 +60,7 @@ export default async function test() {
       question,
       vault,
       USDC,
-      new BN(1000 * 10 ** 6),
+      new BN(10_000 * 10 ** 6),
       numOutcomes,
       this.payer.publicKey
     )
@@ -70,15 +70,15 @@ export default async function test() {
       amm,
       YES,
       NO,
-      new BN(500 * 10 ** 6),
-      new BN(500 * 10 ** 6),
+      new BN(5_000 * 10 ** 6),
+      new BN(5_000 * 10 ** 6),
       new BN(0)
     )
     .rpc();
 
   // Perform mint and swap in the same transaction
   const mintAmount = new BN(500 * 10 ** 6);
-  const swapAmount = new BN(250 * 10 ** 6);
+  const swapAmount = new BN(500 * 10 ** 6);
 
   const mintTx = vaultClient.splitTokensIx(
     question,
@@ -118,14 +118,38 @@ export default async function test() {
     9500 * 10 ** 6,
     "Alice's USDC balance should be 9500000000"
   );
+
+  // there's a decent amount of liquidity, so Alice should receive at least 900 YES but less than 1000
   assert.isAbove(
     Number(yesBalance),
-    250 * 10 ** 6,
-    "Alice's YES balance should be more than 250000000"
+    900 * 10 ** 6,
+    "Alice's YES balance should be more than 900"
+  );
+  assert.isBelow(
+    Number(yesBalance),
+    1000 * 10 ** 6,
+    "Alice's YES balance should be less than 1000"
   );
   assert.equal(
-    noBalance,
-    250 * 10 ** 6,
-    "Alice's NO balance should be less than 250000000"
+    Number(noBalance),
+    0,
+    "Alice's NO balance should be 0"
   );
+  
+  console.log("yesBalance", yesBalance);
+  console.log("noBalance", noBalance);
+
+  const storedAmm = await ammClient.fetchAmm(amm);
+
+  const { optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
+    new BN(yesBalance),
+    storedAmm.baseAmount,
+    storedAmm.quoteAmount
+  );
+
+  console.log("optimalSwapAmount", optimalSwapAmount.toString());
+  console.log("userTokensAfterSwap", userTokensAfterSwap.toString());
+  console.log("expectedQuoteReceived", expectedQuoteReceived.toString());
+
+  // now we do the trecherous part: selling Alice's YES for USDC
 }
