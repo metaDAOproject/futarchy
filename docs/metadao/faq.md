@@ -3,13 +3,10 @@
 ## 1. Futarchy Questions
 
 ### Q: Will futarchy always be correct?
-**A:** Sometimes futarchy may result in decisions that seem suboptimal in hindsight. However, it remains one of the most effective governance mechanisms available.
-
-### Q: Ok this is amazing, should everything be governed by a futarchy?
-**A:** Not necessarily, see Vitalik's [blog post](https://vitalik.eth.limo/general/2022/09/20/daos.html) on DAO types.
+**A:** Sometimes futarchy may result in decisions that seem suboptimal with hindsight. However, no decision-making system can always be correct because we live in a probabilistic world.
 
 ### Q: This sounds like plutocracy, does this just benefit the rich?
-**A:** Futarchy is designed to protect minorities. For a given decision to pass, the minority has to be offered exit liquidity above or at the spot price.
+**A:** Futarchy is designed to protect minorities. For a given decision to pass, the minority has to be bought out above or at the spot price.
 
 ## 2. MetaDAO Questions
 
@@ -30,6 +27,6 @@ Soon:
 - Proposal trading only during certain periods.
 
 ### Q: Have any other crypto projects tried to use prediction markets for governance?
-**A:** Yes, but they did not follow Robin Hanson's model of asset-driven futarchy. They were also built on older blockchains; we now have the benefit of additional years of infrastructure development and cost reductions.
+**A:** Yes Gnosis and Zeitgeist PM, but they did not follow Robin Hanson's model of asset-driven futarchy. They were also built on older blockchains; we now have the benefit of additional years of infrastructure development and cost reductions.
 
 If you have any additional questions not covered in this FAQ, feel free to reach out to us on [Discord](https://discord.com/invite/metadao).
