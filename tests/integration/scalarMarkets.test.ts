@@ -9,6 +9,7 @@ import {
   import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
   import BN from "bn.js";
   import { assert } from "chai";
+  import * as token from "@solana/spl-token";
   
   export default async function test() {
 
@@ -59,21 +60,18 @@ import {
     const payerMintAmount = 10000000 * 10 ** 6;
     await this.mintTo(USDC, this.payer.publicKey, operator, payerMintAmount);
   
+    const usdcMintAmount = 10000000 * 10 ** 6;
     this.createTokenAccount(USDC, alice.publicKey);
-    const aliceMintAmount = 10000000 * 10 ** 6;
-    await this.mintTo(USDC, alice.publicKey, operator, aliceMintAmount);
+    await this.mintTo(USDC, alice.publicKey, operator, usdcMintAmount);
 
     this.createTokenAccount(USDC, bob.publicKey);
-    const bobMintAmount = 10000000 * 10 ** 6;
-    await this.mintTo(USDC, bob.publicKey, operator, bobMintAmount);
+    await this.mintTo(USDC, bob.publicKey, operator, usdcMintAmount);
 
     this.createTokenAccount(USDC, carol.publicKey);
-    const carolMintAmount = 10000000 * 10 ** 6;
-    await this.mintTo(USDC, carol.publicKey, operator, carolMintAmount);
+    await this.mintTo(USDC, carol.publicKey, operator, usdcMintAmount);
 
     this.createTokenAccount(USDC, dan.publicKey);
-    const danMintAmount = 10000000 * 10 ** 6;
-    await this.mintTo(USDC, dan.publicKey, operator, danMintAmount);
+    await this.mintTo(USDC, dan.publicKey, operator, usdcMintAmount);
   
     const vault = await vaultClient.initializeVault(question, USDC, numOutcomes);
     const storedVault = await vaultClient.fetchVault(vault);
@@ -175,63 +173,162 @@ import {
       .rpc();
     yesBalance = await this.getTokenBalance(YES, bob.publicKey);
     noBalance = await this.getTokenBalance(NO, bob.publicKey);
-    console.log("YES balance for bob: ", yesBalance);
-    console.log("NO balance for bob: ", noBalance);
+    assert.equal(yesBalance, new BN(1000*10**6), "YES balance for bob should be 1000");
+    assert.equal(noBalance, new BN(1000*10**6), "NO balance for bob should be 1000");
+
+    //try to to swap with 0 amount
+    failed = false;
+    try {
+        await ammClient
+          .swapIx(
+            amm,
+            YES,
+            NO,
+            { buy: {} },
+            new BN(0),
+            new BN(1),
+            bob.publicKey
+          )
+          .signers([bob])
+          .rpc();
+    } catch (e) {
+      failed = true;
+    }
+    assert.isTrue(failed, "swapIx should fail with 0 amount");
+
+    //mint and swap with random amounts and random users and check balances of pool at the end
+    let totalMintAmount = 0;
+    let totalBuySwapAmount = 0;
+    let totalSellSwapAmount = 0;
+    let randomUsers = [alice, bob, carol, dan];
+    let numSwaps = 50;
+    for (let i = 0; i < numSwaps; i++) {
+        console.log("Swap #" + i.toString());
+        let randomUser = randomUsers[i % randomUsers.length];
+        let randomMintAmount = new BN(Math.floor(Math.random() * 100000 * 10 ** 6));
+        totalMintAmount += Number(randomMintAmount);
+        let randomSwapAmount = new BN(Math.floor(Math.random() * randomMintAmount.toNumber()));
+        const swapDirectionBool = Math.random() < 0.5;
+        const swapDirection = swapDirectionBool ? { buy: {} } : { sell: {} };
+        let mintTx = vaultClient.splitTokensIx(
+            question,
+            vault,
+            USDC,
+            randomMintAmount,
+            numOutcomes,
+            randomUser.publicKey
+        );
+
+        let swapTx = ammClient.swapIx(
+            amm,
+            YES,
+            NO,
+            swapDirection as SwapType,
+            randomSwapAmount,
+            new BN(1),
+            randomUser.publicKey
+        );
+
+        let usdcBalanceBefore = await this.getTokenBalance(USDC, randomUser.publicKey);
+        let yesBalanceBefore = await this.getTokenBalance(YES, randomUser.publicKey);
+        yesBalanceBefore = new BN(yesBalanceBefore).add(randomMintAmount);
+        let noBalanceBefore = await this.getTokenBalance(NO, randomUser.publicKey);
+        noBalanceBefore = new BN(noBalanceBefore).add(randomMintAmount);
+
+        let instructions = await InstructionUtils.getInstructions(mintTx, swapTx);
+        let tx = new Transaction().add(...instructions);
+        tx.recentBlockhash = (await this.banksClient.getLatestBlockhash())[0];
+        tx.feePayer = this.payer.publicKey;
+        tx.sign(this.payer, randomUser);
+        await this.banksClient.processTransaction(tx);
+
+        let usdcBalanceAfter = await this.getTokenBalance(USDC, randomUser.publicKey);
+        let yesBalanceAfter = await this.getTokenBalance(YES, randomUser.publicKey);
+        let noBalanceAfter = await this.getTokenBalance(NO, randomUser.publicKey);
+
+        let yesDiff = Number(yesBalanceAfter) - Number(yesBalanceBefore);
+        let noDiff = Number(noBalanceAfter) - Number(noBalanceBefore);
+
+        assert.equal((usdcBalanceBefore - usdcBalanceAfter), randomMintAmount.toNumber());
+        if (swapDirectionBool) {
+          totalBuySwapAmount += Number(randomSwapAmount);
+          assert.equal(Math.abs(noDiff), randomSwapAmount.toNumber(), "noBalance should decrease by swap amount if buy");
+          assert.isTrue(yesDiff > 0, "yes balance should increase after a buy");
+        } else {
+          totalSellSwapAmount += Number(randomSwapAmount);
+          assert.equal(Math.abs(yesDiff), randomSwapAmount.toNumber(), "yesBalance should decrease by swap amount if sell");
+          assert.isTrue(noDiff > 0, "no balance should increase after a sell");
+        }
+    }
+
+
+    // Merge tokens for some users
+    for (let i = 0; i < Math.floor(randomUsers.length / 2); i++) {
+      const randomUser = randomUsers[i];
+      
+      // Get current YES and NO token balances
+      const yesBalance = await this.getTokenBalance(YES, randomUser.publicKey);
+      const noBalance = await this.getTokenBalance(NO, randomUser.publicKey);
+      const balanceToMerge = Math.min(Number(yesBalance), Number(noBalance));
+      
+      // Create merge instructions for both YES and NO tokens
+      await vaultClient.mergeTokensIx(
+        question,
+        vault,
+        USDC,
+        new BN(balanceToMerge),
+        numOutcomes,
+        randomUser.publicKey
+      ).signers([randomUser]).rpc();
+      
+      // Verify USDC balance after merge
+      const usdcBalanceAfterMerge = await this.getTokenBalance(USDC, randomUser.publicKey);
+      console.log(`User ${i + 1} USDC balance after merge: ${usdcBalanceAfterMerge}`);
+    }
+
+    // Resolve question
+    await vaultClient
+      .resolveQuestionIx(question, operator, [1, 0])
+      .signers([operator])
+      .rpc();
+
+    // Verify question state
+    let storedQuestion = await vaultClient.fetchQuestion(question);
+    assert.deepEqual(storedQuestion.payoutNumerators, [1, 0]);
+    assert.equal(storedQuestion.payoutDenominator, 1);
+
+
+    // Redeem tokens for each random user - redeeming after merging should do nothing.
+    let endingBalances = [];
+    let allUsers = randomUsers.concat([this.payer])
+    for (let i = 0; i < allUsers.length; i++) {
+      const randomUser = allUsers[i];
+      
+      // Redeem both YES and NO tokens
+      await vaultClient.redeemTokensIx(
+        question,
+        vault,
+        USDC,
+        numOutcomes,
+        randomUser.publicKey
+      ).signers([randomUser]).rpc();
+      
+      // Verify USDC balance after redeem
+      const usdcBalanceAfterRedeem = await this.getTokenBalance(USDC, randomUser.publicKey);
+      endingBalances.push(Number(usdcBalanceAfterRedeem));
+      console.log(`User ${i + 1} USDC balance after redeem: ${usdcBalanceAfterRedeem}`);
+    }
+
+    const storedAmm = await ammClient.getAmm(amm);
+    const ammUSDCBalance = storedAmm.baseAmount;
+    console.log("AMM USDC balance:", Number(ammUSDCBalance));
+
+    const totalEndingBalance = endingBalances.reduce((a,b) => a+b, 0);
+    console.log("totalEndingBalance", totalEndingBalance + Number(ammUSDCBalance));
+    console.log("expected totalEndingBalance", usdcMintAmount * 5);
+    assert.equal(totalEndingBalance + Number(ammUSDCBalance), usdcMintAmount * 5);
+
 
     return;
   
-    // Perform mint and swap in the same transaction
-    const mintAmount = new BN(500 * 10 ** 6);
-    const swapAmount = new BN(250 * 10 ** 6);
-  
-    const mintTx = vaultClient.splitTokensIx(
-      question,
-      vault,
-      USDC,
-      mintAmount,
-      numOutcomes,
-      alice.publicKey
-    );
-  
-    const swapTx = ammClient.swapIx(
-      amm,
-      YES,
-      NO,
-      { buy: {} },
-      swapAmount,
-      new BN(1),
-      alice.publicKey
-    );
-  
-    const instructions = await InstructionUtils.getInstructions(mintTx, swapTx);
-  
-    const tx = new Transaction().add(...instructions);
-    tx.recentBlockhash = (await this.banksClient.getLatestBlockhash())[0];
-    tx.feePayer = this.payer.publicKey;
-    tx.sign(this.payer, alice);
-    await this.banksClient.processTransaction(tx);
-  
-    // Assert balances
-    const usdcBalance = await this.getTokenBalance(USDC, alice.publicKey);
-    yesBalance = await this.getTokenBalance(YES, alice.publicKey);
-    noBalance = await this.getTokenBalance(NO, alice.publicKey);
-  
-    console.log("USDC balance: ", usdcBalance);
-    console.log("YES balance: ", yesBalance);
-    console.log("NO balance: ", noBalance);
-    assert.equal(
-      usdcBalance,
-      aliceMintAmount - mintAmount.toNumber(),
-      "Alice's USDC balance should be 9500000000"
-    );
-    assert.isTrue(
-      yesBalance > 500 * 10 ** 6,
-      "Alice's YES balance should be more than 500"
-    );
-    assert.equal(
-      noBalance,
-      250 * 10 ** 6,
-      "Alice's NO balance should be less than 250"
-    );
-  }
-  
+}
