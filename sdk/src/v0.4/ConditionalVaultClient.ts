@@ -179,6 +179,8 @@ export class ConditionalVaultClient {
       );
   }
 
+  // TODO remove `numOucomes`
+
   async initializeVault(
     question: PublicKey,
     underlyingTokenMint: PublicKey,

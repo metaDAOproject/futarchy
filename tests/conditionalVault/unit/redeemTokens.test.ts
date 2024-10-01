@@ -132,6 +132,8 @@ export default function suite() {
       underlyingTokenAccount
     ).then((acc) => acc.amount);
 
+    console.log('balanceAfter', balanceAfter);
+
     assert.isTrue(balanceAfter > balanceBefore);
     assert.equal(balanceAfter - balanceBefore, 1000);
 
@@ -147,10 +149,48 @@ export default function suite() {
       underlyingTokenAccount
     ).then((acc) => acc.amount);
 
+    console.log('balanceAfter', balanceAfter);
+
     assert.isTrue(balanceAfter > balanceBefore);
     assert.equal(balanceAfter - balanceBefore, 1000);
 
     updatedVault = await vaultClient.fetchVault(vault);
     assert.equal(updatedVault.seqNum.toString(), "3");
+  });
+
+  it("redeeming tokens should leave some dust from rounding down", async function () {
+    await vaultClient
+      .resolveQuestionIx(question, settlementAuthority, [2, 1])
+      .rpc();
+
+    const underlyingTokenAccount = await token.getAssociatedTokenAddress(
+      underlyingTokenMint,
+      this.payer.publicKey
+    );
+
+    const balanceBefore = await getAccount(
+      this.banksClient,
+      underlyingTokenAccount
+    ).then((acc) => acc.amount);
+
+    await vaultClient
+      .redeemTokensIx(question, vault, underlyingTokenMint, 2)
+      .rpc();
+
+    const balanceAfter = await getAccount(
+      this.banksClient,
+      underlyingTokenAccount
+    ).then((acc) => acc.amount);
+
+    assert.isTrue(balanceAfter > balanceBefore);
+    assert.isTrue(balanceAfter - balanceBefore  < 1000); //dont need both these checks lol but just in case
+    assert.isTrue(balanceAfter - balanceBefore == 999);
+
+    console.log('balanceAfter', balanceAfter);
+
+    const updatedVault = await vaultClient.fetchVault(vault);
+    assert.equal(updatedVault.seqNum.toString(), "2");
+
+    
   });
 }
