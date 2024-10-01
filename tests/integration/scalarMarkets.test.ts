@@ -288,14 +288,14 @@ import {
 
     // Resolve question
     await vaultClient
-      .resolveQuestionIx(question, operator, [1, 0])
+      .resolveQuestionIx(question, operator, [11, 3])
       .signers([operator])
       .rpc();
 
     // Verify question state
     let storedQuestion = await vaultClient.fetchQuestion(question);
-    assert.deepEqual(storedQuestion.payoutNumerators, [1, 0]);
-    assert.equal(storedQuestion.payoutDenominator, 1);
+    assert.deepEqual(storedQuestion.payoutNumerators, [11, 3]);
+    assert.equal(storedQuestion.payoutDenominator, 14);
 
 
     // Redeem tokens for each random user - redeeming after merging should do nothing.
