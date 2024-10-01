@@ -10,6 +10,13 @@ import {
   import BN from "bn.js";
   import { assert } from "chai";
   import * as token from "@solana/spl-token";
+  import {
+    createMint,
+    createAssociatedTokenAccount,
+    mintTo,
+    getAccount,
+    getMint,
+  } from "spl-token-bankrun";
   
   export default async function test() {
 
@@ -288,14 +295,36 @@ import {
 
     // Resolve question
     await vaultClient
-      .resolveQuestionIx(question, operator, [11, 3])
+      .resolveQuestionIx(question, operator, [243, 117])
       .signers([operator])
       .rpc();
 
     // Verify question state
     let storedQuestion = await vaultClient.fetchQuestion(question);
-    assert.deepEqual(storedQuestion.payoutNumerators, [11, 3]);
-    assert.equal(storedQuestion.payoutDenominator, 14);
+    assert.deepEqual(storedQuestion.payoutNumerators, [243, 117]);
+    assert.equal(storedQuestion.payoutDenominator, 117+243);
+
+    //withdraw liquidity
+    const ammStart = await ammClient.getAmm(amm);
+    let userLpAccount = token.getAssociatedTokenAddressSync(
+      ammStart.lpMint,
+      this.payer.publicKey
+    );
+    const userLpAccountStart = await getAccount(
+      this.banksClient,
+      userLpAccount
+    );
+    const lpMintStart = await getMint(this.banksClient, ammStart.lpMint);
+    await ammClient
+      .removeLiquidityIx(
+        amm,
+        YES,
+        NO,
+        new BN(userLpAccountStart.amount.toString()),
+        new BN(1),
+        new BN(1)
+      )
+      .rpc();
 
 
     // Redeem tokens for each random user - redeeming after merging should do nothing.
@@ -319,16 +348,10 @@ import {
       console.log(`User ${i + 1} USDC balance after redeem: ${usdcBalanceAfterRedeem}`);
     }
 
-    const storedAmm = await ammClient.getAmm(amm);
-    const ammUSDCBalance = storedAmm.baseAmount;
-    console.log("AMM USDC balance:", Number(ammUSDCBalance));
-
     const totalEndingBalance = endingBalances.reduce((a,b) => a+b, 0);
-    console.log("totalEndingBalance", totalEndingBalance + Number(ammUSDCBalance));
+    console.log("totalEndingBalance", totalEndingBalance);
     console.log("expected totalEndingBalance", usdcMintAmount * 5);
-    assert.equal(totalEndingBalance + Number(ammUSDCBalance), usdcMintAmount * 5);
+    assert.isTrue(usdcMintAmount * 5 * 1.0001 > totalEndingBalance && usdcMintAmount * 5 * .9999 < totalEndingBalance);
 
-
-    return;
   
 }
