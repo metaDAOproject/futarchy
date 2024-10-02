@@ -557,7 +557,12 @@ export class AmmClient {
     let quoteAmountX = Number(quoteAmount) * scalar;
 
     //solve equation
-    // (baseReserve + swapAmount) * (quoteReserve - (userTokens - swapAmount)) = baseReserve * quoteReserve
+    // (baseReserve + .99*swapAmount) * (quoteReserve - (userTokens - swapAmount)) = baseReserve * quoteReserve
+    // multiplying out the left hand side and subtracting baseReserve * quoteReserve from both sides yields the following:
+    // .99*swapAmount^2 + baseReserve*swapAmount + .99*swapAmount*quoteReserve - baseReserve*userTokens - .99*swapAmount*userTokens = 0
+    // sqrt both sides it becomes solving a quadratic equation, which results in 2 solutions for swapAmount, one negative one positive, we want the positive one
+    // sqrt(.99*swapAmount^2 + baseReserve*swapAmount + .99*swapAmount*quoteReserve - baseReserve*userTokens - .99*swapAmount*userTokens) = 0
+    // in the quadratic equation, a = .99, b = (baseReserve + .99*quoteReserve - .99*userTokens), c = baseReserve*userTokens
     let swapAmount =
       (1 / 198) *
       (Math.sqrt(
