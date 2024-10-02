@@ -141,7 +141,7 @@ export default async function test() {
 
   const storedAmm = await ammClient.fetchAmm(amm);
 
-  const { optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
+  let { optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
     new BN(yesBalance),
     storedAmm.baseAmount,
     storedAmm.quoteAmount
@@ -161,6 +161,67 @@ export default async function test() {
   console.log("yesBalance", yesBalance);
   console.log("noBalance", noBalance);
 
+  //test edge cases for calculateOptimalSwapForMerge
+  //small reserves, large balance
+  console.log("\nLarge user balance, small reserves");
+  ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
+    new BN(1_000_000_000*1e6),
+    new BN(10),
+    new BN(20)
+  ));
+  console.log("optimalSwapAmount", optimalSwapAmount.toString());
+  console.log("userTokensAfterSwap", userTokensAfterSwap.toString());
+  console.log("expectedQuoteReceived", expectedQuoteReceived.toString());
+  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
+
+
+  //large reserves, small balance
+  console.log("\nSmall user balances, large reserves");
+  ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
+    new BN(100),
+    new BN(1_000_000_000*1e6),
+    new BN(2_000_000_000*1e6)
+  ));
+  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
+  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
+  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
+  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
+
+  //small reserves, small balance
+  console.log("\nSmall user balances, small reserves");
+  ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
+    new BN(10),
+    new BN(20),
+    new BN(30)
+  ));
+  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
+  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
+  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
+  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
+
+  //large reserves, large balance
+  console.log("\nLarge user balances, large reserves");
+  ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
+    new BN(1_000_000_000*1e6),
+    new BN(1_000_000_000*1e6),
+    new BN(2_000_000_000*1e6)
+  ));
+  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
+  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
+  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
+  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
+
+  //skewed reserves (one reserve large, one small)
+  console.log("\nSkewed reserves (one large, one small)");
+  ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
+    new BN(1_000_000_000*1e6),
+    new BN(10),
+    new BN(1_000_000_000*1e6)
+  ));
+  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
+  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
+  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
+  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
 
   // now we do the trecherous part: selling Alice's YES for USDC

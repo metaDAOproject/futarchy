@@ -544,12 +544,6 @@ export class AmmClient {
     userTokensAfterSwap: BN;
     expectedQuoteReceived: BN;
   } {
-    //multiply userTokens, baseAmount, quoteAmount by large scalar
-    let scalar = 1e6;
-    let userTokensX = Number(userBalanceIn) * scalar;
-    let baseAmountX = Number(ammReserveIn) * scalar;
-    let quoteAmountX = Number(ammReserveOut) * scalar;
-
     // essentially, we want to calculate the swap amount so that the remaining user balance = received token amount
 
     // solve this system of equations for swapAmount, outputAmount (we only care about swap amount tho)
@@ -572,26 +566,30 @@ export class AmmClient {
     let c = -Number(ammReserveIn) * Number(userBalanceIn);
 
     let x = (-b + Math.sqrt(b ** 2 - 4 * a * c)) / (2 * a);
+    //this should mathematically return a positive number assuming userBalanceIn, ammReserveIn, and ammReserveOut are all positive (which they should be)
+    // -b + Math.sqrt(b ** 2 - 4 * a * c) > 0 because -4*a*c > 0 and sqrt(b**2 + positive number) > b
 
     console.log("x: ", new BN(x).toString());
 
     let swapAmount =
-      (1 / 198) *
       (Math.sqrt(
-        (-99 * userTokensX + 100 * baseAmountX + 99 * quoteAmountX) ** 2 +
-          39600 * userTokensX * baseAmountX
+        (-99 * Number(userBalanceIn) +
+          100 * Number(ammReserveIn) +
+          99 * Number(ammReserveOut)) **
+          2 +
+          39600 * Number(userBalanceIn) * Number(ammReserveIn)
       ) +
-        99 * userTokensX -
-        100 * baseAmountX -
-        99 * quoteAmountX);
+        99 * Number(userBalanceIn) -
+        100 * Number(ammReserveIn) -
+        99 * Number(ammReserveOut)) /
+      198;
 
-    console.log("swapAmount: ", new BN(swapAmount / scalar).toString());
-    console.log("Optimal swap amount: ", swapAmount / scalar);
+    console.log("optimal swap amount: ", new BN(swapAmount).toString());
     return {
-      optimalSwapAmount: new BN(swapAmount / scalar),
-      userTokensAfterSwap: new BN((userTokensX - swapAmount) / scalar),
+      optimalSwapAmount: new BN(swapAmount),
+      userTokensAfterSwap: new BN(Number(userBalanceIn) - swapAmount),
       expectedQuoteReceived: this.simulateSwap(
-        new BN(swapAmount / scalar),
+        new BN(swapAmount),
         { sell: {} },
         ammReserveIn,
         ammReserveOut

@@ -210,7 +210,6 @@ import {
     let randomUsers = [alice, bob, carol, dan];
     let numSwaps = 50;
     for (let i = 0; i < numSwaps; i++) {
-        console.log("Swap #" + i.toString());
         let randomUser = randomUsers[i % randomUsers.length];
         let randomMintAmount = new BN(Math.floor(Math.random() * 100000 * 10 ** 6));
         totalMintAmount += Number(randomMintAmount);
@@ -288,9 +287,6 @@ import {
         randomUser.publicKey
       ).signers([randomUser]).rpc();
       
-      // Verify USDC balance after merge
-      const usdcBalanceAfterMerge = await this.getTokenBalance(USDC, randomUser.publicKey);
-      console.log(`User ${i + 1} USDC balance after merge: ${usdcBalanceAfterMerge}`);
     }
 
     // Resolve question
@@ -314,7 +310,6 @@ import {
       this.banksClient,
       userLpAccount
     );
-    const lpMintStart = await getMint(this.banksClient, ammStart.lpMint);
     await ammClient
       .removeLiquidityIx(
         amm,
@@ -351,7 +346,7 @@ import {
     const totalEndingBalance = endingBalances.reduce((a,b) => a+b, 0);
     console.log("totalEndingBalance", totalEndingBalance);
     console.log("expected totalEndingBalance", usdcMintAmount * 5);
-    assert.isTrue(usdcMintAmount * 5 * 1.0001 > totalEndingBalance && usdcMintAmount * 5 * .9999 < totalEndingBalance);
+    assert.isTrue(usdcMintAmount * 5 >= totalEndingBalance && usdcMintAmount * 5 * .9999 < totalEndingBalance);
 
   
 }
