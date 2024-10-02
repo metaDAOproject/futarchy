@@ -209,7 +209,7 @@ export default async function test() {
   console.log("optimalSwapAmount:", optimalSwapAmount.toString());
   console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
   console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
-  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
+  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
   //skewed reserves (one reserve large, one small)
   console.log("\nSkewed reserves (one large, one small)");
@@ -221,7 +221,7 @@ export default async function test() {
   console.log("optimalSwapAmount:", optimalSwapAmount.toString());
   console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
   console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
-  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
+  assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
 
   // now we do the trecherous part: selling Alice's YES for USDC
