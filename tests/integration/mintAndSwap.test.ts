@@ -136,8 +136,6 @@ export default async function test() {
     "Alice's NO balance should be 0"
   );
   
-  console.log("yesBalance", yesBalance);
-  console.log("noBalance", noBalance);
 
   const storedAmm = await ammClient.fetchAmm(amm);
 
@@ -147,9 +145,6 @@ export default async function test() {
     storedAmm.quoteAmount
   );
 
-  console.log("optimalSwapAmount", optimalSwapAmount.toString());
-  console.log("userTokensAfterSwap", userTokensAfterSwap.toString());
-  console.log("expectedQuoteReceived", expectedQuoteReceived.toString());
 
   let swapIx2 = ammClient.swapIx(amm, YES, NO, { sell: {} }, optimalSwapAmount, new BN(0), alice.publicKey);
 
@@ -158,69 +153,47 @@ export default async function test() {
   yesBalance = await this.getTokenBalance(YES, alice.publicKey);
   noBalance = await this.getTokenBalance(NO, alice.publicKey);
 
-  console.log("yesBalance", yesBalance);
-  console.log("noBalance", noBalance);
 
   //test edge cases for calculateOptimalSwapForMerge
   //small reserves, large balance
-  console.log("\nLarge user balance, small reserves");
   ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
     new BN(1_000_000_000*1e6),
     new BN(10),
     new BN(20)
   ));
-  console.log("optimalSwapAmount", optimalSwapAmount.toString());
-  console.log("userTokensAfterSwap", userTokensAfterSwap.toString());
-  console.log("expectedQuoteReceived", expectedQuoteReceived.toString());
   assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
 
   //large reserves, small balance
-  console.log("\nSmall user balances, large reserves");
   ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
     new BN(100),
     new BN(1_000_000_000*1e6),
     new BN(2_000_000_000*1e6)
   ));
-  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
-  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
-  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
   assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
   //small reserves, small balance
-  console.log("\nSmall user balances, small reserves");
   ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
     new BN(10),
     new BN(20),
     new BN(30)
   ));
-  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
-  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
-  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
   assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
   //large reserves, large balance
-  console.log("\nLarge user balances, large reserves");
   ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
     new BN(1_000_000_000*1e6),
     new BN(1_000_000_000*1e6),
     new BN(2_000_000_000*1e6)
   ));
-  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
-  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
-  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
   assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
   //skewed reserves (one reserve large, one small)
-  console.log("\nSkewed reserves (one large, one small)");
   ({ optimalSwapAmount, userTokensAfterSwap, expectedQuoteReceived } = ammClient.calculateOptimalSwapForMerge(
     new BN(1_000_000_000*1e6),
     new BN(10),
     new BN(1_000_000_000*1e6)
   ));
-  console.log("optimalSwapAmount:", optimalSwapAmount.toString());
-  console.log("userTokensAfterSwap:", userTokensAfterSwap.toString());
-  console.log("expectedQuoteReceived:", expectedQuoteReceived.toString());
   assert.isTrue(Number(expectedQuoteReceived) - 1 <= Number(userTokensAfterSwap) && Number(userTokensAfterSwap) <= Number(expectedQuoteReceived) + 1);
 
 

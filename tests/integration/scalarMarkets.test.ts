@@ -30,7 +30,7 @@ import {
     let operator: Keypair = Keypair.generate();
 
     //tests varying numOutcomes TODO: get back to this once we figure out how to create markets with more than 2 outcomes
-    console.log("Testing varying numOutcomes");
+    
     const colors = ["red", "blue", "green", "yellow", "purple"];
     for (let i = 2; i <= 5; i++) {
         let question: PublicKey = await vaultClient.initializeQuestion(
@@ -45,7 +45,7 @@ import {
         const storedVault = await vaultClient.fetchVault(vault);
         const conditionalTokenMints = storedVault.conditionalTokenMints;
         assert.isTrue(conditionalTokenMints.length === i);
-        console.log("Number of conditional token mints: ", conditionalTokenMints.length);
+        
 
         for (let j = 0; j < i; j++) {
             await this.createTokenAccount(conditionalTokenMints[j], alice.publicKey);
@@ -54,7 +54,7 @@ import {
   
     const numOutcomes = 2;
   
-    console.log("Initializing question: Will Donald Trump get the W?/YES/NO");
+    
     let question: PublicKey = await vaultClient.initializeQuestion(
       sha256(new TextEncoder().encode("Will Donald Trump get the W?/YES/NO")),
       operator.publicKey,
@@ -340,12 +340,12 @@ import {
       // Verify USDC balance after redeem
       const usdcBalanceAfterRedeem = await this.getTokenBalance(USDC, randomUser.publicKey);
       endingBalances.push(Number(usdcBalanceAfterRedeem));
-      console.log(`User ${i + 1} USDC balance after redeem: ${usdcBalanceAfterRedeem}`);
+      
     }
 
     const totalEndingBalance = endingBalances.reduce((a,b) => a+b, 0);
-    console.log("totalEndingBalance", totalEndingBalance);
-    console.log("expected totalEndingBalance", usdcMintAmount * 5);
+    
+    
     assert.isTrue(usdcMintAmount * 5 >= totalEndingBalance && usdcMintAmount * 5 * .9999 < totalEndingBalance);
 
   
