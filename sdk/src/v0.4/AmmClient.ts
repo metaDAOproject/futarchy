@@ -535,6 +535,12 @@ export class AmmClient {
    * @param decimals number – Number of decimals for the tokens (e.g., 6 for USDC).
    * @returns An object containing the optimal swap amount, expected quote received, and expected mergeable tokens.
    */
+  //TODO: the goal is to optimize - take into account slippage, add buy case, replace epsilon with limit the number of iterations
+  // essentially, we want to calculate the base amount to sell, so that the remaining base amount = quote amount
+
+  // solve this system of equations for swapAmount, outputAmount (we only care about swap amount tho)
+  // (baseReserve + swapAmount) * (quoteReserve - outputAmount) = baseReserve * quoteReserve
+  // baseAmount - swapAmount = outputAmount
   calculateOptimalSwapForMerge(
     userTokens: BN,
     baseAmount: BN,
@@ -544,6 +550,35 @@ export class AmmClient {
     userTokensAfterSwap: BN;
     expectedQuoteReceived: BN;
   } {
+    //multiply userTokens, baseAmount, quoteAmount by large scalar
+    let scalar = 1e6;
+    let userTokensX = Number(userTokens) * scalar;
+    let baseAmountX = Number(baseAmount) * scalar;
+    let quoteAmountX = Number(quoteAmount) * scalar;
+
+    //solve system of equations
+    // let swapAmount0 = (1/198) * (-Math.sqrt((-99*userTokensX + 100*baseAmountX + 99*quoteAmountX)**2 + 39600*userTokensX * baseAmountX) + 99*userTokensX - 100*baseAmountX - 99*quoteAmountX);
+    let swapAmount =
+      (1 / 198) *
+      (Math.sqrt(
+        (-99 * userTokensX + 100 * baseAmountX + 99 * quoteAmountX) ** 2 +
+          39600 * userTokensX * baseAmountX
+      ) +
+        99 * userTokensX -
+        100 * baseAmountX -
+        99 * quoteAmountX);
+    console.log("Optimal swap amount: ", swapAmount / scalar);
+    return {
+      optimalSwapAmount: new BN(swapAmount / scalar),
+      userTokensAfterSwap: new BN((userTokensX - swapAmount) / scalar),
+      expectedQuoteReceived: this.simulateSwap(
+        new BN(swapAmount / scalar),
+        { sell: {} },
+        baseAmount,
+        quoteAmount
+      ).expectedOut,
+    };
+
     const epsilon = new BN(100); // Smallest unit of token
     let left = new BN(0);
     let right = userTokens;
