@@ -538,11 +538,13 @@ export class AmmClient {
   calculateOptimalSwapForMerge(
     userBalanceIn: BN,
     ammReserveIn: BN,
-    ammReserveOut: BN
+    ammReserveOut: BN,
+    slippageBps: BN
   ): {
     optimalSwapAmount: BN;
     userTokensAfterSwap: BN;
     expectedQuoteReceived: BN;
+    minimumExpectedQuoteReceived: BN;
   } {
     // essentially, we want to calculate the swap amount so that the remaining user balance = received token amount
 
@@ -585,62 +587,66 @@ export class AmmClient {
     //   198;
 
     console.log("optimal swap amount: ", new BN(swapAmount).toString());
+    let expectedOut = this.simulateSwap(
+      new BN(swapAmount),
+      { sell: {} },
+      ammReserveIn,
+      ammReserveOut
+    ).expectedOut;
+    let minimumExpectedOut =
+      Number(expectedOut) - (Number(expectedOut) * Number(slippageBps)) / 10000;
     return {
       optimalSwapAmount: new BN(swapAmount),
       userTokensAfterSwap: new BN(Number(userBalanceIn) - swapAmount),
-      expectedQuoteReceived: this.simulateSwap(
-        new BN(swapAmount),
-        { sell: {} },
-        ammReserveIn,
-        ammReserveOut
-      ).expectedOut,
+      expectedQuoteReceived: expectedOut,
+      minimumExpectedQuoteReceived: new BN(minimumExpectedOut),
     };
 
-    const epsilon = new BN(100); // Smallest unit of token
-    let left = new BN(0);
-    let right = userBalanceIn;
+    // const epsilon = new BN(100); // Smallest unit of token
+    // let left = new BN(0);
+    // let right = userBalanceIn;
 
-    while (right.sub(left).gt(epsilon)) {
-      const leftThird = left.add(right.sub(left).div(new BN(3)));
-      const rightThird = right.sub(right.sub(left).div(new BN(3)));
+    // while (right.sub(left).gt(epsilon)) {
+    //   const leftThird = left.add(right.sub(left).div(new BN(3)));
+    //   const rightThird = right.sub(right.sub(left).div(new BN(3)));
 
-      const leftSimulation = this.simulateSwap(
-        leftThird,
-        { sell: {} },
-        ammReserveIn,
-        ammReserveOut
-      );
-      const rightSimulation = this.simulateSwap(
-        rightThird,
-        { sell: {} },
-        ammReserveIn,
-        ammReserveOut
-      );
+    //   const leftSimulation = this.simulateSwap(
+    //     leftThird,
+    //     { sell: {} },
+    //     ammReserveIn,
+    //     ammReserveOut
+    //   );
+    //   const rightSimulation = this.simulateSwap(
+    //     rightThird,
+    //     { sell: {} },
+    //     ammReserveIn,
+    //     ammReserveOut
+    //   );
 
-      const leftDiff = leftSimulation.expectedOut
-        .sub(userBalanceIn.sub(leftThird))
-        .abs();
-      const rightDiff = rightSimulation.expectedOut
-        .sub(userBalanceIn.sub(rightThird))
-        .abs();
+    //   const leftDiff = leftSimulation.expectedOut
+    //     .sub(userBalanceIn.sub(leftThird))
+    //     .abs();
+    //   const rightDiff = rightSimulation.expectedOut
+    //     .sub(userBalanceIn.sub(rightThird))
+    //     .abs();
 
-      if (leftDiff.lt(rightDiff)) {
-        right = rightThird;
-      } else {
-        left = leftThird;
-      }
-    }
+    //   if (leftDiff.lt(rightDiff)) {
+    //     right = rightThird;
+    //   } else {
+    //     left = leftThird;
+    //   }
+    // }
 
-    const optimalSwapAmount = left;
-    return {
-      optimalSwapAmount,
-      userTokensAfterSwap: userBalanceIn.sub(optimalSwapAmount),
-      expectedQuoteReceived: this.simulateSwap(
-        optimalSwapAmount,
-        { sell: {} },
-        ammReserveIn,
-        ammReserveOut
-      ).expectedOut,
-    };
+    // const optimalSwapAmount = left;
+    // return {
+    //   optimalSwapAmount,
+    //   userTokensAfterSwap: userBalanceIn.sub(optimalSwapAmount),
+    //   expectedQuoteReceived: this.simulateSwap(
+    //     optimalSwapAmount,
+    //     { sell: {} },
+    //     ammReserveIn,
+    //     ammReserveOut
+    //   ).expectedOut,
+    // };
   }
 }
