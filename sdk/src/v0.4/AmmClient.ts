@@ -569,20 +569,20 @@ export class AmmClient {
     //this should mathematically return a positive number assuming userBalanceIn, ammReserveIn, and ammReserveOut are all positive (which they should be)
     // -b + Math.sqrt(b ** 2 - 4 * a * c) > 0 because -4*a*c > 0 and sqrt(b**2 + positive number) > b
 
-    console.log("x: ", new BN(x).toString());
+    const swapAmount = x;
 
-    let swapAmount =
-      (Math.sqrt(
-        (-99 * Number(userBalanceIn) +
-          100 * Number(ammReserveIn) +
-          99 * Number(ammReserveOut)) **
-          2 +
-          39600 * Number(userBalanceIn) * Number(ammReserveIn)
-      ) +
-        99 * Number(userBalanceIn) -
-        100 * Number(ammReserveIn) -
-        99 * Number(ammReserveOut)) /
-      198;
+    // let swapAmount =
+    //   (Math.sqrt(
+    //     (-99 * Number(userBalanceIn) +
+    //       100 * Number(ammReserveIn) +
+    //       99 * Number(ammReserveOut)) **
+    //       2 +
+    //       39600 * Number(userBalanceIn) * Number(ammReserveIn)
+    //   ) +
+    //     99 * Number(userBalanceIn) -
+    //     100 * Number(ammReserveIn) -
+    //     99 * Number(ammReserveOut)) /
+    //   198;
 
     console.log("optimal swap amount: ", new BN(swapAmount).toString());
     return {
