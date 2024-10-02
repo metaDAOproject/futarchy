@@ -529,22 +529,16 @@ export class AmmClient {
 
   /**
    * Calculates the optimal swap amount and mergeable tokens without using square roots.
-   * @param userTokens BN – User's base tokens (pass or fail tokens), in smallest units.
-   * @param baseAmount BN – Amount of base tokens in the AMM, in smallest units.
-   * @param quoteAmount BN – Amount of quote tokens in the AMM, in smallest units.
-   * @param decimals number – Number of decimals for the tokens (e.g., 6 for USDC).
+   * @param userBalanceIn BN – Tokens that a user wants to dispose of.
+   * @param ammReserveIn BN – Amount of tokens in the AMM of the token that the user wants to dispose of.
+   * @param ammReserveOut BN – Amount of tokens in the AMM of the token that the user wants to receive.
    * @returns An object containing the optimal swap amount, expected quote received, and expected mergeable tokens.
    */
-  //TODO: the goal is to optimize - take into account slippage, add buy case, replace epsilon with limit the number of iterations
-  // essentially, we want to calculate the base amount to sell, so that the remaining base amount = quote amount
 
-  // solve this system of equations for swapAmount, outputAmount (we only care about swap amount tho)
-  // (baseReserve + swapAmount) * (quoteReserve - outputAmount) = baseReserve * quoteReserve
-  // baseAmount - swapAmount = outputAmount
   calculateOptimalSwapForMerge(
-    userTokens: BN,
-    baseAmount: BN,
-    quoteAmount: BN
+    userBalanceIn: BN,
+    ammReserveIn: BN,
+    ammReserveOut: BN
   ): {
     optimalSwapAmount: BN;
     userTokensAfterSwap: BN;
@@ -552,17 +546,35 @@ export class AmmClient {
   } {
     //multiply userTokens, baseAmount, quoteAmount by large scalar
     let scalar = 1e6;
-    let userTokensX = Number(userTokens) * scalar;
-    let baseAmountX = Number(baseAmount) * scalar;
-    let quoteAmountX = Number(quoteAmount) * scalar;
+    let userTokensX = Number(userBalanceIn) * scalar;
+    let baseAmountX = Number(ammReserveIn) * scalar;
+    let quoteAmountX = Number(ammReserveOut) * scalar;
+
+    // essentially, we want to calculate the swap amount so that the remaining user balance = received token amount
+
+    // solve this system of equations for swapAmount, outputAmount (we only care about swap amount tho)
+    // (baseReserve + swapAmount) * (quoteReserve - outputAmount) = baseReserve * quoteReserve
+    // baseAmount - swapAmount = outputAmount
 
     //solve equation
     // (baseReserve + .99*swapAmount) * (quoteReserve - (userTokens - swapAmount)) = baseReserve * quoteReserve
     // multiplying out the left hand side and subtracting baseReserve * quoteReserve from both sides yields the following:
+    // baseReserve*quoteReserve - baseReserve*userTokens + baseReserve*swapAmount + .99*swapAmount*quoteReserve - .99*swapAmount*userTokens + .99*swapAmount^2 = baseReserve*quoteReserve
     // .99*swapAmount^2 + baseReserve*swapAmount + .99*swapAmount*quoteReserve - baseReserve*userTokens - .99*swapAmount*userTokens = 0
-    // sqrt both sides it becomes solving a quadratic equation, which results in 2 solutions for swapAmount, one negative one positive, we want the positive one
-    // sqrt(.99*swapAmount^2 + baseReserve*swapAmount + .99*swapAmount*quoteReserve - baseReserve*userTokens - .99*swapAmount*userTokens) = 0
-    // in the quadratic equation, a = .99, b = (baseReserve + .99*quoteReserve - .99*userTokens), c = baseReserve*userTokens
+    // in the quadratic equation, a = .99, b = (baseReserve + .99*quoteReserve - .99*userTokens), c = -baseReserve*userTokens
+    // x = (-b + sqrt(b^2 - 4ac)) / 2a
+
+    let a = 0.99;
+    let b =
+      Number(ammReserveIn) +
+      0.99 * Number(ammReserveOut) -
+      0.99 * Number(userBalanceIn);
+    let c = -Number(ammReserveIn) * Number(userBalanceIn);
+
+    let x = (-b + Math.sqrt(b ** 2 - 4 * a * c)) / (2 * a);
+
+    console.log("x: ", new BN(x).toString());
+
     let swapAmount =
       (1 / 198) *
       (Math.sqrt(
@@ -572,6 +584,8 @@ export class AmmClient {
         99 * userTokensX -
         100 * baseAmountX -
         99 * quoteAmountX);
+
+    console.log("swapAmount: ", new BN(swapAmount / scalar).toString());
     console.log("Optimal swap amount: ", swapAmount / scalar);
     return {
       optimalSwapAmount: new BN(swapAmount / scalar),
@@ -579,14 +593,14 @@ export class AmmClient {
       expectedQuoteReceived: this.simulateSwap(
         new BN(swapAmount / scalar),
         { sell: {} },
-        baseAmount,
-        quoteAmount
+        ammReserveIn,
+        ammReserveOut
       ).expectedOut,
     };
 
     const epsilon = new BN(100); // Smallest unit of token
     let left = new BN(0);
-    let right = userTokens;
+    let right = userBalanceIn;
 
     while (right.sub(left).gt(epsilon)) {
       const leftThird = left.add(right.sub(left).div(new BN(3)));
@@ -595,21 +609,21 @@ export class AmmClient {
       const leftSimulation = this.simulateSwap(
         leftThird,
         { sell: {} },
-        baseAmount,
-        quoteAmount
+        ammReserveIn,
+        ammReserveOut
       );
       const rightSimulation = this.simulateSwap(
         rightThird,
         { sell: {} },
-        baseAmount,
-        quoteAmount
+        ammReserveIn,
+        ammReserveOut
       );
 
       const leftDiff = leftSimulation.expectedOut
-        .sub(userTokens.sub(leftThird))
+        .sub(userBalanceIn.sub(leftThird))
         .abs();
       const rightDiff = rightSimulation.expectedOut
-        .sub(userTokens.sub(rightThird))
+        .sub(userBalanceIn.sub(rightThird))
         .abs();
 
       if (leftDiff.lt(rightDiff)) {
@@ -622,12 +636,12 @@ export class AmmClient {
     const optimalSwapAmount = left;
     return {
       optimalSwapAmount,
-      userTokensAfterSwap: userTokens.sub(optimalSwapAmount),
+      userTokensAfterSwap: userBalanceIn.sub(optimalSwapAmount),
       expectedQuoteReceived: this.simulateSwap(
         optimalSwapAmount,
         { sell: {} },
-        baseAmount,
-        quoteAmount
+        ammReserveIn,
+        ammReserveOut
       ).expectedOut,
     };
   }
