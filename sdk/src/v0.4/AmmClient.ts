@@ -556,8 +556,8 @@ export class AmmClient {
     let baseAmountX = Number(baseAmount) * scalar;
     let quoteAmountX = Number(quoteAmount) * scalar;
 
-    //solve system of equations
-    // let swapAmount0 = (1/198) * (-Math.sqrt((-99*userTokensX + 100*baseAmountX + 99*quoteAmountX)**2 + 39600*userTokensX * baseAmountX) + 99*userTokensX - 100*baseAmountX - 99*quoteAmountX);
+    //solve equation
+    // (baseReserve + swapAmount) * (quoteReserve - (userTokens - swapAmount)) = baseReserve * quoteReserve
     let swapAmount =
       (1 / 198) *
       (Math.sqrt(
