@@ -109,9 +109,9 @@ export default async function test() {
   await this.banksClient.processTransaction(tx);
 
   // Assert balances
-  const usdcBalance = await this.getTokenBalance(USDC, alice.publicKey);
-  const yesBalance = await this.getTokenBalance(YES, alice.publicKey);
-  const noBalance = await this.getTokenBalance(NO, alice.publicKey);
+  let usdcBalance = await this.getTokenBalance(USDC, alice.publicKey);
+  let yesBalance = await this.getTokenBalance(YES, alice.publicKey);
+  let noBalance = await this.getTokenBalance(NO, alice.publicKey);
 
   assert.equal(
     usdcBalance,
@@ -150,6 +150,18 @@ export default async function test() {
   console.log("optimalSwapAmount", optimalSwapAmount.toString());
   console.log("userTokensAfterSwap", userTokensAfterSwap.toString());
   console.log("expectedQuoteReceived", expectedQuoteReceived.toString());
+
+  let swapIx2 = ammClient.swapIx(amm, YES, NO, { sell: {} }, optimalSwapAmount, new BN(0), alice.publicKey);
+
+  await swapIx2.signers([alice]).rpc();
+
+  yesBalance = await this.getTokenBalance(YES, alice.publicKey);
+  noBalance = await this.getTokenBalance(NO, alice.publicKey);
+
+  console.log("yesBalance", yesBalance);
+  console.log("noBalance", noBalance);
+
+
 
   // now we do the trecherous part: selling Alice's YES for USDC
 }
