@@ -8,4 +8,3 @@
 * [Turkish](./tr/README.md)
 * [Japanese](./ja/README.md)
 * [Italian](./it/README.md)
-* [Simplified Chinese](./zh-cn/README.md)

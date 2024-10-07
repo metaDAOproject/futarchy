@@ -5,7 +5,3 @@
 * [Brazilian Portuguese](./pt-br/README.md)
 * [Russian](./ru/README.md)
 * [Vietnamese](./vi/README.md)
-* [Turkish](./tr/README.md)
-* [Japanese](./ja/README.md)
-* [Italian](./it/README.md)
-* [Simplified Chinese](./zh-cn/README.md)
