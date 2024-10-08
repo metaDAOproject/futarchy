@@ -1,0 +1,47 @@
+.language-selector {
+    position: relative;
+    display: inline-block;
+}
+
+#current-language {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.arrow-down {
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+    margin-left: 5px;
+    transform: rotate(45deg);
+}
+
+#language-options {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ddd;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#language-options li {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+#language-options li:hover {
+    background-color: #f1f1f1;
+}
+
+#language-options.hidden {
+    display: none;
+}
+
+#language-options.visible {
+    display: block;
+}

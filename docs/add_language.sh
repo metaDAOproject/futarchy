@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script ensures each language has the same files as the english directory.
+
 # Arrays for language names and corresponding codes
 languages=("French" "Spanish" "Brazilian Portuguese" "Russian" "Vietnamese" "Turkish" "Japanese" "Italian" "Simplified Chinese")
 codes=("fr" "es" "pt-br" "ru" "vi" "tr" "ja" "it" "zh-cn")
