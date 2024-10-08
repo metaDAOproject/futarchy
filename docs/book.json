@@ -1,7 +1,7 @@
 {
   "plugins": [
     "open-graph",
-    "language-dropdown"
+    "./gitbook-plugin-language-dropdown"
   ],
   "pluginsConfig": {
     "open-graph": {
@@ -9,7 +9,7 @@
       "defaultDescription": "Explore MetaDAO's documentation to learn about futarchy, a revolutionary decision-making system. Discover how MetaDAO implements market-based governance to solve traditional voting problems.",
       "defaultImage": ".gitbook/assets/metadao-og-image.jpg"
     },
-    "language-dropdown": {
+    "gitbook-plugin-language-dropdown": {
       "languages": [
         {"code": "en", "name": "English"},
         {"code": "es", "name": "Español"},

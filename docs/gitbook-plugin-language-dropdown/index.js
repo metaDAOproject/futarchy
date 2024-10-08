@@ -6,7 +6,8 @@ module.exports = {
     },
     hooks: {
         "page:before": function(page) {
-            var languages = this.config.get('pluginsConfig.language-dropdown.languages');
+            // Update 'pluginsConfig.language-dropdown' to 'pluginsConfig.gitbook-plugin-language-dropdown'
+            var languages = this.config.get('pluginsConfig.gitbook-plugin-language-dropdown.languages');
             var dropdownHtml = generateDropdownHtml(languages);
 
             // Inject language selector after the header's loading spinner
