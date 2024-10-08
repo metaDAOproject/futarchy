@@ -1,7 +1,7 @@
 {
   "plugins": [
     "open-graph",
-    "language-picker@https://github.com/okalachev/gitbook-plugin-language-picker.git"
+    "gitbook-plugin-language-dropdown"
   ],
   "pluginsConfig": {
     "open-graph": {
@@ -9,19 +9,17 @@
       "defaultDescription": "Explore MetaDAO's documentation to learn about futarchy, a revolutionary decision-making system. Discover how MetaDAO implements market-based governance to solve traditional voting problems.",
       "defaultImage": ".gitbook/assets/metadao-og-image.jpg"
     },
-    "language-picker": {
-      "grid-columns": 1,
+    "gitbook-plugin-language-dropdown": {
       "languages": [
-        ["en", "English"],
-        ["es", "Spanish"],
-        ["fr", "French"],
-        ["it", "Italian"],
-        ["ja", "Japanese"],
-        ["pt-br", "Portuguese (BR)"],
-        ["ru", "Russian"],
-        ["tr", "Turkish"],
-        ["vi", "Vietnamese"],
-        ["zh-cn", "Chinese (Simplified)"]
+        {"code": "en", "name": "English"},
+        {"code": "es", "name": "Español"},
+        {"code": "fr", "name": "Français"},
+        {"code": "zh-cn", "name": "中文"},
+        {"code": "pt-br", "name": "Português Brasileiro"},
+        {"code": "ru", "name": "Русский"},
+        {"code": "vi", "name": "Tiếng Việt"},
+        {"code": "tr", "name": "Türkçe"},
+        {"code": "ja", "name": "日本語"}
       ]
     }
   }

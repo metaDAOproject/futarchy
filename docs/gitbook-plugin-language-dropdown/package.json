@@ -2,9 +2,6 @@
   "name": "gitbook-plugin-language-dropdown",
   "version": "1.0.0",
   "description": "A custom language dropdown plugin for GitBook",
-  "engines": {
-    "gitbook": ">3.0.0"
-  },
   "gitbook": {
     "properties": {
       "languages": {

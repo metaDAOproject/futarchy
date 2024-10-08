@@ -4,6 +4,7 @@
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
   },
   "dependencies": {
+    "gitbook-plugin-language-dropdown": "file:./docs/gitbook-plugin-language-dropdown",
     "@coral-xyz/anchor": "0.29.0",
     "@metadaoproject/futarchy": "0.3.0-alpha.8",
     "@metaplex-foundation/mpl-token-metadata": "^3.2.0",
@@ -25,6 +26,7 @@
     "spl-token-bankrun": "0.2.5"
   },
   "devDependencies": {
+    "gitbook-plugin-language-dropdown": "file:./docs/gitbook-plugin-language-dropdown",
     "@mercurial-finance/dynamic-amm-sdk": "^0.4.19",
     "@solana/spl-memo": "^0.2.3",
     "@solana/spl-token-registry": "^0.2.4574",
