@@ -1,25 +1,22 @@
-document.addEventListener("DOMContentLoaded", function() {
-    var languageButton = document.getElementById("current-language");
-    var languageOptions = document.getElementById("language-options");
+document.addEventListener('DOMContentLoaded', function () {
+    var languageSelector = document.querySelector('.language-selector');
+    var currentLanguageButton = document.getElementById('current-language');
+    var languageOptions = document.getElementById('language-options');
+    var languageItems = languageOptions.getElementsByTagName('li');
 
-    languageButton.addEventListener("click", function() {
-        languageOptions.classList.toggle("hidden");
+    // Toggle dropdown menu
+    currentLanguageButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        languageSelector.classList.toggle('open');
     });
 
-    var languageItems = document.querySelectorAll("#language-options li");
-    languageItems.forEach(function(item) {
-        item.addEventListener("click", function() {
-            var selectedLang = item.getAttribute("data-lang");
-            var currentUrl = window.location.href;
-            var baseUrl;
-
-            if (!currentUrl.includes("/" + selectedLang + "/")) {
-                baseUrl = currentUrl.replace(/\/(en|zh-cn|es|pt-br|ru|vi|tr|fr|ja)\//, "/" + selectedLang + "/");
-            } else {
-                baseUrl = currentUrl;
-            }
-
-            window.location.href = baseUrl;
+    // Handle language selection
+    for (var i = 0; i < languageItems.length; i++) {
+        languageItems[i].addEventListener('click', function () {
+            var selectedLanguage = this.getAttribute('data-lang');
+            window.location.href = "/" + selectedLanguage + "/";
         });
-    });
+    }
 });
+
+console.log("Language Dropdown Initialized");

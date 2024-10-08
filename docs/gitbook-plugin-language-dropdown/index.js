@@ -41,3 +41,5 @@ function generateDropdownHtml(languages) {
 
     return html;
 }
+
+console.log("Language Dropdown Plugin Loaded");
