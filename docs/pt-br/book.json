@@ -4,7 +4,7 @@
   ],
   "pluginsConfig": {
     "open-graph": {
-      "baseURL": "https://docs.metadao.fi",
+      "baseURL": "https://docs.metadao.fi/pt-br",
       "defaultDescription": "Explore MetaDAO's documentation to learn about futarchy, a revolutionary decision-making system. Discover how MetaDAO implements market-based governance to solve traditional voting problems.",
       "defaultImage": ".gitbook/assets/metadao-og-image.jpg"
     }
