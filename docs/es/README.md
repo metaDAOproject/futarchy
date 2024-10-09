@@ -1,4 +1,4 @@
-# Introduction
+# Introducción
 
 <figure><img src=".gitbook/assets/protocol-no-background.png" alt=""><figcaption></figcaption></figure>
 
