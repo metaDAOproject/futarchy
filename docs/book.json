@@ -1,26 +1,12 @@
 {
   "plugins": [
-    "open-graph",
-    "language-dropdown"
+    "open-graph"
   ],
   "pluginsConfig": {
     "open-graph": {
       "baseURL": "https://docs.metadao.fi",
       "defaultDescription": "Explore MetaDAO's documentation...",
       "defaultImage": ".gitbook/assets/metadao-og-image.jpg"
-    },
-    "language-dropdown": {
-      "languages": [
-        { "code": "en", "name": "English" },
-        { "code": "es", "name": "Español" },
-        { "code": "fr", "name": "Français" },
-        { "code": "zh-cn", "name": "中文" },
-        { "code": "pt-br", "name": "Português Brasileiro" },
-        { "code": "ru", "name": "Русский" },
-        { "code": "vi", "name": "Tiếng Việt" },
-        { "code": "tr", "name": "Türkçe" },
-        { "code": "ja", "name": "日本語" }
-      ]
     }
   }
 }
