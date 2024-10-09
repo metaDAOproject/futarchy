@@ -1,12 +1,2 @@
 {
-  "plugins": [
-    "open-graph"
-  ],
-  "pluginsConfig": {
-    "open-graph": {
-      "baseURL": "https://docs.metadao.fi",
-      "defaultDescription": "Explore MetaDAO's documentation...",
-      "defaultImage": ".gitbook/assets/metadao-og-image.jpg"
-    }
-  }
 }
