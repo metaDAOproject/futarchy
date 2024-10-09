@@ -6,8 +6,10 @@ module.exports = {
     },
     hooks: {
         "page:before": function(page) {
+            // Log the page object
+            console.log("Processing page:", page.path);
             // Update 'pluginsConfig.language-dropdown' to 'pluginsConfig.gitbook-plugin-language-dropdown'
-            var languages = this.config.get('pluginsConfig.gitbook-plugin-language-dropdown.languages');
+            var languages = this.config.get("pluginsConfig.language-dropdown.languages");
             var dropdownHtml = generateDropdownHtml(languages);
 
             // Inject language selector after the header's loading spinner
@@ -41,5 +43,3 @@ function generateDropdownHtml(languages) {
 
     return html;
 }
-
-console.log("Language Dropdown Plugin Loaded");

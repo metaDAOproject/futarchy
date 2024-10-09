@@ -18,5 +18,3 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
-
-console.log("Language Dropdown Initialized");
