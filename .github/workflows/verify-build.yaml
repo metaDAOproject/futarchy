@@ -50,4 +50,4 @@ jobs:
         shell: bash
       - name: Verify build
         run: |
-          solana-verify verify-from-repo -um --program-id ${{ inputs.program_id }} https://github.com/${{ github.repository }} --library-name ${{ inputs.program_name }}
+          solana-verify verify-from-repo --remote -um --program-id ${{ inputs.program_id }} https://github.com/${{ github.repository }} --library-name ${{ inputs.program_name }}
