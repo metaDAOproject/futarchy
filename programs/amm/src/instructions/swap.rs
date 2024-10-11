@@ -4,6 +4,8 @@ use anchor_spl::token::{self, *};
 use crate::error::AmmError;
 use crate::generate_amm_seeds;
 use crate::state::*;
+// use crate::SwapEvent;
+use crate::events::{SwapEvent, CommonFields};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SwapArgs {
@@ -12,6 +14,7 @@ pub struct SwapArgs {
     pub output_amount_min: u64,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 pub struct Swap<'info> {
     #[account(mut)]
@@ -55,6 +58,8 @@ impl Swap<'_> {
             vault_ata_base,
             vault_ata_quote,
             token_program,
+            event_authority: _,
+            program: _,
         } = ctx.accounts;
 
         let SwapArgs {
@@ -62,6 +67,8 @@ impl Swap<'_> {
             input_amount,
             output_amount_min,
         } = args;
+
+        let clock = Clock::get()?;
 
         match swap_type {
             SwapType::Buy => require_gte!(
@@ -78,7 +85,7 @@ impl Swap<'_> {
 
         require!(input_amount > 0, AmmError::ZeroSwapAmount);
 
-        amm.update_twap(Clock::get()?.slot);
+        amm.update_twap(clock.slot)?;
 
         let output_amount = amm.swap(input_amount, swap_type)?;
 
@@ -129,6 +136,15 @@ impl Swap<'_> {
             output_amount_min,
             AmmError::SwapSlippageExceeded
         );
+
+        amm.seq_num += 1;
+
+        emit_cpi!(SwapEvent {
+            common: CommonFields::new(&clock, user.key(), amm),
+            input_amount,
+            output_amount,
+            swap_type,
+        });
 
         Ok(())
     }

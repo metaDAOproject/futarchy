@@ -26,10 +26,11 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use conditional_vault::cpi::accounts::SettleConditionalVault;
+// use conditional_vault::cpi::accounts::SettleConditionalVault;
 use conditional_vault::program::ConditionalVault as ConditionalVaultProgram;
 use conditional_vault::ConditionalVault as ConditionalVaultAccount;
-use conditional_vault::VaultStatus;
+use conditional_vault::Question;
+// use conditional_vault::VaultStatus;
 
 pub mod error;
 pub mod instructions;
@@ -53,12 +54,12 @@ security_txt! {
     contacts: "email:metaproph3t@protonmail.com",
     policy: "The market will decide whether we pay a bug bounty.",
     source_code: "https://github.com/metaDAOproject/futarchy",
-    source_release: "v0.3",
+    source_release: "v0.4",
     auditors: "Neodyme",
     acknowledgements: "DCF = (CF1 / (1 + r)^1) + (CF2 / (1 + r)^2) + ... (CFn / (1 + r)^n)"
 }
 
-declare_id!("autoQP9RmUNkzzKRXsMkWicDVZ3h29vvyMDcAYjCxxg");
+declare_id!("autowMzCbM29YXMgVG3T62Hkgo7RcyrvgQQkd54fDQL");
 
 pub const SLOTS_PER_10_SECS: u64 = 25;
 pub const THREE_DAYS_IN_SLOTS: u64 = 3 * 24 * 60 * 6 * SLOTS_PER_10_SECS;
@@ -69,6 +70,11 @@ pub const TEN_DAYS_IN_SECONDS: i64 = 10 * 24 * 60 * 60;
 pub const DEFAULT_PASS_THRESHOLD_BPS: u16 = 300;
 
 pub const MAX_BPS: u16 = 10_000;
+
+// the index of the fail and pass outcomes in the question and the index of
+// the pass and fail conditional tokens in the conditional vault
+pub const FAIL_INDEX: usize = 0;
+pub const PASS_INDEX: usize = 1;
 
 // TWAP can only move by $5 per slot
 pub const DEFAULT_MAX_OBSERVATION_CHANGE_PER_UPDATE_LOTS: u64 = 5_000;

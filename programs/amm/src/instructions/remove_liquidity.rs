@@ -3,6 +3,8 @@ use anchor_spl::token::{self, Burn, Transfer};
 
 use crate::{error::AmmError, *};
 
+use crate::events::RemoveLiquidityEvent;
+
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct RemoveLiquidityArgs {
     pub lp_tokens_to_burn: u64,
@@ -25,6 +27,8 @@ impl AddOrRemoveLiquidity<'_> {
             vault_ata_base,
             vault_ata_quote,
             token_program,
+            program: _,
+            event_authority: _,
         } = ctx.accounts;
 
         let RemoveLiquidityArgs {
@@ -41,13 +45,13 @@ impl AddOrRemoveLiquidity<'_> {
 
         require!(lp_tokens_to_burn > 0, AmmError::ZeroLiquidityRemove);
 
-        amm.update_twap(Clock::get()?.slot);
+        amm.update_twap(Clock::get()?.slot)?;
 
         // airlifted from uniswap v1:
         // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L83
 
         let total_liquidity = lp_mint.supply;
-        assert!(total_liquidity > 0);
+        require_gt!(total_liquidity, 0, AmmError::AssertFailed);
 
         let (base_to_withdraw, quote_to_withdraw) =
             amm.get_base_and_quote_withdrawable(lp_tokens_to_burn, total_liquidity);
@@ -97,6 +101,18 @@ impl AddOrRemoveLiquidity<'_> {
                 amount_to_withdraw,
             )?;
         }
+
+        amm.seq_num += 1;
+
+        let clock = Clock::get()?;
+        emit_cpi!(RemoveLiquidityEvent {
+            common: CommonFields::new(&clock, user.key(), amm),
+            lp_tokens_burned: lp_tokens_to_burn,
+            min_quote_amount,
+            min_base_amount,
+            base_amount: base_to_withdraw,
+            quote_amount: quote_to_withdraw,
+        });
 
         Ok(())
     }

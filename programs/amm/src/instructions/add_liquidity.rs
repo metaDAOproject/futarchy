@@ -4,6 +4,7 @@ use anchor_spl::token::{self, *};
 use crate::error::AmmError;
 use crate::AddOrRemoveLiquidity;
 use crate::{generate_amm_seeds, state::*};
+use crate::events::{AddLiquidityEvent, CommonFields};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AddLiquidityArgs {
@@ -27,6 +28,8 @@ impl AddOrRemoveLiquidity<'_> {
             vault_ata_base,
             vault_ata_quote,
             token_program,
+            program: _,
+            event_authority: _,
         } = ctx.accounts;
 
         let AddLiquidityArgs {
@@ -46,7 +49,7 @@ impl AddOrRemoveLiquidity<'_> {
             AmmError::InsufficientBalance
         );
 
-        amm.update_twap(Clock::get()?.slot);
+        amm.update_twap(Clock::get()?.slot)?;
 
         // airlifted from uniswap v1:
         // https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L48
@@ -130,6 +133,18 @@ impl AddOrRemoveLiquidity<'_> {
                 amount,
             )?;
         }
+
+        amm.seq_num += 1;
+
+        let clock = Clock::get()?;
+        emit_cpi!(AddLiquidityEvent {
+            common: CommonFields::new(&clock, user.key(), amm),
+            lp_tokens_minted: lp_tokens_to_mint,
+            max_base_amount,
+            min_lp_tokens,
+            base_amount,
+            quote_amount,
+        });
 
         Ok(())
     }

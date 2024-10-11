@@ -1,10 +1,11 @@
+use conditional_vault::{cpi::accounts::ResolveQuestion, ResolveQuestionArgs};
+
 use super::*;
 
 #[derive(Accounts)]
 pub struct FinalizeProposal<'info> {
     #[account(mut,
-        has_one = base_vault,
-        has_one = quote_vault,
+        has_one = question,
         has_one = pass_amm,
         has_one = fail_amm,
         has_one = dao,
@@ -15,10 +16,8 @@ pub struct FinalizeProposal<'info> {
     #[account(has_one = treasury)]
     pub dao: Box<Account<'info, Dao>>,
     #[account(mut)]
-    pub base_vault: Box<Account<'info, ConditionalVaultAccount>>,
-    #[account(mut)]
-    pub quote_vault: Box<Account<'info, ConditionalVaultAccount>>,
-    /// CHECK: never read
+    pub question: Account<'info, Question>,
+    /// CHECK: it's okay
     pub treasury: UncheckedAccount<'info>,
     #[account(
         mut,
@@ -46,6 +45,8 @@ pub struct FinalizeProposal<'info> {
     pub fail_lp_vault_account: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub vault_program: Program<'info, ConditionalVaultProgram>,
+    /// CHECK: checked by vault program
+    pub vault_event_authority: UncheckedAccount<'info>,
 }
 
 impl FinalizeProposal<'_> {
@@ -71,8 +72,7 @@ impl FinalizeProposal<'_> {
             pass_amm,
             fail_amm,
             dao,
-            base_vault,
-            quote_vault,
+            question,
             treasury,
             pass_lp_user_account,
             fail_lp_user_account,
@@ -80,6 +80,7 @@ impl FinalizeProposal<'_> {
             fail_lp_vault_account,
             vault_program,
             token_program,
+            vault_event_authority,
         } = ctx.accounts;
 
         let proposer_key = proposal.proposer;
@@ -147,38 +148,26 @@ impl FinalizeProposal<'_> {
             .saturating_mul(MAX_BPS.saturating_add(dao.pass_threshold_bps).into())
             / MAX_BPS as u128;
 
-        let (new_proposal_state, new_vault_state) = if pass_market_twap > threshold {
-            (ProposalState::Passed, VaultStatus::Finalized)
+        let (new_proposal_state, payout_numerators) = if pass_market_twap > threshold {
+            (ProposalState::Passed, vec![0, 1])
         } else {
-            (ProposalState::Failed, VaultStatus::Reverted)
+            (ProposalState::Failed, vec![1, 0])
         };
 
         proposal.state = new_proposal_state;
 
-        for vault in [base_vault.to_account_info(), quote_vault.to_account_info()] {
-            let vault_program = vault_program.to_account_info();
-            let cpi_accounts = SettleConditionalVault {
-                settlement_authority: proposal.to_account_info(),
-                vault,
-            };
-            let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(proposal_signer);
-            conditional_vault::cpi::settle_conditional_vault(cpi_ctx, new_vault_state)?;
-        }
-
-        base_vault.reload()?;
-        quote_vault.reload()?;
-
-        match new_proposal_state {
-            ProposalState::Passed => {
-                assert!(base_vault.status == VaultStatus::Finalized);
-                assert!(quote_vault.status == VaultStatus::Finalized);
-            }
-            ProposalState::Failed => {
-                assert!(base_vault.status == VaultStatus::Reverted);
-                assert!(quote_vault.status == VaultStatus::Reverted);
-            }
-            _ => unreachable!("Encountered an unexpected proposal state"),
-        }
+        let vault_program = vault_program.to_account_info();
+        let cpi_accounts = ResolveQuestion {
+            question: question.to_account_info(),
+            oracle: proposal.to_account_info(),
+            event_authority: vault_event_authority.to_account_info(),
+            program: vault_program.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(vault_program, cpi_accounts).with_signer(proposal_signer);
+        conditional_vault::cpi::resolve_question(
+            cpi_ctx,
+            ResolveQuestionArgs { payout_numerators },
+        )?;
 
         Ok(())
     }

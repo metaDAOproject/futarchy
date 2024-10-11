@@ -8,10 +8,12 @@
       "./node_modules/@types"
     ],
     "lib": [
-      "es2015"
+      "es2015",
+      "dom"
     ],
-    "module": "commonjs",
+    "module": "nodenext",
     "target": "ES2020",
+    "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "paths": {

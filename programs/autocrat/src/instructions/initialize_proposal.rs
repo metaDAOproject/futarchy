@@ -26,18 +26,22 @@ pub struct InitializeProposal<'info> {
     #[account(mut)]
     pub dao: Box<Account<'info, Dao>>,
     #[account(
+        constraint = question.oracle == proposal.key()
+    )]
+    pub question: Box<Account<'info, Question>>,
+    #[account(
         constraint = quote_vault.underlying_token_mint == dao.usdc_mint,
-        constraint = quote_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
+        has_one = question,
     )]
     pub quote_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
         constraint = base_vault.underlying_token_mint == dao.token_mint,
-        constraint = base_vault.settlement_authority == proposal.key() @ AutocratError::InvalidSettlementAuthority,
+        has_one = question,
     )]
     pub base_vault: Account<'info, ConditionalVaultAccount>,
     #[account(
-        constraint = pass_amm.base_mint == base_vault.conditional_on_finalize_token_mint,
-        constraint = pass_amm.quote_mint == quote_vault.conditional_on_finalize_token_mint,
+        constraint = pass_amm.base_mint == base_vault.conditional_token_mints[PASS_INDEX],
+        constraint = pass_amm.quote_mint == quote_vault.conditional_token_mints[PASS_INDEX],
     )]
     pub pass_amm: Box<Account<'info, Amm>>,
     #[account(constraint = pass_amm.lp_mint == pass_lp_mint.key())]
@@ -45,8 +49,8 @@ pub struct InitializeProposal<'info> {
     #[account(constraint = fail_amm.lp_mint == fail_lp_mint.key())]
     pub fail_lp_mint: Account<'info, Mint>,
     #[account(
-        constraint = fail_amm.base_mint == base_vault.conditional_on_revert_token_mint,
-        constraint = fail_amm.quote_mint == quote_vault.conditional_on_revert_token_mint,
+        constraint = fail_amm.base_mint == base_vault.conditional_token_mints[FAIL_INDEX],
+        constraint = fail_amm.quote_mint == quote_vault.conditional_token_mints[FAIL_INDEX],
     )]
     pub fail_amm: Box<Account<'info, Amm>>,
     #[account(
@@ -110,6 +114,7 @@ impl InitializeProposal<'_> {
         let Self {
             base_vault,
             quote_vault,
+            question,
             proposal,
             dao,
             pass_amm,
@@ -210,6 +215,7 @@ impl InitializeProposal<'_> {
             fail_lp_tokens_locked: fail_lp_tokens_to_lock,
             nonce,
             pda_bump: ctx.bumps.proposal,
+            question: question.key(),
         });
 
         Ok(())

@@ -5,12 +5,15 @@ use anchor_spl::token::*;
 use crate::error::AmmError;
 use crate::state::*;
 
+use crate::events::{CreateAmmEvent, CommonFields};
+
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct CreateAmmArgs {
     pub twap_initial_observation: u128,
     pub twap_max_observation_change_per_update: u128,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: CreateAmmArgs)]
 pub struct CreateAmm<'info> {
@@ -72,16 +75,18 @@ impl CreateAmm<'_> {
 
     pub fn handle(ctx: Context<Self>, args: CreateAmmArgs) -> Result<()> {
         let CreateAmm {
-            user: _,
+            user,
             amm,
             lp_mint,
             base_mint,
             quote_mint,
-            vault_ata_base: _,
-            vault_ata_quote: _,
+            vault_ata_base,
+            vault_ata_quote,
             associated_token_program: _,
             token_program: _,
             system_program: _,
+            program: _,
+            event_authority: _,
         } = ctx.accounts;
 
         let current_slot = Clock::get()?.slot;
@@ -111,6 +116,20 @@ impl CreateAmm<'_> {
                 twap_initial_observation,
                 twap_max_observation_change_per_update,
             ),
+
+            seq_num: 0,
+        });
+
+        let clock = Clock::get()?;
+        emit_cpi!(CreateAmmEvent {
+            common: CommonFields::new(&clock, user.key(), amm),
+            twap_initial_observation,
+            twap_max_observation_change_per_update,
+            lp_mint: lp_mint.key(),
+            base_mint: base_mint.key(),
+            quote_mint: quote_mint.key(),
+            vault_ata_base: vault_ata_base.key(),
+            vault_ata_quote: vault_ata_quote.key(),
         });
 
         Ok(())
