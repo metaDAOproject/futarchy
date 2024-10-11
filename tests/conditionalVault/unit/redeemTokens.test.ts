@@ -132,7 +132,7 @@ export default function suite() {
       underlyingTokenAccount
     ).then((acc) => acc.amount);
 
-    console.log('balanceAfter', balanceAfter);
+    // console.log('balanceAfter', balanceAfter);
 
     assert.isTrue(balanceAfter > balanceBefore);
     assert.equal(balanceAfter - balanceBefore, 1000);
@@ -149,7 +149,7 @@ export default function suite() {
       underlyingTokenAccount
     ).then((acc) => acc.amount);
 
-    console.log('balanceAfter', balanceAfter);
+    // console.log('balanceAfter', balanceAfter);
 
     assert.isTrue(balanceAfter > balanceBefore);
     assert.equal(balanceAfter - balanceBefore, 1000);
@@ -186,7 +186,7 @@ export default function suite() {
     assert.isTrue(balanceAfter - balanceBefore  < 1000); //dont need both these checks lol but just in case
     assert.isTrue(balanceAfter - balanceBefore == 999);
 
-    console.log('balanceAfter', balanceAfter);
+    // console.log('balanceAfter', balanceAfter);
 
     const updatedVault = await vaultClient.fetchVault(vault);
     assert.equal(updatedVault.seqNum.toString(), "2");

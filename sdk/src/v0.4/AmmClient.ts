@@ -573,20 +573,6 @@ export class AmmClient {
 
     const swapAmount = x;
 
-    // let swapAmount =
-    //   (Math.sqrt(
-    //     (-99 * Number(userBalanceIn) +
-    //       100 * Number(ammReserveIn) +
-    //       99 * Number(ammReserveOut)) **
-    //       2 +
-    //       39600 * Number(userBalanceIn) * Number(ammReserveIn)
-    //   ) +
-    //     99 * Number(userBalanceIn) -
-    //     100 * Number(ammReserveIn) -
-    //     99 * Number(ammReserveOut)) /
-    //   198;
-
-    console.log("optimal swap amount: ", new BN(swapAmount).toString());
     let expectedOut = this.simulateSwap(
       new BN(swapAmount),
       { sell: {} },
@@ -601,52 +587,5 @@ export class AmmClient {
       expectedQuoteReceived: expectedOut,
       minimumExpectedQuoteReceived: new BN(minimumExpectedOut),
     };
-
-    // const epsilon = new BN(100); // Smallest unit of token
-    // let left = new BN(0);
-    // let right = userBalanceIn;
-
-    // while (right.sub(left).gt(epsilon)) {
-    //   const leftThird = left.add(right.sub(left).div(new BN(3)));
-    //   const rightThird = right.sub(right.sub(left).div(new BN(3)));
-
-    //   const leftSimulation = this.simulateSwap(
-    //     leftThird,
-    //     { sell: {} },
-    //     ammReserveIn,
-    //     ammReserveOut
-    //   );
-    //   const rightSimulation = this.simulateSwap(
-    //     rightThird,
-    //     { sell: {} },
-    //     ammReserveIn,
-    //     ammReserveOut
-    //   );
-
-    //   const leftDiff = leftSimulation.expectedOut
-    //     .sub(userBalanceIn.sub(leftThird))
-    //     .abs();
-    //   const rightDiff = rightSimulation.expectedOut
-    //     .sub(userBalanceIn.sub(rightThird))
-    //     .abs();
-
-    //   if (leftDiff.lt(rightDiff)) {
-    //     right = rightThird;
-    //   } else {
-    //     left = leftThird;
-    //   }
-    // }
-
-    // const optimalSwapAmount = left;
-    // return {
-    //   optimalSwapAmount,
-    //   userTokensAfterSwap: userBalanceIn.sub(optimalSwapAmount),
-    //   expectedQuoteReceived: this.simulateSwap(
-    //     optimalSwapAmount,
-    //     { sell: {} },
-    //     ammReserveIn,
-    //     ammReserveOut
-    //   ).expectedOut,
-    // };
   }
 }

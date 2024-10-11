@@ -453,19 +453,19 @@ export default function suite() {
       let storedPassAmm = await ammClient.getAmm(passAmm);
       let storedFailAmm = await ammClient.getAmm(failAmm);
 
-      console.log(
-        PriceMath.getHumanPrice(storedPassAmm.oracle.lastObservation, 9, 6)
-      );
-      console.log(
-        PriceMath.getHumanPrice(storedFailAmm.oracle.lastObservation, 9, 6)
-      );
+      // console.log(
+      //   PriceMath.getHumanPrice(storedPassAmm.oracle.lastObservation, 9, 6)
+      // );
+      // console.log(
+      //   PriceMath.getHumanPrice(storedFailAmm.oracle.lastObservation, 9, 6)
+      // );
 
       let passTwap = ammClient.getTwap(storedPassAmm);
 
       let failTwap = ammClient.getTwap(storedFailAmm);
 
-      console.log(PriceMath.getHumanPrice(passTwap, 9, 6));
-      console.log(PriceMath.getHumanPrice(failTwap, 9, 6));
+      // console.log(PriceMath.getHumanPrice(passTwap, 9, 6));
+      // console.log(PriceMath.getHumanPrice(failTwap, 9, 6));
 
       let storedQuestion = await vaultClient.fetchQuestion(question);
 
@@ -515,19 +515,19 @@ export default function suite() {
       let storedPassAmm = await ammClient.getAmm(passAmm);
       let storedFailAmm = await ammClient.getAmm(failAmm);
 
-      console.log(
-        PriceMath.getHumanPrice(storedPassAmm.oracle.lastObservation, 9, 6)
-      );
-      console.log(
-        PriceMath.getHumanPrice(storedFailAmm.oracle.lastObservation, 9, 6)
-      );
+      // console.log(
+      //   PriceMath.getHumanPrice(storedPassAmm.oracle.lastObservation, 9, 6)
+      // );
+      // console.log(
+      //   PriceMath.getHumanPrice(storedFailAmm.oracle.lastObservation, 9, 6)
+      // );
 
       let passTwap = ammClient.getTwap(storedPassAmm);
 
       let failTwap = ammClient.getTwap(storedFailAmm);
 
-      console.log(PriceMath.getHumanPrice(passTwap, 9, 6));
-      console.log(PriceMath.getHumanPrice(failTwap, 9, 6));
+      // console.log(PriceMath.getHumanPrice(passTwap, 9, 6));
+      // console.log(PriceMath.getHumanPrice(failTwap, 9, 6));
 
       let storedQuestion = await vaultClient.fetchQuestion(question);
 

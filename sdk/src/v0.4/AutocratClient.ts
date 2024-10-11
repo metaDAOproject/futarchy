@@ -252,9 +252,9 @@ export class AutocratClient {
       USDC_DECIMALS
     );
 
-    console.log(
-      PriceMath.getHumanPrice(scaledPrice, tokenDecimals, USDC_DECIMALS)
-    );
+    // console.log(
+    //   PriceMath.getHumanPrice(scaledPrice, tokenDecimals, USDC_DECIMALS)
+    // );
 
     await this.initializeDaoIx(
       daoKeypair,
