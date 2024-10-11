@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 export const AUTOCRAT_PROGRAM_ID = new PublicKey(
-  "aUtoxZicuMfnN2Qa8WuebpJCCHZAMM1A1L4vjG6VSyY"
+  "autowMzCbM29YXMgVG3T62Hkgo7RcyrvgQQkd54fDQL"
 );
 export const AMM_PROGRAM_ID = new PublicKey(
   "AMMyu265tkBpRW21iGQxKGLaves3gKm2JcMUqfXNSpqD"
