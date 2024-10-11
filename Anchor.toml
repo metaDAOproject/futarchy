@@ -20,7 +20,7 @@ skip-lint = false
 [programs.localnet]
 amm = "AMMyu265tkBpRW21iGQxKGLaves3gKm2JcMUqfXNSpqD"
 autocrat_migrator = "MigRDW6uxyNMDBD8fX2njCRyJC4YZk2Rx9pDUZiAESt"
-autocrat = "aUtoxZicuMfnN2Qa8WuebpJCCHZAMM1A1L4vjG6VSyY"
+autocrat = "autowMzCbM29YXMgVG3T62Hkgo7RcyrvgQQkd54fDQL"
 conditional_vault = "VLTX1ishMBbcX3rdBWGssxawAo1Q2X2qxYFYqiGodVg"
 optimistic_timelock = "tiME1hz9F5C5ZecbvE5z6Msjy8PKfTqo1UuRYXfndKF"
 
