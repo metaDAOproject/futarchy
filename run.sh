@@ -38,6 +38,12 @@ deploy() {
     solana program deploy --use-rpc -u "$CLUSTER" --program-id ./target/deploy/"$PROGRAM_NAME"-keypair.json ./target/deploy/"$PROGRAM_NAME".so --with-compute-unit-price 5 --max-sign-attempts 15 && PROGRAM_ID=$(solana-keygen pubkey ./target/deploy/"$PROGRAM_NAME"-keypair.json) && anchor idl init --filepath ./target/idl/"$PROGRAM_NAME".json $PROGRAM_ID --provider.cluster "$CLUSTER"
 }
 
+deploy_verifiable() {
+    PROGRAM_NAME=$1
+    CLUSTER=$2
+    solana program deploy --use-rpc -u "$CLUSTER" --program-id ./target/deploy/"$PROGRAM_NAME"-keypair.json ./verifiable-builds/"$PROGRAM_NAME".so --with-compute-unit-price 5 --max-sign-attempts 15 && PROGRAM_ID=$(solana-keygen pubkey ./target/deploy/"$PROGRAM_NAME"-keypair.json) && anchor idl init --filepath ./target/idl/"$PROGRAM_NAME".json $PROGRAM_ID --provider.cluster "$CLUSTER"
+}
+
 upgrade() {
     PROGRAM_NAME=$1
     PROGRAM_ID=$2
@@ -89,6 +95,7 @@ case "$1" in
     test_no_build) test_no_build ;;
     build_verifiable) build_verifiable "$2" ;;
     deploy) deploy "$2" "$3" ;;
+    deploy_verifiable) deploy_verifiable "$2" "$3" ;;
     upgrade) upgrade "$2" "$3" "$4" ;;
     upgrade_idl) upgrade_idl "$2" "$3" "$4" ;;
     bankrun) bankrun ;;
