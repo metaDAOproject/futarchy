@@ -8,7 +8,7 @@ We implement futarchy via three programs:
 
 ### Conditional vault program <a href="#conditional-vault-program" id="conditional-vault-program"></a>
 
-For a decision market to work, you must revert all of the market's trades when the condition isn't met. This is what allows speculators to place trades like "I would pay $5,000 for 10 META if this proposal passes."
+For a decision market to work, you must revert all of the market's trades when the condition isn't met. This is what allows speculators to place trades like "I would pay $50,000 for 10 META if this proposal passes."
 
 Blockchains like Solana don't allow you to revert transactions after they've been finalized, so we need a mechanism to _simulate_ reverting transactions. That mechanism is conditional tokens.
 

@@ -4,9 +4,9 @@ But of course, futarchy isn't perfect. These are some potential pitfalls with th
 
 ### Keynesian Beauty Contests
 
-Sometimes, investors buy what they think others will buy, not what they think the fundamentals support. The [GameStop short squeeze](https://en.wikipedia.org/wiki/GameStop\_short\_squeeze) is an example of this, and many more can be found in crypto.
+Sometimes, investors buy what they think others will buy, not what they think the fundamentals support. The housing bubble of the mid 2000's is an example of this, and many more can be found in crypto.
 
-A potential solution to this is to use whitelisted markets. Investors would apply to be a part of futarchic markets, demonstrating that they have traded based on fundamentals in the past.
+A potential solution to this is to use a token with supply, mintable only by the autocrat, so any member of the DAO to create a proposal for token issuance or buy backs.
 
 ### Conditional Markets are Zero-Sum
 

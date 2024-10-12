@@ -25,6 +25,7 @@
 
 * [Overview](metadao/overview.md)
 * [META](metadao/meta.md)
+* [FAQ](metadao/faq.md)
 * [Legal](metadao/legal.md)
 
 ## Media Kit
