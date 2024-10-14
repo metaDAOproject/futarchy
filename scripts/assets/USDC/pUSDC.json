@@ -1,0 +1,6 @@
+{
+  "name": "Pass USDC",
+  "symbol": "pUSDC",
+  "description": "A token that redeems back to USDC if the proposal passes",
+  "image": "https://raw.githubusercontent.com/metaDAOproject/futarchy/refs/heads/develop/scripts/assets/USDC/pUSDC.png"
+}
