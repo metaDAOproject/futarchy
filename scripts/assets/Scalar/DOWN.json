@@ -1,0 +1,6 @@
+{
+  "name": "Down",
+  "symbol": "pDOWN",
+  "description": "Redeemable relative to the metric.",
+  "image": "https://raw.githubusercontent.com/metaDAOproject/futarchy/refs/heads/develop/scripts/assets/scalar/DOWN.png"
+}
