@@ -1,0 +1,12 @@
+---
+{{description_a_simple_description_of_futarchy}}
+---
+
+# {{eli5_1}}
+{{futarchy_is_a_fundamentally_new_mechanism_because_of_this_it_normally_takes_some_time_to_fully_understand_how_it_works}}
+
+{{at_a_highlevel_though_a_basic_way_to_think_about_futarchy_is}}
+
+{{when_proposals_are_raised_to_a_dao_people_speculate_on_whether_the_proposal_would_make_the_daos_token_go_up}}
+{{when_the_market_thinks_that_the_proposal_would_increase_the_value_of_the_token_the_proposal_passes}}
+{{when_the_market_thinks_that_the_proposal_would_decrease_the_value_of_the_token_the_proposal_fails}}
