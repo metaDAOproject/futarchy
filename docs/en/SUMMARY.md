@@ -9,6 +9,9 @@
 * [Trading Proposals](using-the-platform/trading-proposals.md)
 * [Value Resolved Decision Markets](using-the-platform/value-resolved-decision-markets.md)
 
+## Examples
+* [Example Rubric](examples/rubric.md)
+
 ## Futarchy
 
 * [ELI5](futarchy/eli5.md)

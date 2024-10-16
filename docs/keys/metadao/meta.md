@@ -1,4 +1,4 @@
-# {{meta_1}}
+# META
 ### {{purpose}}
 {{all_futarchies_need_an_asset_to_use_in_its_decision_markets_metadao_has_meta_whose_mint_is_metaddfl6wwmweoktfjwcthtbumtarrjzjrpzuvkxhr}}
 

@@ -1,4 +1,5 @@
-# {{value_resolved_decision_markets_1}}{{metadaos_value_based_decision_making_program_is_adaptable_for_many_different_applications_in_hansons_paper_he_proposes_we_vote_on_values_but_bet_on_beliefs_therefore_this_is_an_iterative_step_in_that_direction}}
+# {{value_resolved_decision_markets_1}}
+{{metadaos_value_based_decision_making_program_is_adaptable_for_many_different_applications_in_hansons_paper_he_proposes_we_vote_on_values_but_bet_on_beliefs_therefore_this_is_an_iterative_step_in_that_direction}}
 
 {{in_some_cases_the_underlying_value_may_not_be_directly_measurable_value_accretive_to_the_business_but_can_be_measured_discretely_within_a_criteria_framework_or_perhaps_many_values_may_be_assessed_in_aggregate}}
 
@@ -8,7 +9,7 @@
 
 {{with_the_advancement_of_oracles_and_onchain_data_there_exists_a_certain_future_where_the_practicality_of_automated_resolution_is_within_reach_however_the_current_implementation_is_designed_around_flexibility_with_the_status_quo}}
 
-{{What_ideas_might_you_want}} {{Join_the_MetaDAO_Discord}}
+{{What_ideas_might_you_want}} {{Join the}} [{{MetaDAO Discord}}](https://discord.gg/metadao) {{and let us know!}}
 
 ## {{examples}}{{weve_designed_the_product_based_on_consumer_demand_but_by_no_means_is_it_constrained_to_only_these_examples}}
 

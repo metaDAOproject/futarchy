@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script ensures each language has the same files as the English directory
-# CSV file path (adjust if necessary)
+
 csv_file="./languages.csv"
 
 # Source of truth directory (parent directory's "en" directory)
@@ -15,7 +15,6 @@ fi
 
 # Read languages and codes from CSV
 while IFS=, read -r language code; do
-  # Skip the header row or any blank rows
   if [[ "$language" == "Language" || -z "$language" || -z "$code" ]]; then
     continue
   fi

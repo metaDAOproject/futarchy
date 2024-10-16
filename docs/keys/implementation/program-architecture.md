@@ -5,7 +5,7 @@
 {{amm_allows_the_creation_of_ammbased_conditional_markets_provides_a_timeweighted_average_price_oracle}}
 {{autocrat_the_program_that_coordinates_futarchy_allows_the_creation_of_daos_and_proposals_and_allows_proposals_to_be_finalized_based_on_the_prices_in_the_conditional_markets}}
 
-### {{conditional_vault_program_a_hrefconditionalvaultprogram_idconditionalvaultprograma}}
+### {{conditional_vault_program}} Conditional vault program <a href="#conditional-vault-program" id="conditional-vault-program"></a>
 {{for_a_decision_market_to_work_you_must_revert_all_of_the_markets_trades_when_the_condition_isnt_met_this_is_what_allows_speculators_to_place_trades_like_i_would_pay_5000_for_10_meta_if_this_proposal_passes}}
 
 {{blockchains_like_solana_dont_allow_you_to_revert_transactions_after_theyve_been_finalized_so_we_need_a_mechanism_to__simulate__reverting_transactions_that_mechanism_is_conditional_tokens}}
@@ -36,12 +36,12 @@
 
 <figure><img src="../.gitbook/assets/conditional-markets-interaction.png" alt="{{Layout_Of_Conditional}}" width="475"><figcaption></figcaption></figure>
 
-### {{amm_a_hrefamm_idamma}}
+### {{amm}} <a href='#amm' id='amm'></a>
 {{decision_markets_are_facilitated_through_a_constantproduct_ammx20}}
 
 {{Uniswap_amm}}
 
-### {{autocrat_a_hrefautocrat_idautocrata}}
+### {{autocrat}}  <a href='#autocrat' id='autocrat'></a>
 {{the_last_piece_of_the_puzzle_is__autocrat__the_program_that_orchestrates_futarchy}}
 
 {{anyone_can_interact_with_autocrat_to_create_a__proposal__which_contains_fields_such_as_a_proposal_number_proposal_description_link_and_an_executable_solana_virtual_machine_svm_instruction_for_example_someone_could_create_a_proposal_to_transfer_150000_usdc_to_a_development_team_to_improve_a_product_thats_managed_by_a_dao}}

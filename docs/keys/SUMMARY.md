@@ -7,6 +7,9 @@
 * [{{trading_proposals}}](using-the-platform/trading-proposals.md)
 * [{{value_resolved_decision_markets}}](using-the-platform/value-resolved-decision-markets.md)
 
+## {{Examples}}
+* [{{Example Rubric}}](examples/rubric.md)
+
 ## {{futarchy}}
 * [{{eli5}}](futarchy/eli5.md)
 * [{{overview}}](futarchy/overview.md)
@@ -17,16 +20,16 @@
 * [{{program_architecture}}](implementation/program-architecture.md)
 * [{{price_oracle}}](implementation/price-oracle.md)
 
-## {{metadao_1}}
+## {{metadao}}
 * [{{overview_1}}](metadao/overview.md)
-* [{{meta}}](metadao/meta.md)
+* [META](metadao/meta.md)
 * [{{legal}}](metadao/legal.md)
 
 ## {{media_kit}}
 * [{{metadao}}](media-kit/metadao.md)
 * [{{faas}}](media-kit/faas.md)
 
-## {{links}}
+## 🔗 {{Links}}
 * [{{discord}}](https://discord.gg/metadao)
   * [{{x}}](https://x.com/MetaDAOProject)
 * [{{blog}}](https://blog.metadao.fi/)

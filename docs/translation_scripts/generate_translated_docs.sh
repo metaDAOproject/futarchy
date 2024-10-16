@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script generates the translated md files from the keys and translation json
+
 # CSV file path (adjust if necessary)
 csv_file="./languages.csv"
 
@@ -11,7 +13,6 @@ fi
 
 # Iterate over the CSV rows
 while IFS=, read -r language code; do
-  # Skip the header row or any blank rows
   if [[ "$language" == "Language" || -z "$language" || -z "$code" ]]; then
     continue
   fi
@@ -27,9 +28,9 @@ while IFS=, read -r language code; do
     continue
   fi
 
+
   # Iterate over all markdown (.md) files in the "keys_backup" directory
   find ../keys_backup -type f -name "*.md" | while read -r FILE; do
-    # Get the relative path of the file to maintain structure
     relative_path=$(realpath --relative-to="../keys" "$FILE")
 
     # Path to generate the corresponding file in the language's directory
@@ -43,9 +44,17 @@ while IFS=, read -r language code; do
 
     # Read the keys_backup from the JSON and replace them in the copied markdown file
     jq -r 'to_entries[] | "\(.key) \(.value)"' "$KEY_FILE" | while IFS=" " read -r key value; do
-      # Use sed to replace occurrences of the key with the value in the generated file
       sed -i "s/$key/$value/g" "$GENERATED_FILE"
     done
+  done
+
+  # After generating the files, read them to check for lines containing `{{`
+  find "../$code" -type f -name "*.md" | while read -r generated_file; do
+    if grep -q "{{" "$generated_file"; then
+      echo "Error: Found '{{' in file: $generated_file"
+      grep "{{" "$generated_file"
+      exit 1
+    fi
   done
 
 done < "$csv_file"
