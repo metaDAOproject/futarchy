@@ -1,17 +1,13 @@
-Operations Direct Action Template
+操作直接行动模板
 
-This is the template you can use for creating operations direct action proposals. Just delete this part at the top.
+这是用于创建操作直接行动提案的模板。只需删除顶部的这一部分。
 
-# Proposal x - INSERT NAME HERE
+# 提案 x - 在此插入名称
+#### 类型
+运营直接行动
 
-#### Type
-
-Operations Direct Action
-
-#### Author(s)
-
+#### 作者
 {name #1}, {name #2}
 
-## Overview
-
-A brief description of this proposal. Cover why it's good for the Meta-DAO. If the Meta-DAO has previously committed to taking this action, link that committment (e.g., a transaction signature of a passed proposal).
+## 概述
+对该提案的简要描述。说明为什么这对Meta-DAO有利。如果Meta-DAO之前已承诺采取此行动，请链接该承诺（例如，已通过提案的交易签名）。

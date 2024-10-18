@@ -1,28 +1,32 @@
-# Example Rubric
+# {{Example_Rubric}}
 
-ACME Corp is the developer of an innovative L1 blockchain written in FORTRAN. To bootstrap its ecosystem, ACME funds teams who build applications with $100k grants. 
+{{ACME_Corp_is_the_developer}}
 
-ACME retroactively grades grants on two criteria: project completion and project adoption. Each of these is half the weight of a grant’s score.
+{{project_completion_and_project_adoption}}
 
-<figure><img src="../../.gitbook/assets/rubric-score.png" alt="Scoring Mechanism"><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/rubric-score.png" alt="{{Scoring_Mechanism}}"><figcaption></figcaption></figure>
 
-## Completion
-Projects can receive a 0 to 0.5 completion score. Here’s how the number is determined:
+## {{Completion}}
 
-- 0: this project essentially ran off with the money, releasing nothing publicly.
-- 0.25: this project did not launch but it did develop part of the product; there’s a codebase that another project would be able to use.
-- 0.5: this project fully launched.
+{{Projects_can_receive_a_completion_score}}
 
-## Adoption
-Projects can receive a 0 to 0.5 adoption score. Here’s how the number is determined:
+{{project_essentially_ran_off}}
+{{this_project_did_not_launch}}
+{{this_project_fully_launched}}
 
-- 0: if it’s a consumer product, 50 people or less have used this product; if it’s a DeFi product, it’s acquired less than $50k in TVL.
-- 0.5: if it’s a consumer product, 500 people or less have used this product; if it’s a DeFi product, it’s acquired less than $500k in TVL.
-- 1: if it’s a consumer product, 2,500 people or more have used it; if it’s a DeFi product, it’s acquired more than $2.5M in TVL.
+## {{Adoption}}
 
-## Methodology
-Grants are scored by a grants committee of 5 people, 3 from ACME and 2 from MetaDAO. The total score is computed by averaging the scores of the 5 committee members.
+{{Projects_can_receive_a}}
 
-## Timeline
-Grants are scored 3 months after the grant has been given.
+{{its_acquired_less_than_50_in_TVL}}
+{{its_acquired_less_than_500k_in_TVL}}
+{{2500_people or more have used it}}
+
+## {{Methodology}}
+
+{{Grants_are_scored_by_a_grants_committee}}
+
+## {{Timeline}}
+
+{{months_after_the_grant_has_been_given}}
 

@@ -1,33 +1,27 @@
-Operations Project Template
+运营项目模板
 
-This is the template you can use for creating operations project proposals. Just delete this part at the top.
+这是您可以用来创建运营项目提案的模板。只需删除顶部的这一部分。
 
-# Proposal x - INSERT NAME HERE
+# 提案 x - 在此插入名称
+#### 类型
+运营项目
 
-#### Type
+#### 企业家
+在此插入名称
 
-Operations project
+## 概述
+插入项目的简要描述。请务必涉及以下内容：
+- MetaDAO当前面临的问题或该项目旨在改善的指标
+- 该项目将如何解决问题或改善指标
+- 其他人可以用来衡量成功的指标
 
-#### Entrepreneur(s)
+还请插入一个非常简短的（1-2句）描述，说明该项目与MetaDAO业务的关系：
+- 如果适用，这可能为 Meta-DAO 创造多少价值
+- 预计预算
 
-insert name(s) here
+## 重点领域
+讨论该项目旨在解决什么问题或该项目应改善哪些指标。
 
-## Overview
-
-Insert a brief description of the project. Be sure to touch on the following:
-- What problem the Meta-DAO is currently facing or what metric this project is supposed to improve
-- What this project would do to address the issue or improve the metrics
-- What metrics others can use to measure success
-
-Also insert a very brief (1-2 sentence) description of how this project relates to the Meta-DAO's business:
-- How much value this could create for the Meta-DAO, if applicable
-- An estimated budget
-
-## Focus area
-
-Talk about what problem this project is intended to address or what metrics this project should improve.
-
-## Project
-
-Describe in 1-3 paragraphs what the project would consist of and why it would improve the relevant metrics.
+## 项目
+用1-3段文字描述项目的构成以及为什么它会改善相关指标。
 

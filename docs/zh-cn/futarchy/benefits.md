@@ -1,33 +1,28 @@
-# Benefits
+# 好处
+与其他决策方式相比，futarchy 有许多优点。
 
-Compared to the other ways of making decisions, futarchy has a number of benefits.
+### 市场提供激励以纠正错误决策
+> _在一个高效的资本市场中，资产价格反映了所有相关信息，因此在当前信息的基础上提供了对未来事件的最佳预测。_\
+> 保罗·罗德和科尔曼·斯特伦普夫, [历史总统博彩市场](https://users.wfu.edu/strumpks/papers/JEP\_2004.pdf)
 
-### Markets provide incentives to correct bad decisions
+考虑[选举预测市场](https://en.wikipedia.org/wiki/Election\_stock\_market)。如果唐纳德·特朗普有50%的获胜机会，但你可以以0.32美元购买“唐纳德·特朗普获胜”合约，你就有动力去购买。而如果价格达到0.65美元，你就有动力去卖出或做空。
 
-> _In an efficient capital market, asset prices reflect all relevant information and thus provide the best prediction of future events given the current information._\
-> Paul Rhode and Koleman Strumpf, [Historical Presidential Betting Markets](https://users.wfu.edu/strumpks/papers/JEP\_2004.pdf)
+一般来说，当资产偏离其内在价值（等于其未来现金流的净现值）时，交易者会受到激励进行买卖，直到两者趋于一致。
 
-Consider [election prediction markets](https://en.wikipedia.org/wiki/Election\_stock\_market). If Donald Trump has a 50% chance of winning but you can buy ‘Donald Trump win’ contracts at $0.32, you are incentivized to buy. And if they reach $0.65, you are incentivized to sell or short.
+在一个基于未来学的治理体系中，这意味着交易者有动力去纠正错误的决策。例如，如果“在将公司所有现金捐给慈善机构的条件下的股票”与正常股票的交易价格相同，交易者就有动力去卖出这种条件股票，从而导致其价格下跌。
 
-In general, when an asset deviates from its intrinsic value - equal to the net present value of its future cash flows - traders are incentivized to buy or sell until the two converge.
+### 市场很难操控
+这也使得操纵决策变得困难。每当你操纵一个市场时，你就将其推离内在价值，从而为他人纠正你的操纵行为创造了动机。事实上，有[证据](https://www.sciencedirect.com/science/article/abs/pii/S0167268105001575)表明，操纵实际上_提高_了价格的准确性。
 
-What this means in a futarchy is that there's an incentive for traders to correct for bad decisions. For example, if "stock conditional on giving away all of the company's cash to charity" is trading for the same price as normal stock, traders are incentivized to sell the conditional stock, causing its price to decline.
+这与投票形成对比，在投票中，选票和政客都可能被收买。
 
-### Markets are hard to manipulate
+### 随着时间的推移，市场将权力从不良预测者转移到良好预测者
+市场随着时间的推移，将更多的权力赋予那些更擅长预测的人。这是因为高回报不仅直接增加了交易者的资本，还提高了他们从投资者那里筹集资本的能力。
 
-This also makes it hard to manipulate decisions. Any time you manipulate a market, you push it away from intrinsic value and thus create an incentive for someone to correct your manipulations. In fact, there's [evidence](https://www.sciencedirect.com/science/article/abs/pii/S0167268105001575) to indicate that manipulation actually _increases_ the accuracy of prices.
+### 通常情况下，市场在信息聚合方面优于其他系统
+市场并不是完全有效的。但根据大多数实证证据，市场在信息聚合方面比个别专家更出色：
 
-This is in contrast to voting, where votes and politicians alike can be bought.
-
-### Over time, markets shift power from bad predictors to good predictors
-
-Markets give more power over time to those who are better predictors. This is because high returns both directly increase a trader’s capital and improve their ability to raise capital from investors.
-
-### Generally, markets beat other systems of aggregating information
-
-Markets aren't perfectly efficient. But according to most empirical evidence, markets are better aggregators of information than individual experts:
-
-* Prediction markets [outperform](https://repository.arizona.edu/bitstream/handle/10150/666656/azu\_etd\_hr\_2021\_0133\_sip1\_m.pdf?sequence=1) [professional pollsters](https://www.jstor.org/stable/40467652) in predicting elections.
-* Commodities futures markets [outperform government forecasts](https://www.jstor.org/stable/40467652) in predicting weather.
-* Companies like [Google](https://googleblog.blogspot.com/2005/09/putting-crowd-wisdom-to-work.html) and [HP](https://authors.library.caltech.edu/44358/1/wp1131.pdf) have used prediction markets to successfully forecast things like launch dates, printer sales, and the dates of new office openings.
-* Famously, while it took the US government more than 5 months to identify the Morton-Thiakol O-Rings as the root cause of the Challenger crash, [the market had priced it into Morton-Thiakol's stock price within 14 minutes](https://maloney.people.clemson.edu/855/9.pdf).
+* 预测市场[表现优于](https://repository.arizona.edu/bitstream/handle/10150/666656/azu\_etd\_hr\_2021\_0133\_sip1\_m.pdf?sequence=1)在预测选举中。[专业民意调查员](https://www.jstor.org/stable/40467652)
+* 商品期货市场[优于政府预测](https://www.jstor.org/stable/40467652)在预测天气方面。
+* 像 [Google](https://googleblog.blogspot.com/2005/09/putting-crowd-wisdom-to-work.html) 和 [HP](https://authors.library.caltech.edu/44358/1/wp1131.pdf) 这样的公司已经使用预测市场成功预测了诸如发布日期、打印机销售和新办公室开业日期等事项。
+* 众所周知，美国政府花了超过5个月的时间才确定莫顿-西奥科尔的O型环是挑战者号航天飞机失事的根本原因， [市场在14分钟内将其计入了Morton-Thiakol的股价](https://maloney.people.clemson.edu/855/9.pdf).

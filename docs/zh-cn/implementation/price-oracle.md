@@ -1,25 +1,21 @@
-# Price Oracle
+# 价格预言机
+为了让 futarchy 发挥作用，您需要一种提取提案条件市场价格的方法。
 
-For futarchy to work, you need a way of extracting the price of a proposal's conditional market.
+一种简单的方法是仅在提案最终确定时使用现货价格。但这很容易被操控。例如，有人可能会在最终确定之前抬高通行市场的价格，以迫使提案通过。
 
-The naive approach is to just use the spot price at the time of proposal finalization. But this is highly manipulable. For example, someone could pump the price of the pass market right before finalization in order to force the proposal to pass.
+<figure><img src="../.gitbook/assets/conditional-markets-dark.png" alt=""><figcaption><p>有人可能会在最后一分钟提高通过价格，以强行通过提案</p></figcaption></figure>
 
-<figure><img src="../.gitbook/assets/conditional-markets-dark.png" alt=""><figcaption><p>Someone could bid up the pass price in the last minute to force a proposal through</p></figcaption></figure>
+### 时间加权平均价格
+更不幼稚的方法是使用时间加权平均价格（TWAP）。TWAPs 更难操控。例如，如果 TOKEN 的通过价格在提案的前 72 小时为 $100，然后操控者在最后 15 分钟将价格推至 $1000，那么 TWAP 将为 $103.11，仅比“真实价格”高出 3%。
 
-### TWAP
+然而，TWAPs 也有其缺陷。重要的是，Solana 验证者可以通过在几个时段内将价格设置得极高来操纵 TWAPs。由于验证者控制着时段，他们知道没有人能够以他们极高的价格进行出售。如果一个验证者控制了 1% 的时段，他们可以在自己的时段内将通过价格提高 100 倍，从而强行通过一个提案。
 
-Less naive is to use a time-weighted average price (TWAP). TWAPs are much harder to manipulate. For example, if TOKEN's pass price is $100 for the first 72 hours of a proposal and then a manipulator pushes the price to $1000 for the last 15 minutes, the TWAP would be $103.11, only a 3% difference from the 'true price.'
-
-However, TWAPs also have their flaws. Importantly, Solana validators can manipulate TWAPs by setting the price extremely high for a few slots. Because the validator controls the slot, they know that noone would be able to sell into their extremely high price. If a validator controls 1% of slots, they could force a proposal through by 100xing the pass price during their slots.
-
-### Lagging price TWAP
-
-We deal with this by using a special form of TWAP we call a lagging price TWAP. In a lagging price TWAP, the number that gets fed into the TWAP isn't the raw price - it's a number that tries to approximate the price but which can only move a certain amount per update. We call this an _observation_. Each DAO must configure the _first observation_ and _max observation change per update_ that get used in its proposals' markets.
+### 滞后价格时间加权平均价格 (TWAP)
+我们通过使用一种特殊形式的时间加权平均价格（TWAP）来处理这个问题，我们称之为滞后价格TWAP。在滞后价格TWAP中，输入到TWAP的数字不是原始价格，而是一个尝试近似价格的数字，但每次更新只能移动一定的量。我们称之为一个_观察_。每个DAO必须配置其提案市场中使用的_首次观察_和_每次更新的最大观察变化_。
 
 <figure><img src="../.gitbook/assets/twap-chart.png" alt=""><figcaption></figcaption></figure>
 
-To take an example, imagine that MetaDAO's first observation is set to $500 and its max change per update is $5. If a proposal opens with a pass market of $550, it will take 10 updates before the observation accurately reflects the price. Assuming each update is spaced evenly and the price stays at $550, the TWAP after 10 updates will be $527.5 (\[$505 + $510 + $515 + $520 + $525 + $530 + $535 + $540 + $545 + $550] / 10). After 10 more updates, it will be $538.75.
+举个例子，假设MetaDAO的初始观察值设定为$500，每次更新的最大变化为$5。如果一个提案以$550的通过市场价格开启，那么需要10次更新后观察值才能准确反映价格。假设每次更新间隔均匀且价格保持在$550，10次更新后的TWAP将为$527.5（\[$505 + $510 + $515 + $520 + $525 + $530 + $535 + $540 + $545 + $550] / 10）。再经过10次更新后，它将是$538.75。
 
-### One minute between updates
-
-Ideally, the TWAP would be highly sensitive to normal price movements and highly insensitive to manipulated price movements. We originally allowed one update per slot, but this gives the opposite effect: an attacker may be able to land in every slot, whereas normal trading activity isn't as frequent (yet!), so an attacker would move the price more than genuine price movements. To deal with this, we only allow one update per minute.
+### 更新之间间隔一分钟
+理想情况下，TWAP 对正常价格波动高度敏感，而对操纵价格波动高度不敏感。我们最初允许每个时段进行一次更新，但这产生了相反的效果：攻击者可能能够在每个时段都进行操作，而正常交易活动并不那么频繁（至少目前如此！），因此攻击者会比真实的价格波动更能影响价格。为了解决这个问题，我们只允许每分钟进行一次更新。

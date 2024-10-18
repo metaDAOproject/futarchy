@@ -1,61 +1,53 @@
-# Value Resolved Decision Markets
-MetaDAO's value based decision making program is adaptable for many different applications. In Hanson's paper he proposes we vote on values but bet on beliefs, therefore this is an iterative step in that direction. 
+# 价值解决决策市场
+MetaDAO 的基于价值的决策制定程序适用于许多不同的应用。在 Hanson 的论文中，他建议我们对价值进行投票，但对信念进行下注，因此这是朝着该方向迈出的迭代步骤。
 
-In some cases the underlying value may not be directly measurable (value accretive to the business) but can be measured discretely within a criteria framework, or perhaps many values may be assessed in aggregate.
+在某些情况下，基础价值可能无法直接衡量（对业务的价值增值），但可以在一个标准框架内离散地衡量，或者许多价值可能会被整体评估。
 
-Hanson's example of GDP, health, leisure, happiness and environment are all examples of measures which could be impacted through the use of this system. While you may not be able to trade health in any practical sense, these specialized contracts payout relative to a future measure against the value.
+汉森关于 GDP、健康、休闲、幸福和环境的例子都是可以通过使用该系统而受到影响的衡量标准的例子。虽然你可能无法在任何实际意义上交易健康，但这些专业化合约会根据未来衡量标准相对于价值的情况进行支付。
 
-These markets must be resolved to do so we propose an initial structure in line with current existing committees, boards or members within DAOs. These members would be responsible for executing the measurement as outlined within a robust framework or rubric.
+这些市场必须得到解决，为此我们提出一个与当前现有的委员会、董事会或DAO成员一致的初步结构。这些成员将负责根据一个健全的框架或评分标准执行测量。
 
-With the advancement of oracles and on-chain data there exists a certain future where the practicality of automated resolution is within reach. However the current implementation is designed around flexibility with the status quo.
+随着预言机和链上数据的进步，自动化解决方案的实用性在未来某个时候将成为可能。然而，目前的实现是围绕现状的灵活性而设计的。
 
-What ideas might you want to see evaluated or examples you'd be interested in experimenting with? Join the [MetaDAO Discord](https://discord.gg/metadao) and let us know!
+您希望看到哪些想法被评估，或者您有兴趣尝试哪些示例？ {{Join the}} [{{MetaDAO Discord}}](https://discord.gg/metadao) {{and let us know!}}
 
-## Examples
-We've designed the product based on consumer demand, but by no means is it constrained to ONLY these examples.
+## 示例我们根据消费者需求设计了产品，但绝不仅限于这些例子。
 
-### Grants
+### 资助
+以下是用于资助计划的指南，以及如果您想实施该系统所需的内容。
 
-The following is a guide for use within a grants program and what will be required from you if you'd like to implement the system.
+<figure><img src="../.gitbook/assets/grant-summary.png" alt="资助流程概述"><figcaption></figcaption></figure>
 
-<figure><img src="../.gitbook/assets/grant-summary.png" alt="Grant Process Overview"><figcaption></figcaption></figure>
+#### 先决条件首先，MetaDAO 需要以下内容：
 
-#### Pre-requisites
-First, MetaDAO will need the following:
+- 标准: 用于评估资助效果的标准。 这就是交易者用来为资助定价并决定是否应允许其通过的依据。一个例子在[这里](../examples/rubric.md)。
+- 期望的最低流动性：您希望在资助市场中看到的最低流动性是多少。我们建议在 $2k 到 $20k 之间，其中最低流动性至少是资助平均预期规模的 20%。更多的流动性意味着更强的激励来正确定价市场。
+- 期望的资助金额：受资助者应能够申请的金额，以及这是固定的还是有一个可申请的范围。
+- 期望阈值：根据您的标准，在授予资助之前，您希望市场对其进行评估的有效程度。例如，“50%”或“85%”。
+- 交易期：市场运行的时间长度。我们建议为3天。
 
-- Rubric: a rubric for evaluating grants’ effectiveness. This is what traders will use to price a grant and determine whether it should be allowed to go through. An example is [here](../examples/rubric.md).
-- Desired minimum liquidity: how much liquidity you’d like to see in a grant market at a minimum. We recommend from $2k to $20k, where minimum liquidity is at least 20% of the average expected size of grant. More liquidity means a stronger incentive to correctly price a market.
-- Desired grant size: how much grantees should be able to request, and whether this is fixed or if there’s a range that grants can request from.
-- Desired threshold: how effective you want the market to rate a grant before it's awarded, based on your criteria. For example, '50%' or '85%.'
-- Trading period: how long the markets will run for. We recommend 3 days.
+#### 资助生命周期<figure><img src="../.gitbook/assets/grant-flow-chart.png" alt="资助决策市场流程"><figcaption></figcaption></figure>
+在我们的系统中，资助经历几个阶段：
 
-#### Grant Lifecycle
-<figure><img src="../.gitbook/assets/grant-flow-chart.png" alt="Flow Of  Decision Market For Grants"><figcaption></figcaption></figure>
-In our system, grants go through several stages:
+- 创意构思
+- 决策市场
+- 现货市场
+- 解决方案
 
-- Ideation
-- Decision market
-- Spot market
-- Resolution
+##### 构思首先，需要有人提出一个潜在资助的想法。一旦他们决定愿意去做，他们就会撰写一份资助提案。这个提案可以选择遵循您自己的模板。
 
-##### Ideation
-First, someone needs to come up with an idea for a prospective grant. Once they’ve determined that they’re willing to do it, they’ll write a grant proposal. This proposal can optionally follow your own template.
+##### 决策市场<figure><img src="../.gitbook/assets/grant-ideation-decision-market.png" alt="资助决策市场"><figcaption></figcaption></figure>
+一旦潜在的受赠者撰写了他们的资助提案，我们会帮助他们创建一个决策市场。
 
-##### Decision market
-<figure><img src="../.gitbook/assets/grant-ideation-decision-market.png" alt="Decision Market For Grants"><figcaption></figcaption></figure>
-Once a prospective grantee has written up their grant proposal, we help them create a decision market.
+在决策市场中，交易者会交易如果授予该资助，其效果评分会是多少？
 
-In the decision market, traders trade on what would be the effectiveness score of this grant if it were given?
+人们可以通过购买 E-UP 代币来押注某项资助将会有效。他们可以通过购买 E-DOWN 代币来押注某项资助将会无效。这类似于预测市场交易者购买 YES 和 NO 代币。E-UP 代币根据资助的有效性支付，而 E-DOWN 则支付相反的结果。例如，如果某项资助被认为是 78% 有效，E-UP 将支付 $0.78，而 E-DOWN 将支付 $0.22。
 
-People can bet that a grant will be effective by buying E-UP tokens. They can bet that a grant will be ineffective by buying E-DOWN tokens. This is analogous to prediction market traders buying YES and NO tokens. E-UP tokens pay out relative to the effectiveness of the grant, and E-DOWN pays out the inverse. For example, if a grant is deemed as 78% effective, E-UP will pay out $0.78 and E-DOWN will pay out $0.22.
+E-UP 的市场价格代表了市场对资助效果的看法。
 
-The market price of E-UP represents the market’s view on how effective a grant will be.
+在交易期结束后，资助将被接受或拒绝。如果被拒绝，所有交易者将收回他们的钱，并且不会有资金发送给受助人。如果被接受，资金将通过您喜欢的任何方式发送（例如，通过Squads多重签名）。
 
-After the trading period, the grant will be either accepted or rejected. If it’s rejected, all traders get their money back and no money is sent to the grantee. If it’s accepted, the money will be sent by whatever means you prefer (e.g., out of a Squads multisig).
+##### 现货市场<figure><img src="../.gitbook/assets/grant-spot-evaluation.png" alt="带评估的现货市场"><figcaption></figcaption></figure>
+如果授予了资助，我们会保持 E-UP 和 E-DOWN 市场开放。这允许交易者在市场已经反映他们的信念时清算他们的头寸。这也使市场能够持续评估受资助者。
 
-##### Spot market
-<figure><img src="../.gitbook/assets/grant-spot-evaluation.png" alt="Spot Market With Evaulation"><figcaption></figcaption></figure>
-If a grant is given, we leave the E-UP and E-DOWN markets open. This allows traders to liquidate their position if the market has already priced in their beliefs. This also allows the market to continuously evaluate the grantee.
-
-##### Resolution
-After the time period specified in the rubric, the grant is graded. Its score is fed into an oracle so that traders can redeem their E-UP and E-DOWN for cash. This concludes the process and the markets.
+##### 决议在评分标准中指定的时间段结束后，拨款将被评分。其分数被输入到一个预言机中，以便交易者可以将他们的E-UP和E-DOWN兑换成现金。这就结束了整个过程和市场。

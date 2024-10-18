@@ -1,13 +1,12 @@
 ---
-description: A simple description of futarchy
+description: 对未来学的一种简单描述
 ---
 
-# ELI5
+# 用简单的话解释
+Futarchy 是一种全新的机制。因此，通常需要一些时间才能完全理解其运作方式。
 
-Futarchy is a fundamentally new mechanism. Because of this, it normally takes some time to fully understand how it works.
+从高层次来看，思考未来治理的一种基本方式是：
 
-At a high-level though, a basic way to think about futarchy is:
-
-1. When proposals are raised to a DAO, people speculate on whether the proposal would make the DAO's token go up
-2. When the market thinks that the proposal would increase the value of the token, the proposal passes
-3. When the market thinks that the proposal would decrease the value of the token, the proposal fails
+1. 当提案提交给DAO时，人们会猜测该提案是否会使DAO的代币上涨
+2. 当市场认为提案会增加代币的价值时，提案通过
+3. 当市场认为提案会降低代币的价值时，提案将失败

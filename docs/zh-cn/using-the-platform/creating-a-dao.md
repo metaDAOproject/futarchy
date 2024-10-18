@@ -1,10 +1,9 @@
-# Creating a DAO
+# 创建一个DAO
+所以，你想为你的项目使用futarchy——太好了！要创建一个futarchy，你需要指定几个参数：
 
-So, you want to use futarchy for your project - great! To create a futarchy, you need to specify a few parameters:
+* **提案时间**：提案在通过或失败之前应保持活跃的时间量。默认情况下为三天。以 Solana 插槽指定。
+* **通过阈值：** 提案通过所需的通过价格必须高于失败价格的百分比。
+* **最低流动性：** 为了防止垃圾信息，提案者需要在他们的提案市场中锁定AMM流动性。每个DAO会规定他们需要锁定的金额，包括USDC和futarchy的代币。
+* **TWAP 敏感性参数：** 如价格预言机部分所述，纳入 TWAP 的价格每分钟只能按一定的美元金额变动。每个 DAO 必须指定此美元金额。我们建议为现货价格的 1-5%。
 
-* **Proposal time**: the amount of time a proposal should be active before it can pass or fail. Three days by default. Specified in Solana slots.
-* **Pass threshold:** the percentage that the pass price needs to be above the fail price in order for a proposal to pass.
-* **Min liquidity:** to prevent spam, proposers are required to lock AMM liquidity in their proposal markets. The amount they are required to lock, in both USDC and the futarchy's token, is specified by each DAO.
-* **TWAP sensitivity parameters:** as explained in the price oracle section, the price that gets factored into the TWAP can only move by a certain dollar amount per minute. Each DAO must specify this dollar amount. We recommend 1-5% of the spot price.
-
-Once these parameters are decided, you can reach out to Proph3t (@metaproph3t on Twitter, Telegram, and Discord) to create the DAO for you. Today, we're working with a small number of DAOs, but we will eventually make this a permissionless process.
+一旦这些参数确定后，您可以联系 Proph3t（在 Twitter、Telegram 和 Discord 上的用户名为 @metaproph3t）为您创建 DAO。今天，我们正在与少数 DAO 合作，但最终我们将使这一过程无需许可。
