@@ -1,32 +1,32 @@
-# {{Example_Rubric}}
+# 示例评分标准
 
-{{ACME_Corp_is_the_developer}}
+ACME公司是一个创新L1区块链的开发者，该区块链使用FORTRAN编写。为了启动其生态系统，ACME为构建应用程序的团队提供10万美元的资助。
 
-{{project_completion_and_project_adoption}}
+ACME 事后根据两个标准对资助进行评分：项目完成度和项目采纳度。每个标准各占资助评分的一半权重。
 
-<figure><img src="../../.gitbook/assets/rubric-score.png" alt="{{Scoring_Mechanism}}"><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/rubric-score.png" alt="评分机制"><figcaption></figcaption></figure>
 
-## {{Completion}}
+## 完成
 
-{{Projects_can_receive_a_completion_score}}
+项目可以获得0到0.5的完成评分。以下是评分的确定方式：
 
-{{project_essentially_ran_off}}
-{{this_project_did_not_launch}}
-{{this_project_fully_launched}}
+- 0: 这个项目基本上卷款跑路，什么都没有公开发布。
+- 0.25：这个项目没有启动，但确实开发了部分产品；有一个代码库，其他项目可以使用。
+- - 0.5：该项目全面启动。
 
-## {{Adoption}}
+## 采用
 
-{{Projects_can_receive_a}}
+项目可以获得0到0.5的采用评分。以下是评分的确定方式：
 
-{{its_acquired_less_than_50_in_TVL}}
-{{its_acquired_less_than_500k_in_TVL}}
-{{2500_people or more have used it}}
+- 0: 如果这是一个消费产品，使用过这个产品的人数不超过50人；如果这是一个DeFi产品，其TVL（总锁定价值）少于5万美元。
+- 0.5：如果是消费产品，使用该产品的人数不超过500人；如果是DeFi产品，其TVL（总锁定价值）少于50万美元。
+- 1: 如果是消费产品，已有2,500人或更多使用；如果是DeFi产品，其TVL已超过250万美元。
 
-## {{Methodology}}
+## 方法论
 
-{{Grants_are_scored_by_a_grants_committee}}
+资助由一个由5人组成的资助委员会评分，其中3人来自ACME，2人来自MetaDAO。总评分通过5位委员会成员的评分平均值计算得出。
 
-## {{Timeline}}
+## 时间线
 
-{{months_after_the_grant_has_been_given}}
+资助在授予后3个月进行评分。
 
