@@ -1,6 +1,6 @@
 - To add a language add the ISO code to languages.csv and run `./setLanguages.sh`
 - To get translations for a new language or new strings run `./getTranslations.py`
-  - Get you API key from here https://platform.openai.com/settings/profile?tab=api-keys 
+  - Get you API key from here https://platform.openai.com/settings/profile?tab=api-keys
     - Run export `OPENAI_API_KEY= "$MY_SECRET"`
 - To refactor the string for a specific language go to {code}_strings.json
   - When changing meaning or a string, (not making grammar fix) then rename the key
