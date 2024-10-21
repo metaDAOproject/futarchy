@@ -5,7 +5,7 @@
 {{amm_allows_the_creation_of_ammbased_conditional_markets_provides_a_timeweighted_average_price_oracle}}
 {{autocrat_the_program_that_coordinates_futarchy_allows_the_creation_of_daos_and_proposals_and_allows_proposals_to_be_finalized_based_on_the_prices_in_the_conditional_markets}}
 
-### {{conditional_vault_program}} Conditional vault program <a href="#conditional-vault-program" id="conditional-vault-program"></a>
+### {{conditional_vault_program}} <a href="#conditional-vault-program" id="conditional-vault-program"></a>
 {{for_a_decision_market_to_work_you_must_revert_all_of_the_markets_trades_when_the_condition_isnt_met_this_is_what_allows_speculators_to_place_trades_like_i_would_pay_5000_for_10_meta_if_this_proposal_passes}}
 
 {{blockchains_like_solana_dont_allow_you_to_revert_transactions_after_theyve_been_finalized_so_we_need_a_mechanism_to__simulate__reverting_transactions_that_mechanism_is_conditional_tokens}}

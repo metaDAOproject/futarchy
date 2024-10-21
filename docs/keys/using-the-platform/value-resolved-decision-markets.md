@@ -11,14 +11,16 @@
 
 {{What_ideas_might_you_want}} {{Join_the_MetaDAO_Discord}}
 
-## {{examples}}{{weve_designed_the_product_based_on_consumer_demand_but_by_no_means_is_it_constrained_to_only_these_examples}}
+## {{examples}}
+{{weve_designed_the_product_based_on_consumer_demand_but_by_no_means_is_it_constrained_to_only_these_examples}}
 
 ### {{grants}}
 {{the_following_is_a_guide_for_use_within_a_grants_program_and_what_will_be_required_from_you_if_youd_like_to_implement_the_system}}
 
 <figure><img src="../.gitbook/assets/grant-summary.png" alt="{{Grant_Process_Overview}}"><figcaption></figcaption></figure>
 
-#### {{prerequisites}}{{first_metadao_will_need_the_following}}
+#### {{prerequisites}}
+{{first_metadao_will_need_the_following}}
 
 - {{a-rubric-for-evaluating-grants}} {{This_is_what_traders_will_use}}
 {{desired_minimum_liquidity_how_much_liquidity_youd_like_to_see_in_a_grant_market_at_a_minimum_we_recommend_from_2k_to_20k_where_minimum_liquidity_is_at_least_20_of_the_average_expected_size_of_grant_more_liquidity_means_a_stronger_incentive_to_correctly_price_a_market}}
@@ -26,7 +28,8 @@
 {{desired_threshold_how_effective_you_want_the_market_to_rate_a_grant_before_its_awarded_based_on_your_criteria_for_example_50_or_85}}
 {{trading_period_how_long_the_markets_will_run_for_we_recommend_3_days}}
 
-#### {{grant_lifecycle}}<figure><img src="../.gitbook/assets/grant-flow-chart.png" alt="{{Flow_Of_Decision_Market_For_Grants}}"><figcaption></figcaption></figure>
+#### {{grant_lifecycle}}
+<figure><img src="../.gitbook/assets/grant-flow-chart.png" alt="{{Flow_Of_Decision_Market_For_Grants}}"><figcaption></figcaption></figure>
 {{in_our_system_grants_go_through_several_stages}}
 
 {{ideation}}
@@ -34,9 +37,11 @@
 {{spot_market}}
 {{resolution}}
 
-##### {{ideation_1}}{{first_someone_needs_to_come_up_with_an_idea_for_a_prospective_grant_once_theyve_determined_that_theyre_willing_to_do_it_theyll_write_a_grant_proposal_this_proposal_can_optionally_follow_your_own_template}}
+##### {{ideation_1}}
+{{first_someone_needs_to_come_up_with_an_idea_for_a_prospective_grant_once_theyve_determined_that_theyre_willing_to_do_it_theyll_write_a_grant_proposal_this_proposal_can_optionally_follow_your_own_template}}
 
-##### {{decision_market_1}}<figure><img src="../.gitbook/assets/grant-ideation-decision-market.png" alt="{{Decision_Market_For_Grants}}"><figcaption></figcaption></figure>
+##### {{decision_market_1}}
+<figure><img src="../.gitbook/assets/grant-ideation-decision-market.png" alt="{{Decision_Market_For_Grants}}"><figcaption></figcaption></figure>
 {{once_a_prospective_grantee_has_written_up_their_grant_proposal_we_help_them_create_a_decision_market}}
 
 {{in_the_decision_market_traders_trade_on_what_would_be_the_effectiveness_score_of_this_grant_if_it_were_given}}
@@ -47,7 +52,9 @@
 
 {{after_the_trading_period_the_grant_will_be_either_accepted_or_rejected_if_its_rejected_all_traders_get_their_money_back_and_no_money_is_sent_to_the_grantee_if_its_accepted_the_money_will_be_sent_by_whatever_means_you_prefer_eg_out_of_a_squads_multisig}}
 
-##### {{spot_market_1}}<figure><img src="../.gitbook/assets/grant-spot-evaluation.png" alt="{{Spot_Market_With_Evaulation}}"><figcaption></figcaption></figure>
+##### {{spot_market_1}}
+<figure><img src="../.gitbook/assets/grant-spot-evaluation.png" alt="{{Spot_Market_With_Evaulation}}"><figcaption></figcaption></figure>
 {{if_a_grant_is_given_we_leave_the_eup_and_edown_markets_open_this_allows_traders_to_liquidate_their_position_if_the_market_has_already_priced_in_their_beliefs_this_also_allows_the_market_to_continuously_evaluate_the_grantee}}
 
-##### {{resolution_1}}{{after_the_time_period_specified_in_the_rubric_the_grant_is_graded_its_score_is_fed_into_an_oracle_so_that_traders_can_redeem_their_eup_and_edown_for_cash_this_concludes_the_process_and_the_markets}}
+##### {{resolution_1}}
+{{after_the_time_period_specified_in_the_rubric_the_grant_is_graded_its_score_is_fed_into_an_oracle_so_that_traders_can_redeem_their_eup_and_edown_for_cash_this_concludes_the_process_and_the_markets}}
