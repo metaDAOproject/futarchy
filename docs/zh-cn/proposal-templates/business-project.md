@@ -1,25 +1,22 @@
-Business Project Template
+商业项目模板
 
-This is the template you can use for creating business project proposals. Just delete this part at the top.
+这是您可以用来创建商业项目提案的模板。只需删除顶部的这部分。
 
-# Proposal x - INSERT NAME HERE
+# 提案x - 在此处插入名称
+**创业者：** 在此处插入姓名
 
-**Entrepreneur(s):** insert name(s) here
+## 概述
+插入正在构建的产品的简短描述。确保涉及以下内容：
+- 目标客户是谁
+- 该产品将为他们解决什么问题
+- 产品将如何实现盈利
+- 关键指标会是什么（例如，每日活跃用户，月度经常性收入，总锁定价值，交易量等）
 
-## Overview
+还需插入一个非常简短的（1-2句）描述，说明这个项目与MetaDAO业务的关系：
+- 这可能为Meta-DAO创造多少价值
+- 预计的预算
 
-Insert a brief description of the product being built. Be sure to touch on the following:
-- Who the target customer is
-- What problem the product would solve for them
-- How the product would monetize
-- What the key metrics would be (e.g., DAUs, MRR, TVL, volume, etc.)
-
-Also insert a very brief (1-2 sentence) description of how this project relates to the Meta-DAO's business:
-- How much value this could create for the Meta-DAO
-- An estimated budget
-
-## Problem
-
-Talk about what problem the target customer is currently facing. You can prove that this is a problem for the customer in a few different ways:
-- Citing customers complaining (e.g., publicly on Twitter / in DMs)
-- Showing that customers are using other products to solve this problem (in hopefully a worse way t
+## 问题
+谈论目标客户目前面临的问题。您可以通过几种不同的方式证明这对客户来说是一个问题：
+- 引述客户的抱怨（例如，在Twitter上公开或在私信中）
+- 显示客户正在使用其他产品来解决这个问题（希望以一种更糟糕的方式）

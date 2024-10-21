@@ -1,18 +1,17 @@
-# Creating Proposals
+# 创建提案
+[介绍MetaDAO](https://blog.metadao.fi/a-futards-guide-to-the-meta-dao-7a6b8d66443a)
 
-[Introduction To MetaDAO](https://blog.metadao.fi/a-futards-guide-to-the-meta-dao-7a6b8d66443a)
+[解释性博客文章](https://blog.metadao.fi/so-you-want-to-raise-a-proposal-2d83304c0b9d)
 
-[Explainer Blog Post](https://blog.metadao.fi/so-you-want-to-raise-a-proposal-2d83304c0b9d)
+商业项目是MetaDAO将财务资本转化为创收产品的方式。商业直接行动在这些产品上进行操作，调整参数以追求客户满意度和盈利能力。运营项目和直接行动支持业务，确保MetaDAO有合适的人员和资源来创建新产品并管理现有产品。
 
-Business projects are how MetaDAO converts financial capital into revenue-generating products. Business direct actions operate over those products, tweaking parameters in the pursuit of customer satisfaction and profitability. Operations projects and direct actions support the business, ensuring that MetaDAO has the right people and resources to create new products and manage existing ones.
-
-Each of these four proposal types has its own template. These are listed here:
+这四种提案类型每种都有自己的模板。这些模板在这里列出：
 
 {% content-ref url="../proposal-templates/business-project.md" %} . {% endcontent-ref %}
-{% content-ref url="../proposal-templates/business-direct-action.md" %} Business direct action {% endcontent-ref %}
-{% content-ref url="../proposal-templates/operations-project.md" %} Operations project {% endcontent-ref %}
-{% content-ref url="../proposal-templates/operations-direct-action.md" %} Operations direct action {% endcontent-ref %}
+{% content-ref url="../proposal-templates/business-direct-action.md" %} 商业直接行动 {% endcontent-ref %}
+{% content-ref url="../proposal-templates/operations-project.md" %} 运营项目 {% endcontent-ref %}
+{% content-ref url="../proposal-templates/operations-direct-action.md" %} 操作指导行动 {% endcontent-ref %}
 
-Project proposals should generally be raised by entrepreneurs who are accountable to the DAO for their execution. Direct action proposals can be raised by anyone.
+项目提案通常应由对DAO负责执行的企业家提出。任何人都可以提出直接行动提案。
 
-You can use any document app you want to create proposals.
+您可以使用任何您想要的文档应用来创建提案。

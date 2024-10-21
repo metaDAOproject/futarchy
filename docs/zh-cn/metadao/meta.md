@@ -1,11 +1,8 @@
 # META
+### 目的
+所有的Futarchy都需要一个资产来在其决策市场中使用。MetaDAO有META，其铸币是  METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr.
 
-### Purpose
+### 分发
+为了启动治理过程，10,000 META被空投到大约60个钱包中。剩余的供应由DAO的财政部持有。
 
-All futarchies need an asset to use in its decision markets. MetaDAO has META, whose mint is METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr.
-
-### Distribution
-
-To bootstrap the governance process, 10,000 META was airdropped to \~60 wallets. The remaining supply was held by the DAO's treasury.
-
-More META has entered the circulating supply through successful governance proposals, such as Collosseum's proposal to swap $250,000 for 437 META from the treasury. As of May 2024, the circulating supply stands at around 15,798 and 5,087 META is held by the DAO treasury and multisigs.&#x20;
+通过成功的治理提案，更多的META已经进入了流通供应中，例如Collosseum的提案，从财政部换取250,000美元的437 META。截至2024年5月，流通供应量约为15,798，而DAO财政部和多签名账户持有5,087 META。&#x20;

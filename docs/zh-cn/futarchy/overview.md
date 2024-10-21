@@ -1,12 +1,11 @@
-# Overview
+# 概述
+> _由于投机市场在民主制度难以胜任的任务上表现出色，我们可能会尝试通过更多地依赖投机市场来改善民主制度。_\
+> 罗宾·汉森
 
-> _Since speculative markets excel at a task where democracies struggle, we might try to improve democracy by having it rely more on speculative markets._\
-> Robin Hanson
+Futarchy 由经济学家 Robin Hanson 在 2000 年发明。基本的想法是通过市场进行决策。
 
-Futarchy was invented by economist Robin Hanson in 2000. The basic idea is to make decisions via markets.
+它通过_决策市场_来实现这一点。在决策市场中，您可以推测如果一个组织做出特定决策，资产将会值多少。例如，您可以推测如果苹果公司解雇了蒂姆·库克，AAPL的价值将会是多少。
 
-It does this through _decision markets_. In a decision market, you speculate on what an asset would be worth if an organization took a specific decision. For example, you could speculate on what the value of AAPL would be if Apple fired Tim Cook.
-
-Futarchy then uses the prices in these markets to make decisions. For example, a company organized as a futarchy would fire the CEO if the decision markets say that this would increase the value of that company's stock.&#x20;
+Futarchy 然后使用这些市场中的价格来做出决策。例如，一个组织为 Futarchy 的公司会在决策市场表示这将增加该公司股票价值的情况下解雇 CEO。&#x20;
 
 {% embed url="https://youtu.be/PRog7R37MA0?si=y69R2JRbLqm5uyFH" %}

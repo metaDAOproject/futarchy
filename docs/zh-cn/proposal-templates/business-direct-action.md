@@ -1,13 +1,10 @@
-Business Direct Action Template
+商业直接行动模板
 
-This is the template you can use for creating business direct action proposals. Just delete this part at the top.
+这是您可以用来创建业务直接行动提案的模板。只需删除顶部的这部分。
 
-# Proposal x - INSERT NAME HERE
+# 提案x - 在此处插入名称
+## 概述
+这个提案的简要描述。阐述为什么这对Meta-DAO有利。
 
-## Overview
-
-A brief description of this proposal. Cover why it's good for the Meta-DAO.
-
-## Financial projections
-
-If you can, cover how this is projected to affect the cash flows and enterprise value of the Meta-DAO.
+## 财务预测
+如果可以的话，请解释这将如何预计影响MetaDAO的现金流和企业价值。

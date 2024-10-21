@@ -1,0 +1,22 @@
+{{business_project_template}}
+
+{{this_is_the_template_you_can_use_for_creating_business_project_proposals_just_delete_this_part_at_the_top}}
+
+# {{proposal_x__insert_name_here_3}}
+{{entrepreneurs_insert_names_here}}
+
+## {{overview_7}}
+{{insert_a_brief_description_of_the_product_being_built_be_sure_to_touch_on_the_following}}
+{{who_the_target_customer_is}}
+{{what_problem_the_product_would_solve_for_them}}
+{{how_the_product_would_monetize}}
+{{what_the_key_metrics_would_be_eg_daus_mrr_tvl_volume_etc}}
+
+{{also_insert_a_very_brief_12_sentence_description_of_how_this_project_relates_to_the_metadaos_business_1}}
+{{how_much_value_this_could_create_for_the_metadao}}
+{{an_estimated_budget_1}}
+
+## {{problem}}
+{{talk_about_what_problem_the_target_customer_is_currently_facing_you_can_prove_that_this_is_a_problem_for_the_customer_in_a_few_different_ways}}
+{{citing_customers_complaining_eg_publicly_on_twitter__in_dms}}
+{{showing_that_customers_are_using_other_products_to_solve_this_problem_in_hopefully_a_worse_way_t}}

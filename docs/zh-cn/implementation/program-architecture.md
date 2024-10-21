@@ -1,59 +1,55 @@
-# Program Architecture
+# 程序架构
+我们通过三个程序实现Futarchy：
 
-We implement futarchy via three programs:
+* **条件性保险库:** 允许创建条件性代币的功能。
+* **AMM:** 允许创建基于AMM的条件市场。提供一个时间加权平均价格预言机。
+* **Autocrat（自动统治者）:** 协调Futarchy的程序。允许创建DAOs和提案，并允许根据条件市场中的价格来最终确定提案。
 
-* **Conditional vault:** what allows the creation of conditional tokens.
-* **AMM:** allows the creation of AMM-based conditional markets. Provides a time-weighted average price oracle.
-* **Autocrat:** the program that coordinates futarchy. Allows the creation of DAOs and proposals, and allows proposals to be finalized based on the prices in the conditional markets.
+### 条件性保险库程序 Conditional vault program <a href="#conditional-vault-program" id="conditional-vault-program"></a>
+要使决策市场正常运作，当条件未满足时，您必须撤销市场的所有交易。这就是允许投机者进行像'如果这个提案通过，我愿意支付$5,000购买10个META'这样的交易的原因。
 
-### Conditional vault program <a href="#conditional-vault-program" id="conditional-vault-program"></a>
+像Solana这样的区块链不允许你在交易被最终确定后撤销交易，所以我们需要一种机制来_模拟_撤销交易。这种机制就是条件性代币。
 
-For a decision market to work, you must revert all of the market's trades when the condition isn't met. This is what allows speculators to place trades like "I would pay $5,000 for 10 META if this proposal passes."
+条件性代币与_条件性金库_相绑定。每个条件性金库都有特定的_基础代币，结算权威，_和_提案_。在Futarchy的情况下，基础代币将是USDC或DAO的代币，结算权威将是DAO的财政部，提案将是向DAO的提案。
 
-Blockchains like Solana don't allow you to revert transactions after they've been finalized, so we need a mechanism to _simulate_ reverting transactions. That mechanism is conditional tokens.
+<figure><img src="../.gitbook/assets/conditional-vaults.png" alt="条件性保险库程序" width="563"><figcaption></figcaption></figure>
 
-Conditional tokens are tied to _conditional vaults_. Each conditional vault has a specific _underlying token, settlement authority,_ and _proposal_. In the case of futarchy, the underlying token would be either USDC or the DAO's token, the settlement authority would be the DAO's treasury, and the proposal would be a proposal to the DAO.
+一旦创建了保险库，任何人都可以存入基础代币以换取条件代币。您会收到两种类型的条件代币：如果保险库被最终确定，可以兑换为基础代币的代币，以及如果保险库被撤销，可以兑换为基础代币的代币。例如，如果您向保险库存入10个USDC，您将收到10个在最终确定条件下的USDC和10个在撤销条件下的USDC。
 
-<figure><img src="../.gitbook/assets/conditional-vaults.png" alt="Conditional Vault Program" width="563"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/conditional-vault-quote.png" alt="条件性保险库报价资产交互" width="563"><figcaption></figcaption></figure>
 
-Once a vault is created, anyone can deposit underlying tokens in exchange for conditional tokens. You receive two types of conditional tokens: ones that are redeemable for underlying tokens if the vault is finalized and ones that are redeemable for underlying tokens if the vault is reverted. For example, if you deposit 10 USDC into a vault, you will receive 10 conditional-on-finalize USDC and 10 conditional-on-revert USDC.
+结算权威可以选择 _finalize_ 或者 _revert_ 一个金库。
 
-<figure><img src="../.gitbook/assets/conditional-vault-quote.png" alt="Conditional Vault Quote Asset Interaction" width="563"><figcaption></figcaption></figure>
+如果结算权威机构最终确定了一个保险库，用户可以兑换他们的条件决定性代币以获取基础代币。相反，如果结算权威机构撤销了一个保险库，用户可以兑换他们的条件撤销性代币以获取基础代币。
 
-The settlement authority can either _finalize_ or _revert_ a vault.
+<figure><img src="../.gitbook/assets/settled-market-conditional-vault.png" alt="条件性保险库结算" width="563"><figcaption></figcaption></figure>
 
-If the settlement authority finalizes a vault, users can redeem their conditional-on-finalize tokens for underlying tokens. Conversely, if the settlement authority reverts a vault, users can redeem their conditional-on-revert tokens for underlying tokens.
+每个提案都有两个金库：基础金库和报价金库。基础金库使用DAO的代币作为基础代币，报价金库使用USDC作为基础代币。例如，MetaDAO的提案有META和USDC的金库。
 
-<figure><img src="../.gitbook/assets/settled-market-conditional-vault.png" alt="Conditional Vault Settlement" width="563"><figcaption></figcaption></figure>
+如果提案通过，两个保险库都将被确定。如果失败，两者都将被撤销。
 
-There are two vaults for each proposal: a base vault and a quote vault. The base vault uses the DAO's token as the underlying token, and the quote vault uses USDC as the underlying token. For example, MetaDAO proposals have vaults for META and USDC.
+<figure><img src="../.gitbook/assets/conditional-vault-underlying.png" alt="条件性保险库基础资产互动" width="563"><figcaption></figcaption></figure>
 
-If the proposal passes, both vaults are finalized. If it fails, both are reverted.
+这使我们能够实现所需的交易回滚。例如，如果有人铸造了有条件通过的META并用它交换了有条件通过的USDC，那么提案要么会通过，他们可以用有条件通过的USDC兑换USDC，要么提案会失败，他们可以用有条件失败的META兑换他们原来的META。
 
-<figure><img src="../.gitbook/assets/conditional-vault-underlying.png" alt="Conditional Vault Underlying Asset Interaction" width="563"><figcaption></figcaption></figure>
+因此，我们为每个提案创建两个市场：一个是在提案通过的条件下交易META和USDC，另一个是在提案失败的条件下交易META和USDC。这使交易者能够表达如“如果提案通过，这个代币将值112美元，但如果提案失败，它只值105美元。”这样的观点。
 
-This allows us to achieve the desired reverting of trades. For example, if someone mints conditional-on-pass META and trades it for conditional-on-pass USDC, either the proposal will pass and they can redeem conditional-on-pass USDC for USDC or the proposal will fail and they can redeem their conditional-on-fail META for their original META.
+<figure><img src="../.gitbook/assets/conditional-markets-interaction.png" alt="条件市场互动的布局" width="475"><figcaption></figcaption></figure>
 
-So we create two markets per proposal: one where conditional-on-pass META is traded for conditional-on-pass USDC and one where conditional-on-fail META is traded for conditional-on-fail USDC. This allows traders to express opinions like “this token would be worth $112 if the proposal passes, but it’s only worth $105 if the proposal fails.”
+### 自动做市商 <a href='#amm' id='amm'></a>
+决策市场是通过恒定产品自动做市商（AMM）来促进的。&#x20;
 
-<figure><img src="../.gitbook/assets/conditional-markets-interaction.png" alt="Layout Of Conditional Markets Interactions" width="475"><figcaption></figcaption></figure>
+重要的是，这个AMM提供了一个链上的时间加权平均价格(TWAP)预言机，可以被autocrat用来决定何时通过或否决提案。这个预言机遵循与[Uniswap V2](https://docs.uniswap.org/contracts/v2/concepts/core-concepts/oracles)相同的设计，并使用了几种额外的机制来确保防止操纵。
 
-### AMM <a href="#amm" id="amm"></a>
+### 自动统治者  <a href='#autocrat' id='autocrat'></a>
+谜题的最后一块是_autocrat_，这是一个协调Futarchy的程序。
 
-Decision markets are facilitated through a constant-product AMM.&#x20;
+任何人都可以与autocrat交互，创建一个_提案_，其中包含诸如提案编号、提案描述链接以及可执行的Solana虚拟机(SVM)指令等字段。例如，有人可以创建一个提案，将150,000 USDC转移到一个开发团队，以改进由DAO管理的产品。
 
-Importantly, this AMM provides an on-chain time-weighted average price (TWAP) oracle that can be used by autocrat to determine when to pass or fail proposals. The oracle follows the same design as [Uniswap V2](https://docs.uniswap.org/contracts/v2/concepts/core-concepts/oracles), and uses several additional mechanisms to ensure manipulation-resistance.
+必要的条件性保险库和市场同时创建。
 
-### Autocrat <a href="#autocrat" id="autocrat"></a>
+<figure><img src="../.gitbook/assets/autocrat-markets.png" alt="元首程序结构" width="563"><figcaption></figcaption></figure>
 
-The last piece of the puzzle is _autocrat_, the program that orchestrates futarchy.
+在可配置的时间段后（默认为3天），任何人都可以触发提案的最终确定。在最终确定过程中，autocrat会检查通过市场的TWAP是否比失败市场的TWAP高出x%，其中x是DAO配置的阈值。
 
-Anyone can interact with autocrat to create a _proposal_, which contains fields such as a proposal number, proposal description link, and an executable Solana Virtual Machine (SVM) instruction. For example, someone could create a proposal to transfer 150,000 USDC to a development team to improve a product that’s managed by a DAO.
-
-The requisite conditional vaults and markets are created at the same time.
-
-<figure><img src="../.gitbook/assets/autocrat-markets.png" alt="The Program Structure For Autocrat" width="563"><figcaption></figcaption></figure>
-
-After a configurable amount of time (3 days by default), anyone can trigger proposal finalization. In finalization, autocrat checks if the TWAP of the pass market is x% higher than the TWAP of the fail market, where x is a DAO-configured threshold.
-
-&#x20;If it is, it finalizes the pass market, reverts the fail market, and allows the SVM instruction to be executed. If it isn’t, it reverts the pass market, finalizes the fail market, and does not allow the SVM instruction to be executed.
+如果是，它将完成通过市场的最终决定，撤销失败市场，并允许执行SVM指令。如果不是，它将撤销通过市场，完成失败市场的最终决定，并不允许执行SVM指令。

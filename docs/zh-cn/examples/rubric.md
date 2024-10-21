@@ -1,28 +1,32 @@
-# Example Rubric
+# 示例评分标准
 
-ACME Corp is the developer of an innovative L1 blockchain written in FORTRAN. To bootstrap its ecosystem, ACME funds teams who build applications with $100k grants. 
+ACME Corp是一种创新的用FORTRAN编写的L1区块链的开发者。为了引导其生态系统，ACME以10万美元的资助为构建应用程序的团队提供资金。
 
-ACME retroactively grades grants on two criteria: project completion and project adoption. Each of these is half the weight of a grant’s score.
+ACME根据两个标准对补助进行追溯评级：项目完成和项目采纳。这两项各占补助分数的一半。
 
-<figure><img src="../../.gitbook/assets/rubric-score.png" alt="Scoring Mechanism"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/rubric-score.png" alt="评分机制"><figcaption></figcaption></figure>
 
-## Completion
-Projects can receive a 0 to 0.5 completion score. Here’s how the number is determined:
+## 完成
 
-- 0: this project essentially ran off with the money, releasing nothing publicly.
-- 0.25: this project did not launch but it did develop part of the product; there’s a codebase that another project would be able to use.
-- 0.5: this project fully launched.
+项目可以获得0到0.5的完成分数。以下是确定这个数字的方式：
 
-## Adoption
-Projects can receive a 0 to 0.5 adoption score. Here’s how the number is determined:
+- 0: 这个项目基本上拿着钱就跑了，没有公开发布任何东西。
+- 0.25：此项目未启动，但它确实开发了部分产品；存在一个代码库，其他项目可以使用。
+- 0.5: 该项目已全面启动。
 
-- 0: if it’s a consumer product, 50 people or less have used this product; if it’s a DeFi product, it’s acquired less than $50k in TVL.
-- 0.5: if it’s a consumer product, 500 people or less have used this product; if it’s a DeFi product, it’s acquired less than $500k in TVL.
-- 1: if it’s a consumer product, 2,500 people or more have used it; if it’s a DeFi product, it’s acquired more than $2.5M in TVL.
+## 采纳
 
-## Methodology
-Grants are scored by a grants committee of 5 people, 3 from ACME and 2 from MetaDAO. The total score is computed by averaging the scores of the 5 committee members.
+项目可以获得0到0.5的采纳分数。以下是确定这个数字的方式：
 
-## Timeline
-Grants are scored 3 months after the grant has been given.
+- 0: 如果这是一种消费品，那么使用过这种产品的人数不超过50人；如果这是一种DeFi产品，那么它的总锁定价值（TVL）不超过5万美元。
+- 0.5：如果这是一种消费品，那么使用过这种产品的人数不超过500人；如果这是一种DeFi产品，那么它的总价值锁定（TVL）不超过50万美元。
+- 1: 如果它是一种消费品，那么有2500人或更多的人使用过它；如果它是DeFi产品，那么它已经获得了超过250万美元的TVL。
+
+## 方法论
+
+补助金由5人的补助金委员会进行评分，其中3人来自ACME，2人来自MetaDAO。总分是通过平均5个委员会成员的分数来计算的。
+
+## 时间线
+
+补助金在发放后的三个月内进行评分。
 
