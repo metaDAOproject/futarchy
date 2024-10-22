@@ -1,2 +1,0 @@
-# {{overview_3}}
-{{metadao_is_the_dao_responsible_for_developing_futarchy_it_is_itself_a_futarchy_and_uses_meta_as_its_reference_asset}}
