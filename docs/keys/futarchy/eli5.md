@@ -2,7 +2,7 @@
 {{description_a_simple_description_of_futarchy}}
 ---
 
-# {{eli5_1}}
+# {{eli5}}
 {{futarchy_is_a_fundamentally_new_mechanism_because_of_this_it_normally_takes_some_time_to_fully_understand_how_it_works}}
 
 {{at_a_highlevel_though_a_basic_way_to_think_about_futarchy_is}}

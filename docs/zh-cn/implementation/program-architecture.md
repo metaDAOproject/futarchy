@@ -1,16 +1,16 @@
 # 程序架构
 我们通过三个程序实现Futarchy：
 
-* **条件性保险库:** 允许创建条件性代币的功能。
-* **AMM:** 允许创建基于AMM的条件市场。提供一个时间加权平均价格预言机。
-* **Autocrat（自动统治者）:** 协调Futarchy的程序。允许创建DAOs和提案，并允许根据条件市场中的价格来最终确定提案。
+* **条件性保险库**: 允许创建条件性代币的功能。
+* **AMM**: 允许创建基于AMM的条件市场。提供一个时间加权平均价格预言机。
+* **Autocrat（自动统治者）**: 协调Futarchy的程序。允许创建DAOs和提案，并允许根据条件市场中的价格来最终确定提案。
 
-### 条件性保险库程序 Conditional vault program <a href="#conditional-vault-program" id="conditional-vault-program"></a>
+### 条件性保险库程序 <a href="#conditional-vault-program" id="conditional-vault-program"></a>
 要使决策市场正常运作，当条件未满足时，您必须撤销市场的所有交易。这就是允许投机者进行像'如果这个提案通过，我愿意支付$5,000购买10个META'这样的交易的原因。
 
-像Solana这样的区块链不允许你在交易被最终确定后撤销交易，所以我们需要一种机制来_模拟_撤销交易。这种机制就是条件性代币。
+像Solana这样的区块链不允许你在交易被最终确定后撤销交易，所以我们需要一种机制来模拟撤销交易。这种机制就是条件性代币。
 
-条件性代币与_条件性金库_相绑定。每个条件性金库都有特定的_基础代币，结算权威，_和_提案_。在Futarchy的情况下，基础代币将是USDC或DAO的代币，结算权威将是DAO的财政部，提案将是向DAO的提案。
+条件性代币与条件性金库相绑定。每个条件性金库都有特定的基础代币，结算权威，和提案。在Futarchy的情况下，基础代币将是USDC或DAO的代币，结算权威将是DAO的财政部，提案将是向DAO的提案。
 
 <figure><img src="../.gitbook/assets/conditional-vaults.png" alt="条件性保险库程序" width="563"><figcaption></figcaption></figure>
 
@@ -18,7 +18,7 @@
 
 <figure><img src="../.gitbook/assets/conditional-vault-quote.png" alt="条件性保险库报价资产交互" width="563"><figcaption></figcaption></figure>
 
-结算权威可以选择 _finalize_ 或者 _revert_ 一个金库。
+结算授权机构可以选择最终确定或回退一个金库。
 
 如果结算权威机构最终确定了一个保险库，用户可以兑换他们的条件决定性代币以获取基础代币。相反，如果结算权威机构撤销了一个保险库，用户可以兑换他们的条件撤销性代币以获取基础代币。
 
@@ -30,7 +30,7 @@
 
 <figure><img src="../.gitbook/assets/conditional-vault-underlying.png" alt="条件性保险库基础资产互动" width="563"><figcaption></figcaption></figure>
 
-这使我们能够实现所需的交易回滚。例如，如果有人铸造了有条件通过的META并用它交换了有条件通过的USDC，那么提案要么会通过，他们可以用有条件通过的USDC兑换USDC，要么提案会失败，他们可以用有条件失败的META兑换他们原来的META。
+这使我们能够实现所需的交易回滚。例如，如果有人铸造了以提案通过为条件的Meta并用它交换了以提案通过为条件的USDC，那么提案要么会通过，他们可以用以提案通过为条件的USDC兑换USDC，要么提案会失败，他们可以用以提案失败为条件的META兑换他们原来的META。
 
 因此，我们为每个提案创建两个市场：一个是在提案通过的条件下交易META和USDC，另一个是在提案失败的条件下交易META和USDC。这使交易者能够表达如“如果提案通过，这个代币将值112美元，但如果提案失败，它只值105美元。”这样的观点。
 
@@ -42,9 +42,9 @@
 重要的是，这个AMM提供了一个链上的时间加权平均价格(TWAP)预言机，可以被autocrat用来决定何时通过或否决提案。这个预言机遵循与[Uniswap V2](https://docs.uniswap.org/contracts/v2/concepts/core-concepts/oracles)相同的设计，并使用了几种额外的机制来确保防止操纵。
 
 ### 自动统治者  <a href='#autocrat' id='autocrat'></a>
-谜题的最后一块是_autocrat_，这是一个协调Futarchy的程序。
+谜题的最后一块是autocrat，这是一个协调Futarchy的程序。
 
-任何人都可以与autocrat交互，创建一个_提案_，其中包含诸如提案编号、提案描述链接以及可执行的Solana虚拟机(SVM)指令等字段。例如，有人可以创建一个提案，将150,000 USDC转移到一个开发团队，以改进由DAO管理的产品。
+任何人都可以与autocrat交互，创建一个提案，其中包含诸如提案编号、提案描述链接以及可执行的Solana虚拟机(SVM)指令等字段。例如，有人可以创建一个提案，将150,000 USDC转移到一个开发团队，以改进由DAO管理的产品。
 
 必要的条件性保险库和市场同时创建。
 

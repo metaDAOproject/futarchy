@@ -11,7 +11,7 @@
 * [示例评分标准](examples/rubric.md)
 
 ## Futarchy
-* [向五岁儿童解释](futarchy/eli5.md)
+* [简单的解释](futarchy/eli5.md)
 * [概述](futarchy/overview.md)
 * [好处](futarchy/benefits.md)
 * [缺点](futarchy/drawbacks.md)

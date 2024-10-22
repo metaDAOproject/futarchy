@@ -11,14 +11,16 @@ MetaDAO的基于价值的决策制定程序适用于许多不同的应用。在�
 
 有哪些想法是你可能希望看到评估的，或者你有兴趣尝试的例子？ 加入[MetaDAO Discord](https://discord.gg/metadao)并告诉我们！
 
-## 示例我们根据消费者需求设计了产品，但这绝不意味着它仅限于这些示例。
+## 示例
+示例我们根据消费者需求设计了产品，但这绝不意味着它仅限于这些示例
 
 ### 资助
 以下是在赠款计划中使用的指南，以及如果您想要实施该系统，将需要您做什么。
 
 <figure><img src="../.gitbook/assets/grant-summary.png" alt="资助流程概述"><figcaption></figcaption></figure>
 
-#### 先决条件首先，MetaDAO将需要以下内容：
+#### 先决条件
+先决条件首先，MetaDAO将需要以下内容
 
 - 评分标准：用于评估资助效果的评分标准。 这是交易者用来定价赠款并确定是否应该允许其通过的工具。一个例子在[这里](../examples/rubric.md)。
 - 期望的最低流动性：您希望在赠款市场中看到的最低流动性是多少。我们建议从2000美元到20000美元，其中最低流动性至少是赠款预期平均规模的20%。更高的流动性意味着更强烈的正确定价市场的激励。
@@ -26,7 +28,8 @@ MetaDAO的基于价值的决策制定程序适用于许多不同的应用。在�
 - 期望的阈值：你希望市场在基于你的标准授予补助之前，对补助的有效性进行多高的评估。例如，'50%' 或 '85%。'
 - 交易期限：市场将运行多长时间。我们建议3天。
 
-#### 资助生命周期<figure><img src="../.gitbook/assets/grant-flow-chart.png" alt="资助决策市场的流程"><figcaption></figcaption></figure>
+#### 资助生命周期
+<figure><img src="../.gitbook/assets/grant-flow-chart.png" alt="资助决策市场的流程"><figcaption></figcaption></figure>
 在我们的系统中，补助经过几个阶段：
 
 - 构思
@@ -34,9 +37,11 @@ MetaDAO的基于价值的决策制定程序适用于许多不同的应用。在�
 - 现货市场
 - 决议
 
-##### 构思首先，有人需要提出一个潜在的赠款的想法。一旦他们决定愿意这样做，他们将撰写一个赠款提案。这个提案可以选择性地遵循你自己的模板。
+##### 构思
+构思首先，有人需要提出一个潜在的赠款的想法。一旦他们决定愿意这样做，他们将撰写一个赠款提案。这个提案可以选择性地遵循你自己的模板。
 
-##### 决策市场<figure><img src="../.gitbook/assets/grant-ideation-decision-market.png" alt="资助决策市场"><figcaption></figcaption></figure>
+##### 决策市场
+<figure><img src="../.gitbook/assets/grant-ideation-decision-market.png" alt="资助决策市场"><figcaption></figcaption></figure>
 一旦潜在的资助接收者撰写了他们的资助提案，我们会帮助他们创建一个决策市场。
 
 在决策市场中，交易者会交易如果这笔补助被给予，其有效性评分会是多少？
@@ -47,7 +52,9 @@ E-UP的市场价格代表市场对补助效果的看法。
 
 交易期结束后，资助将被接受或拒绝。如果被拒绝，所有交易者将获得退款，资助者不会收到任何款项。如果被接受，款项将通过您选择的方式发送（例如，通过Squads多重签名）。
 
-##### 现货市场<figure><img src="../.gitbook/assets/grant-spot-evaluation.png" alt="现货市场与评估"><figcaption></figcaption></figure>
+##### 现货市场
+<figure><img src="../.gitbook/assets/grant-spot-evaluation.png" alt="现货市场与评估"><figcaption></figcaption></figure>
 如果授予了一笔资助，我们将保持E-UP和E-DOWN市场开放。这允许交易者在市场已经反映了他们的信念时清算他们的头寸。这也允许市场持续评估受资助者。
 
-##### 决议在规则中指定的时间期限后，将对补助进行评级。其得分将输入到一个预言机中，以便交易者可以兑换他们的E-UP和E-DOWN为现金。这结束了该过程和市场。
+##### 决议
+决议在规则中指定的时间期限后，将对补助进行评级。其得分将输入到一个预言机中，以便交易者可以兑换他们的E-UP和E-DOWN为现金。这结束了该过程和市场。

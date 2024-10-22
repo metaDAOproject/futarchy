@@ -1,6 +1,6 @@
 # META
 ### 目的
-所有的Futarchy都需要一个资产来在其决策市场中使用。MetaDAO有META，其铸币是  METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr.
+所有的Futarchy都需要一个资产来在其决策市场中使用。MetaDAO有META，其铸币是 METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr.
 
 ### 分发
 为了启动治理过程，10,000 META被空投到大约60个钱包中。剩余的供应由DAO的财政部持有。
