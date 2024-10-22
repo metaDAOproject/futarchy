@@ -9,6 +9,9 @@
 * [Trading Proposals](using-the-platform/trading-proposals.md)
 * [Value Resolved Decision Markets](using-the-platform/value-resolved-decision-markets.md)
 
+## Examples
+* [Example Rubric](examples/rubric.md)
+
 ## Futarchy
 
 * [ELI5](futarchy/eli5.md)
@@ -35,7 +38,7 @@
 ## 🔗 Links
 
 * [Discord](https://discord.gg/metadao)
-* [X](https://x.com/MetaDAOProject)
+  * [X](https://x.com/MetaDAOProject)
 * [Blog](https://blog.metadao.fi/)
 * [GitHub](https://github.com/metaDAOproject)
 * [Whitepaper](https://github.com/metaDAOproject/Manifesto/blob/main/Manifesto.pdf)
