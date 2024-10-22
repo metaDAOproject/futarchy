@@ -448,6 +448,23 @@ export class AmmClient {
     };
   }
 
+  simulateSwapInner(
+    inputAmount: BN,
+    inputReserves: BN,
+    outputReserves: BN
+  ): BN {
+    if (inputReserves.eqn(0) || outputReserves.eqn(0)) {
+      throw new Error("reserves must be non-zero");
+    }
+
+    let inputAmountWithFee: BN = inputAmount.muln(990);
+
+    let numerator: BN = inputAmountWithFee.mul(outputReserves);
+    let denominator: BN = inputReserves.muln(1000).add(inputAmountWithFee);
+
+    return numerator.div(denominator);
+  }
+
   simulateSwap(
     inputAmount: BN,
     swapType: SwapType,
@@ -455,11 +472,7 @@ export class AmmClient {
     quoteReserves: BN,
     slippageBps?: BN
   ): SwapSimulation {
-    if (baseReserves.eqn(0) || quoteReserves.eqn(0)) {
-      throw new Error("reserves must be non-zero");
-    }
-
-    let inputReserves, outputReserves: BN;
+    let inputReserves: BN, outputReserves: BN;
     if (swapType.buy) {
       inputReserves = quoteReserves;
       outputReserves = baseReserves;
@@ -468,18 +481,18 @@ export class AmmClient {
       outputReserves = quoteReserves;
     }
 
-    let inputAmountWithFee: BN = inputAmount.muln(990);
+    let expectedOut = this.simulateSwapInner(
+      inputAmount,
+      inputReserves,
+      outputReserves
+    );
 
-    let numerator: BN = inputAmountWithFee.mul(outputReserves);
-    let denominator: BN = inputReserves.muln(1000).add(inputAmountWithFee);
-
-    let expectedOut = numerator.div(denominator);
     let minExpectedOut;
     if (slippageBps) {
       minExpectedOut = PriceMath.subtractSlippage(expectedOut, slippageBps);
     }
 
-    let newBaseReserves, newQuoteReserves: BN;
+    let newBaseReserves: BN, newQuoteReserves: BN;
     if (swapType.buy) {
       newBaseReserves = baseReserves.sub(expectedOut);
       newQuoteReserves = quoteReserves.add(inputAmount);
@@ -542,9 +555,9 @@ export class AmmClient {
     slippageBps: BN
   ): {
     optimalSwapAmount: BN;
-    userTokensAfterSwap: BN;
-    expectedQuoteReceived: BN;
-    minimumExpectedQuoteReceived: BN;
+    userInAfterSwap: BN;
+    expectedOut: BN;
+    minimumExpectedOut: BN;
   } {
     // essentially, we want to calculate the swap amount so that the remaining user balance = received token amount
 
@@ -573,19 +586,18 @@ export class AmmClient {
 
     const swapAmount = x;
 
-    let expectedOut = this.simulateSwap(
+    let expectedOut = this.simulateSwapInner(
       new BN(swapAmount),
-      { sell: {} },
       ammReserveIn,
       ammReserveOut
-    ).expectedOut;
+    );
     let minimumExpectedOut =
       Number(expectedOut) - (Number(expectedOut) * Number(slippageBps)) / 10000;
     return {
       optimalSwapAmount: new BN(swapAmount),
-      userTokensAfterSwap: new BN(Number(userBalanceIn) - swapAmount),
-      expectedQuoteReceived: expectedOut,
-      minimumExpectedQuoteReceived: new BN(minimumExpectedOut),
+      userInAfterSwap: new BN(Number(userBalanceIn) - swapAmount),
+      expectedOut: expectedOut,
+      minimumExpectedOut: new BN(minimumExpectedOut),
     };
   }
 }
