@@ -7,6 +7,7 @@ import {
   Keypair,
   PublicKey,
   Transaction,
+  TransactionInstruction,
   TransactionMessage,
 } from "@solana/web3.js";
 import { PERMISSIONLESS_ACCOUNT } from "@metadaoproject/programs";
@@ -21,6 +22,7 @@ import {
   sendWithRetries,
 } from "./daoActions.js";
 import {
+  compareVaultTransactionInstructions,
   createSquadsVaultTxAndProposal,
   getSquadsPdasFromDao,
   probeSquadsVaultTransaction,
@@ -190,10 +192,13 @@ export class FutarchyProposalInitializationError extends Error {
 
 /**
  * Finishes a createFutarchyProposal run that failed after its squads proposal
- * was created: checks the squads proposal is on the DAO's multisig and still
- * active, then initializes the futarchy proposal for it, skipping the
- * accounts that already exist. The actions aren't rebuilt - the instructions
- * put up for vote are the ones the squads transaction already holds.
+ * was created: checks the squads proposal is on the DAO's multisig, still
+ * active and holds `instructions` - what the actions produce now - then
+ * initializes the futarchy proposal for it, skipping the accounts that
+ * already exist. What's put up for vote is what the squads transaction
+ * already holds: instructions whose data differs (amounts recomputed from
+ * live state, like withdrawal minimums) are reported, anything else differing
+ * means it isn't the proposal these actions created.
  */
 const resumeFutarchyProposal = async ({
   provider,
@@ -201,12 +206,14 @@ const resumeFutarchyProposal = async ({
   dao,
   payer,
   squadsProposal,
+  instructions,
 }: {
   provider: AnchorProvider;
   futarchy: FutarchyClient;
   dao: PublicKey;
   payer: Keypair;
   squadsProposal: PublicKey;
+  instructions: TransactionInstruction[];
 }) => {
   const { multisigPda: daoMultisig } = await getSquadsPdasFromDao(dao);
 
@@ -235,6 +242,28 @@ const resumeFutarchyProposal = async ({
     index: transactionIndex,
   });
 
+  const vaultTransaction =
+    await multisig.accounts.VaultTransaction.fromAccountAddress(
+      provider.connection,
+      squadsVaultTransaction,
+    );
+  const comparison = compareVaultTransactionInstructions(
+    vaultTransaction.message,
+    instructions,
+  );
+  if (comparison.kind === "different") {
+    throw new Error(
+      `Squads proposal ${squadsProposal.toBase58()} holds other instructions than the actions produce - it isn't the proposal these actions created. Check resumeSquadsProposal against the failed run's log.`,
+    );
+  }
+  if (comparison.kind === "data") {
+    for (const i of comparison.differing) {
+      console.warn(
+        `Instruction ${i} (${instructions[i].programId.toBase58()}) holds different data on-chain than the actions produce now. The on-chain data is what a passed proposal executes - expected for amounts derived from live state, like withdrawal minimums.`,
+      );
+    }
+  }
+
   console.log("Resuming squads proposal:", squadsProposal.toBase58());
   console.log("Squads transaction index:", transactionIndex.toString());
   console.log("Squads transaction:", squadsVaultTransaction.toBase58());
@@ -260,8 +289,9 @@ const resumeFutarchyProposal = async ({
  *
  * If initialization fails after the squads proposal was created, a
  * FutarchyProposalInitializationError carrying the squads proposal is thrown.
- * Re-run with `resumeSquadsProposal` set to it to finish the initialization;
- * the actions are ignored then, since the instructions are already on-chain.
+ * Re-run with `resumeSquadsProposal` set to it and the same actions to finish
+ * the initialization; the actions are only rebuilt then to check the squads
+ * proposal holds them, since what's voted on is already on-chain.
  * Any other error means nothing of this run landed on the DAO's multisig, so
  * the run can be repeated as is.
  *
@@ -284,14 +314,10 @@ export const createFutarchyProposal = async ({
   actions: DaoActionBuilder[];
   resumeSquadsProposal?: PublicKey;
 }) => {
-  if (resumeSquadsProposal) {
-    return resumeFutarchyProposal({
-      provider,
-      futarchy,
-      dao,
-      payer,
-      squadsProposal: resumeSquadsProposal,
-    });
+  if (resumeSquadsProposal && actions.length === 0) {
+    throw new Error(
+      "Resuming needs the actions the squads proposal was created with, to check it holds them",
+    );
   }
 
   const {
@@ -312,6 +338,17 @@ export const createFutarchyProposal = async ({
     throw new Error(
       "An action is signed by the DAO itself, which a futarchy proposal's permissionless execution can't provide - enqueue it through the admin approval flow instead",
     );
+  }
+
+  if (resumeSquadsProposal) {
+    return resumeFutarchyProposal({
+      provider,
+      futarchy,
+      dao,
+      payer,
+      squadsProposal: resumeSquadsProposal,
+      instructions,
+    });
   }
 
   if (setupTransaction) {

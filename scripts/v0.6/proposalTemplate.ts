@@ -21,8 +21,9 @@ import { createFutarchyProposal } from "../utils/futarchyProposal.js";
 //
 // If a run fails after "Squads transaction and proposal created!", don't
 // re-run it as is - that creates a second squads proposal with the same
-// instructions. Set RESUME_SQUADS_PROPOSAL to the logged squads proposal and
-// re-run to finish initializing the futarchy proposal for it.
+// instructions. Set RESUME_SQUADS_PROPOSAL to the logged squads proposal,
+// keep the actions as they were (the script checks the proposal holds them),
+// and re-run to finish initializing the futarchy proposal for it.
 
 ///////////////
 // Constants //

@@ -70,30 +70,53 @@ export const createSquadsVaultTxAndProposal = async (
   };
 };
 
-// Whether a vault transaction's message holds exactly `instructions`: the
-// same programs, accounts (in order) and data, with no lookup tables
-const holdsInstructions = (
+/**
+ * How a vault transaction's message compares to `instructions`: `exact` when
+ * it holds the same programs, accounts (in order) and data; `data` when only
+ * the data of some instructions (`differing`, by index) differs - the same
+ * actions built against other state; `different` otherwise: other programs
+ * or accounts, another number of instructions, or lookup tables in use.
+ */
+export type InstructionsComparison =
+  | { kind: "exact" }
+  | { kind: "data"; differing: number[] }
+  | { kind: "different" };
+
+export const compareVaultTransactionInstructions = (
   message: multisig.generated.VaultTransactionMessage,
   instructions: TransactionInstruction[],
-) =>
-  message.addressTableLookups.length === 0 &&
-  message.instructions.length === instructions.length &&
-  message.instructions.every((compiled, i) => {
+): InstructionsComparison => {
+  if (
+    message.addressTableLookups.length > 0 ||
+    message.instructions.length !== instructions.length
+  ) {
+    return { kind: "different" };
+  }
+
+  const differing: number[] = [];
+  for (const [i, compiled] of message.instructions.entries()) {
     const instruction = instructions[i];
     const accounts = Array.from(compiled.accountIndexes).map(
       (index) => message.accountKeys[index],
     );
-    return (
+    const sameTarget =
       message.accountKeys[compiled.programIdIndex]?.equals(
         instruction.programId,
       ) &&
       accounts.length === instruction.keys.length &&
       accounts.every((account, j) =>
         account?.equals(instruction.keys[j].pubkey),
-      ) &&
-      Buffer.from(compiled.data).equals(instruction.data)
-    );
-  });
+      );
+    if (!sameTarget) {
+      return { kind: "different" };
+    }
+    if (!Buffer.from(compiled.data).equals(instruction.data)) {
+      differing.push(i);
+    }
+  }
+
+  return differing.length > 0 ? { kind: "data", differing } : { kind: "exact" };
+};
 
 /**
  * Probes the vault transaction at `vaultTransactionPda`: absent, holding
@@ -115,7 +138,10 @@ export const probeSquadsVaultTransaction = async (
   }
   const [vaultTransaction] =
     multisig.accounts.VaultTransaction.fromAccountInfo(accountInfo);
-  return holdsInstructions(vaultTransaction.message, instructions)
+  return compareVaultTransactionInstructions(
+    vaultTransaction.message,
+    instructions,
+  ).kind === "exact"
     ? "landed"
     : "taken";
 };
