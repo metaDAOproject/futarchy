@@ -1,13 +1,11 @@
 import { AnchorProvider } from "@coral-xyz/anchor";
 import * as multisig from "@sqds/multisig";
 import { sha256 } from "@noble/hashes/sha256";
-import bs58 from "bs58";
 import {
   ComputeBudgetProgram,
   Connection,
   Keypair,
   PublicKey,
-  SendTransactionError,
   Transaction,
   TransactionMessage,
 } from "@solana/web3.js";
@@ -20,113 +18,50 @@ import {
   buildDaoActions,
   DaoActionBuilder,
   sendAndConfirm,
+  sendWithRetries,
 } from "./daoActions.js";
 import {
   createSquadsVaultTxAndProposal,
   getSquadsPdasFromDao,
+  probeSquadsVaultTransaction,
 } from "./squads.js";
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const accountExists = async (connection: Connection, account: PublicKey) =>
   (await connection.getAccountInfo(account, "confirmed")) !== null;
 
 /**
- * Signs and sends a transaction, confirming it at the confirmed commitment.
- * A failed attempt is retried with a freshly built transaction: a load
- * balanced RPC can run preflight on a node that hasn't yet seen the
- * transaction that created an account this one reads, and a transaction that
- * expires unconfirmed can never land, so rebuilding it is safe.
- *
- * `createdAccounts` are accounts only this flow creates (PDAs of its own
- * proposal); when they all exist the transaction is skipped, so an attempt
- * that landed without being confirmed isn't repeated. Leave it out for
- * accounts anyone could create at the same address, like squads transactions
- * at a transaction index - there, only a confirmed signature counts as
- * success.
+ * Sends a transaction creating `createdAccounts` - PDAs only this proposal's
+ * flow creates - through sendWithRetries, treating the step as done once they
+ * all exist. That's what makes a failed run re-runnable: steps whose accounts
+ * already exist are skipped.
  */
-const sendCreateTransaction = async ({
+const sendCreateTransaction = ({
   provider,
   payer,
-  signers = [],
   name,
-  createdAccounts = [],
+  createdAccounts,
   buildTransaction,
-  attempts = 5,
 }: {
   provider: AnchorProvider;
   payer: Keypair;
-  signers?: Keypair[];
   name: string;
-  createdAccounts?: PublicKey[];
+  createdAccounts: PublicKey[];
   buildTransaction: () => Promise<Transaction>;
-  attempts?: number;
-}) => {
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    if (createdAccounts.length > 0) {
+}) =>
+  sendWithRetries({
+    provider,
+    payer,
+    name,
+    build: async () => ({ transaction: await buildTransaction() }),
+    probe: async () => {
       const existing = await Promise.all(
         createdAccounts.map((account) =>
           accountExists(provider.connection, account),
         ),
       );
-      if (existing.every(Boolean)) {
-        console.log(`${name} already exists - skipping`);
-        return null;
-      }
-    }
-
-    try {
-      const transaction = await buildTransaction();
-      const { blockhash, lastValidBlockHeight } =
-        await provider.connection.getLatestBlockhash("confirmed");
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = payer.publicKey;
-      transaction.sign(payer, ...signers);
-
-      let signature: string;
-      try {
-        signature = await provider.connection.sendRawTransaction(
-          transaction.serialize(),
-          { preflightCommitment: "confirmed" },
-        );
-      } catch (error) {
-        // The node rejected the transaction, so nothing was broadcast
-        if (error instanceof SendTransactionError) {
-          throw error;
-        }
-        // Anything else (e.g. a transport error) may have happened after the
-        // transaction was forwarded, so confirm it by signature: it either
-        // lands or expires, and only then is rebuilding it safe
-        signature = bs58.encode(transaction.signature!);
-      }
-
-      const status = await provider.connection.confirmTransaction(
-        { signature, blockhash, lastValidBlockHeight },
-        "confirmed",
-      );
-      if (status.value.err) {
-        throw new Error(
-          `Transaction ${signature} failed: ${JSON.stringify(status.value.err)}`,
-        );
-      }
-
-      console.log(`${name} created!`);
-      console.log("Transaction signature:", signature);
-      return signature;
-    } catch (error) {
-      if (attempt === attempts) {
-        throw error;
-      }
-      console.warn(
-        `${name}: attempt ${attempt} of ${attempts} failed, retrying -`,
-        error instanceof Error ? error.message : error,
-      );
-      await sleep(2_000);
-    }
-  }
-
-  throw new Error(`${name}: out of attempts`);
-};
+      return existing.every(Boolean) ? "landed" : "absent";
+    },
+  });
 
 /**
  * Initializes the futarchy proposal for an existing squads proposal on the
@@ -327,8 +262,8 @@ const resumeFutarchyProposal = async ({
  * FutarchyProposalInitializationError carrying the squads proposal is thrown.
  * Re-run with `resumeSquadsProposal` set to it to finish the initialization;
  * the actions are ignored then, since the instructions are already on-chain.
- * Any other error means no squads proposal was confirmed, so the run can be
- * repeated as is.
+ * Any other error means nothing of this run landed on the DAO's multisig, so
+ * the run can be repeated as is.
  *
  * A passed proposal is executed permissionlessly, so actions the DAO itself
  * signs (requiresAdminExecution) can't go through here - route those through
@@ -388,56 +323,61 @@ export const createFutarchyProposal = async ({
     console.log("Transaction signature:", setupSignature);
   }
 
-  // Read only now so the DAO multisig's transaction index is fresh. It stays
-  // pinned across retries: an attempt that expired can't land anymore, and if
-  // another proposal took the index meanwhile the retries fail on it instead
-  // of adopting it.
-  const daoMultisigAccount =
-    await multisig.accounts.Multisig.fromAccountAddress(
-      provider.connection,
-      daoMultisig,
-    );
-  const transactionIndex =
-    BigInt(daoMultisigAccount.transactionIndex.toString()) + 1n;
-
-  const transactionMessage = new TransactionMessage({
-    payerKey: daoMultisigVault,
-    recentBlockhash: (await provider.connection.getLatestBlockhash()).blockhash,
-    instructions,
-  });
-
-  const { vaultTxCreateIx, proposalCreateIx } =
-    await createSquadsVaultTxAndProposal(
-      daoMultisig,
-      transactionIndex,
-      transactionMessage,
-      payer.publicKey,
-    );
-
-  const [squadsVaultTransaction] = multisig.getTransactionPda({
-    multisigPda: daoMultisig,
-    index: transactionIndex,
-  });
-  const [squadsProposal] = multisig.getProposalPda({
-    multisigPda: daoMultisig,
-    transactionIndex,
-  });
-
-  try {
-    await sendCreateTransaction({
+  const { transactionIndex, squadsVaultTransaction, squadsProposal } =
+    await sendWithRetries({
       provider,
       payer,
       signers: [PERMISSIONLESS_ACCOUNT],
       name: "Squads transaction and proposal",
-      buildTransaction: async () =>
-        new Transaction().add(vaultTxCreateIx, proposalCreateIx),
+      // Built only now so the DAO multisig's transaction index is fresh, and
+      // rebuilt only if another proposal takes that index
+      build: async () => {
+        const daoMultisigAccount =
+          await multisig.accounts.Multisig.fromAccountAddress(
+            provider.connection,
+            daoMultisig,
+          );
+        const transactionIndex =
+          BigInt(daoMultisigAccount.transactionIndex.toString()) + 1n;
+
+        const transactionMessage = new TransactionMessage({
+          payerKey: daoMultisigVault,
+          recentBlockhash: (await provider.connection.getLatestBlockhash())
+            .blockhash,
+          instructions,
+        });
+
+        const { vaultTxCreateIx, proposalCreateIx } =
+          await createSquadsVaultTxAndProposal(
+            daoMultisig,
+            transactionIndex,
+            transactionMessage,
+            payer.publicKey,
+          );
+
+        const [squadsVaultTransaction] = multisig.getTransactionPda({
+          multisigPda: daoMultisig,
+          index: transactionIndex,
+        });
+        const [squadsProposal] = multisig.getProposalPda({
+          multisigPda: daoMultisig,
+          transactionIndex,
+        });
+
+        return {
+          transaction: new Transaction().add(vaultTxCreateIx, proposalCreateIx),
+          transactionIndex,
+          squadsVaultTransaction,
+          squadsProposal,
+        };
+      },
+      probe: ({ squadsVaultTransaction }) =>
+        probeSquadsVaultTransaction(
+          provider.connection,
+          squadsVaultTransaction,
+          instructions,
+        ),
     });
-  } catch (error) {
-    console.error(
-      "Creating the squads transaction and proposal failed. No squads proposal was confirmed, so the run can be repeated as is.",
-    );
-    throw error;
-  }
 
   console.log("Squads transaction index:", transactionIndex.toString());
   console.log("Squads transaction:", squadsVaultTransaction.toBase58());

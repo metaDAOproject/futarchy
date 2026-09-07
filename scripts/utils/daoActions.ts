@@ -1,12 +1,11 @@
 import { AnchorProvider } from "@coral-xyz/anchor";
 import * as multisig from "@sqds/multisig";
 import BN from "bn.js";
+import bs58 from "bs58";
 import {
   Keypair,
   PublicKey,
-  RpcResponseAndContext,
   SendTransactionError,
-  SignatureResult,
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
@@ -37,7 +36,7 @@ import {
   UpdateDaoParams,
 } from "@metadaoproject/programs/futarchy/v0.6";
 import { buildAdminApprovalTransactions } from "./adminApproval.js";
-import { getSquadsPdasFromDao } from "./squads.js";
+import { getSquadsPdasFromDao, probeSquadsVaultTransaction } from "./squads.js";
 
 const SEED_AMM_POSITION = Buffer.from("amm_position");
 const SEED_POSITION_NFT_MINT = Buffer.from("position_nft_mint");
@@ -619,15 +618,149 @@ export const sendAndConfirm = async (
   return signature;
 };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A preflight rejection: the node simulated the transaction and refused to
+// forward it. Any other send error may have come back after the transaction
+// was forwarded.
+const isPreflightRejection = (error: unknown) =>
+  error instanceof SendTransactionError &&
+  error.message.includes("Transaction simulation failed");
+
+/**
+ * What a probe found at the accounts a transaction creates: they exist
+ * holding what the transaction puts there (`landed`), don't exist (`absent`),
+ * or exist holding something else, like another proposal at the same squads
+ * transaction index (`taken`).
+ */
+export type ProbeResult = "landed" | "absent" | "taken";
+
+/**
+ * Sends a transaction, retrying until it's confirmed at the confirmed
+ * commitment or `attempts` run out, without a retry ever duplicating what an
+ * earlier attempt created:
+ *
+ * - A preflight rejection was never broadcast. Any other send error is
+ *   followed by confirming the signature until it lands or its blockhash
+ *   expires, after which it can't land anymore.
+ * - Before each attempt, `probe` looks at the created accounts: an attempt
+ *   that landed without being confirmed is adopted, and when another
+ *   transaction took the address the transaction is rebuilt via `build`.
+ *   Otherwise `build` is called once, so an address it derives from mutable
+ *   state (a squads transaction index) stays pinned across attempts.
+ *
+ * Returns what `build` returned plus the confirmed signature - null when the
+ * probe found the accounts before anything was sent.
+ */
+export const sendWithRetries = async <T extends { transaction: Transaction }>({
+  provider,
+  payer,
+  signers = [],
+  name,
+  build,
+  probe,
+  attempts = 5,
+}: {
+  provider: AnchorProvider;
+  payer: Keypair;
+  signers?: Keypair[];
+  name: string;
+  build: () => Promise<T>;
+  probe: (built: T) => Promise<ProbeResult>;
+  attempts?: number;
+}): Promise<T & { signature: string | null }> => {
+  let built = await build();
+  let lastSignature: string | null = null;
+  let lastError: unknown;
+
+  const landed = () => {
+    if (lastSignature) {
+      console.log(`${name} landed!`);
+      console.log("Transaction signature:", lastSignature);
+    } else {
+      console.log(`${name} already exists - skipping`);
+    }
+    return { ...built, signature: lastSignature };
+  };
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const state = await probe(built);
+    if (state === "landed") {
+      return landed();
+    }
+    if (state === "taken") {
+      console.warn(`${name}: address taken by another transaction, rebuilding`);
+      built = await build();
+    }
+
+    try {
+      const { transaction } = built;
+      const { blockhash, lastValidBlockHeight } =
+        await provider.connection.getLatestBlockhash("confirmed");
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = payer.publicKey;
+      transaction.sign(payer, ...signers);
+      const signature = bs58.encode(transaction.signature!);
+
+      try {
+        await provider.connection.sendRawTransaction(transaction.serialize(), {
+          preflightCommitment: "confirmed",
+        });
+      } catch (error) {
+        if (isPreflightRejection(error)) {
+          throw error;
+        }
+        // May have been forwarded before the error came back - confirm it
+        // like a sent one
+      }
+      lastSignature = signature;
+
+      const status = await provider.connection.confirmTransaction(
+        { signature, blockhash, lastValidBlockHeight },
+        "confirmed",
+      );
+      if (status.value.err) {
+        throw new Error(
+          `Transaction ${signature} failed: ${JSON.stringify(status.value.err)}`,
+        );
+      }
+
+      console.log(`${name} created!`);
+      console.log("Transaction signature:", signature);
+      return { ...built, signature };
+    } catch (error) {
+      lastError = error;
+      console.warn(
+        `${name}: attempt ${attempt} of ${attempts} failed -`,
+        error instanceof Error ? error.message : error,
+      );
+      if (attempt < attempts) {
+        await sleep(2_000);
+      }
+    }
+  }
+
+  // Out of attempts - a last look so the failure is reported truthfully
+  const state = await probe(built);
+  if (state === "landed") {
+    return landed();
+  }
+  console.error(
+    state === "taken"
+      ? `${name}: giving up - another transaction took the address, nothing of this run's landed`
+      : `${name}: giving up - nothing landed`,
+  );
+  throw lastError;
+};
+
 /**
  * Signs and sends the transactions built by buildDaoActionTransactions in
  * order (setup if any, DAO multisig, ops multisig), logging the created
  * squads transactions and proposals along the way. Each squads transaction
  * is built right before it's sent, so its multisig's transaction index is
- * read as late as possible, and enqueue proposal creation retries with a
- * freshly built transaction when an attempt definitively fails (e.g. an
- * index collision with another operator's proposal on the shared ops
- * multisig).
+ * read as late as possible, and goes through sendWithRetries, which keeps
+ * that index pinned across retries and only moves to a fresh one when another
+ * proposal took it - which happens on the shared ops multisig.
  */
 export const signAndSendDaoActionTransactions = async ({
   provider,
@@ -651,104 +784,55 @@ export const signAndSendDaoActionTransactions = async ({
     console.log("Transaction signature:", setupSignature);
   }
 
-  // Built only now so the DAO multisig's transaction index is fresh
   const {
-    daoTransaction,
     daoTransactionIndex,
     daoVaultTransactionPda,
     daoProposalPda,
     enqueuedApprovalPda,
     buildMetadaoTransaction,
-  } = await buildDaoTransaction();
+    signature: daoSignature,
+  } = await sendWithRetries({
+    provider,
+    payer,
+    signers: [PERMISSIONLESS_ACCOUNT],
+    name: "DAO squads transaction",
+    build: async () => {
+      const built = await buildDaoTransaction();
+      return { ...built, transaction: built.daoTransaction };
+    },
+    probe: ({ daoVaultTransactionPda, daoInstructions }) =>
+      probeSquadsVaultTransaction(
+        provider.connection,
+        daoVaultTransactionPda,
+        daoInstructions,
+      ),
+  });
 
-  daoTransaction.sign(payer, PERMISSIONLESS_ACCOUNT);
-
-  const daoSignature = await sendAndConfirm(provider, daoTransaction);
-
-  console.log("DAO squads transaction created!");
-  console.log("Transaction signature:", daoSignature);
   console.log("Squads transaction index:", daoTransactionIndex.toString());
   console.log("Squads transaction:", daoVaultTransactionPda.toBase58());
   console.log("Squads proposal:", daoProposalPda.toBase58());
-
-  // The ops multisig is shared, so another operator's proposal can consume
-  // the transaction index between the build's index read and our transaction
-  // landing. A definitively failed attempt rebuilds with a fresh index and
-  // retries; an ambiguous confirmation timeout is not retried, since the
-  // transaction may still land and a second attempt would then create a
-  // duplicate enqueue proposal.
-  const sendEnqueueTransactionWithRetries = async (attempts: number) => {
-    let lastError: unknown;
-
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      const enqueue = await buildMetadaoTransaction();
-      enqueue.metadaoTransaction.sign(payer);
-
-      let signature: string;
-      try {
-        signature = await provider.connection.sendRawTransaction(
-          enqueue.metadaoTransaction.serialize(),
-        );
-      } catch (error) {
-        if (!(error instanceof SendTransactionError)) {
-          // Anything but the node rejecting the transaction (e.g. a
-          // transport error) is ambiguous - the transaction may have been
-          // forwarded and could still land, so retrying could create a
-          // duplicate enqueue proposal. Throw out of the retry loop instead.
-          console.error(
-            `Sending the enqueue transaction failed without a node response. It may still land - check whether proposal ${enqueue.metadaoProposalPda.toBase58()} gets created before re-running.`,
-          );
-          throw error;
-        }
-        // The node rejected the transaction at preflight, so nothing was
-        // broadcast
-        console.warn(`Enqueue attempt ${attempt} of ${attempts} rejected`);
-        lastError = error;
-        continue;
-      }
-
-      let status: RpcResponseAndContext<SignatureResult>;
-      try {
-        status = await provider.connection.confirmTransaction(
-          signature,
-          "confirmed",
-        );
-      } catch (error) {
-        // The timeout is ambiguous - the transaction may still land, so
-        // retrying could create a duplicate enqueue proposal. Throw out of
-        // the retry loop instead.
-        console.error(
-          `Confirmation of enqueue transaction ${signature} timed out. It may still land - check it before re-running, or a duplicate enqueue proposal could be created.`,
-        );
-        throw error;
-      }
-
-      if (status.value.err) {
-        // Landed on-chain but failed, consuming only the transaction fee
-        console.warn(
-          `Enqueue attempt ${attempt} of ${attempts} failed on-chain`,
-        );
-        lastError = new Error(
-          `Enqueue transaction ${signature} failed: ${JSON.stringify(status.value.err)}`,
-        );
-        continue;
-      }
-
-      return { ...enqueue, metadaoSignature: signature };
-    }
-
-    throw lastError;
-  };
 
   const {
     metadaoTransactionIndex,
     metadaoVaultTransactionPda,
     metadaoProposalPda,
-    metadaoSignature,
-  } = await sendEnqueueTransactionWithRetries(3);
+    signature: metadaoSignature,
+  } = await sendWithRetries({
+    provider,
+    payer,
+    name: "Enqueue approval squads transaction",
+    build: async () => {
+      const built = await buildMetadaoTransaction();
+      return { ...built, transaction: built.metadaoTransaction };
+    },
+    probe: ({ metadaoVaultTransactionPda, metadaoInstructions }) =>
+      probeSquadsVaultTransaction(
+        provider.connection,
+        metadaoVaultTransactionPda,
+        metadaoInstructions,
+      ),
+  });
 
-  console.log("Enqueue approval squads transaction created!");
-  console.log("Transaction signature:", metadaoSignature);
   console.log("Squads transaction index:", metadaoTransactionIndex.toString());
   console.log("Squads transaction:", metadaoVaultTransactionPda.toBase58());
   console.log("Squads proposal:", metadaoProposalPda.toBase58());
