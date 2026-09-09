@@ -15,18 +15,14 @@ import {
   FutarchyClient,
   getProposalAddr,
 } from "@metadaoproject/programs/futarchy/v0.6";
-import {
-  buildDaoActions,
-  DaoActionBuilder,
-  sendAndConfirm,
-  sendWithRetries,
-} from "./daoActions.js";
+import { buildDaoActions, DaoActionBuilder } from "./daoActions.js";
 import {
   compareVaultTransactionInstructions,
   createSquadsVaultTxAndProposal,
   getSquadsPdasFromDao,
   probeSquadsVaultTransaction,
 } from "./squads.js";
+import { sendAndConfirm, sendWithRetries } from "./transactions.js";
 
 const accountExists = async (connection: Connection, account: PublicKey) =>
   (await connection.getAccountInfo(account, "confirmed")) !== null;
