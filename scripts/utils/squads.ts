@@ -6,7 +6,7 @@ import {
   TransactionMessage,
 } from "@solana/web3.js";
 import * as multisig from "@sqds/multisig";
-import type { ProbeResult } from "./daoActions.js";
+import type { ProbeResult } from "./transactions.js";
 
 // Returns the multisig, spending limit and 0th vault pda for a given dao address
 export const getSquadsPdasFromDao = async (
